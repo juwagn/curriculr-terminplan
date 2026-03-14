@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -l \"c:/Users/juwag/OneDrive - Gesamtschule Horst/02 Orga/04 IT Dienstleistungen/Wordpress Plugin Terminplaner/gsh-terminplan.php\")"
+    ]
+  }
+}
