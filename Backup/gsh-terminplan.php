@@ -1190,15 +1190,13 @@ function gsh_tp_ajax_feedback() {
     $body .= sprintf( "Plugin-Version: %s\n", GSH_TP_VERSION );
     $body .= sprintf( "Zeitpunkt:      %s\n", wp_date( 'd.m.Y, H:i \U\h\r' ) );
     $body .= sprintf( "Seite:          %s\n", home_url() );
-    // Absender explizit setzen – benannte Callbacks damit remove_filter() greift
-    // (anonyme Funktionen würden sich bei jedem AJAX-Request stapeln)
-    add_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    add_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
+    // Absender explizit setzen – verhindert Spam-Einstufung durch generisches wordpress@…
+    $from_email = get_bloginfo( 'admin_email' );
+    $from_name  = get_bloginfo( 'name' );
+    add_filter( 'wp_mail_from',      function() use ( $from_email ) { return $from_email; } );
+    add_filter( 'wp_mail_from_name', function() use ( $from_name  ) { return $from_name;  } );
     // Senden
     $sent = wp_mail( $to, $subject, $body );
-    // Filter sofort wieder entfernen – kein Einfluss auf andere wp_mail()-Aufrufe
-    remove_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    remove_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
     if ( $sent ) {
         wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
     } else {
@@ -1206,25 +1204,8 @@ function gsh_tp_ajax_feedback() {
     }
 }
 
-/**
- * Setzt den Absender-Namen für Feedback-E-Mails.
- * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
- *
- * @since 3.12.0
- */
-function gsh_tp_feedback_mail_from_name() {
-    return get_bloginfo( 'name' );
-}
-
-/**
- * Setzt die Absender-Adresse für Feedback-E-Mails.
- * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
- *
- * @since 3.12.0
- */
-function gsh_tp_feedback_mail_from() {
-    return get_bloginfo( 'admin_email' );
-}
+/* ================================================================
+   1. ADMIN-EINSTELLUNGEN
    ================================================================ */
 
 /**

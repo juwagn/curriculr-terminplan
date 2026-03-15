@@ -9,11 +9,11 @@
  * Text Domain: gsh-terminplan
  *
  * Changelog 3.12.0:
- * - [FEATURE] Feedback-Button in der Fusszeile: Fehler melden, Funktionswuensche und Lob direkt einsenden
- * - [FEATURE] Feedback wird per wp_mail() als E-Mail zugestellt – kein externes Formular
- * - [UX] Typ waehlen + Freitext, Bestaetigung erscheint direkt im Modal (kein Tab-Wechsel)
- * - [ADMIN] Empfaenger-E-Mail im System-Tab konfigurierbar
- * - [INFRA] AJAX-Handler mit Nonce-Absicherung
+ * - [FEATURE] Feedback-Button in der Fusszeile: Fehler melden, Funktionswuensche und Lob einreichen
+ * - [FEATURE] Feedback-Modal: Typ waehlen + Freitext, oeffnet Microsoft Forms im neuen Tab
+ * - [UX] Zeichenzaehler im Textfeld (max. 1000 Zeichen)
+ * - [UX] Absenden-Button erst aktiv wenn Typ und Text ausgefuellt sind
+ * - [UX] Bestaetigung im Footer-Button nach Absenden ("Danke!")
  *
  * Changelog 3.11.0:
  * - [UX] Alle Emoji-Icons durch konsistente Lucide-SVGs ersetzt (scharf, themefaehig, OS-unabhaengig)
@@ -405,6 +405,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'GSH_TP_VERSION',       '3.12.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
+/** Microsoft Forms-URL für das Feedback-Formular (seit 3.12.0) */
+define( 'GSH_TP_FEEDBACK_URL', 'https://forms.office.com/Pages/ResponsePage.aspx?id=Xqf0g2roqUG1ZIo3PFAWcieJREeQlHtErBGesyWVvYdUOFhIUFpVVUxJM09WTkRMQjZPVVkzMEQ3Vy4u' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
 define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup)
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
@@ -477,10 +479,10 @@ function gsh_tp_changelog() {
         array(
             'version' => '3.12.0',
             'entries' => array(
-                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Button in der Fußzeile – Fehler, Wünsche und Lob direkt aus dem Terminplan einsenden' ),
-                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als E-Mail zugestellt – kein Wechsel zu externen Formularen nötig' ),
-                array( 'tag' => 'UX',      'text' => 'Bestätigung erscheint direkt im Modal – kein Tab-Wechsel, kein Neuladen' ),
-                array( 'tag' => 'ADMIN',   'text' => 'Empfänger-E-Mail im Admin-Bereich (System-Tab) konfigurierbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Button in der Fußzeile – Fehler, Wünsche und Lob direkt aus dem Terminplan einreichen' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Modal: Typ wählen (Fehler / Wunsch / Lob / Sonstiges) und Freitext eingeben' ),
+                array( 'tag' => 'UX',      'text' => 'Formular öffnet sich im neuen Tab – nur noch Senden klicken' ),
+                array( 'tag' => 'UX',      'text' => 'Absenden-Button aktiviert sich erst wenn Typ und Text vollständig ausgefüllt sind' ),
             ),
         ),
         array(
@@ -1141,90 +1143,8 @@ function gsh_tp_clear_old_logs( $days = 30 ) {
     return $removed;
 }
 
-/**
- * AJAX-Handler: Feedback-E-Mail versenden.
- *
- * Empfängt Typ und Nachricht via POST, validiert die Eingaben,
- * baut eine strukturierte E-Mail und sendet sie via wp_mail().
- *
- * @since 3.12.0
- * @return void  Antwortet mit JSON und beendet die Ausführung.
- */
-function gsh_tp_ajax_feedback() {
-    // Nonce prüfen
-    check_ajax_referer( 'gsh_tp_feedback_nonce', 'nonce' );
-    // Eingaben bereinigen
-    $type_key = sanitize_key( $_POST['type'] ?? '' );
-    $message  = sanitize_textarea_field( $_POST['message'] ?? '' );
-    // Erlaubte Typen
-    $allowed_types = array(
-        'bug'    => '🐛 Fehler melden',
-        'wish'   => '💡 Funktionswunsch',
-        'praise' => '👍 Lob',
-        'other'  => '💬 Sonstiges',
-    );
-    // Validierung
-    if ( ! isset( $allowed_types[ $type_key ] ) ) {
-        wp_send_json_error( array( 'message' => 'Ungültiger Feedback-Typ.' ) );
-    }
-    if ( mb_strlen( $message ) < 3 ) {
-        wp_send_json_error( array( 'message' => 'Nachricht zu kurz.' ) );
-    }
-    if ( mb_strlen( $message ) > 1000 ) {
-        wp_send_json_error( array( 'message' => 'Nachricht zu lang (max. 1000 Zeichen).' ) );
-    }
-    $type_label = $allowed_types[ $type_key ];
-    // Empfänger aus Einstellungen (Fallback: WordPress-Admin)
-    $to = get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) );
-    if ( ! is_email( $to ) ) {
-        $to = get_bloginfo( 'admin_email' );
-    }
-    // Betreff
-    $subject = sprintf( '[GSH Terminplan] %s', $type_label );
-    // E-Mail-Body (Plain Text)
-    $body  = "Neues Feedback aus dem GSH Terminplan:\n";
-    $body .= str_repeat( '-', 40 ) . "\n\n";
-    $body .= sprintf( "Typ:      %s\n\n", $type_label );
-    $body .= sprintf( "Nachricht:\n%s\n\n", $message );
-    $body .= str_repeat( '-', 40 ) . "\n";
-    $body .= sprintf( "Plugin-Version: %s\n", GSH_TP_VERSION );
-    $body .= sprintf( "Zeitpunkt:      %s\n", wp_date( 'd.m.Y, H:i \U\h\r' ) );
-    $body .= sprintf( "Seite:          %s\n", home_url() );
-    // Absender explizit setzen – benannte Callbacks damit remove_filter() greift
-    // (anonyme Funktionen würden sich bei jedem AJAX-Request stapeln)
-    add_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    add_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
-    // Senden
-    $sent = wp_mail( $to, $subject, $body );
-    // Filter sofort wieder entfernen – kein Einfluss auf andere wp_mail()-Aufrufe
-    remove_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    remove_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
-    if ( $sent ) {
-        wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
-    } else {
-        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an den Admin.' ) );
-    }
-}
-
-/**
- * Setzt den Absender-Namen für Feedback-E-Mails.
- * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
- *
- * @since 3.12.0
- */
-function gsh_tp_feedback_mail_from_name() {
-    return get_bloginfo( 'name' );
-}
-
-/**
- * Setzt die Absender-Adresse für Feedback-E-Mails.
- * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
- *
- * @since 3.12.0
- */
-function gsh_tp_feedback_mail_from() {
-    return get_bloginfo( 'admin_email' );
-}
+/* ================================================================
+   1. ADMIN-EINSTELLUNGEN
    ================================================================ */
 
 /**
@@ -1315,9 +1235,6 @@ add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_tour_assets' );
 add_action( 'admin_init', 'gsh_tp_register_settings' );
 // Hintergrund-Refresh via WP-Cron (non-blocking, kein Besucher wartet)
 add_action( 'gsh_tp_cron_refresh', 'gsh_tp_do_refresh' );
-// Feedback-AJAX (eingeloggte und nicht-eingeloggte Nutzer)
-add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
-add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );
@@ -1355,10 +1272,6 @@ function gsh_tp_register_settings() {
     register_setting( 'gsh_tp_options', 'gsh_tp_iserv_domain', array(
         'sanitize_callback' => 'esc_url_raw',
         'default'           => '',
-    ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_feedback_email', array(
-        'sanitize_callback' => 'sanitize_email',
-        'default'           => get_bloginfo( 'admin_email' ),
     ) );
 }
 
@@ -2517,20 +2430,6 @@ function gsh_tp_render_system_tab() {
         <table class="form-table">
 
             <tr>
-                <th><label for="gsh_tp_feedback_email">Feedback-Empfänger</label></th>
-                <td>
-                    <input type="email" id="gsh_tp_feedback_email" name="gsh_tp_feedback_email"
-                           value="<?php echo esc_attr( get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) ) ); ?>"
-                           class="regular-text"
-                           placeholder="deine@schule.de" />
-                    <p class="description">
-                        An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
-                        Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).
-                    </p>
-                </td>
-            </tr>
-
-            <tr>
                 <th><label for="gsh_tp_kiosk_token">Kiosk-Token</label></th>
                 <td>
                     <input type="text" id="gsh_tp_kiosk_token" name="gsh_tp_kiosk_token"
@@ -3449,11 +3348,6 @@ function gsh_tp_shortcode( $atts ) {
     $cats_json = esc_attr( wp_json_encode( $cats_for_js ) );
 
     $o  = gsh_tp_css();
-
-    // Nonce und AJAX-URL für Feedback-AJAX ins Frontend übergeben
-    $feedback_nonce = wp_create_nonce( 'gsh_tp_feedback_nonce' );
-    $ajax_url       = admin_url( 'admin-ajax.php' );
-
     $o .= '<div class="gtp" id="gtp" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
 
     // Entwurfs-Banner
@@ -3566,7 +3460,7 @@ function gsh_tp_shortcode( $atts ) {
         . 'v' . esc_html( GSH_TP_VERSION ) . '</button>';
     $o .= '</div>'; // .gtp-ft
 
-    // ── Feedback-Modal (wp_mail, seit 3.12.0) ────────────────────────────────
+    // ── Feedback-Modal ────────────────────────────────────────────────────────
     $o .= '<div id="gtp-feedback-overlay" class="gtp-popup-overlay" role="dialog"'
         . ' aria-modal="true" aria-labelledby="gtp-feedback-title"'
         . ' style="display:none" tabindex="-1">';
@@ -3574,8 +3468,8 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<button type="button" class="gtp-popup-close" onclick="gtpFeedbackClose()"'
         . ' aria-label="Schließen">&times;</button>';
     $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">&#128172; Feedback geben</h3>';
-    $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.</p>';
-    // Typ-Auswahl
+    $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.'
+        . ' Das Formular öffnet sich im neuen Tab &ndash; du musst dort nur noch auf <em>Senden</em> klicken.</p>';
     $o .= '<div class="gtp-feedback-types" role="group" aria-label="Feedback-Typ wählen">';
     $types = array(
         'bug'    => array( 'emoji' => '&#128027;', 'label' => 'Fehler melden' ),
@@ -3585,24 +3479,24 @@ function gsh_tp_shortcode( $atts ) {
     );
     foreach ( $types as $key => $t ) {
         $o .= '<button type="button" class="gtp-feedback-type" data-type="' . esc_attr( $key ) . '"'
+            . ' data-label="' . esc_attr( $t['label'] ) . '"'
             . ' onclick="gtpFeedbackType(this)">'
-            . $t['emoji'] . ' ' . esc_html( $t['label'] ) . '</button>';
+            . $t['emoji'] . ' ' . esc_html( $t['label'] )
+            . '</button>';
     }
-    $o .= '</div>';
-    // Freitextfeld
+    $o .= '</div>'; // .gtp-feedback-types
     $o .= '<div class="gtp-feedback-field">';
-    $o .= '<label for="gtp-feedback-text" class="gtp-feedback-label">Dein Anliegen</label>';
+    $o .= '<label for="gtp-feedback-text" class="gtp-feedback-label">Beschreibe kurz dein Anliegen</label>';
     $o .= '<textarea id="gtp-feedback-text" class="gtp-feedback-textarea"'
         . ' rows="4" maxlength="1000"'
         . ' placeholder="Was ist aufgefallen? Was wünschst du dir?"></textarea>';
     $o .= '<div class="gtp-feedback-counter"><span id="gtp-feedback-count">0</span> / 1000</div>';
     $o .= '</div>';
-    // Status-Meldung (per JS befüllt)
-    $o .= '<div id="gtp-feedback-status" class="gtp-feedback-status" style="display:none"></div>';
-    // Aktions-Buttons
     $o .= '<div class="gtp-feedback-actions">';
     $o .= '<button type="button" class="gtp-btn" id="gtp-feedback-submit"'
-        . ' onclick="gtpFeedbackSubmit()" disabled>Absenden</button>';
+        . ' onclick="gtpFeedbackSubmit()"'
+        . ' data-url="' . esc_attr( GSH_TP_FEEDBACK_URL ) . '"'
+        . ' disabled>Formular &ouml;ffnen &#8599;</button>';
     $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpFeedbackClose()">Abbrechen</button>';
     $o .= '</div>';
     $o .= '</div>'; // .gtp-feedback-card
@@ -3686,10 +3580,6 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>'; // .gtp-changelog-card
     $o .= '</div>'; // #gtpChangelog
-
-    // Versteckte Felder für JS (AJAX-URL und Nonce)
-    $o .= '<input type="hidden" id="gtp-ajax-url" value="' . esc_attr( $ajax_url ) . '">';
-    $o .= '<input type="hidden" id="gtp-feedback-nonce" value="' . esc_attr( $feedback_nonce ) . '">';
 
     $o .= '</div>'; // .gtp
     $o .= gsh_tp_js();
@@ -6232,27 +6122,27 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() { gtpTourStart(false); }, 800);
 });
 
-/* ── Feedback-Modal (wp_mail via AJAX, seit 3.12.0) ─────────── */
+/* ── Feedback-Modal ──────────────────────────────────────────── */
 
-var gtpFeedbackSelectedType = '';
+var gtpFeedbackSelectedType  = '';
+var gtpFeedbackSelectedLabel = '';
 
 function gtpFeedbackOpen() {
   var overlay = document.getElementById('gtp-feedback-overlay');
   if (!overlay) return;
-  gtpFeedbackSelectedType = '';
+  overlay.style.display = 'flex';
+  overlay.focus();
+  gtpFeedbackSelectedType  = '';
+  gtpFeedbackSelectedLabel = '';
+  var textarea = document.getElementById('gtp-feedback-text');
+  if (textarea) textarea.value = '';
+  var counter = document.getElementById('gtp-feedback-count');
+  if (counter) counter.textContent = '0';
+  var submit = document.getElementById('gtp-feedback-submit');
+  if (submit) submit.disabled = true;
   document.querySelectorAll('.gtp-feedback-type').forEach(function(b) {
     b.classList.remove('gtp-feedback-type-active');
   });
-  var ta  = document.getElementById('gtp-feedback-text');
-  var cnt = document.getElementById('gtp-feedback-count');
-  var sub = document.getElementById('gtp-feedback-submit');
-  var st  = document.getElementById('gtp-feedback-status');
-  if (ta)  ta.value           = '';
-  if (cnt) cnt.textContent    = '0';
-  if (sub) sub.disabled       = true;
-  if (st)  { st.style.display = 'none'; st.textContent = ''; }
-  overlay.style.display = 'flex';
-  overlay.focus();
 }
 
 function gtpFeedbackClose() {
@@ -6265,90 +6155,65 @@ function gtpFeedbackType(btn) {
     b.classList.remove('gtp-feedback-type-active');
   });
   btn.classList.add('gtp-feedback-type-active');
-  gtpFeedbackSelectedType = btn.getAttribute('data-type') || '';
-  gtpFeedbackCheck();
+  gtpFeedbackSelectedType  = btn.getAttribute('data-type')  || '';
+  gtpFeedbackSelectedLabel = btn.getAttribute('data-label') || '';
+  gtpFeedbackUpdateSubmit();
 }
 
-function gtpFeedbackCheck() {
-  var ta  = document.getElementById('gtp-feedback-text');
-  var sub = document.getElementById('gtp-feedback-submit');
-  if (sub) sub.disabled = !(gtpFeedbackSelectedType && ta && ta.value.trim().length >= 3);
+function gtpFeedbackUpdateSubmit() {
+  var textarea = document.getElementById('gtp-feedback-text');
+  var submit   = document.getElementById('gtp-feedback-submit');
+  if (!submit) return;
+  var hasType = gtpFeedbackSelectedType !== '';
+  var hasText = textarea && textarea.value.trim().length > 0;
+  submit.disabled = !(hasType && hasText);
 }
 
 function gtpFeedbackSubmit() {
-  var sub = document.getElementById('gtp-feedback-submit');
-  var ta  = document.getElementById('gtp-feedback-text');
-  var st  = document.getElementById('gtp-feedback-status');
-  if (!sub || sub.disabled) return;
-  var ajaxUrl = (document.getElementById('gtp-ajax-url')       || {}).value || '';
-  var nonce   = (document.getElementById('gtp-feedback-nonce') || {}).value || '';
-  sub.disabled    = true;
-  sub.textContent = 'Wird gesendet\u2026';
-  var body = new URLSearchParams();
-  body.append('action',  'gsh_tp_feedback');
-  body.append('nonce',   nonce);
-  body.append('type',    gtpFeedbackSelectedType);
-  body.append('message', ta ? ta.value.trim() : '');
-  fetch(ajaxUrl, { method: 'POST', body: body })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (!st) return;
-      st.style.display = 'block';
-      if (data.success) {
-        st.className   = 'gtp-feedback-status gtp-feedback-status-ok';
-        st.textContent = '\u2713 ' + (data.data.message || 'Feedback gesendet. Danke!');
-        setTimeout(function() {
-          gtpFeedbackClose();
-          var fbBtn = document.getElementById('gtp-feedback-btn');
-          if (fbBtn) {
-            var orig = fbBtn.innerHTML;
-            fbBtn.innerHTML = '&#10003; Danke!';
-            fbBtn.disabled  = true;
-            setTimeout(function() { fbBtn.innerHTML = orig; fbBtn.disabled = false; }, 3000);
-          }
-        }, 2000);
-      } else {
-        st.className    = 'gtp-feedback-status gtp-feedback-status-err';
-        st.textContent  = '\u2717 ' + (data.data.message || 'Fehler beim Senden.');
-        sub.disabled    = false;
-        sub.textContent = 'Absenden';
-      }
-    })
-    .catch(function() {
-      if (st) {
-        st.style.display = 'block';
-        st.className     = 'gtp-feedback-status gtp-feedback-status-err';
-        st.textContent   = '\u2717 Verbindungsfehler. Bitte erneut versuchen.';
-      }
-      sub.disabled    = false;
-      sub.textContent = 'Absenden';
-    });
+  var submit   = document.getElementById('gtp-feedback-submit');
+  var textarea = document.getElementById('gtp-feedback-text');
+  if (!submit || submit.disabled) return;
+  var baseUrl = submit.getAttribute('data-url') || '';
+  var url = baseUrl;
+  window.open(url, '_blank', 'noopener,noreferrer');
+  gtpFeedbackClose();
+  var fbBtn = document.getElementById('gtp-feedback-btn');
+  if (fbBtn) {
+    var orig = fbBtn.innerHTML;
+    fbBtn.innerHTML = '\u2713 Danke!';
+    fbBtn.disabled  = true;
+    setTimeout(function() {
+      fbBtn.innerHTML = orig;
+      fbBtn.disabled  = false;
+    }, 3000);
+  }
 }
 
-// Textarea: Zeichenzähler + Submit-Check
+// Escape schließt das Feedback-Modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('gtp-feedback-overlay');
+    if (overlay && overlay.style.display !== 'none') gtpFeedbackClose();
+  }
+});
+
+// Zeichenzähler
 document.addEventListener('DOMContentLoaded', function() {
   var ta = document.getElementById('gtp-feedback-text');
   if (ta) {
     ta.addEventListener('input', function() {
-      var cnt = document.getElementById('gtp-feedback-count');
-      if (cnt) cnt.textContent = this.value.length;
-      gtpFeedbackCheck();
+      var counter = document.getElementById('gtp-feedback-count');
+      if (counter) counter.textContent = ta.value.length;
+      gtpFeedbackUpdateSubmit();
     });
   }
   // Klick auf Overlay-Hintergrund schließt Modal
   var overlay = document.getElementById('gtp-feedback-overlay');
   if (overlay) {
     overlay.addEventListener('click', function(e) {
-      if (e.target === this) gtpFeedbackClose();
+      if (e.target === overlay) gtpFeedbackClose();
     });
   }
-});
-
-// Escape schließt Modal
-document.addEventListener('keydown', function(e) {
-  if (e.key !== 'Escape') return;
-  var overlay = document.getElementById('gtp-feedback-overlay');
-  if (overlay && overlay.style.display !== 'none') gtpFeedbackClose();
 });
 </script>
 JSEOF;

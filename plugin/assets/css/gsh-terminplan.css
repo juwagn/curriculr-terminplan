@@ -625,6 +625,17 @@ a .gtp-icon:only-child {
     margin-top: 4px;
 }
 
+/* ── Status-Meldung (Erfolg / Fehler) ───────────────────────── */
+.gtp-feedback-status {
+    padding:       10px 14px;
+    border-radius: 8px;
+    font-size:     .82rem;
+    font-weight:   600;
+    margin-bottom: 1rem;
+}
+.gtp-feedback-status-ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.gtp-feedback-status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
 /* ── Aktions-Buttons ────────────────────────────────────────────── */
 .gtp-feedback-actions {
     display:         flex;
@@ -634,9 +645,10 @@ a .gtp-icon:only-child {
 }
 
 #gtp-feedback-submit:disabled {
-    opacity:   .45;
-    cursor:    not-allowed;
-    transform: none !important;
+    opacity:    .45;
+    cursor:     not-allowed;
+    transform:  none !important;
+    background: var(--gtp-text);
 }
 #gtp-feedback-submit:not(:disabled) {
     background: var(--gtp-accent);
