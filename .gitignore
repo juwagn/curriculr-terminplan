@@ -1,0 +1,19 @@
+# WordPress-Konfiguration (enthält Datenbankpasswörter!)
+wp-config.php
+
+# Backup-Dateien
+*.bak
+*_backup_*
+_old/
+
+# Betriebssystem-Dateien
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code persönliche Einstellungen
+.vscode/settings.json
+
+# Sensible Testdaten (falls vorhanden)
+*.sql
+/tests/private/
