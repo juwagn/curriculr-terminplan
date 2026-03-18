@@ -3,10 +3,115 @@
  * Plugin Name: GSH Terminplan Dashboard
  * Plugin URI:  https://gesamtschule-horst.de
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     3.5.0
+ * Version:     3.13.0
  * Author:      Gesamtschule Horst
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 3.13.0:
+ * - [BUGFIX] Stichwörter/Tags: POST-Redirect-GET nach Speichern verhindert Static-Cache-Problem
+ * - [BUGFIX] Suchfeld-Placeholder zeigte "…" statt echtem Auslassungszeichen
+ * - [UX] Feedback-Log als Tab in Plugin-Admin integriert (kein separater Menüpunkt mehr)
+ *
+ * Changelog 3.12.0:
+ * - [FEATURE] Feedback per AJAX + wp_mail(): HTML-E-Mail mit Absendername, Typ, Rate-Limiting, Honeypot
+ * - [FEATURE] DB-Fallback-Log: Feedback immer gespeichert auch bei E-Mail-Fehler (wp_options-basiert)
+ * - [FEATURE] Admin-Seite "Terminplan Feedback": Log einsehen, SMTP-Diagnose-Hinweis
+ * - [BUGFIX] Kategorien-Editor: Löschen-Button reagiert jetzt auch auf Klick ins SVG-Icon
+ * - [BUGFIX] Suchfeld: Placeholder und Text im Dark Mode korrekt kontrastreich dargestellt
+ * - [UX] Optionales Absender-Namensfeld im Feedback-Modal
+ *
+ * Changelog 3.11.0:
+ * - [UX] Alle Emoji-Icons durch konsistente Lucide-SVGs ersetzt (scharf, themefaehig, OS-unabhaengig)
+ * - [UX] Suchfeld: Icon neben Eingabefeld statt im Placeholder-Text
+ * - [INFRA] gsh_tp_icon()-Hilfsfunktion als zentrale Icon-Verwaltung (18 Icons, Lucide 0.395)
+ * - [INFRA] CSS Design-Tokens fuer Spacing (4px-Raster) und Border-Radius in :root ergaenzt
+ *
+ * Changelog 3.10.0:
+ * - [FEATURE] Onboarding-Tour: erklaert beim ersten Besuch Filter, Suche, PDF und Dark Mode
+ * - [UX] "?"-Button im Header startet die Tour jederzeit manuell neu
+ * - [UX] Tour merkt sich: nach Abschluss oder Abbruch kein automatischer Neustart
+ * - [UX] Shepherd.js-Design angepasst ans Plugin-Layout (Farben, Radius, Typografie)
+ * - [UX] Fortschrittsanzeige in jedem Tour-Schritt (z. B. "2 / 5")
+ * - [INFRA] Shepherd.js 11.2.0 via cdnjs, wird nur auf der Terminplan-Seite geladen
+ *
+ * Changelog 3.9.0:
+ * - [FEATURE] Dark Mode: neues dunkles Theme mit angepassten Farben
+ * - [FEATURE] Theme-Switcher: schwebendes Gear-Icon unten rechts (Hell / Dunkel / System)
+ * - [UX] Wahl wird im Browser gespeichert und beim naechsten Besuch wiederhergestellt
+ * - [UX] Modus "System" folgt automatisch der Geraeteeinstellung (prefers-color-scheme)
+ * - [INFRA] Dark-Mode-CSS in assets/css/gsh-terminplan.css via data-gtp-theme-Attribut
+ *
+ * Changelog 3.8.0:
+ * - [FEATURE] Changelog-Modal: Versionsnummer im Frontend und Admin anklickbar
+ * - [UX] Frontend zeigt letzte 3 Versionen, gefiltert auf benutzerrelevante Eintraege
+ * - [UX] Admin zeigt vollstaendigen Changelog aller Versionen mit Tag-Farbcodierung
+ * - [INFRA] gsh_tp_changelog() als strukturiertes PHP-Array (Single Source of Truth)
+ *
+ * Changelog 3.7.0:
+ * - [UX] Fluid-Grid-Layout ersetzt hartes 2-Stufen-Breakpoint-System
+ * - CSS Grid mit auto-fit/minmax() fuer fliegende Spaltenumbrueche
+ * - Flexbox-Fallback fuer aeltere Browser (kein CSS-Grid-Support)
+ * - Tabellen → Cards im Bereich 1024–1200 px (rein per CSS, kein JS)
+ * - data-label-Attribute in gsh_tp_table() ergaenzt (SW, Mo-Fr, Hinweise)
+ * - Neues CSS-File: assets/css/gsh-terminplan.css
+ * - wp_enqueue_style() mit Cache-Busting via GSH_TP_VERSION
+ *
+ * Changelog 3.6.4:
+ * - [INFRA] Cache-Key-Versionierung gegen stale Daten nach Plugin-Updates
+ * - Neue Konstante GSH_TP_CACHE_VERSION (aktuell: 3) für versionierte Key-Suffixe
+ * - Neue Hilfsfunktion gsh_tp_ck($prefix, $pid) erzeugt Keys im Format …_v3
+ * - Neue Funktion gsh_tp_clear_version_caches($version) löscht veraltete Keys
+ * - Migration gsh_tp_migrate_cache_version() läuft einmalig via admin_init
+ * - Betrifft: gsh_tp_ical_, gsh_tp_fresh_, gsh_tp_chg_, gsh_tp_sync_logs_
+ *
+ * Changelog 3.6.3:
+ * - [UX] Mobile: Heutige Woche deutlich sichtbarer hervorgehoben
+ * - Pulsierender Punkt im Wochenkopf der aktuellen Schulwoche (@keyframes gtpPulse)
+ * - "HEUTE"-Badge größer und prominenter (erhöhte Schrift- und Padding-Größe)
+ * - Nav-Leiste zeigt "👉 Heute" wenn die aktuelle Woche im Sichtfenster liegt
+ * - Neue JS-Funktion: gtpMobTodayIndicator() – aufgerufen aus gtpMobUpdateNav()
+ *
+ * Changelog 3.6.2:
+ * - [UX] iCal-URL-Validierung mit sprechenden Fehlermeldungen im Admin
+ * - Neue Funktion: gsh_tp_validate_ical_url() mit detaillierten Rückgabewerten
+ * - Profil-Speicherung zeigt Warnung bei ungültiger URL statt stummem Reset
+ * - URL-Input: pattern-Attribut + Inline-Feedback-Span
+ * - JavaScript: 1s-Debounce-Validierung mit ✓/✗/⌛ Statusanzeige
+ *
+ * Changelog 3.6.1:
+ * - [UX] Filter-Buttons: echter Toggle-Modus statt Exklusiv-Modus
+ * - Jeder Button schaltet seine Kategorie unabhängig ein/aus
+ * - Filter-Zustand wird per localStorage seitenübergreifend gespeichert
+ * - aria-pressed="true/false" für Barrierefreiheit
+ * - Zähler-Label zeigt "X/Y sichtbar" wenn mindestens eine Kategorie versteckt ist
+ *
+ * Changelog 3.6.0:
+ * - [FEATURE] Admin-Dashboard für Sync-Verlauf
+ * - Neue Tab: "Sync-Verlauf" zeigt letzte 20 Sync-Versuche pro Profil
+ * - Details pro Sync: Timestamp, Status, Fehlertyp, Event-Count, Dauer
+ * - Farb-Codierung: Grün (✓ erfolgreich), Rot (✗ Fehler)
+ * - Automatisches Cleanup: Logs älter als 30 Tage entfernen
+ * - Neue Funktionen: gsh_tp_log_sync_attempt(), gsh_tp_get_sync_logs(), gsh_tp_clear_old_logs()
+ *
+ * Changelog 3.5.3:
+ * - [UX] Bestätigungs-Dialoge bei destruktiven Aktionen (Löschen, Cache-Reset)
+ * - Neue Bestätigungen: Profil-Löschen, Cache-Leeren, Token-Regenerieren
+ * - Verbessert Admin-Workflow durch klare Konsequenz-Anzeige
+ * - Reduziert versehentliches Löschen von Schuljahr-Profilen
+ *
+ * Changelog 3.5.2:
+ * - [SECURITY] Kiosk-Token Rate-Limiting und Timing-Safe-Vergleich
+ * - Neue Funktion: gsh_tp_check_kiosk_access() für Token-Validierung
+ * - Admin-Panel: Warnung bei fehlendem Token oder ungültiger IServ-Domain
+ * - Max. 10 Kiosk-Zugriffe pro IP pro Stunde (DoS-Schutz)
+ * - Logging fehlgeschlagener Kiosk-Versuche
+ *
+ * Changelog 3.5.1:
+ * - [SECURITY] CSRF-Token-Validierung für alle Admin-Formulare
+ * - [BUGFIX] Validierung von $_POST ohne wp_verify_nonce()
+ * - Betroffene Funktionen: gsh_tp_settings_page(), Profil-Speicherung, Kategorien
+ * - Empfehlung: Sofort einspielen (Sicherheits-Patch)
  *
  * Changelog 3.5.0:
  * - Zwei-Schuljahre-Verwaltung: Jedes Schuljahr hat ein eigenes Profil mit
@@ -303,11 +408,357 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',  '3.5.0' );
+define( 'GSH_TP_VERSION',       '3.13.0' );
+define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
 define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup)
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
+
+/**
+ * Gibt ein Lucide-Icon als inline-SVG-String zurück.
+ *
+ * Alle Icons stammen aus Lucide 0.395 (MIT-Lizenz, https://lucide.dev).
+ * viewBox ist immer "0 0 24 24", stroke="currentColor" erbt die Textfarbe.
+ *
+ * @since 3.11.0
+ * @param string $name   Icon-Name (siehe switch unten)
+ * @param string $size   CSS-Größe, Standard "1em"
+ * @param string $class  Optionale zusätzliche CSS-Klasse
+ * @return string        Vollständiger <svg>-String
+ */
+function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
+    $paths = array(
+        'check'          => '<polyline points="20 6 9 17 4 12"/>',
+        'x'              => '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+        'alert-triangle' => '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        'lock'           => '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+        'file-text'      => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+        'download'       => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+        'map-pin'        => '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+        'bell'           => '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+        'search'         => '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+        'dice'           => '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/>',
+        'trash'          => '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+        'link'           => '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        'play'           => '<polygon points="5 3 19 12 5 21 5 3"/>',
+        'refresh-cw'     => '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+        'chevron-left'   => '<polyline points="15 18 9 12 15 6"/>',
+        'chevron-right'  => '<polyline points="9 18 15 12 9 6"/>',
+        'loader'         => '<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>',
+        'clock'          => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    );
+
+    if ( ! isset( $paths[ $name ] ) ) {
+        return '';
+    }
+
+    $cls = 'gtp-icon' . ( $class ? ' ' . esc_attr( $class ) : '' );
+    $sz  = esc_attr( $size );
+
+    return '<svg class="' . $cls . '" xmlns="http://www.w3.org/2000/svg"'
+        . ' width="' . $sz . '" height="' . $sz . '" viewBox="0 0 24 24"'
+        . ' fill="none" stroke="currentColor" stroke-width="2"'
+        . ' stroke-linecap="round" stroke-linejoin="round"'
+        . ' aria-hidden="true" focusable="false">'
+        . $paths[ $name ]
+        . '</svg>';
+}
+
+/**
+ * Gibt den vollständigen Plugin-Changelog als strukturiertes Array zurück.
+ *
+ * Tags:
+ *   FEATURE  – neue Funktion für Benutzer
+ *   UX       – Verbesserung der Bedienbarkeit / Darstellung
+ *   BUGFIX   – Fehlerbehebung
+ *   SECURITY – Sicherheitsrelevante Änderung
+ *   INFRA    – Technisch intern; für Kolleg*innen nicht direkt sichtbar
+ *
+ * @since 3.8.0
+ * @return array[] Array von Versions-Blöcken mit 'version' und 'entries'.
+ */
+function gsh_tp_changelog() {
+    return array(
+        array(
+            'version' => '3.13.0',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX',  'text' => 'Stichwörter im Kategorien-Editor werden jetzt zuverlässig gespeichert' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Suchfeld: Platzhaltertext zeigte \\u2026 statt dem Auslassungszeichen …' ),
+                array( 'tag' => 'UX',      'text' => 'Feedback-Log ist jetzt als Tab in die Plugin-Einstellungen integriert' ),
+            ),
+        ),
+        array(
+            'version' => '3.12.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Button in der Fußzeile – Fehler, Wünsche und Lob direkt aus dem Terminplan einsenden' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als HTML-E-Mail zugestellt – mit Absendername, Typ-Kennzeichnung und Formatierung' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Log im Admin: alle Einträge einsehbar, auch wenn E-Mail-Versand fehlschlug' ),
+                array( 'tag' => 'UX',      'text' => 'Rate-Limiting: max. 3 Feedbacks pro 10 Minuten schützt vor unbeabsichtigtem Mehrfach-Absenden' ),
+                array( 'tag' => 'UX',      'text' => 'SMTP-Diagnose-Hinweis im Admin wenn E-Mail-Versand wiederholt fehlschlägt' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Löschen-Button in Kategorien-Editor: Klick auf Icon-Bereich funktioniert jetzt zuverlässig' ),
+            ),
+        ),
+        array(
+            'version' => '3.11.0',
+            'entries' => array(
+                array( 'tag' => 'UX',    'text' => 'Alle Icons wurden vereinheitlicht: Lucide-SVGs statt Emojis – scharf auf allen Geräten und im Dark Mode' ),
+                array( 'tag' => 'UX',    'text' => 'Suchfeld: Such-Icon direkt im Eingabefeld (nicht mehr im Placeholder-Text)' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Hilfsfunktion gsh_tp_icon() für konsistente Icon-Verwaltung (18 Lucide-Icons)' ),
+                array( 'tag' => 'INFRA', 'text' => 'CSS Design-Tokens für Spacing und Border-Radius in :root (vereinfacht zukünftige Anpassungen)' ),
+            ),
+        ),
+        array(
+            'version' => '3.10.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Onboarding-Tour: führt beim ersten Besuch durch Filter, Suche, PDF-Export und Dark Mode' ),
+                array( 'tag' => 'UX',      'text' => 'Hilfe-Button (?) im Header – Tour jederzeit manuell starten' ),
+                array( 'tag' => 'UX',      'text' => 'Tour-Fortschritt wird angezeigt (z. B. Schritt 2 von 5)' ),
+                array( 'tag' => 'UX',      'text' => 'Nach Abschluss der Tour kein automatischer Neustart beim nächsten Besuch' ),
+                array( 'tag' => 'INFRA',   'text' => 'Shepherd.js 11.2.0 wird nur auf der Terminplan-Seite geladen' ),
+            ),
+        ),
+        array(
+            'version' => '3.9.1',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Dark Mode: Tabellen-Kopfzeile (thead) war unsichtbar, da Hintergrundfarbe bereits dunkel war – jetzt korrekt in --gtp-surface dargestellt' ),
+            ),
+        ),
+        array(
+            'version' => '3.9.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Dark Mode: Terminplan jetzt auch im dunklen Design verfügbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Theme-Switcher: Gear-Icon unten rechts – Hell, Dunkel oder System-Einstellung wählbar' ),
+                array( 'tag' => 'UX',      'text' => 'Theme-Wahl wird gespeichert und beim nächsten Besuch automatisch wiederhergestellt' ),
+                array( 'tag' => 'UX',      'text' => 'Modus „System" passt sich automatisch an die Geräteeinstellung (Hell/Dunkel) an' ),
+                array( 'tag' => 'INFRA',   'text' => 'Dark-Mode-Farben als CSS Custom Properties in assets/css/gsh-terminplan.css' ),
+            ),
+        ),
+        array(
+            'version' => '3.8.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE',  'text' => 'Changelog-Modal: Versionsnummer im Frontend und Admin anklickbar' ),
+                array( 'tag' => 'UX',       'text' => 'Frontend zeigt die letzten 3 Versionen mit benutzerrelevanten Änderungen' ),
+                array( 'tag' => 'UX',       'text' => 'Admin zeigt vollständigen Changelog aller Versionen mit Tag-Farbcodierung' ),
+                array( 'tag' => 'INFRA',    'text' => 'gsh_tp_changelog() als strukturiertes PHP-Array (Single Source of Truth)' ),
+            ),
+        ),
+        array(
+            'version' => '3.7.0',
+            'entries' => array(
+                array( 'tag' => 'UX',    'text' => 'Fluid-Grid-Layout ersetzt hartes 2-Stufen-Breakpoint-System' ),
+                array( 'tag' => 'UX',    'text' => 'Tabellen transformieren sich im Bereich 1024–1200 px automatisch zu Cards (rein per CSS)' ),
+                array( 'tag' => 'UX',    'text' => 'Flexbox-Fallback für ältere Browser ohne CSS-Grid-Support ergänzt' ),
+                array( 'tag' => 'INFRA', 'text' => 'data-label-Attribute in gsh_tp_table() ergänzt (SW, Mo–Fr, Hinweise)' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neues Stylesheet: assets/css/gsh-terminplan.css mit wp_enqueue_style() + Cache-Busting' ),
+            ),
+        ),
+        array(
+            'version' => '3.6.4',
+            'entries' => array(
+                array( 'tag' => 'INFRA', 'text' => 'Cache-Key-Versionierung: stale Daten nach Plugin-Updates werden automatisch ignoriert' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Konstante GSH_TP_CACHE_VERSION (aktuell 3) für versionierte Key-Suffixe' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Hilfsfunktion gsh_tp_ck() erzeugt Keys im Format …_v3' ),
+                array( 'tag' => 'INFRA', 'text' => 'gsh_tp_migrate_cache_version() bereinigt veraltete Cache-Keys einmalig via admin_init' ),
+            ),
+        ),
+        array(
+            'version' => '3.6.3',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Mobile: Heutige Woche deutlich sichtbarer hervorgehoben' ),
+                array( 'tag' => 'UX', 'text' => 'Pulsierender Punkt im Wochenkopf der aktuellen Schulwoche' ),
+                array( 'tag' => 'UX', 'text' => '„HEUTE"-Badge größer und prominenter gestaltet' ),
+                array( 'tag' => 'UX', 'text' => 'Navigationsleiste zeigt „👉 Heute" wenn aktuelle Woche im Sichtfenster liegt' ),
+            ),
+        ),
+        array(
+            'version' => '3.6.2',
+            'entries' => array(
+                array( 'tag' => 'UX',    'text' => 'iCal-URL-Validierung mit sprechenden Fehlermeldungen im Admin-Bereich' ),
+                array( 'tag' => 'UX',    'text' => 'Profil-Speicherung zeigt Warnung bei ungültiger URL statt stillem Zurücksetzen' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Funktion gsh_tp_validate_ical_url() mit detaillierten Rückgabewerten' ),
+                array( 'tag' => 'INFRA', 'text' => 'URL-Eingabefeld: pattern-Attribut und 1-Sekunden-Debounce-Validierung mit Live-Feedback' ),
+            ),
+        ),
+        array(
+            'version' => '3.6.1',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Filter-Buttons: echter Toggle-Modus – jede Kategorie lässt sich unabhängig ein-/ausschalten' ),
+                array( 'tag' => 'UX', 'text' => 'Filter-Zustand wird per localStorage seitenübergreifend gespeichert' ),
+                array( 'tag' => 'UX', 'text' => 'Zähler-Label zeigt „X / Y sichtbar" wenn Kategorien ausgeblendet sind' ),
+                array( 'tag' => 'UX', 'text' => 'aria-pressed-Attribut für bessere Barrierefreiheit der Filter-Buttons' ),
+            ),
+        ),
+        array(
+            'version' => '3.6.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Neuer Admin-Tab „Sync-Verlauf" zeigt die letzten 20 Synchronisierungsversuche pro Schuljahr' ),
+                array( 'tag' => 'UX',      'text' => 'Details pro Sync: Zeitstempel, Status, Fehlertyp, Terminanzahl, Dauer' ),
+                array( 'tag' => 'UX',      'text' => 'Farb-Codierung: Grün (✓ erfolgreich), Rot (✗ Fehler)' ),
+                array( 'tag' => 'INFRA',   'text' => 'Automatisches Bereinigen von Log-Einträgen älter als 30 Tage' ),
+            ),
+        ),
+        array(
+            'version' => '3.5.3',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Bestätigungs-Dialoge vor destruktiven Aktionen: Profil löschen, Cache leeren, Token erneuern' ),
+                array( 'tag' => 'UX', 'text' => 'Verhindert versehentliches Löschen von Schuljahr-Profilen und Cache-Daten' ),
+            ),
+        ),
+        array(
+            'version' => '3.5.2',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'Kiosk-Token: Timing-sicherer Vergleich (hash_equals) gegen Timing-Angriffe' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Rate-Limiting: maximal 10 Kiosk-Zugriffsversuche pro IP und Stunde' ),
+                array( 'tag' => 'UX',       'text' => 'Admin-Warnung bei fehlendem Kiosk-Token oder ungültiger IServ-Domain' ),
+            ),
+        ),
+        array(
+            'version' => '3.5.1',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'CSRF-Schutz: WordPress-Nonces für alle Admin-Formulare eingeführt' ),
+                array( 'tag' => 'BUGFIX',   'text' => 'POST-Daten wurden ohne wp_verify_nonce() verarbeitet' ),
+            ),
+        ),
+        array(
+            'version' => '3.5.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Zwei-Schuljahre-Verwaltung: Jedes Schuljahr hat ein eigenes Profil mit iCal-URL, Quartalsgrenzen und Cache' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Admin-Tab-System: Ein Tab pro Schuljahr + Kategorien + Kiosk & System' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Neues Schuljahr per Button anlegen; Frontend-Umschalter zwischen aktiven Schuljahren' ),
+                array( 'tag' => 'UX',      'text' => 'Entwurfs-Modus: Nicht beschlossene Pläne nur für Admins sichtbar, mit farbigem Banner' ),
+                array( 'tag' => 'INFRA',   'text' => 'Migration: Bisherige Einstellungen werden automatisch als erstes Profil übernommen' ),
+            ),
+        ),
+        array(
+            'version' => '3.4.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Kategorien vollständig konfigurierbar: Anzeigename, Farben und Stichwörter pro Kategorie einstellbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Excel-zu-ICS Import-Tool: Excel-Datei hochladen, Vorschau, ICS-Download für IServ-Import' ),
+                array( 'tag' => 'UX',      'text' => 'Filter-Buttons und Druck-Legende passen sich automatisch an die Kategorien an' ),
+                array( 'tag' => 'INFRA',   'text' => 'CSS dynamisch aus Kategorie-Einstellungen generiert (keine hardcodierten Farbwerte mehr)' ),
+            ),
+        ),
+        array(
+            'version' => '3.3.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Stale-While-Revalidate: Kalender wird sofort angezeigt, Aktualisierung läuft unsichtbar im Hintergrund' ),
+                array( 'tag' => 'UX',      'text' => 'Kein Besucher wartet mehr auf IServ – der Feed wird via WP-Cron non-blocking geholt' ),
+                array( 'tag' => 'INFRA',   'text' => 'Seiten-Cache (WP Super Cache, W3TC, LiteSpeed, WP Fastest Cache) wird nach Refresh automatisch geleert' ),
+            ),
+        ),
+        array(
+            'version' => '3.2.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'IServ-Kiosk-Modus: Passwortloser Terminplan-Zugang per Token-URL für Monitore und Infoscreens' ),
+                array( 'tag' => 'UX',      'text' => 'Kiosk-URL wird automatisch im Admin angezeigt, sobald Token und Kiosk-Seite konfiguriert sind' ),
+            ),
+        ),
+        array(
+            'version' => '3.1.0',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'PDF-Export komplett überarbeitet: A4 Querformat, professioneller Header, Seitenfußzeile auf jeder Seite' ),
+                array( 'tag' => 'UX', 'text' => 'Farb-Indikator statt farbiger Hintergründe im Druck für bessere Toner-Ersparnis' ),
+            ),
+        ),
+        array(
+            'version' => '3.0.0',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Komplettes UI-Redesign: CSS Custom Properties, Sticky Tabs, Event-Cards mit Hover-Effekten' ),
+                array( 'tag' => 'UX', 'text' => 'Event-Detail-Popup mit Backdrop-Blur; Bottom Sheet auf Mobile' ),
+                array( 'tag' => 'UX', 'text' => 'Mobile iOS-Feed-Stil: Frosted-Glass-Navigation, Datum als Kreis' ),
+                array( 'tag' => 'UX', 'text' => 'Textsuche mit Focus-Mode: Nicht-Treffer werden gedimmt statt versteckt' ),
+            ),
+        ),
+        array(
+            'version' => '2.5.0',
+            'entries' => array(
+                array( 'tag' => 'INFRA', 'text' => 'Performance: Date-Index reduziert Rendering von ~400 Events drastisch (O(1) statt O(n))' ),
+            ),
+        ),
+        array(
+            'version' => '2.3.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Änderungs-Benachrichtigungen: Banner zeigt neue, geänderte und gelöschte Termine seit dem letzten Besuch' ),
+                array( 'tag' => 'UX',      'text' => 'Neue und geänderte Events werden farbig hervorgehoben (pulsierender Rahmen)' ),
+            ),
+        ),
+        array(
+            'version' => '2.2.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'PDF-Export: Quartal oder alle Quartale als PDF speichern über Browser-Druckdialog' ),
+            ),
+        ),
+        array(
+            'version' => '2.1.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Event-Detail-Popup: Klick auf Termin zeigt Titel, Datum, Uhrzeit, Ort und Beschreibung' ),
+                array( 'tag' => 'UX',      'text' => 'Auf Mobile als Bottom Sheet, auf Desktop als zentriertes Modal' ),
+            ),
+        ),
+        array(
+            'version' => '2.0.1',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Mobile-Navigation: Pfeil-Buttons (‹/›) und 📍-Button funktionierten nicht' ),
+            ),
+        ),
+        array(
+            'version' => '2.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Mobile Agenda-Ansicht: Auf Smartphones wird die Tabelle durch eine vertikale Wochenliste ersetzt' ),
+                array( 'tag' => 'FEATURE', 'text' => '2-Wochen-Schiebefenster mit ‹/›-Navigation und Wisch-Geste; 📍-Button springt zur aktuellen Woche' ),
+            ),
+        ),
+        array(
+            'version' => '1.8',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'URL-Validierung nutzt wp_http_validate_url() statt einfachem Präfix-Check' ),
+                array( 'tag' => 'INFRA',    'text' => 'Vollständige PHPDoc-Blöcke und Kurzanleitung für Kolleg*innen im Datei-Kopf' ),
+            ),
+        ),
+        array(
+            'version' => '1.7',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Vergangene Wochen ausgrauen (opacity 0.45); Hover hebt die Zeile wieder auf' ),
+                array( 'tag' => 'UX', 'text' => 'Sticky Tabellenkopf: Kopfzeile klebt beim Scrollen oben' ),
+            ),
+        ),
+        array(
+            'version' => '1.6',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Echtzeit-Textsuche: Suchfeld durchsucht alle Termine in allen Quartalen (mit Debounce)' ),
+                array( 'tag' => 'UX',      'text' => 'Suchergebnis-Zeile zeigt Trefferzahl und klickbare Quartal-Links' ),
+            ),
+        ),
+        array(
+            'version' => '1.5',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Auto-Scroll zur aktuellen Woche beim Laden der Seite' ),
+                array( 'tag' => 'UX', 'text' => 'Floating „Heute"-Button erscheint sobald die heutige Zeile aus dem Viewport gescrollt ist' ),
+            ),
+        ),
+        array(
+            'version' => '1.4',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Lange Termine (≥ 5 Tage) erscheinen nur in der Hinweise-Spalte, nicht in Tagesspalten' ),
+            ),
+        ),
+        array(
+            'version' => '1.3',
+            'entries' => array(
+                array( 'tag' => 'UX',      'text' => 'Professionelles Frontend-Design: Karten-Layout, moderne Tabs, farbige Kategorie-Filter' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Manuelle Synchronisierung per Button in den Einstellungen; Sync-Zeitstempel im Header' ),
+            ),
+        ),
+        array(
+            'version' => '1.2',
+            'entries' => array(
+                array( 'tag' => 'INFRA', 'text' => 'Druckfunktion via unsichtbarem iframe (kein Popup-Blocker-Problem)' ),
+                array( 'tag' => 'INFRA', 'text' => 'Kategorie-Erkennung mit Wortgrenzen-Matching statt einfachem strpos' ),
+            ),
+        ),
+    );
+}
 
 // Migration 3.3.0: gsh_tp_ical_data war vor 3.3.0 ein Transient.
 // Beim ersten Request nach dem Update: Transient → permanente Option migrieren.
@@ -437,6 +888,56 @@ function gsh_tp_sanitize_url_raw( $url ) {
 }
 
 /**
+ * Validiert eine iCal-Feed-URL und gibt ein strukturiertes Ergebnis zurück.
+ *
+ * Prüft in dieser Reihenfolge:
+ *   1. URL leer?
+ *   2. Beginnt mit https://?
+ *   3. Besteht wp_http_validate_url()?
+ *
+ * Kein Netzwerk-Request – reine Syntax-Prüfung, damit die Funktion
+ * auch im Admin-Render-Pfad ohne Performance-Kosten aufrufbar ist.
+ *
+ * @since 3.6.2
+ * @param  string $url Rohe URL-Eingabe.
+ * @return array {
+ *   'valid' bool         true wenn die URL syntaktisch korrekt ist.
+ *   'error' string|null  Lesbare Fehlermeldung oder null bei Erfolg.
+ *   'url'   string       Bereinigte URL (esc_url_raw), ggf. leer.
+ * }
+ */
+function gsh_tp_validate_ical_url( $url ) {
+    $url = trim( $url );
+    if ( empty( $url ) ) {
+        return array( 'valid' => false, 'error' => 'URL ist leer', 'url' => '' );
+    }
+    $cleaned = esc_url_raw( $url );
+    if ( strpos( $cleaned, 'https://' ) !== 0 ) {
+        return array( 'valid' => false, 'error' => 'Nur HTTPS erlaubt', 'url' => $cleaned );
+    }
+    if ( ! wp_http_validate_url( $cleaned ) ) {
+        return array( 'valid' => false, 'error' => 'Ungültige URL-Syntax', 'url' => $cleaned );
+    }
+    return array( 'valid' => true, 'error' => null, 'url' => $cleaned );
+}
+
+/**
+ * Erzeugt einen versions-spezifischen Cache-Schlüssel.
+ *
+ * Format: {prefix}{pid}_v{GSH_TP_CACHE_VERSION}
+ * Wenn GSH_TP_CACHE_VERSION erhöht wird, zeigen alle Lese-Calls auf neue Keys –
+ * alte Daten bleiben in der DB, werden aber ignoriert und bei Migration gelöscht.
+ *
+ * @since 3.6.4
+ * @param  string $prefix Schlüssel-Präfix inkl. Unterstrich, z.B. 'gsh_tp_ical_'.
+ * @param  string $pid    Profil-ID (bereits sanitize_key'd).
+ * @return string         Vollständiger Cache-Schlüssel mit Versions-Suffix.
+ */
+function gsh_tp_ck( $prefix, $pid ) {
+    return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION;
+}
+
+/**
  * Migration 3.4.0 → 3.5.0: Legt das erste Schuljahr-Profil aus den alten Einzeloptionen an.
  *
  * Wird via admin_init aufgerufen. Läuft nur einmal (Guard: gsh_tp_profiles existiert bereits).
@@ -482,9 +983,342 @@ function gsh_tp_maybe_migrate() {
 }
 add_action( 'admin_init', 'gsh_tp_maybe_migrate' );
 
-/* ================================================================
-   1. ADMIN-EINSTELLUNGEN
-   ================================================================ */
+/**
+ * Löscht alle Cache-Keys einer bestimmten Schema-Version über alle Profile.
+ *
+ * Wird von gsh_tp_migrate_cache_version() genutzt um nach einem Versions-Sprung
+ * die alten, nun ungültigen Einträge aus der Datenbank zu entfernen.
+ *
+ * @since 3.6.4
+ * @param  int $version Die zu löschende Cache-Schema-Version (z.B. 2).
+ * @return void
+ */
+function gsh_tp_clear_version_caches( $version ) {
+    $sfx = '_v' . (int) $version;
+    foreach ( gsh_tp_get_profiles() as $p ) {
+        $pid = sanitize_key( $p['id'] );
+        delete_option( 'gsh_tp_ical_' . $pid . $sfx );
+        delete_option( 'gsh_tp_sync_logs_' . $pid . $sfx );
+        delete_transient( 'gsh_tp_fresh_' . $pid . $sfx );
+        delete_transient( 'gsh_tp_chg_' . $pid . $sfx );
+    }
+}
+
+/**
+ * Einmalige Migration beim Plugin-Update: Löscht veraltete Cache-Keys und
+ * trägt die aktuelle Schema-Version in gsh_tp_cache_ver ein.
+ *
+ * Läuft via admin_init. Bei v0 → v3 (Ersteinführung der Versionierung) werden
+ * die alten Keys ohne Suffix entfernt, sodass ein Fresh-Fetch ausgelöst wird.
+ * Bei späteren Updates (z.B. v3 → v4) werden die alten _v3-Keys bereinigt.
+ *
+ * @since 3.6.4
+ * @return void
+ */
+function gsh_tp_migrate_cache_version() {
+    $stored_ver = (int) get_option( 'gsh_tp_cache_ver', 0 );
+    if ( $stored_ver === GSH_TP_CACHE_VERSION ) {
+        return; // Keine Migration nötig
+    }
+
+    foreach ( gsh_tp_get_profiles() as $p ) {
+        $pid = sanitize_key( $p['id'] );
+        if ( 0 === $stored_ver ) {
+            // Erste Versionierung (3.6.4): unversionierte Legacy-Keys entfernen
+            delete_option( 'gsh_tp_ical_' . $pid );
+            delete_option( 'gsh_tp_sync_logs_' . $pid );
+            delete_transient( 'gsh_tp_fresh_' . $pid );
+            delete_transient( 'gsh_tp_chg_' . $pid );
+        } else {
+            // Spätere Updates: alle Zwischenversionen bereinigen
+            for ( $v = $stored_ver; $v < GSH_TP_CACHE_VERSION; $v++ ) {
+                gsh_tp_clear_version_caches( $v );
+            }
+        }
+    }
+
+    update_option( 'gsh_tp_cache_ver', GSH_TP_CACHE_VERSION );
+}
+add_action( 'admin_init', 'gsh_tp_migrate_cache_version' );
+
+/**
+ * Prüft den Kiosk-Zugriff per Token mit IP-basiertem Rate-Limiting.
+ *
+ * Vergleicht den übergebenen Token timing-sicher (hash_equals) mit dem gespeicherten
+ * Token. Verhindert Brute-Force-Angriffe: Nach 10 Fehlversuchen von derselben IP
+ * innerhalb einer Stunde wird der Zugriff blockiert.
+ *
+ * Aufruf aus dem Page-Template page-terminplan-kiosk.php:
+ *   $token = sanitize_text_field( $_GET['token'] ?? '' );
+ *   if ( ! gsh_tp_check_kiosk_access( $token ) ) { status_header( 403 ); exit; }
+ *
+ * @since 3.5.2
+ * @param  string $token Der vom Nutzer übergebene Token (?token= URL-Parameter).
+ * @return bool          true bei gültigem Token, false bei falschem Token oder Rate-Limit.
+ */
+function gsh_tp_check_kiosk_access( $token ) {
+    $saved_token = get_option( 'gsh_tp_kiosk_token', '' );
+
+    // Kein Token konfiguriert → Zugriff grundsätzlich verweigern
+    if ( empty( $saved_token ) ) {
+        return false;
+    }
+
+    // IP ermitteln – REMOTE_ADDR ist verlässlicher als X-Forwarded-For
+    $ip       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+    $rate_key = 'gsh_tp_kiosk_rl_' . md5( $ip );
+    $attempts = (int) get_transient( $rate_key );
+
+    // Rate-Limit: max. 10 Fehlversuche pro Stunde und IP
+    if ( $attempts >= 10 ) {
+        return false;
+    }
+
+    // Timing-sicherer Vergleich (verhindert Timing-Angriffe)
+    if ( ! hash_equals( $saved_token, (string) $token ) ) {
+        // Fehlversuch zählen; Transient läuft nach 1 Stunde automatisch ab
+        set_transient( $rate_key, $attempts + 1, HOUR_IN_SECONDS );
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Speichert einen Sync-Versuch im Sync-Log eines Profils.
+ *
+ * Hält die letzten 50 Einträge pro Profil in einer Datenbank-Option vor.
+ * Ältere Einträge werden automatisch entfernt (FIFO).
+ *
+ * @since 3.6.0
+ * @param string $profile_id Profil-ID.
+ * @param string $status     'success' oder 'error'.
+ * @param array  $details    Optional: error_type, event_count, duration_ms, message.
+ * @return void
+ */
+function gsh_tp_log_sync_attempt( $profile_id, $status, $details = array() ) {
+    $pid     = sanitize_key( $profile_id );
+    $log_key = gsh_tp_ck( 'gsh_tp_sync_logs_', $pid );
+    $logs    = get_option( $log_key, array() );
+    if ( ! is_array( $logs ) ) {
+        $logs = array();
+    }
+    array_unshift( $logs, array(
+        'timestamp'   => gmdate( 'Y-m-d H:i:s' ),
+        'status'      => ( 'success' === $status ) ? 'success' : 'error',
+        'error_type'  => sanitize_key( $details['error_type'] ?? '' ),
+        'event_count' => absint( $details['event_count'] ?? 0 ),
+        'duration_ms' => absint( $details['duration_ms'] ?? 0 ),
+        'message'     => sanitize_text_field( $details['message'] ?? '' ),
+    ) );
+    $logs = array_slice( $logs, 0, 50 ); // max. 50 Einträge vorhalten
+    update_option( $log_key, $logs, false );
+}
+
+/**
+ * Gibt die letzten Sync-Log-Einträge eines Profils zurück.
+ *
+ * @since 3.6.0
+ * @param string $profile_id Profil-ID.
+ * @param int    $limit      Max. Anzahl zurückgegebener Einträge (Standard: 20).
+ * @return array             Array von Log-Einträgen, neueste zuerst.
+ */
+function gsh_tp_get_sync_logs( $profile_id, $limit = 20 ) {
+    $pid  = sanitize_key( $profile_id );
+    $logs = get_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ), array() );
+    return is_array( $logs ) ? array_slice( $logs, 0, max( 1, (int) $limit ) ) : array();
+}
+
+/**
+ * Entfernt Sync-Log-Einträge, die älter als $days Tage sind.
+ *
+ * Läuft über alle bekannten Profile und bereinigt deren Logs.
+ *
+ * @since 3.6.0
+ * @param int $days Einträge älter als dieser Wert (in Tagen) werden gelöscht.
+ * @return int      Anzahl entfernter Einträge über alle Profile.
+ */
+function gsh_tp_clear_old_logs( $days = 30 ) {
+    $cutoff  = gmdate( 'Y-m-d H:i:s', time() - absint( $days ) * DAY_IN_SECONDS );
+    $removed = 0;
+    foreach ( gsh_tp_get_profiles() as $p ) {
+        $pid     = sanitize_key( $p['id'] );
+        $log_key = gsh_tp_ck( 'gsh_tp_sync_logs_', $pid );
+        $logs    = get_option( $log_key, array() );
+        if ( ! is_array( $logs ) ) {
+            continue;
+        }
+        $filtered = array_values( array_filter( $logs, function ( $entry ) use ( $cutoff ) {
+            return isset( $entry['timestamp'] ) && $entry['timestamp'] >= $cutoff;
+        } ) );
+        $removed += count( $logs ) - count( $filtered );
+        update_option( $log_key, $filtered, false );
+    }
+    return $removed;
+}
+
+/**
+ * AJAX-Handler: Feedback-E-Mail versenden.
+ *
+ * Empfängt Typ und Nachricht via POST, validiert die Eingaben,
+ * baut eine strukturierte E-Mail und sendet sie via wp_mail().
+ *
+ * @since 3.12.0
+ * @return void  Antwortet mit JSON und beendet die Ausführung.
+ */
+function gsh_tp_ajax_feedback() {
+    // Nonce prüfen
+    check_ajax_referer( 'gsh_tp_feedback_nonce', 'nonce' );
+
+    // Honeypot: verstecktes Feld muss leer sein (Spam-Schutz)
+    if ( ! empty( $_POST['gsh_tp_hp'] ) ) {
+        wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
+    }
+
+    // Rate-Limiting: max. 3 Feedbacks pro IP in 10 Minuten
+    $ip      = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
+    $ip_hash = hash( 'sha256', $ip . wp_salt() );
+    $rl_key  = 'gsh_tp_rl_' . substr( $ip_hash, 0, 20 );
+    $rl      = (int) get_transient( $rl_key );
+    if ( $rl >= 3 ) {
+        wp_send_json_error( array( 'message' => 'Bitte warte einige Minuten bevor du erneut Feedback sendest.' ) );
+    }
+
+    // Eingaben bereinigen
+    $sender   = sanitize_text_field( $_POST['sender'] ?? '' );
+    $type_key = sanitize_key( $_POST['type'] ?? '' );
+    $message  = sanitize_textarea_field( $_POST['message'] ?? '' );
+
+    // Erlaubte Typen
+    $allowed_types = array(
+        'bug'    => '🐛 Fehler melden',
+        'wish'   => '💡 Funktionswunsch',
+        'praise' => '👍 Lob',
+        'other'  => '💬 Sonstiges',
+    );
+
+    // Validierung
+    if ( ! isset( $allowed_types[ $type_key ] ) ) {
+        wp_send_json_error( array( 'message' => 'Ungültiger Feedback-Typ.' ) );
+    }
+    if ( mb_strlen( $message ) < 3 ) {
+        wp_send_json_error( array( 'message' => 'Nachricht zu kurz.' ) );
+    }
+    if ( mb_strlen( $message ) > 1000 ) {
+        wp_send_json_error( array( 'message' => 'Nachricht zu lang (max. 1000 Zeichen).' ) );
+    }
+
+    $type_label = $allowed_types[ $type_key ];
+
+    // Empfänger aus Einstellungen (Fallback: WordPress-Admin)
+    $to = get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) );
+    if ( ! is_email( $to ) ) {
+        $to = get_bloginfo( 'admin_email' );
+    }
+
+    // Betreff
+    $subject = sprintf( '[GSH Terminplan] %s', $type_label );
+
+    // HTML-E-Mail-Body
+    $name_line = $sender ? '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Absender:</td><td style="padding:4px 0">' . esc_html( $sender ) . '</td></tr>' : '';
+    $body = '<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#1e293b;margin:0;padding:0">'
+        . '<div style="max-width:540px;margin:0 auto;padding:32px 24px">'
+        . '<h2 style="margin:0 0 24px;font-size:1.1rem;color:#1e293b">Neues Feedback aus dem GSH Terminplan</h2>'
+        . '<table style="border-collapse:collapse;width:100%">'
+        . $name_line
+        . '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Typ:</td><td style="padding:4px 0">' . esc_html( $type_label ) . '</td></tr>'
+        . '<tr><td style="padding:12px 0 4px;color:#64748b;font-weight:600;vertical-align:top">Nachricht:</td><td style="padding:12px 0 4px"><div style="background:#f8fafc;border-left:3px solid #2563eb;padding:12px 16px;border-radius:0 8px 8px 0;white-space:pre-wrap">' . esc_html( $message ) . '</div></td></tr>'
+        . '</table>'
+        . '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
+        . '<p style="font-size:.78rem;color:#94a3b8;margin:0">Plugin v' . GSH_TP_VERSION . ' &bull; ' . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr &bull; ' . esc_url( home_url() ) . '</p>'
+        . '</div></body></html>';
+
+    // Absender explizit setzen
+    add_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    add_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    add_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
+    $sent = wp_mail( $to, $subject, $body );
+
+    remove_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    remove_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    remove_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
+    // Rate-Limit-Zähler erhöhen
+    set_transient( $rl_key, $rl + 1, 10 * MINUTE_IN_SECONDS );
+
+    // DB-Log: immer speichern (auch bei Erfolg – für Diagnose)
+    gsh_tp_feedback_log( $type_key, $sender, $message, $ip_hash, $sent ? 'sent' : 'failed' );
+
+    if ( $sent ) {
+        wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
+    } else {
+        // Fehlerzähler für SMTP-Diagnose-Warnung
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 ) + 1;
+        update_option( 'gsh_tp_mail_fail_count', $fail_count );
+        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Dein Feedback wurde aber gespeichert und kann im Admin eingesehen werden.' ) );
+    }
+}
+
+/**
+ * Setzt den Absender-Namen für Feedback-E-Mails.
+ * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
+ *
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_from_name() {
+    return get_bloginfo( 'name' );
+}
+
+/**
+ * Setzt die Absender-Adresse für Feedback-E-Mails.
+ * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
+ *
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_from() {
+    return get_bloginfo( 'admin_email' );
+}
+
+/**
+ * Setzt den Content-Type für Feedback-E-Mails auf HTML.
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_content_type() {
+    return 'text/html';
+}
+
+/**
+ * Speichert einen Feedback-Eintrag in der WordPress-Datenbank (Transient-basiertes Log).
+ *
+ * Nutzt wp_options als einfaches Append-Log (max. 200 Einträge).
+ * Kein Schema, kein CREATE TABLE nötig.
+ *
+ * @since 3.12.0
+ * @param string $type     Feedback-Typ-Schlüssel
+ * @param string $sender   Absender-Name (optional)
+ * @param string $message  Feedback-Text
+ * @param string $ip_hash  SHA-256-Hash der IP (DSGVO-konform)
+ * @param string $status   'sent' oder 'failed'
+ * @return void
+ */
+function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
+    $log     = get_option( 'gsh_tp_feedback_log', array() );
+    if ( ! is_array( $log ) ) {
+        $log = array();
+    }
+    array_unshift( $log, array(
+        'ts'      => current_time( 'Y-m-d H:i:s' ),
+        'type'    => $type,
+        'sender'  => $sender,
+        'message' => $message,
+        'ip'      => $ip_hash,
+        'status'  => $status,
+    ) );
+    // Maximal 200 Einträge behalten
+    $log = array_slice( $log, 0, 200 );
+    update_option( 'gsh_tp_feedback_log', $log, false );
+}
 
 /**
  * Registriert den Einstellungsmenüeintrag im WordPress-Backend.
@@ -504,28 +1338,131 @@ function gsh_tp_admin_menu() {
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
     );
+    // Kein separater Menüpunkt für Feedback-Log mehr – ist jetzt Tab in der Hauptseite
 }
 
 /**
- * Lädt SheetJS (xlsx.js) nur auf der Plugin-Einstellungsseite.
+ * Rendert den Feedback-Log-Tab in der Plugin-Admin-Seite.
  *
- * @since 3.4.0
- * @param string $hook Der aktuelle Admin-Page-Hook.
+ * Umbenannt von gsh_tp_feedback_log_page() – ist jetzt Tab statt eigener Menüpunkt.
+ *
+ * @since 3.12.0 (Tab seit 3.13.0)
  * @return void
  */
-add_action( 'admin_enqueue_scripts', 'gsh_tp_admin_scripts' );
-function gsh_tp_admin_scripts( $hook ) {
-    if ( 'settings_page_gsh-terminplan' !== $hook ) {
-        return;
-    }
-    wp_enqueue_script(
-        'sheetjs',
-        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+function gsh_tp_render_feedback_log_tab() {
+    $log        = get_option( 'gsh_tp_feedback_log', array() );
+    $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+
+    $type_labels = array(
+        'bug'    => '🐛 Fehler',
+        'wish'   => '💡 Wunsch',
+        'praise' => '👍 Lob',
+        'other'  => '💬 Sonstiges',
+    );
+
+    if ( $fail_count >= 3 ) : ?>
+    <div class="notice notice-warning inline" style="margin-bottom:16px">
+        <p><strong>⚠ Hinweis:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+        Bitte prüfe die WordPress-E-Mail-Konfiguration oder installiere ein SMTP-Plugin wie
+        <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP</a>.</p>
+    </div>
+    <?php endif;
+
+    if ( empty( $log ) ) : ?>
+        <p>Noch kein Feedback eingegangen.</p>
+    <?php else : ?>
+        <p><?php echo count( $log ); ?> Einträge (neueste zuerst, max. 200 gespeichert)</p>
+        <table class="widefat striped" style="max-width:1000px">
+            <thead>
+                <tr>
+                    <th style="width:140px">Zeitpunkt</th>
+                    <th style="width:120px">Typ</th>
+                    <th style="width:130px">Absender</th>
+                    <th>Nachricht</th>
+                    <th style="width:70px">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $log as $entry ) : ?>
+                <tr>
+                    <td style="white-space:nowrap"><?php echo esc_html( $entry['ts'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $type_labels[ $entry['type'] ?? '' ] ?? $entry['type'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $entry['sender'] ?: '(anonym)' ); ?></td>
+                    <td style="white-space:pre-wrap"><?php echo esc_html( $entry['message'] ?? '' ); ?></td>
+                    <td>
+                        <?php if ( ( $entry['status'] ?? '' ) === 'sent' ) : ?>
+                            <span style="color:#166534;font-weight:700">✓ gesendet</span>
+                        <?php else : ?>
+                            <span style="color:#991b1b;font-weight:700">✗ Fehler</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>" style="margin-top:16px">
+            <?php wp_nonce_field( 'gsh_tp_clear_feedback_log' ); ?>
+            <input type="hidden" name="gsh_tp_clear_feedback_log" value="1">
+            <?php submit_button( 'Log leeren', 'secondary', 'submit', false ); ?>
+        </form>
+    <?php endif;
+}
+
+
+/**
+ * Bindet das externe Frontend-Stylesheet des Plugins ein.
+ *
+ * Lädt assets/css/gsh-terminplan.css auf allen öffentlichen Seiten.
+ * Die Versionsnummer GSH_TP_VERSION sorgt für automatisches Cache-Busting
+ * bei jedem Plugin-Update.
+ *
+ * @since 3.7.0
+ * @return void
+ */
+function gsh_tp_enqueue_frontend_styles() {
+    wp_enqueue_style(
+        'gsh-terminplan',
+        plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
         array(),
-        '0.18.5',
-        true
+        GSH_TP_VERSION
     );
 }
+add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
+
+/**
+ * Shepherd.js für die Onboarding-Tour laden (nur auf der Terminplan-Seite).
+ *
+ * Shepherd.js wird von cdnjs geladen – dieselbe Quelle wie SheetJS im Admin.
+ * CSS und JS werden nur eingebunden wenn der Shortcode auf der Seite vorhanden ist.
+ *
+ * @since 3.10.0
+ * @return void
+ */
+function gsh_tp_enqueue_tour_assets() {
+    global $post;
+    if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'gsh_terminplan' ) ) {
+        return;
+    }
+
+    // Shepherd.js CSS
+    wp_enqueue_style(
+        'shepherd-js',
+        'https://cdnjs.cloudflare.com/ajax/libs/shepherd.js/11.2.0/css/shepherd.min.css',
+        array(),
+        '11.2.0'
+    );
+
+    // Shepherd.js Script (im Footer laden – nach dem Plugin-JS)
+    wp_enqueue_script(
+        'shepherd-js',
+        'https://cdnjs.cloudflare.com/ajax/libs/shepherd.js/11.2.0/js/shepherd.min.js',
+        array(),
+        '11.2.0',
+        true // im Footer
+    );
+}
+add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_tour_assets' );
 
 /**
  * Meldet alle Plugin-Optionen bei der WordPress Settings API an.
@@ -540,6 +1477,9 @@ function gsh_tp_admin_scripts( $hook ) {
 add_action( 'admin_init', 'gsh_tp_register_settings' );
 // Hintergrund-Refresh via WP-Cron (non-blocking, kein Besucher wartet)
 add_action( 'gsh_tp_cron_refresh', 'gsh_tp_do_refresh' );
+// Feedback-AJAX (eingeloggte und nicht-eingeloggte Nutzer)
+add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
+add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );
@@ -577,6 +1517,10 @@ function gsh_tp_register_settings() {
     register_setting( 'gsh_tp_options', 'gsh_tp_iserv_domain', array(
         'sanitize_callback' => 'esc_url_raw',
         'default'           => '',
+    ) );
+    register_setting( 'gsh_tp_options', 'gsh_tp_feedback_email', array(
+        'sanitize_callback' => 'sanitize_email',
+        'default'           => get_bloginfo( 'admin_email' ),
     ) );
 }
 
@@ -980,134 +1924,207 @@ function gsh_tp_settings_page() {
     }
 
     // ── POST: Neues Schuljahr-Profil anlegen ──
-    if ( isset( $_POST['gsh_tp_new_profile'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_np_n'] ?? '' ) ), 'gsh_tp_new_profile' ) ) {
-        if ( count( $profiles ) < 5 ) {
-            $year   = (int) date( 'Y' );
-            $new_id = 'sj_' . $year . '_' . ( $year + 1 );
-            $exist  = array_column( $profiles, 'id' );
-            if ( in_array( $new_id, $exist, true ) ) {
-                $new_id = $new_id . '_2';
+    if ( isset( $_POST['gsh_tp_new_profile'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_np_n'] ?? '' ) ), 'gsh_tp_new_profile' ) ) {
+            if ( count( $profiles ) < 5 ) {
+                $year   = (int) date( 'Y' );
+                $new_id = 'sj_' . $year . '_' . ( $year + 1 );
+                $exist  = array_column( $profiles, 'id' );
+                if ( in_array( $new_id, $exist, true ) ) {
+                    $new_id = $new_id . '_2';
+                }
+                $active = gsh_tp_get_profile( gsh_tp_active_profile_id() );
+                $profiles[] = array(
+                    'id'              => sanitize_key( $new_id ),
+                    'label'           => 'Schuljahr ' . $year . '/' . ( $year + 1 ),
+                    'ical_url'        => $active['ical_url'] ?? '',
+                    'cache_duration'  => $active['cache_duration'] ?? 3600,
+                    'quartal_grenzen' => $active['quartal_grenzen'] ?? '',
+                    'schuljahr_start' => $active['schuljahr_start'] ?? '',
+                    'is_active'       => false,
+                    'is_draft'        => true,
+                    'created'         => current_time( 'Y-m-d' ),
+                );
+                gsh_tp_save_profiles( $profiles );
+                $profiles = gsh_tp_get_profiles();
+                echo '<div class="notice notice-success"><p>Neues Schuljahr-Profil <strong>'
+                   . esc_html( 'Schuljahr ' . $year . '/' . ( $year + 1 ) )
+                   . '</strong> als Entwurf angelegt.</p></div>';
             }
-            $active = gsh_tp_get_profile( gsh_tp_active_profile_id() );
-            $profiles[] = array(
-                'id'              => sanitize_key( $new_id ),
-                'label'           => 'Schuljahr ' . $year . '/' . ( $year + 1 ),
-                'ical_url'        => $active['ical_url'] ?? '',
-                'cache_duration'  => $active['cache_duration'] ?? 3600,
-                'quartal_grenzen' => $active['quartal_grenzen'] ?? '',
-                'schuljahr_start' => $active['schuljahr_start'] ?? '',
-                'is_active'       => false,
-                'is_draft'        => true,
-                'created'         => current_time( 'Y-m-d' ),
-            );
-            gsh_tp_save_profiles( $profiles );
-            $profiles = gsh_tp_get_profiles();
-            echo '<div class="notice notice-success"><p>Neues Schuljahr-Profil <strong>'
-               . esc_html( 'Schuljahr ' . $year . '/' . ( $year + 1 ) )
-               . '</strong> als Entwurf angelegt.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
     }
 
     // ── POST: Profil speichern ──
-    if ( isset( $_POST['gsh_tp_save_profile'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sp_n'] ?? '' ) ), 'gsh_tp_save_profile' ) ) {
-        $save_id  = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-        $raw_data = $_POST['gsh_tp_profile'][ $save_id ] ?? array();
-        $profiles = array_map( function ( $p ) use ( $save_id, $raw_data ) {
-            if ( $p['id'] !== $save_id ) {
-                return $p;
+    if ( isset( $_POST['gsh_tp_save_profile'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sp_n'] ?? '' ) ), 'gsh_tp_profile_save' ) ) {
+            $save_id    = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+            $raw_data   = $_POST['gsh_tp_profile'][ $save_id ] ?? array();
+            $url_check  = gsh_tp_validate_ical_url( $raw_data['ical_url'] ?? '' );
+            $profiles   = array_map( function ( $p ) use ( $save_id, $raw_data, $url_check ) {
+                if ( $p['id'] !== $save_id ) {
+                    return $p;
+                }
+                return array_merge( $p, array(
+                    'label'           => sanitize_text_field( $raw_data['label'] ?? $p['label'] ),
+                    'ical_url'        => $url_check['url'], // bereits bereinigt
+                    'cache_duration'  => max( 300, min( 86400, absint( $raw_data['cache_duration'] ?? 3600 ) ) ),
+                    'quartal_grenzen' => sanitize_textarea_field( $raw_data['quartal_grenzen'] ?? '' ),
+                    'schuljahr_start' => sanitize_text_field( $raw_data['schuljahr_start'] ?? '' ),
+                    'is_active'       => $p['is_active'], // Aktiv-Status nur via activate_profile ändern
+                    'is_draft'        => ! empty( $raw_data['is_draft'] ),
+                ) );
+            }, $profiles );
+            gsh_tp_save_profiles( $profiles );
+            $profiles = gsh_tp_get_profiles();
+            if ( ! $url_check['valid'] && ! empty( $raw_data['ical_url'] ) ) {
+                echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' ) . ' Profil gespeichert, aber die iCal-URL ist ung&uuml;ltig: <strong>'
+                   . esc_html( $url_check['error'] ) . '</strong>. Die URL wurde nicht &uuml;bernommen.</p></div>';
+            } else {
+                echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil gespeichert.</p></div>';
             }
-            return array_merge( $p, array(
-                'label'           => sanitize_text_field( $raw_data['label'] ?? $p['label'] ),
-                'ical_url'        => gsh_tp_sanitize_url_raw( $raw_data['ical_url'] ?? '' ),
-                'cache_duration'  => max( 300, min( 86400, absint( $raw_data['cache_duration'] ?? 3600 ) ) ),
-                'quartal_grenzen' => sanitize_textarea_field( $raw_data['quartal_grenzen'] ?? '' ),
-                'schuljahr_start' => sanitize_text_field( $raw_data['schuljahr_start'] ?? '' ),
-                'is_active'       => $p['is_active'], // Aktiv-Status nur via activate_profile ändern
-                'is_draft'        => ! empty( $raw_data['is_draft'] ),
-            ) );
-        }, $profiles );
-        gsh_tp_save_profiles( $profiles );
-        $profiles = gsh_tp_get_profiles();
-        echo '<div class="notice notice-success"><p>&#10003; Profil gespeichert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
     }
 
     // ── POST: Profil aktivieren ──
-    if ( isset( $_POST['gsh_tp_activate_profile'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_ap_n'] ?? '' ) ), 'gsh_tp_activate_profile' ) ) {
-        $act_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-        $profiles = array_map( function ( $p ) use ( $act_id ) {
-            $p['is_active'] = ( $p['id'] === $act_id );
-            if ( $p['id'] === $act_id ) {
-                $p['is_draft'] = false;
-            }
-            return $p;
-        }, $profiles );
-        gsh_tp_save_profiles( $profiles );
-        $profiles = gsh_tp_get_profiles();
-        echo '<div class="notice notice-success"><p>&#10003; Profil als aktiv gesetzt.</p></div>';
+    if ( isset( $_POST['gsh_tp_activate_profile'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_ap_n'] ?? '' ) ), 'gsh_tp_activate_profile' ) ) {
+            $act_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+            $profiles = array_map( function ( $p ) use ( $act_id ) {
+                $p['is_active'] = ( $p['id'] === $act_id );
+                if ( $p['id'] === $act_id ) {
+                    $p['is_draft'] = false;
+                }
+                return $p;
+            }, $profiles );
+            gsh_tp_save_profiles( $profiles );
+            $profiles = gsh_tp_get_profiles();
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil als aktiv gesetzt.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
     }
 
     // ── POST: Profil löschen ──
-    if ( isset( $_POST['gsh_tp_delete_profile'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
-        $del_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-        $del_prof = gsh_tp_get_profile( $del_id );
-        if ( count( $profiles ) <= 1 ) {
-            echo '<div class="notice notice-error"><p>Das letzte Profil kann nicht gel&ouml;scht werden.</p></div>';
-        } elseif ( ! $del_prof || ! empty( $del_prof['is_active'] ) ) {
-            echo '<div class="notice notice-error"><p>Das aktive Profil kann nicht gel&ouml;scht werden.</p></div>';
+    if ( isset( $_POST['gsh_tp_delete_profile'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
+            $del_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+            $del_prof = gsh_tp_get_profile( $del_id );
+            if ( count( $profiles ) <= 1 ) {
+                echo '<div class="notice notice-error"><p>Das letzte Profil kann nicht gel&ouml;scht werden.</p></div>';
+            } elseif ( ! $del_prof || ! empty( $del_prof['is_active'] ) ) {
+                echo '<div class="notice notice-error"><p>Das aktive Profil kann nicht gel&ouml;scht werden.</p></div>';
+            } else {
+                $pid = sanitize_key( $del_id );
+                // Versionierte Keys (aktuell und eventuelle Vorgänger)
+                delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid ) );
+                delete_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ) );
+                delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
+                delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid ) );
+                // Unversionierte Keys (Backup, Sync-Zeitstempel, Snapshot, Guard)
+                delete_option( 'gsh_tp_backup_' . $pid );
+                delete_option( 'gsh_tp_sync_' . $pid );
+                delete_transient( 'gsh_tp_snap_' . $pid );
+                $profiles = array_values( array_filter( $profiles, function ( $p ) use ( $del_id ) {
+                    return $p['id'] !== $del_id;
+                } ) );
+                gsh_tp_save_profiles( $profiles );
+                wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan' ) );
+                exit;
+            }
         } else {
-            $pid = sanitize_key( $del_id );
-            delete_option( 'gsh_tp_ical_' . $pid );
-            delete_option( 'gsh_tp_backup_' . $pid );
-            delete_option( 'gsh_tp_sync_' . $pid );
-            delete_transient( 'gsh_tp_fresh_' . $pid );
-            delete_transient( 'gsh_tp_snap_' . $pid );
-            delete_transient( 'gsh_tp_chg_' . $pid );
-            $profiles = array_values( array_filter( $profiles, function ( $p ) use ( $del_id ) {
-                return $p['id'] !== $del_id;
-            } ) );
-            gsh_tp_save_profiles( $profiles );
-            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan' ) );
-            exit;
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
     }
 
     // ── POST: Kalender synchronisieren ──
-    if ( isset( $_POST['gsh_tp_sync'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sn'] ?? '' ) ), 'gsh_tp_sync' ) ) {
-        $sync_pid = sanitize_key( $_POST['gsh_tp_sync_pid'] ?? gsh_tp_active_profile_id() );
-        // Whitelist-Check: muss ein bekanntes Profil sein
-        $known = array_column( $profiles, 'id' );
-        if ( ! in_array( $sync_pid, $known, true ) ) {
-            $sync_pid = gsh_tp_active_profile_id();
-        }
-        $ok = gsh_tp_do_refresh( $sync_pid );
-        if ( $ok ) {
-            echo '<div class="notice notice-success"><p>&#10003; Kalender erfolgreich synchronisiert ('
-               . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr).</p></div>';
+    if ( isset( $_POST['gsh_tp_sync'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sn'] ?? '' ) ), 'gsh_tp_sync_manual' ) ) {
+            $sync_pid = sanitize_key( $_POST['gsh_tp_sync_pid'] ?? gsh_tp_active_profile_id() );
+            // Whitelist-Check: muss ein bekanntes Profil sein
+            $known = array_column( $profiles, 'id' );
+            if ( ! in_array( $sync_pid, $known, true ) ) {
+                $sync_pid = gsh_tp_active_profile_id();
+            }
+            $ok = gsh_tp_do_refresh( $sync_pid );
+            if ( $ok ) {
+                echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kalender erfolgreich synchronisiert ('
+                   . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr).</p></div>';
+            } else {
+                echo '<div class="notice notice-error"><p>' . gsh_tp_icon( 'x' ) . ' Synchronisierung fehlgeschlagen &ndash; '
+                   . 'bitte die iCal-URL pr&uuml;fen oder warten, bis der IServ-Server erreichbar ist.</p></div>';
+            }
         } else {
-            echo '<div class="notice notice-error"><p>&#10007; Synchronisierung fehlgeschlagen &ndash; '
-               . 'bitte die iCal-URL pr&uuml;fen oder warten, bis der IServ-Server erreichbar ist.</p></div>';
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
     }
 
     // ── POST: Cache leeren ──
-    if ( isset( $_POST['gsh_tp_cc'] ) &&
-         wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cn'] ?? '' ) ), 'gsh_tp_cc' ) ) {
-        $cc_pid = sanitize_key( $_POST['gsh_tp_cc_pid'] ?? '' );
-        $known  = array_column( $profiles, 'id' );
-        if ( $cc_pid && in_array( $cc_pid, $known, true ) ) {
-            delete_transient( 'gsh_tp_fresh_' . $cc_pid );
-        } else {
-            foreach ( $profiles as $p ) {
-                delete_transient( 'gsh_tp_fresh_' . sanitize_key( $p['id'] ) );
+    if ( isset( $_POST['gsh_tp_cc'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cn'] ?? '' ) ), 'gsh_tp_cc' ) ) {
+            $cc_pid = sanitize_key( $_POST['gsh_tp_cc_pid'] ?? '' );
+            $known  = array_column( $profiles, 'id' );
+            if ( $cc_pid && in_array( $cc_pid, $known, true ) ) {
+                delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $cc_pid ) );
+            } else {
+                foreach ( $profiles as $p ) {
+                    delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', sanitize_key( $p['id'] ) ) );
+                }
             }
+            echo '<div class="notice notice-success"><p>Cache als veraltet markiert &ndash; '
+               . 'wird beim n&auml;chsten Seitenaufruf im Hintergrund aktualisiert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
-        echo '<div class="notice notice-success"><p>Cache als veraltet markiert &ndash; '
-           . 'wird beim n&auml;chsten Seitenaufruf im Hintergrund aktualisiert.</p></div>';
+    }
+
+    // ── POST: Kategorien speichern ──
+    if ( isset( $_POST['gsh_tp_save_categories'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cats_n'] ?? '' ) ), 'gsh_tp_categories_save' ) ) {
+            $raw_cats = isset( $_POST['gsh_tp_categories'] ) ? (array) $_POST['gsh_tp_categories'] : array();
+            update_option( 'gsh_tp_categories', gsh_tp_sanitize_categories( $raw_cats ) );
+            // Bugfix: POST-Redirect-GET verhindert dass die static-gecachten Kategorien
+            // auf der neu gerenderten Seite alte Daten zeigen (PHP static-Variable bleibt
+            // im selben Request erhalten – nach Redirect ist sie zurückgesetzt).
+            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_kategorien&saved=1' ) );
+            exit;
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // ── POST: Feedback-Log leeren ──
+    if ( isset( $_POST['gsh_tp_clear_feedback_log'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'gsh_tp_clear_feedback_log' ) ) {
+            delete_option( 'gsh_tp_feedback_log' );
+            delete_option( 'gsh_tp_mail_fail_count' );
+            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log&cleared=1' ) );
+            exit;
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // ── POST: Alte Sync-Logs löschen ──
+    if ( isset( $_POST['gsh_tp_clear_logs'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cl_n'] ?? '' ) ), 'gsh_tp_clear_logs' ) ) {
+            $removed = gsh_tp_clear_old_logs( 30 );
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' ' . (int) $removed
+               . ' veraltete Log-Eintr&auml;ge gel&ouml;scht.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // Erfolgshinweise nach Redirects
+    if ( isset( $_GET['saved'] ) && '1' === $_GET['saved'] ) {
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kategorien gespeichert.</p></div>';
+    }
+    if ( isset( $_GET['cleared'] ) && '1' === $_GET['cleared'] ) {
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Feedback-Log geleert.</p></div>';
     }
 
     // ── Tabs aufbauen ──
@@ -1121,8 +2138,10 @@ function gsh_tp_settings_page() {
         }
         $tabs[ $p['id'] ] = esc_html( $p['label'] ) . $suffix;
     }
-    $tabs['_kategorien'] = 'Kategorien';
-    $tabs['_system']     = 'Kiosk &amp; System';
+    $tabs['_kategorien']   = 'Kategorien';
+    $tabs['_system']       = 'Kiosk &amp; System';
+    $tabs['_sync_log']     = 'Sync-Verlauf';
+    $tabs['_feedback_log'] = 'Feedback-Log';
 
     // Tab aus URL-Parameter lesen – Whitelist-Check gegen $tabs
     $active_tab = sanitize_key( $_GET['tab'] ?? '' );
@@ -1131,7 +2150,88 @@ function gsh_tp_settings_page() {
     }
     ?>
     <div class="wrap">
-        <h1>GSH Terminplan &ndash; Einstellungen</h1>
+        <h1>GSH Terminplan &ndash; Einstellungen
+            <button type="button"
+                    id="gsh-admin-cl-btn"
+                    onclick="gshAdminChangelogOpen()"
+                    style="font-size:13px;font-weight:400;margin-left:10px;vertical-align:middle;
+                           cursor:pointer;border:1px solid #c3c4c7;border-radius:4px;
+                           padding:2px 10px;background:#f6f7f7;color:#3c434a">
+                v<?php echo esc_html( GSH_TP_VERSION ); ?> &#x25BE; Changelog
+            </button>
+        </h1>
+
+        <!-- Admin-Changelog-Modal -->
+        <div id="gshAdminChangelog"
+             role="dialog" aria-modal="true" aria-label="Vollständiger Changelog"
+             style="display:none;position:fixed;inset:0;z-index:100000;
+                    background:rgba(0,0,0,.55);overflow-y:auto">
+            <div style="background:#fff;max-width:680px;margin:60px auto;border-radius:8px;
+                        padding:28px 32px;position:relative;max-height:80vh;overflow-y:auto">
+                <button type="button"
+                        onclick="gshAdminChangelogClose()"
+                        aria-label="Schließen"
+                        style="position:absolute;top:14px;right:16px;border:none;background:none;
+                               font-size:22px;cursor:pointer;color:#666;line-height:1">&times;</button>
+                <h2 style="margin-top:0">&#128221; Vollständiger Changelog</h2>
+                <?php
+                $cl_tag_colors = array(
+                    'FEATURE'  => '#16a34a',
+                    'UX'       => '#2563eb',
+                    'BUGFIX'   => '#dc2626',
+                    'SECURITY' => '#d97706',
+                    'INFRA'    => '#6b7280',
+                );
+                foreach ( gsh_tp_changelog() as $block ) :
+                    $version_clean = esc_html( $block['version'] );
+                ?>
+                <div style="margin-bottom:1.5rem">
+                    <strong style="font-size:15px;color:#1d2327">Version <?php echo $version_clean; ?></strong>
+                    <ul style="margin:.4rem 0 0 1rem;padding:0">
+                    <?php foreach ( $block['entries'] as $entry ) :
+                        $tag   = esc_html( $entry['tag'] );
+                        $color = $cl_tag_colors[ $entry['tag'] ] ?? '#6b7280';
+                    ?>
+                        <li style="margin:.3rem 0;font-size:13px;color:#3c434a">
+                            <span style="display:inline-block;font-size:10px;font-weight:700;
+                                         text-transform:uppercase;letter-spacing:.04em;
+                                         padding:1px 6px;border-radius:3px;margin-right:6px;
+                                         background:<?php echo esc_attr( $color ); ?>22;
+                                         color:<?php echo esc_attr( $color ); ?>;
+                                         border:1px solid <?php echo esc_attr( $color ); ?>44">
+                                <?php echo $tag; ?>
+                            </span>
+                            <?php echo esc_html( $entry['text'] ); ?>
+                        </li>
+                    <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <script>
+        /* Admin-Changelog-Modal – Funktionen müssen auf der Admin-Seite definiert sein,
+           da gsh_tp_js() (Frontend-JS) hier nicht geladen wird. */
+        function gshAdminChangelogOpen() {
+            var m = document.getElementById('gshAdminChangelog');
+            if ( m ) m.style.display = 'block';
+        }
+        function gshAdminChangelogClose() {
+            var m = document.getElementById('gshAdminChangelog');
+            if ( m ) m.style.display = 'none';
+        }
+        document.addEventListener('keydown', function(e) {
+            if ( e.key === 'Escape' ) gshAdminChangelogClose();
+        });
+        document.addEventListener('click', function(e) {
+            var m = document.getElementById('gshAdminChangelog');
+            if ( m && m.style.display !== 'none' && e.target === m ) {
+                gshAdminChangelogClose();
+            }
+        });
+        </script>
+
         <?php settings_errors(); ?>
 
         <nav class="nav-tab-wrapper" style="margin-bottom:1.5rem">
@@ -1158,6 +2258,10 @@ function gsh_tp_settings_page() {
             gsh_tp_render_kategorien_tab();
         } elseif ( '_system' === $active_tab ) {
             gsh_tp_render_system_tab();
+        } elseif ( '_sync_log' === $active_tab ) {
+            gsh_tp_render_sync_log_tab();
+        } elseif ( '_feedback_log' === $active_tab ) {
+            gsh_tp_render_feedback_log_tab();
         } else {
             gsh_tp_render_profile_tab( $active_tab );
         }
@@ -1185,8 +2289,8 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         return;
     }
     $pid       = sanitize_key( $profile_id );
-    $cache_key = 'gsh_tp_ical_' . $pid;
-    $fresh_key = 'gsh_tp_fresh_' . $pid;
+    $cache_key = gsh_tp_ck( 'gsh_tp_ical_', $pid );
+    $fresh_key = gsh_tp_ck( 'gsh_tp_fresh_', $pid );
     $has_data  = ! empty( get_option( $cache_key, '' ) );
     $is_fresh  = false !== get_transient( $fresh_key );
     $sync_raw  = get_option( 'gsh_tp_sync_' . $pid, '' );
@@ -1206,7 +2310,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
     }
     ?>
     <form method="post">
-        <?php wp_nonce_field( 'gsh_tp_save_profile', 'gsh_tp_sp_n' ); ?>
+        <?php wp_nonce_field( 'gsh_tp_profile_save', 'gsh_tp_sp_n' ); ?>
         <input type="hidden" name="gsh_tp_profile_id" value="<?php echo esc_attr( $profile_id ); ?>" />
         <table class="form-table">
             <tr>
@@ -1219,13 +2323,67 @@ function gsh_tp_render_profile_tab( $profile_id ) {
                 </td>
             </tr>
             <tr>
-                <th><label>iCal-Feed-URL</label></th>
+                <th><label for="gsh_tp_url_<?php echo esc_attr( $pid ); ?>">iCal-Feed-URL</label></th>
                 <td>
                     <input type="url"
+                           id="gsh_tp_url_<?php echo esc_attr( $pid ); ?>"
                            name="gsh_tp_profile[<?php echo esc_attr( $profile_id ); ?>][ical_url]"
                            value="<?php echo esc_attr( $profile['ical_url'] ); ?>"
-                           class="regular-text" placeholder="https://iserv.example.de/ical/..." />
+                           class="regular-text" placeholder="https://iserv.example.de/ical/..."
+                           pattern="https://.+" />
                     <p class="description">HTTPS-URL des IServ-Kalender-Exports (.ics).</p>
+                    <?php
+                    // Server-seitige Statusanzeige der gespeicherten URL
+                    if ( ! empty( $profile['ical_url'] ) ) {
+                        $saved_check = gsh_tp_validate_ical_url( $profile['ical_url'] );
+                        if ( $saved_check['valid'] ) {
+                            echo '<span style="display:block;margin-top:4px;color:#166534;font-size:13px">'
+                               . gsh_tp_icon( 'check' ) . ' Gespeicherte URL ist g&uuml;ltig</span>';
+                        } else {
+                            echo '<span style="display:block;margin-top:4px;color:#991b1b;font-size:13px">'
+                               . gsh_tp_icon( 'x' ) . ' Gespeicherte URL ungültig: <strong>'
+                               . esc_html( $saved_check['error'] ) . '</strong></span>';
+                        }
+                    }
+                    ?>
+                    <span id="gsh_tp_url_fb_<?php echo esc_attr( $pid ); ?>" style="display:block;margin-top:4px;font-size:13px"></span>
+                    <script>
+                    (function(){
+                        var inp = document.getElementById('gsh_tp_url_<?php echo esc_js( $pid ); ?>');
+                        var fb  = document.getElementById('gsh_tp_url_fb_<?php echo esc_js( $pid ); ?>');
+                        if(!inp || !fb) return;
+                        var icoCheck  = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+                        var icoX      = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                        var icoLoader = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>';
+                        var timer = null;
+                        inp.addEventListener('input', function(){
+                            clearTimeout(timer);
+                            var val = inp.value.trim();
+                            if(!val){ fb.textContent = ''; return; }
+                            fb.innerHTML = '<span style="color:#888">' + icoLoader + ' Wird gepr\u00fcft\u2026</span>';
+                            timer = setTimeout(function(){
+                                if(val.indexOf('https://') !== 0){
+                                    fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Nur HTTPS erlaubt</span>';
+                                    return;
+                                }
+                                try{
+                                    var u = new URL(val);
+                                    if(u.protocol !== 'https:'){
+                                        fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Nur HTTPS erlaubt</span>';
+                                        return;
+                                    }
+                                    if(!u.hostname || u.hostname.indexOf('.') === -1){
+                                        fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Ung\u00fcltige URL-Syntax (kein g\u00fcltiger Hostname)</span>';
+                                        return;
+                                    }
+                                    fb.innerHTML = '<span style="color:#166534">' + icoCheck + ' URL-Syntax g\u00fcltig \u2013 wird beim Speichern server-seitig gepr\u00fcft</span>';
+                                }catch(e){
+                                    fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Ung\u00fcltige URL-Syntax</span>';
+                                }
+                            }, 1000);
+                        });
+                    })();
+                    </script>
                 </td>
             </tr>
             <tr>
@@ -1277,7 +2435,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         </table>
         <p>
             <button type="submit" name="gsh_tp_save_profile" value="1" class="button button-primary">
-                &#10003; Profil speichern
+                <?php echo gsh_tp_icon( 'check' ); ?> Profil speichern
             </button>
         </p>
     </form>
@@ -1290,7 +2448,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         <input type="hidden" name="gsh_tp_profile_id" value="<?php echo esc_attr( $profile_id ); ?>" />
         <button type="submit" name="gsh_tp_activate_profile" value="1"
                 class="button" style="color:#1e8449;border-color:#1e8449">
-            &#9654; Als aktiv setzen
+            <?php echo gsh_tp_icon( 'play' ); ?> Als aktiv setzen
         </button>
     </form>
     <?php endif; ?>
@@ -1303,8 +2461,8 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         <input type="hidden" name="gsh_tp_profile_id" value="<?php echo esc_attr( $profile_id ); ?>" />
         <button type="submit" name="gsh_tp_delete_profile" value="1"
                 class="button" style="color:#c0392b;border-color:#c0392b"
-                onclick="return confirm('Profil wirklich l\u00f6schen? Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden.')">
-            &#10005; Profil l&ouml;schen
+                onclick="return confirm('Wirklich l\u00f6schen? Alle Terminplan-Daten f\u00fcr dieses Schuljahr gehen verloren.')">
+            <?php echo gsh_tp_icon( 'x' ); ?> Profil l&ouml;schen
         </button>
     </form>
     <?php endif; ?>
@@ -1327,9 +2485,9 @@ function gsh_tp_render_profile_tab( $profile_id ) {
             <td>
                 <?php
                 if ( $has_data && $is_fresh ) {
-                    echo '<span style="color:#1e8449">&#10003; Daten frisch &ndash; n&auml;chster Hintergrund-Refresh bei Ablauf des Freshness-Timers</span>';
+                    echo '<span style="color:#1e8449">' . gsh_tp_icon( 'check' ) . ' Daten frisch &ndash; n&auml;chster Hintergrund-Refresh bei Ablauf des Freshness-Timers</span>';
                 } elseif ( $has_data ) {
-                    echo '<span style="color:#b7950b">&#9203; Daten veraltet &ndash; Hintergrund-Refresh l&auml;uft beim n&auml;chsten Seitenaufruf</span>';
+                    echo '<span style="color:#b7950b">' . gsh_tp_icon( 'clock' ) . ' Daten veraltet &ndash; Hintergrund-Refresh l&auml;uft beim n&auml;chsten Seitenaufruf</span>';
                 } else {
                     echo '<span style="color:#888">&#8212; Noch keine Daten &ndash; werden beim n&auml;chsten Seitenaufruf synchron geladen</span>';
                 }
@@ -1338,11 +2496,11 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         </tr>
     </table>
     <form method="post" style="margin-top:.75rem;display:inline-block;margin-right:8px">
-        <?php wp_nonce_field( 'gsh_tp_sync', 'gsh_tp_sn' ); ?>
+        <?php wp_nonce_field( 'gsh_tp_sync_manual', 'gsh_tp_sn' ); ?>
         <input type="hidden" name="gsh_tp_sync_pid" value="<?php echo esc_attr( $profile_id ); ?>" />
         <button type="submit" name="gsh_tp_sync" value="1"
                 class="button button-primary" style="height:36px;font-size:14px;padding:0 18px">
-            &#8635; Jetzt synchronisieren
+            <?php echo gsh_tp_icon( 'refresh-cw' ); ?> Jetzt synchronisieren
         </button>
         <span class="description" style="margin-left:10px;line-height:36px">
             Leert den Cache und ruft sofort die aktuellen Kalenderdaten vom IServ ab.
@@ -1351,7 +2509,8 @@ function gsh_tp_render_profile_tab( $profile_id ) {
     <form method="post" style="display:inline-block;margin-top:.5rem">
         <?php wp_nonce_field( 'gsh_tp_cc', 'gsh_tp_cn' ); ?>
         <input type="hidden" name="gsh_tp_cc_pid" value="<?php echo esc_attr( $profile_id ); ?>" />
-        <button type="submit" name="gsh_tp_cc" value="1" class="button">Cache leeren</button>
+        <button type="submit" name="gsh_tp_cc" value="1" class="button"
+                onclick="return confirm('Cache leeren? Beim n\u00e4chsten Seitenaufruf werden die Kalenderdaten neu vom IServ abgerufen.')">Cache leeren</button>
         <span class="description" style="margin-left:10px">
             Markiert den Cache als veraltet. Beim n&auml;chsten Seitenaufruf startet ein Hintergrund-Refresh.
         </span>
@@ -1378,8 +2537,9 @@ function gsh_tp_render_kategorien_tab() {
         &bdquo;LK&ldquo; findet &bdquo;LK 3&ldquo;, aber nicht &bdquo;Volk&ldquo;.
     </p>
 
-    <form method="post" action="options.php">
-        <?php settings_fields( 'gsh_tp_options' ); ?>
+    <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_kategorien' ) ); ?>">
+        <?php wp_nonce_field( 'gsh_tp_categories_save', 'gsh_tp_cats_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_categories" value="1" />
 
         <?php
         $existing_cats = gsh_tp_get_categories();
@@ -1442,7 +2602,7 @@ function gsh_tp_render_kategorien_tab() {
                     </td>
                     <td>
                         <button type="button" class="button gsh-cat-del"
-                                title="Kategorie löschen">&#10005;</button>
+                                title="Kategorie löschen"><?php echo gsh_tp_icon( 'x', '0.9em' ); ?></button>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -1475,7 +2635,8 @@ function gsh_tp_render_kategorien_tab() {
             });
 
             tbody.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('gsh-cat-del')) return;
+                var delBtn = e.target.closest('.gsh-cat-del');
+                if (!delBtn) return;
                 var rows = tbody.querySelectorAll('.gsh-cat-row');
                 if (rows.length <= 1) {
                     alert('Es muss mindestens eine Kategorie vorhanden sein.');
@@ -1504,7 +2665,7 @@ function gsh_tp_render_kategorien_tab() {
                         '<input type="text" name="gsh_tp_categories[' + idx + '][keywords]" value="" style="width:100%" class="gsh-cat-kw" placeholder="Stichwort1, Stichwort2, ..." />' +
                         '<span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;font-size:12px;border-left:3px solid #cccccc;background:#f0f0f0;color:#333333">Beispieltermin</span>' +
                     '</td>' +
-                    '<td><button type="button" class="button gsh-cat-del" title="Kategorie löschen">&#10005;</button></td>';
+                    '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen"><svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
                 tbody.appendChild(row);
             });
 
@@ -1524,11 +2685,10 @@ function gsh_tp_render_kategorien_tab() {
 }
 
 /**
- * Rendert den System-Tab (Kiosk-Modus, Shortcode-Hilfe, Excel-Import).
+ * Rendert den System-Tab (Kiosk-Modus, Shortcode-Hilfe).
  *
  * Kiosk-Einstellungen (Token, IServ-Domain) werden über die WordPress
- * Settings API (options.php) gespeichert. Der Excel→ICS-Konverter
- * läuft komplett clientseitig (SheetJS, kein Upload auf den Server).
+ * Settings API (options.php) gespeichert.
  *
  * @since 3.2.0 (Tab-Wrapper seit 3.5.0)
  * @return void
@@ -1544,7 +2704,30 @@ function gsh_tp_render_system_tab() {
 
     <form method="post" action="options.php">
         <?php settings_fields( 'gsh_tp_options' ); ?>
+        <?php
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+        if ( $fail_count >= 3 ) : ?>
+        <div class="notice notice-warning inline" style="margin-bottom:16px">
+            <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+            Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a> um den E-Mail-Versand zu konfigurieren.
+            <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>">Feedback-Log ansehen</a></p>
+        </div>
+        <?php endif; ?>
         <table class="form-table">
+
+            <tr>
+                <th><label for="gsh_tp_feedback_email">Feedback-Empfänger</label></th>
+                <td>
+                    <input type="email" id="gsh_tp_feedback_email" name="gsh_tp_feedback_email"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) ) ); ?>"
+                           class="regular-text"
+                           placeholder="deine@schule.de" />
+                    <p class="description">
+                        An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
+                        Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).
+                    </p>
+                </td>
+            </tr>
 
             <tr>
                 <th><label for="gsh_tp_kiosk_token">Kiosk-Token</label></th>
@@ -1554,10 +2737,20 @@ function gsh_tp_render_system_tab() {
                            class="regular-text" autocomplete="off"
                            placeholder="mind. 20 Zeichen" />
                     <button type="button" class="button" style="margin-left:6px"
-                            onclick="document.getElementById('gsh_tp_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
-                        &#127922; Zuf&auml;lligen Token erzeugen
+                            onclick="if(!confirm('Token wird ersetzt. Alte Kiosk-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
+                        <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
                     </button>
                     <p class="description">Geheimer Token f&uuml;r den Zugang zur Kiosk-Seite. Mind. 20 Zeichen empfohlen.</p>
+                    <?php
+                    $cur_token = get_option( 'gsh_tp_kiosk_token', '' );
+                    if ( empty( $cur_token ) ) {
+                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
+                           . 'die Kiosk-Seite ist ohne Authentifizierung erreichbar!</p>';
+                    } elseif ( strlen( $cur_token ) < 20 ) {
+                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
+                           . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
+                    }
+                    ?>
                 </td>
             </tr>
 
@@ -1568,6 +2761,10 @@ function gsh_tp_render_system_tab() {
                            value="<?php echo esc_attr( get_option( 'gsh_tp_iserv_domain', '' ) ); ?>"
                            class="regular-text" placeholder="https://example-school.de" />
                     <p class="description">Die vollst&auml;ndige URL eures IServ-Servers (mit https://). Wird ben&ouml;tigt damit nur euer IServ die Seite einbetten darf.</p>
+                    <?php if ( empty( get_option( 'gsh_tp_iserv_domain', '' ) ) ) : ?>
+                        <p style="color:#e67e22;margin-top:6px"><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> IServ-Domain fehlt</strong> &ndash;
+                        ohne diese Einstellung kann jede Website die Kiosk-Seite einbetten.</p>
+                    <?php endif; ?>
                 </td>
             </tr>
 
@@ -1592,9 +2789,9 @@ function gsh_tp_render_system_tab() {
                         echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">'
                            . esc_html( $kiosk_url ) . '</code>';
                         echo '<a href="' . esc_url( $kiosk_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
-                           . '&#128279; Kiosk-Seite testen</a>';
+                           . gsh_tp_icon( 'link' ) . ' Kiosk-Seite testen</a>';
                     } else {
-                        echo '<p style="color:#888;margin:0">&#9888; Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
+                        echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
                            . implode( ', ', $missing ) . '.</p>';
                     }
                     ?>
@@ -1614,542 +2811,106 @@ function gsh_tp_render_system_tab() {
     <p><code>[gsh_terminplan schuljahr="sj_2026_27"]</code> &ndash; Bestimmtes Schuljahr-Profil anzeigen</p>
     <p><code>[gsh_terminplan schuljahr="entwurf"]</code> &ndash; Entwurf-Vorschau (nur Admins)</p>
 
-    <!-- ============================================================
-         IMPORT-SEKTION: Excel → ICS (seit 3.4.0)
-         ============================================================ -->
-    <hr />
-    <h2>Terminplan-Import (Excel &rarr; ICS)</h2>
-    <div style="background:#eaf2f8;border-left:4px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:4px;">
-        <strong>Excel &rarr; ICS Konverter</strong><br>
-        Laden Sie eine Excel-Datei (.xlsx) mit Schulterminen hoch. Das Plugin erzeugt daraus
-        eine ICS-Kalenderdatei, die Sie in IServ importieren k&ouml;nnen.<br>
-        <em>Die Datei wird nur im Browser verarbeitet &ndash; kein Upload auf den Server.</em>
-    </div>
+    <?php
+    // Import-Sektion entfernt in v3.12.0 – wird durch externes Tool ersetzt.
+    // (Ehemals: Terminplan-Import Excel → ICS mit SheetJS)
+    ?>
+        <?php
+}
 
-    <style>
-        /* Import-Sektion Styles */
-        .gsh-import-dropzone {
-            border: 2px dashed #b4c6d7;
-            border-radius: 6px;
-            padding: 32px 24px;
-            text-align: center;
-            background: #f9fbfd;
-            cursor: pointer;
-            transition: border-color .2s, background .2s;
-            margin-bottom: 16px;
-        }
-        .gsh-import-dropzone.dragover {
-            border-color: #2874a6;
-            background: #eaf2f8;
-        }
-        .gsh-import-dropzone p {
-            margin: 0 0 8px;
-            font-size: 15px;
-            color: #555;
-        }
-        .gsh-import-preview { margin-top: 20px; }
-        .gsh-import-preview .widefat th,
-        .gsh-import-preview .widefat td { padding: 6px 10px; font-size: 13px; }
-        .gsh-import-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid;
-        }
-        .gsh-import-badge[data-c="konferenz"] { background:#dbeafe; border-color:#3b82f6; color:#1e40af; }
-        .gsh-import-badge[data-c="pruefung"]  { background:#fee2e2; border-color:#ef4444; color:#991b1b; }
-        .gsh-import-badge[data-c="projekt"]   { background:#dcfce7; border-color:#22c55e; color:#166534; }
-        .gsh-import-badge[data-c="frei"]      { background:#f1f5f9; border-color:#94a3b8; color:#475569; }
-        .gsh-import-badge[data-c="eltern"]    { background:#ffedd5; border-color:#f97316; color:#9a3412; }
-        .gsh-import-badge[data-c="frist"]     { background:#fef9c3; border-color:#eab308; color:#713f12; }
-        .gsh-import-badge[data-c="standard"]  { background:#f1f5f9; border-color:#64748b; color:#334155; }
-        .gsh-import-stats {
-            margin: 12px 0;
-            padding: 10px 14px;
-            background: #f0f6fb;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .gsh-import-actions { margin-top: 16px; }
-        .gsh-import-actions .button { margin-right: 8px; }
-    </style>
+/**
+ * Rendert den Sync-Verlauf-Tab.
+ *
+ * Zeigt die letzten 20 Sync-Versuche aller Profile tabellarisch.
+ * Erfolgreiche Zeilen sind grün hinterlegt, fehlerhafte rot.
+ * Ein Cleanup-Button entfernt Einträge älter als 30 Tage.
+ *
+ * @since 3.6.0
+ * @return void
+ */
+function gsh_tp_render_sync_log_tab() {
+    $profiles = gsh_tp_get_profiles();
+    ?>
+    <h2>Sync-Verlauf</h2>
+    <p class="description" style="margin-bottom:1.5rem">
+        Die letzten Synchronisierungs-Versuche aller Schuljahr-Profile.
+        Hilfreich beim Debuggen von Verbindungs- und Konfigurationsproblemen
+        (Timeouts, ungültige iCal-URLs, Netzwerkfehler).
+    </p>
 
-    <div class="gsh-import-dropzone" id="gshImportDropzone">
-        <p><strong>Excel-Datei hier ablegen</strong></p>
-        <p>oder Datei ausw&auml;hlen:</p>
-        <input type="file" id="gshImportFile" accept=".xlsx,.xls,.csv" style="margin-top:4px" />
-    </div>
+    <?php foreach ( $profiles as $p ) :
+        $logs = gsh_tp_get_sync_logs( $p['id'], 20 );
+    ?>
+    <h3 style="margin-top:1.5rem;margin-bottom:.5rem"><?php echo esc_html( $p['label'] ); ?></h3>
+    <?php if ( empty( $logs ) ) : ?>
+        <p style="color:#888"><em>Noch keine Sync-Versuche gespeichert.</em></p>
+    <?php else : ?>
+    <table class="widefat" style="max-width:960px;margin-bottom:12px;border-collapse:collapse">
+        <thead>
+            <tr style="background:#f6f7f7">
+                <th style="width:148px;padding:8px 10px">Zeitpunkt</th>
+                <th style="width:72px;padding:8px 10px">Status</th>
+                <th style="width:110px;padding:8px 10px">Fehlertyp</th>
+                <th style="width:68px;padding:8px 10px">Events</th>
+                <th style="width:72px;padding:8px 10px">Dauer</th>
+                <th style="padding:8px 10px">Meldung</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ( $logs as $entry ) :
+            $is_ok  = ( 'success' === ( $entry['status'] ?? '' ) );
+            $row_bg = $is_ok ? '#f0fdf4' : '#fff5f5';
+            $ts_disp = '';
+            if ( ! empty( $entry['timestamp'] ) ) {
+                $dt = new DateTime( $entry['timestamp'], new DateTimeZone( 'UTC' ) );
+                $dt->setTimezone( wp_timezone() );
+                $ts_disp = $dt->format( 'd.m.Y H:i:s' );
+            }
+        ?>
+            <tr style="background:<?php echo esc_attr( $row_bg ); ?>;border-top:1px solid #e0e0e0">
+                <td style="padding:6px 10px;font-size:13px"><?php echo esc_html( $ts_disp ); ?></td>
+                <td style="padding:6px 10px;font-size:13px">
+                    <?php if ( $is_ok ) : ?>
+                        <span style="color:#166534;font-weight:600">&#10003; OK</span>
+                    <?php else : ?>
+                        <span style="color:#991b1b;font-weight:600">&#10005; Fehler</span>
+                    <?php endif; ?>
+                </td>
+                <td style="padding:6px 10px;font-size:13px">
+                    <?php if ( ! empty( $entry['error_type'] ) ) : ?>
+                        <code style="font-size:12px"><?php echo esc_html( $entry['error_type'] ); ?></code>
+                    <?php else : ?>
+                        <span style="color:#888">&ndash;</span>
+                    <?php endif; ?>
+                </td>
+                <td style="padding:6px 10px;font-size:13px">
+                    <?php echo $is_ok ? esc_html( $entry['event_count'] ?? 0 ) : '<span style="color:#888">&ndash;</span>'; ?>
+                </td>
+                <td style="padding:6px 10px;font-size:13px">
+                    <?php echo esc_html( ( $entry['duration_ms'] ?? 0 ) . ' ms' ); ?>
+                </td>
+                <td style="padding:6px 10px;font-size:13px;color:#555">
+                    <?php echo esc_html( $entry['message'] ?? '' ); ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+    <?php endforeach; ?>
 
-    <div class="gsh-import-actions" style="margin-bottom:16px">
-        <button type="button" class="button" id="gshImportUploadBtn" disabled>
-            &#128196; Excel hochladen &amp; Vorschau anzeigen
+    <hr style="margin:2rem 0 1.5rem" />
+    <h3>Wartung</h3>
+    <form method="post" style="display:inline-block">
+        <?php wp_nonce_field( 'gsh_tp_clear_logs', 'gsh_tp_cl_n' ); ?>
+        <button type="submit" name="gsh_tp_clear_logs" value="1" class="button"
+                onclick="return confirm('Alle Log-Eintr\u00e4ge \u00e4lter als 30 Tage l\u00f6schen?')">
+            <?php echo gsh_tp_icon( 'trash' ); ?> Logs &auml;lter als 30 Tage l&ouml;schen
         </button>
-        <button type="button" class="button" id="gshImportTemplateBtn" style="margin-left:4px">
-            &#128229; Excel-Vorlage herunterladen
-        </button>
-    </div>
-
-    <div class="gsh-import-preview" id="gshImportPreview" style="display:none">
-        <h3>Vorschau der erkannten Termine</h3>
-        <div id="gshImportStats" class="gsh-import-stats"></div>
-        <table class="widefat striped" id="gshImportTable">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Bezeichnung</th>
-                    <th>Startdatum</th>
-                    <th>Startzeit</th>
-                    <th>Endedatum</th>
-                    <th>Endzeit</th>
-                    <th>Kategorie</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <div class="gsh-import-actions" style="margin-top:16px">
-            <button type="button" class="button button-primary" id="gshImportDownloadBtn" style="background:#1e8449;border-color:#1e8449;">
-                &#128229; ICS-Datei herunterladen
-            </button>
-        </div>
-    </div>
-
-    <script>
-    (function() {
-        'use strict';
-
-        /* -------------------------------------------------------
-           Kategorie-Mapping und Farben
-           ------------------------------------------------------- */
-        var categoryMap = {
-            'konferenz': 'Konferenz',
-            'prüfung':   'Prüfung',
-            'pruefung':  'Prüfung',
-            'projekt':   'Projekt',
-            'ferien':    'Ferien',
-            'ferien/frei':'Ferien',
-            'frei':      'Ferien',
-            'eltern':    'Eltern',
-            'frist':     'Frist',
-            'sonstige':  ''
-        };
-
-        // Interne Kategorie-ID für Badge-Farben
-        var categoryBadgeMap = {
-            'Konferenz': 'konferenz',
-            'Prüfung':   'pruefung',
-            'Projekt':   'projekt',
-            'Ferien':    'frei',
-            'Eltern':    'eltern',
-            'Frist':     'frist',
-            '':          'standard'
-        };
-
-        /* -------------------------------------------------------
-           Header-Erkennung – Spalten-Mapping
-           ------------------------------------------------------- */
-        var headerPatterns = {
-            title:     /bezeichnung|termin|title|summary/i,
-            startDate: /startdatum|start|beginn|von/i,
-            startTime: /startzeit/i,
-            endDate:   /end(e?)datum|end(e?)|bis/i,
-            endTime:   /endzeit/i,
-            category:  /kategorie|category|typ/i,
-            note:      /bemerk|hinweis|note/i
-        };
-
-        /* -------------------------------------------------------
-           Hilfsfunktionen
-           ------------------------------------------------------- */
-
-        // Excel-Seriennummer → JavaScript Date
-        function excelDateToJS(serial) {
-            if (typeof serial === 'number') {
-                // Excel-Datum: Tage seit 1899-12-30
-                var utcDays = Math.floor(serial) - 25569;
-                return new Date(utcDays * 86400 * 1000);
-            }
-            return null;
-        }
-
-        // Datum-String erkennen: TT.MM.JJJJ oder JJJJ-MM-TT
-        function parseDate(val) {
-            if (val == null || val === '') return null;
-            if (typeof val === 'number') {
-                var d = excelDateToJS(val);
-                return d ? formatDateObj(d) : null;
-            }
-            var s = String(val).trim();
-            var m;
-            // TT.MM.JJJJ
-            m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-            if (m) return m[3] + '-' + pad(m[2]) + '-' + pad(m[1]);
-            // JJJJ-MM-TT
-            m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if (m) return m[1] + '-' + pad(m[2]) + '-' + pad(m[3]);
-            return null;
-        }
-
-        // Uhrzeit erkennen: HH:MM oder H:MM
-        function parseTime(val) {
-            if (val == null || val === '') return null;
-            if (typeof val === 'number') {
-                // Excel-Zeitbruch (0.0 – 0.999...)
-                var totalMinutes = Math.round(val * 24 * 60);
-                var h = Math.floor(totalMinutes / 60);
-                var min = totalMinutes % 60;
-                return pad(h) + ':' + pad(min);
-            }
-            var s = String(val).trim();
-            var m = s.match(/^(\d{1,2}):(\d{2})$/);
-            if (m) return pad(m[1]) + ':' + pad(m[2]);
-            return null;
-        }
-
-        function pad(n) { return ('0' + parseInt(n, 10)).slice(-2); }
-
-        function formatDateObj(d) {
-            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-        }
-
-        function formatDateDE(isoStr) {
-            if (!isoStr) return '';
-            var p = isoStr.split('-');
-            return p[2] + '.' + p[1] + '.' + p[0];
-        }
-
-        function resolveCategory(raw) {
-            if (!raw) return '';
-            var key = String(raw).trim().toLowerCase();
-            if (categoryMap.hasOwnProperty(key)) return categoryMap[key];
-            // Teilübereinstimmung
-            for (var k in categoryMap) {
-                if (key.indexOf(k) !== -1) return categoryMap[k];
-            }
-            return '';
-        }
-
-        /* -------------------------------------------------------
-           Excel einlesen und Termine extrahieren
-           ------------------------------------------------------- */
-        function parseExcel(data) {
-            var workbook = XLSX.read(data, { type: 'array', cellDates: false });
-            var sheetName = workbook.SheetNames[0];
-            var rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '' });
-
-            // Header-Zeile finden (erste 10 Zeilen durchsuchen)
-            var headerRow = -1;
-            var colMap = {};
-            for (var i = 0; i < Math.min(rows.length, 10); i++) {
-                var row = rows[i];
-                if (!row || !row.length) continue;
-                var found = 0;
-                var tempMap = {};
-                for (var j = 0; j < row.length; j++) {
-                    var cell = String(row[j] || '').trim();
-                    if (!cell) continue;
-                    for (var key in headerPatterns) {
-                        if (headerPatterns[key].test(cell) && !tempMap[key]) {
-                            tempMap[key] = j;
-                            found++;
-                            break;
-                        }
-                    }
-                }
-                // Mindestens Titel und Startdatum gefunden?
-                if (found >= 2 && tempMap.title !== undefined && tempMap.startDate !== undefined) {
-                    headerRow = i;
-                    colMap = tempMap;
-                    break;
-                }
-            }
-
-            if (headerRow === -1) {
-                alert('Header-Zeile konnte nicht erkannt werden.\n\nErwartet: Spalten wie "Terminbezeichnung", "Startdatum" etc.\nBitte verwenden Sie die Excel-Vorlage.');
-                return [];
-            }
-
-            var events = [];
-            for (var r = headerRow + 1; r < rows.length; r++) {
-                var row = rows[r];
-                if (!row || !row.length) continue;
-
-                var title = String(row[colMap.title] || '').trim();
-                if (!title) continue;
-                // "z.B." Platzhalter überspringen
-                if (/^z\.b\./i.test(title)) continue;
-
-                var startDate = parseDate(row[colMap.startDate]);
-                if (!startDate) continue; // Ohne Startdatum kein Termin
-
-                var startTime = colMap.startTime !== undefined ? parseTime(row[colMap.startTime]) : null;
-                var endDate   = colMap.endDate !== undefined ? parseDate(row[colMap.endDate]) : null;
-                var endTime   = colMap.endTime !== undefined ? parseTime(row[colMap.endTime]) : null;
-                var category  = colMap.category !== undefined ? resolveCategory(row[colMap.category]) : '';
-                var note      = colMap.note !== undefined ? String(row[colMap.note] || '').trim() : '';
-
-                events.push({
-                    title:     title,
-                    startDate: startDate,
-                    startTime: startTime,
-                    endDate:   endDate || startDate,
-                    endTime:   endTime,
-                    category:  category,
-                    note:      note
-                });
-            }
-
-            return events;
-        }
-
-        /* -------------------------------------------------------
-           Vorschau-Tabelle rendern
-           ------------------------------------------------------- */
-        function renderPreview(events) {
-            var tbody = document.querySelector('#gshImportTable tbody');
-            tbody.innerHTML = '';
-
-            var allDay = 0;
-            events.forEach(function(ev, idx) {
-                var isAllDay = !ev.startTime;
-                if (isAllDay) allDay++;
-
-                var badgeId = categoryBadgeMap[ev.category] || 'standard';
-                var catLabel = ev.category || 'Sonstige';
-
-                var tr = document.createElement('tr');
-                tr.innerHTML =
-                    '<td>' + (idx + 1) + '</td>' +
-                    '<td>' + escHtml(ev.title) + '</td>' +
-                    '<td>' + formatDateDE(ev.startDate) + '</td>' +
-                    '<td>' + (ev.startTime || '–') + '</td>' +
-                    '<td>' + formatDateDE(ev.endDate) + '</td>' +
-                    '<td>' + (ev.endTime || '–') + '</td>' +
-                    '<td><span class="gsh-import-badge" data-c="' + badgeId + '">' + escHtml(catLabel) + '</span></td>';
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('gshImportStats').innerHTML =
-                '<strong>' + events.length + ' Termine erkannt</strong>, davon ' + allDay + ' ganzt&auml;gig';
-            document.getElementById('gshImportPreview').style.display = 'block';
-        }
-
-        function escHtml(s) {
-            var div = document.createElement('div');
-            div.appendChild(document.createTextNode(s));
-            return div.innerHTML;
-        }
-
-        /* -------------------------------------------------------
-           ICS-Generierung (RFC 5545)
-           ------------------------------------------------------- */
-        function generateICS(events) {
-            var now = new Date();
-            var stamp = now.getFullYear() +
-                pad(now.getMonth() + 1) + pad(now.getDate()) + 'T' +
-                pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-            var ts = Math.floor(now.getTime() / 1000);
-
-            var lines = [
-                'BEGIN:VCALENDAR',
-                'VERSION:2.0',
-                'PRODID:-//GSH Terminplan//Import//DE',
-                'CALSCALE:GREGORIAN',
-                'METHOD:PUBLISH',
-                // VTIMEZONE Europe/Berlin
-                'BEGIN:VTIMEZONE',
-                'TZID:Europe/Berlin',
-                'BEGIN:STANDARD',
-                'DTSTART:19701025T030000',
-                'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
-                'TZOFFSETFROM:+0200',
-                'TZOFFSETTO:+0100',
-                'TZNAME:CET',
-                'END:STANDARD',
-                'BEGIN:DAYLIGHT',
-                'DTSTART:19700329T020000',
-                'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
-                'TZOFFSETFROM:+0100',
-                'TZOFFSETTO:+0200',
-                'TZNAME:CEST',
-                'END:DAYLIGHT',
-                'END:VTIMEZONE'
-            ];
-
-            events.forEach(function(ev, idx) {
-                var isAllDay = !ev.startTime;
-                lines.push('BEGIN:VEVENT');
-                lines.push('UID:gsh-import-' + idx + '-' + ts + '@gesamtschule-horst.de');
-                lines.push('DTSTAMP:' + stamp);
-
-                if (isAllDay) {
-                    // Ganztägig: VALUE=DATE, Endedatum + 1 Tag (exklusiv nach RFC 5545)
-                    lines.push('DTSTART;VALUE=DATE:' + ev.startDate.replace(/-/g, ''));
-                    var endD = addDays(ev.endDate, 1);
-                    lines.push('DTEND;VALUE=DATE:' + endD.replace(/-/g, ''));
-                } else {
-                    var startDT = ev.startDate.replace(/-/g, '') + 'T' + ev.startTime.replace(':', '') + '00';
-                    lines.push('DTSTART;TZID=Europe/Berlin:' + startDT);
-
-                    if (ev.endTime) {
-                        var endDT = ev.endDate.replace(/-/g, '') + 'T' + ev.endTime.replace(':', '') + '00';
-                        lines.push('DTEND;TZID=Europe/Berlin:' + endDT);
-                    } else {
-                        // Default-Dauer: 1 Stunde
-                        var sh = parseInt(ev.startTime.split(':')[0], 10);
-                        var sm = parseInt(ev.startTime.split(':')[1], 10);
-                        var eh = sh + 1;
-                        var endDT2 = ev.startDate.replace(/-/g, '') + 'T' + pad(eh) + pad(sm) + '00';
-                        lines.push('DTEND;TZID=Europe/Berlin:' + endDT2);
-                    }
-                }
-
-                lines.push('SUMMARY:' + foldLine(ev.title));
-                if (ev.category) {
-                    lines.push('CATEGORIES:' + ev.category);
-                }
-                if (ev.note) {
-                    lines.push('DESCRIPTION:' + foldLine(ev.note));
-                }
-
-                lines.push('END:VEVENT');
-            });
-
-            lines.push('END:VCALENDAR');
-            return lines.join('\r\n');
-        }
-
-        function addDays(isoStr, n) {
-            var p = isoStr.split('-');
-            var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
-            d.setDate(d.getDate() + n);
-            return formatDateObj(d);
-        }
-
-        // RFC 5545 Zeilen-Faltung (75 Zeichen)
-        function foldLine(str) {
-            return str.replace(/[,;\\]/g, function(c) { return '\\' + c; });
-        }
-
-        /* -------------------------------------------------------
-           Blob-Download
-           ------------------------------------------------------- */
-        function downloadBlob(content, filename, mime) {
-            var blob = new Blob([content], { type: mime });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        /* -------------------------------------------------------
-           Excel-Vorlage generieren (mit SheetJS)
-           ------------------------------------------------------- */
-        function generateTemplate() {
-            var headerRow = ['Terminbezeichnung', 'Startdatum', 'Startzeit', 'Endedatum', 'Endzeit', 'Kategorie', 'Bemerkungen'];
-            var infoRows = [
-                ['GSH Schuljahresterminplan – Importvorlage'],
-                ['Bitte ab Zeile 4 ausfüllen. Zeile 4 = Header (nicht löschen!). Datumsformat: TT.MM.JJJJ, Uhrzeit: HH:MM'],
-                ['Kategorien: Konferenz, Prüfung, Projekt, Ferien/Frei, Eltern, Frist, Sonstige']
-            ];
-            var exampleRow = ['z.B. Gesamtkonferenz', '15.08.2025', '14:00', '15.08.2025', '16:00', 'Konferenz', ''];
-
-            var wsData = infoRows.concat([headerRow, exampleRow]);
-            var ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // Spaltenbreiten
-            ws['!cols'] = [
-                { wch: 30 }, { wch: 14 }, { wch: 10 },
-                { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 25 }
-            ];
-
-            var wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Terminplan');
-            XLSX.writeFile(wb, 'Terminplan-Vorlage.xlsx');
-        }
-
-        /* -------------------------------------------------------
-           Event-Listener
-           ------------------------------------------------------- */
-        var parsedEvents = [];
-        var fileInput = document.getElementById('gshImportFile');
-        var uploadBtn = document.getElementById('gshImportUploadBtn');
-        var templateBtn = document.getElementById('gshImportTemplateBtn');
-        var downloadBtn = document.getElementById('gshImportDownloadBtn');
-        var dropzone = document.getElementById('gshImportDropzone');
-
-        // Datei-Auswahl → Button aktivieren
-        fileInput.addEventListener('change', function() {
-            uploadBtn.disabled = !fileInput.files.length;
-        });
-
-        // Upload-Button → Datei parsen und Vorschau anzeigen
-        uploadBtn.addEventListener('click', function() {
-            if (!fileInput.files.length) return;
-            if (typeof XLSX === 'undefined') {
-                alert('SheetJS (xlsx.js) wurde nicht geladen. Bitte Seite neu laden.');
-                return;
-            }
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                var data = new Uint8Array(e.target.result);
-                parsedEvents = parseExcel(data);
-                if (parsedEvents.length) {
-                    renderPreview(parsedEvents);
-                }
-            };
-            reader.readAsArrayBuffer(fileInput.files[0]);
-        });
-
-        // ICS-Download
-        downloadBtn.addEventListener('click', function() {
-            if (!parsedEvents.length) return;
-            var ics = generateICS(parsedEvents);
-            downloadBlob(ics, 'schuljahresterminplan.ics', 'text/calendar;charset=utf-8');
-        });
-
-        // Vorlage-Download
-        templateBtn.addEventListener('click', function() {
-            if (typeof XLSX === 'undefined') {
-                alert('SheetJS (xlsx.js) wurde nicht geladen. Bitte Seite neu laden.');
-                return;
-            }
-            generateTemplate();
-        });
-
-        // Drag & Drop
-        ['dragenter', 'dragover'].forEach(function(evt) {
-            dropzone.addEventListener(evt, function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.add('dragover');
-            });
-        });
-        ['dragleave', 'drop'].forEach(function(evt) {
-            dropzone.addEventListener(evt, function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove('dragover');
-            });
-        });
-        dropzone.addEventListener('drop', function(e) {
-            var files = e.dataTransfer.files;
-            if (files.length) {
-                fileInput.files = files;
-                uploadBtn.disabled = false;
-                // Automatisch Vorschau anzeigen
-                uploadBtn.click();
-            }
-        });
-
-    })();
-    </script>
-
+        <span class="description" style="margin-left:10px">
+            Entfernt veraltete Sync-Log-Eintr&auml;ge aus der Datenbank aller Profile.
+        </span>
+    </form>
     <?php
 }
 
@@ -2190,9 +2951,9 @@ function gsh_tp_fetch_ical( $profile_id = '' ) {
     }
     $pid = sanitize_key( $profile_id );
 
-    // Profil-spezifische Keys (mit Fallback auf globale Konstanten für Migration)
-    $cache_key = $pid ? 'gsh_tp_ical_' . $pid : GSH_TP_CACHE_KEY;
-    $fresh_key = $pid ? 'gsh_tp_fresh_' . $pid : GSH_TP_FRESH_KEY;
+    // Profil-spezifische Keys (versioniert, mit Fallback auf globale Konstanten für Migration)
+    $cache_key = $pid ? gsh_tp_ck( 'gsh_tp_ical_', $pid ) : GSH_TP_CACHE_KEY;
+    $fresh_key = $pid ? gsh_tp_ck( 'gsh_tp_fresh_', $pid ) : GSH_TP_FRESH_KEY;
 
     // 1. Sofort die gespeicherten Daten liefern (läuft nie ab)
     $data = get_option( $cache_key, '' );
@@ -2241,10 +3002,10 @@ function gsh_tp_fetch_sync( $profile_id = '' ) {
         return '';
     }
 
-    $cache_key  = $pid ? 'gsh_tp_ical_' . $pid   : GSH_TP_CACHE_KEY;
-    $backup_key = $pid ? 'gsh_tp_backup_' . $pid  : GSH_TP_BACKUP_KEY;
-    $fresh_key  = $pid ? 'gsh_tp_fresh_' . $pid   : GSH_TP_FRESH_KEY;
-    $sync_key   = $pid ? 'gsh_tp_sync_' . $pid    : 'gsh_tp_last_sync';
+    $cache_key  = $pid ? gsh_tp_ck( 'gsh_tp_ical_', $pid )   : GSH_TP_CACHE_KEY;
+    $backup_key = $pid ? 'gsh_tp_backup_' . $pid              : GSH_TP_BACKUP_KEY; // Rohdaten – kein Versionssuffix
+    $fresh_key  = $pid ? gsh_tp_ck( 'gsh_tp_fresh_', $pid )  : GSH_TP_FRESH_KEY;
+    $sync_key   = $pid ? 'gsh_tp_sync_' . $pid                : 'gsh_tp_last_sync'; // Zeitstempel – kein Versionssuffix
 
     $resp = wp_remote_get( $url, array(
         'timeout'   => 15,
@@ -2281,8 +3042,8 @@ function gsh_tp_schedule_refresh( $profile_id = '' ) {
         $profile_id = gsh_tp_active_profile_id();
     }
     $pid   = sanitize_key( $profile_id );
-    $guard = $pid ? 'gsh_tp_sched_' . $pid : GSH_TP_FRESH_KEY;
-    $fresh = $pid ? 'gsh_tp_fresh_' . $pid : GSH_TP_FRESH_KEY;
+    $guard = $pid ? 'gsh_tp_sched_' . $pid                   : GSH_TP_FRESH_KEY; // Guard – kein Versionssuffix
+    $fresh = $pid ? gsh_tp_ck( 'gsh_tp_fresh_', $pid )       : GSH_TP_FRESH_KEY;
 
     // Schutz-Transient: verhindert Doppel-Scheduling für 120 Sekunden
     set_transient( $fresh, time(), 120 );
@@ -2324,27 +3085,48 @@ function gsh_tp_do_refresh( $profile_id = '' ) {
     }
 
     if ( empty( $url ) ) {
+        gsh_tp_log_sync_attempt( $profile_id, 'error', array( 'error_type' => 'url_invalid' ) );
         return false;
     }
 
+    $start_ms = round( microtime( true ) * 1000 );
     $resp = wp_remote_get( $url, array(
         'timeout'   => 30, // Im Hintergrund darf es länger dauern
         'sslverify' => true,
         'headers'   => array( 'Accept' => 'text/calendar' ),
     ) );
-    if ( is_wp_error( $resp ) || wp_remote_retrieve_response_code( $resp ) !== 200 ) {
+    $duration_ms = round( microtime( true ) * 1000 ) - $start_ms;
+
+    if ( is_wp_error( $resp ) ) {
+        gsh_tp_log_sync_attempt( $profile_id, 'error', array(
+            'error_type'  => 'network_error',
+            'duration_ms' => $duration_ms,
+            'message'     => $resp->get_error_message(),
+        ) );
+        return false;
+    }
+    if ( wp_remote_retrieve_response_code( $resp ) !== 200 ) {
+        gsh_tp_log_sync_attempt( $profile_id, 'error', array(
+            'error_type'  => 'network_error',
+            'duration_ms' => $duration_ms,
+            'message'     => 'HTTP ' . wp_remote_retrieve_response_code( $resp ),
+        ) );
         return false;
     }
     $body = wp_remote_retrieve_body( $resp );
     if ( strpos( $body, 'BEGIN:VCALENDAR' ) === false ) {
+        gsh_tp_log_sync_attempt( $profile_id, 'error', array(
+            'error_type'  => 'invalid_ical',
+            'duration_ms' => $duration_ms,
+        ) );
         return false;
     }
 
-    // Profil-spezifische Cache-Keys
-    $cache_key  = $pid ? 'gsh_tp_ical_' . $pid   : GSH_TP_CACHE_KEY;
-    $backup_key = $pid ? 'gsh_tp_backup_' . $pid  : GSH_TP_BACKUP_KEY;
-    $fresh_key  = $pid ? 'gsh_tp_fresh_' . $pid   : GSH_TP_FRESH_KEY;
-    $sync_key   = $pid ? 'gsh_tp_sync_' . $pid    : 'gsh_tp_last_sync';
+    // Profil-spezifische Cache-Keys (versionierte Keys für Datenstrukturen)
+    $cache_key  = $pid ? gsh_tp_ck( 'gsh_tp_ical_', $pid )  : GSH_TP_CACHE_KEY;
+    $backup_key = $pid ? 'gsh_tp_backup_' . $pid             : GSH_TP_BACKUP_KEY; // Rohdaten – kein Versionssuffix
+    $fresh_key  = $pid ? gsh_tp_ck( 'gsh_tp_fresh_', $pid ) : GSH_TP_FRESH_KEY;
+    $sync_key   = $pid ? 'gsh_tp_sync_' . $pid               : 'gsh_tp_last_sync'; // Zeitstempel – kein Versionssuffix
 
     // Daten, Backup und Sync-Zeitstempel aktualisieren
     update_option( $cache_key, $body, false );
@@ -2355,8 +3137,8 @@ function gsh_tp_do_refresh( $profile_id = '' ) {
     set_transient( $fresh_key, time(), $dur );
 
     // Snapshot-Diff: Änderungen erkennen und akkumulieren (pro Profil)
-    $snap_key     = $pid ? 'gsh_tp_snap_' . $pid : 'gsh_tp_events_snapshot';
-    $changes_key  = $pid ? 'gsh_tp_chg_' . $pid  : 'gsh_tp_changes';
+    $snap_key     = $pid ? 'gsh_tp_snap_' . $pid                     : 'gsh_tp_events_snapshot'; // Snapshot – kein Versionssuffix
+    $changes_key  = $pid ? gsh_tp_ck( 'gsh_tp_chg_', $pid )         : 'gsh_tp_changes';
     $new_events   = gsh_tp_parse_events( $body );
     $old_snapshot = get_transient( $snap_key );
     $new_snapshot = gsh_tp_build_snapshot( $new_events );
@@ -2376,6 +3158,12 @@ function gsh_tp_do_refresh( $profile_id = '' ) {
 
     // Seiten-Cache von Cache-Plugins invalidieren
     gsh_tp_clear_page_cache();
+
+    // Erfolgreichen Sync-Versuch protokollieren
+    gsh_tp_log_sync_attempt( $profile_id, 'success', array(
+        'event_count' => count( $new_events ),
+        'duration_ms' => $duration_ms,
+    ) );
 
     return true;
 }
@@ -2771,7 +3559,7 @@ function gsh_tp_shortcode( $atts ) {
         if ( ! current_user_can( 'manage_options' ) ) {
             return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
                  . 'border-radius:8px;color:#475569;text-align:center">'
-                 . '&#128274; Dieser Terminplan ist noch nicht freigegeben.</div>';
+                 . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
         }
         $profile_id = '';
         foreach ( gsh_tp_get_profiles() as $p ) {
@@ -2802,7 +3590,7 @@ function gsh_tp_shortcode( $atts ) {
     if ( ! empty( $profile['is_draft'] ) && ! current_user_can( 'manage_options' ) ) {
         return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
              . 'border-radius:8px;color:#475569;text-align:center">'
-             . '&#128274; Dieser Terminplan ist noch nicht freigegeben.</div>';
+             . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
     }
 
     $data = gsh_tp_fetch_ical( $profile_id );
@@ -2843,7 +3631,7 @@ function gsh_tp_shortcode( $atts ) {
 
     // ── Ausgabe zusammenbauen ──
     $pid          = sanitize_key( $profile_id );
-    $chg_key      = $pid ? 'gsh_tp_chg_' . $pid : 'gsh_tp_changes';
+    $chg_key      = $pid ? gsh_tp_ck( 'gsh_tp_chg_', $pid ) : 'gsh_tp_changes';
     $changes      = get_transient( $chg_key );
     $changes_json = esc_attr( wp_json_encode( is_array( $changes ) ? $changes : array() ) );
 
@@ -2860,13 +3648,18 @@ function gsh_tp_shortcode( $atts ) {
     $cats_json = esc_attr( wp_json_encode( $cats_for_js ) );
 
     $o  = gsh_tp_css();
+
+    // Nonce und AJAX-URL für Feedback-AJAX ins Frontend übergeben
+    $feedback_nonce = wp_create_nonce( 'gsh_tp_feedback_nonce' );
+    $ajax_url       = admin_url( 'admin-ajax.php' );
+
     $o .= '<div class="gtp" id="gtp" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
 
     // Entwurfs-Banner
     if ( ! empty( $profile['is_draft'] ) ) {
         $o .= '<div style="background:#fef9c3;border:1px solid #eab308;padding:10px 16px;'
             . 'border-radius:8px;margin-bottom:16px;font-weight:600;color:#92400e">'
-            . '&#128274; ENTWURF &ndash; Dieser Terminplan ist noch nicht beschlossen.</div>';
+            . gsh_tp_icon( 'lock' ) . ' ENTWURF &ndash; Dieser Terminplan ist noch nicht beschlossen.</div>';
     }
 
     // Frontend-Umschalter: erscheint wenn mehrere aktive (nicht-Entwurf) Profile vorhanden
@@ -2893,18 +3686,24 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Gesamtschule Horst</span>';
     $o .= '</div>';
     $o .= '<div class="gtp-search">';
+    $o .= '<div class="gtp-search-wrap">';
+    $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
-        . ' placeholder="&#128269; Termin suchen&hellip;" autocomplete="off"'
+        . ' placeholder="Termin suchen…" autocomplete="off"' // Bugfix: \u2026 ist nur in JS gültig – UTF-8-Literal verwenden
         . ' oninput="gtpSearchInput(this.value)" />';
-    $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
     $o .= '</div>';
+    $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
+    $o .= '</div>'; // .gtp-search
     $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
+    $o .= '<button type="button" id="gtp-tour-btn" onclick="gtpTourStart(true)"'
+        . ' aria-label="Hilfe-Tour starten"'
+        . ' title="Hilfe-Tour starten">&#10067;</button>';
     $o .= '</div>'; // .gtp-hd
 
     // Änderungs-Banner (wird per JS befüllt und ggf. eingeblendet)
     $o .= '<div class="gtp-changes" id="gtpChanges" style="display:none">';
     $o .= '<div class="gtp-changes-inner">';
-    $o .= '<span class="gtp-changes-icon">&#128276;</span>';
+    $o .= '<span class="gtp-changes-icon">' . gsh_tp_icon( 'bell' ) . '</span>';
     $o .= '<span class="gtp-changes-text" id="gtpChangesText"></span>';
     $o .= '<button type="button" class="gtp-changes-show" id="gtpChangesShow"'
         . ' onclick="gtpChangesToggle()">Anzeigen</button>';
@@ -2926,17 +3725,17 @@ function gsh_tp_shortcode( $atts ) {
 
     // Filter-Buttons (dynamisch aus Kategorie-Einstellungen)
     $o .= '<div class="gtp-filt-wrap">';
-    $o .= '<span class="gtp-filt-lbl">Anzeige filtern:</span>';
+    $o .= '<span class="gtp-filt-lbl">Anzeige filtern: <span id="gtp-filt-count" class="gtp-filt-count"></span></span>';
     $o .= '<div class="gtp-filt">';
     foreach ( gsh_tp_get_categories() as $cat ) {
         $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="'
-            . esc_attr( $cat['slug'] ) . '" onclick="gtpFil(this)">'
+            . esc_attr( $cat['slug'] ) . '" onclick="gtpFil(this)" aria-pressed="true">'
             . esc_html( $cat['label'] ) . '</button>';
     }
     // „Sonstige"-Button für Termine ohne Kategorie-Match
-    $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="standard" onclick="gtpFil(this)">Sonstige</button>';
+    $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="standard" onclick="gtpFil(this)" aria-pressed="true">Sonstige</button>';
     $o .= '<button type="button" id="gtp-reset" class="gtp-reset" onclick="gtpReset()" style="display:none">'
-        . '&#10005; Alle anzeigen</button>';
+        . gsh_tp_icon( 'x', '0.85em' ) . ' Alle anzeigen</button>';
     $o .= '</div></div>';
 
     // Quartalspanels
@@ -2955,12 +3754,94 @@ function gsh_tp_shortcode( $atts ) {
 
     // Footer mit PDF-Buttons
     $o .= '<div class="gtp-ft">';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf()">&#128196; Quartal als PDF</button>';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll()">&#128196; Alle Quartale als PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf()">' . gsh_tp_icon( 'file-text' ) . ' Quartal als PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll()">' . gsh_tp_icon( 'file-text' ) . ' Alle Quartale als PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-feedback" id="gtp-feedback-btn"'
+        . ' onclick="gtpFeedbackOpen()" aria-label="Feedback geben">'
+        . '&#128172; Feedback</button>';
     $o .= '<span class="gtp-src">Quelle: IServ-Kalender</span>';
-    $o .= '</div>';
+    $o .= ' &nbsp;|&nbsp; <button type="button" class="gtp-version-btn" '
+        . 'onclick="gtpChangelogOpen()" aria-label="Changelog anzeigen">'
+        . 'v' . esc_html( GSH_TP_VERSION ) . '</button>';
+    $o .= '</div>'; // .gtp-ft
 
-    $o .= '<button type="button" id="gtp-heute-btn" onclick="gtpScrollToday()" aria-label="Zur heutigen Woche springen">&#128205; Heute</button>';
+    // ── Feedback-Modal (wp_mail, seit 3.12.0) ────────────────────────────────
+    $o .= '<div id="gtp-feedback-overlay" class="gtp-popup-overlay" role="dialog"'
+        . ' aria-modal="true" aria-labelledby="gtp-feedback-title"'
+        . ' style="display:none" tabindex="-1">';
+    $o .= '<div class="gtp-popup-card gtp-feedback-card">';
+    $o .= '<button type="button" class="gtp-popup-close" onclick="gtpFeedbackClose()"'
+        . ' aria-label="Schließen">&times;</button>';
+    $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">&#128172; Feedback geben</h3>';
+    $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.</p>';
+    // Honeypot: verstecktes Anti-Spam-Feld (muss leer bleiben)
+    $o .= '<input type="text" name="gsh_tp_hp" id="gtp-feedback-hp" '
+        . 'autocomplete="off" tabindex="-1" '
+        . 'style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" '
+        . 'aria-hidden="true">';
+    // Typ-Auswahl
+    $o .= '<div class="gtp-feedback-types" role="group" aria-label="Feedback-Typ wählen">';
+    $types = array(
+        'bug'    => array( 'emoji' => '&#128027;', 'label' => 'Fehler melden' ),
+        'wish'   => array( 'emoji' => '&#128161;', 'label' => 'Funktionswunsch' ),
+        'praise' => array( 'emoji' => '&#128077;', 'label' => 'Lob' ),
+        'other'  => array( 'emoji' => '&#128172;', 'label' => 'Sonstiges' ),
+    );
+    foreach ( $types as $key => $t ) {
+        $o .= '<button type="button" class="gtp-feedback-type" data-type="' . esc_attr( $key ) . '"'
+            . ' onclick="gtpFeedbackType(this)">'
+            . $t['emoji'] . ' ' . esc_html( $t['label'] ) . '</button>';
+    }
+    $o .= '</div>';
+    // Optionales Absender-Feld
+    $o .= '<div class="gtp-feedback-field">';
+    $o .= '<label for="gtp-feedback-sender" class="gtp-feedback-label">Dein Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>';
+    $o .= '<input type="text" id="gtp-feedback-sender" class="gtp-feedback-textarea" '
+        . 'style="min-height:auto;resize:none;padding:8px 14px" '
+        . 'maxlength="80" placeholder="z. B. Frau Muster" autocomplete="name">';
+    $o .= '</div>';
+    // Freitextfeld
+    $o .= '<div class="gtp-feedback-field">';
+    $o .= '<label for="gtp-feedback-text" class="gtp-feedback-label">Dein Anliegen</label>';
+    $o .= '<textarea id="gtp-feedback-text" class="gtp-feedback-textarea"'
+        . ' rows="4" maxlength="1000"'
+        . ' placeholder="Was ist aufgefallen? Was wünschst du dir?"></textarea>';
+    $o .= '<div class="gtp-feedback-counter"><span id="gtp-feedback-count">0</span> / 1000</div>';
+    $o .= '</div>';
+    // Status-Meldung (per JS befüllt)
+    $o .= '<div id="gtp-feedback-status" class="gtp-feedback-status" style="display:none"></div>';
+    // Aktions-Buttons
+    $o .= '<div class="gtp-feedback-actions">';
+    $o .= '<button type="button" class="gtp-btn" id="gtp-feedback-submit"'
+        . ' onclick="gtpFeedbackSubmit()" disabled>Absenden</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpFeedbackClose()">Abbrechen</button>';
+    $o .= '</div>';
+    $o .= '</div>'; // .gtp-feedback-card
+    $o .= '</div>'; // #gtp-feedback-overlay
+
+    $o .= '<button type="button" id="gtp-heute-btn" onclick="gtpScrollToday()" aria-label="Zur heutigen Woche springen">' . gsh_tp_icon( 'map-pin' ) . ' Heute</button>';
+
+    // ── Theme-Switcher (schwebendes Gear-Icon unten rechts) ──────────────────
+    $o .= '<div id="gtp-theme-wrap" aria-label="Theme-Einstellungen">';
+    $o .= '<div id="gtp-theme-panel" role="group" aria-label="Theme wählen">';
+    $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="light" '
+        . 'onclick="gtpSetTheme(\'light\')" aria-label="Helles Theme">'
+        . '<span class="gtp-theme-opt-icon">&#9728;&#65039;</span> Hell'
+        . '</button>';
+    $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="dark" '
+        . 'onclick="gtpSetTheme(\'dark\')" aria-label="Dunkles Theme">'
+        . '<span class="gtp-theme-opt-icon">&#127769;</span> Dunkel'
+        . '</button>';
+    $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="auto" '
+        . 'onclick="gtpSetTheme(\'auto\')" aria-label="System-Theme">'
+        . '<span class="gtp-theme-opt-icon">&#128187;</span> System'
+        . '</button>';
+    $o .= '</div>'; // #gtp-theme-panel
+    $o .= '<button type="button" id="gtp-theme-btn" onclick="gtpThemeToggle()" '
+        . 'aria-label="Theme wechseln" aria-expanded="false">'
+        . '&#9881;&#65039;'
+        . '</button>';
+    $o .= '</div>'; // #gtp-theme-wrap
 
     // Event-Detail-Popup – einmalig im DOM, wird per JS befüllt und geöffnet
     $o .= '<div id="gtpPopup" class="gtp-popup-overlay" role="dialog" aria-modal="true" aria-labelledby="gtpPopupTitle" style="display:none" tabindex="-1">';
@@ -2974,6 +3855,52 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-popup-desc" id="gtpPopupDesc"></div>';
     $o .= '</div>'; // .gtp-popup-card
     $o .= '</div>'; // #gtpPopup
+
+    // ── Changelog-Modal (Frontend) ───────────────────────────────────────────
+    // Zeigt nur FEATURE/UX/BUGFIX/SECURITY, maximal die letzten 3 Versionen
+    $cl_frontend_tags = array( 'FEATURE', 'UX', 'BUGFIX', 'SECURITY' );
+    $cl_all           = gsh_tp_changelog();
+    $cl_frontend      = array();
+    foreach ( $cl_all as $version_block ) {
+        $filtered = array_values( array_filter(
+            $version_block['entries'],
+            static fn( $e ) => in_array( $e['tag'], $cl_frontend_tags, true )
+        ) );
+        if ( ! empty( $filtered ) ) {
+            $cl_frontend[] = array(
+                'version' => $version_block['version'],
+                'entries' => $filtered,
+            );
+        }
+        if ( count( $cl_frontend ) >= 3 ) {
+            break;
+        }
+    }
+
+    $o .= '<div id="gtpChangelog" class="gtp-popup-overlay" role="dialog" aria-modal="true" '
+        . 'aria-label="Changelog" style="display:none" tabindex="-1">';
+    $o .= '<div class="gtp-popup-card gtp-changelog-card">';
+    $o .= '<button type="button" class="gtp-popup-close" onclick="gtpChangelogClose()" '
+        . 'aria-label="Schließen">&times;</button>';
+    $o .= '<h3 class="gtp-popup-title">&#128221; Was ist neu?</h3>';
+    foreach ( $cl_frontend as $block ) {
+        $o .= '<div class="gtp-cl-version">';
+        $o .= '<span class="gtp-cl-vtag">Version ' . esc_html( $block['version'] ) . '</span>';
+        $o .= '<ul class="gtp-cl-list">';
+        foreach ( $block['entries'] as $entry ) {
+            $tag_class = 'gtp-cl-tag gtp-cl-tag--' . strtolower( esc_attr( $entry['tag'] ) );
+            $o .= '<li><span class="' . $tag_class . '">' . esc_html( $entry['tag'] ) . '</span> '
+                . esc_html( $entry['text'] ) . '</li>';
+        }
+        $o .= '</ul>';
+        $o .= '</div>';
+    }
+    $o .= '</div>'; // .gtp-changelog-card
+    $o .= '</div>'; // #gtpChangelog
+
+    // Versteckte Felder für JS (AJAX-URL und Nonce)
+    $o .= '<input type="hidden" id="gtp-ajax-url" value="' . esc_attr( $ajax_url ) . '">';
+    $o .= '<input type="hidden" id="gtp-feedback-nonce" value="' . esc_attr( $feedback_nonce ) . '">';
 
     $o .= '</div>'; // .gtp
     $o .= gsh_tp_js();
@@ -3080,11 +4007,14 @@ function gsh_tp_table( $index, $qd, $sjs ) {
     $c   = clone $qs;
     $lim = 50; // Sicherheit gegen Endlosschleifen
 
+    // Spaltenbezeichner für data-label (Card-Layout im Bereich 1024–1200 px)
+    $day_labels = array( 'Mo', 'Di', 'Mi', 'Do', 'Fr' );
+
     while ( $c <= $qe && $lim-- > 0 ) {
         $sw      = gsh_tp_schulwoche( $c->format( 'Y-m-d' ), $sjs );
         $friday  = ( clone $c )->modify( '+4 days' )->format( 'Y-m-d' );
         $h .= $friday < $td ? '<tr class="gtp-past">' : '<tr>';
-        $h .= '<td class="gs"><b>' . ( $sw > 0 ? sprintf( '%02d', $sw ) : '–' ) . '</b></td>';
+        $h .= '<td class="gs" data-label="' . esc_attr__( 'SW', 'gsh-terminplan' ) . '"><b>' . ( $sw > 0 ? sprintf( '%02d', $sw ) : '–' ) . '</b></td>';
 
         // ── Vorarbeiten: Lange Termine dieser Woche für die Hinweise-Spalte sammeln ──
         // Ein Termin gilt als "lang", wenn er >= 5 Tage dauert (ganze Woche oder länger).
@@ -3131,7 +4061,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
                 $cl .= ' gt-hol';
             }
 
-            $h .= '<td class="' . esc_attr( $cl ) . '">';
+            $h .= '<td class="' . esc_attr( $cl ) . '" data-label="' . esc_attr( $day_labels[ $d ] ) . '">';
             $h .= '<span class="gdl">' . esc_html( $dy->format( 'd.m.' ) ) . '</span>';
 
             foreach ( $de as $ev ) {
@@ -3161,7 +4091,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
         }
 
         // ── Hinweise-Spalte rendern ──
-        $h .= '<td class="gh gnc">';
+        $h .= '<td class="gh gnc" data-label="' . esc_attr__( 'Hinweise', 'gsh-terminplan' ) . '">';
 
         // Lange Termine (mit Kategorie-Farbe und Datumsbereich)
         foreach ( $hinweise_long as $ev ) {
@@ -3307,16 +4237,16 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
     // ── Sticky Navigationsleiste ──
     $h .= '<div class="gtp-mob-nav">';
     $h .= '<button type="button" class="gtp-mob-prev" onclick="gtpMobNav(this,-1)"'
-        . ( 0 === $start ? ' disabled' : '' ) . '>&#8249;</button>';
+        . ( 0 === $start ? ' disabled' : '' ) . '>' . gsh_tp_icon( 'chevron-left' ) . '</button>';
     $h .= '<div class="gtp-mob-nav-info">'
         . '<div class="gtp-mob-nav-sw"></div>'   // wird von JS befüllt
         . '<div class="gtp-mob-nav-dates"></div>' // wird von JS befüllt
         . '</div>';
     // 📍-Button springt zur aktuellen Woche zurück
     $h .= '<button type="button" class="gtp-mob-today-btn" onclick="gtpMobToday(this)"'
-        . ' aria-label="Zur heutigen Woche springen">&#128205;</button>';
+        . ' aria-label="Zur heutigen Woche springen">' . gsh_tp_icon( 'map-pin' ) . '</button>';
     $h .= '<button type="button" class="gtp-mob-next" onclick="gtpMobNav(this,1)"'
-        . ( ( $start + 2 ) >= $total ? ' disabled' : '' ) . '>&#8250;</button>';
+        . ( ( $start + 2 ) >= $total ? ' disabled' : '' ) . '>' . gsh_tp_icon( 'chevron-right' ) . '</button>';
     $h .= '</div>';
 
     // ── Wochen-Container ──
@@ -3339,7 +4269,8 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
         // JS übernimmt ab dann die Navigation.
         $week_vis = ( $wi >= $start && $wi < $start + 2 ) ? '' : ' style="display:none"';
 
-        $h .= '<div class="gtp-mob-week" data-wi="' . $wi . '"' . $week_vis . '>';
+        $week_cls = 'gtp-mob-week' . ( $wi === $today_week_idx ? ' gtp-mob-today-week' : '' );
+        $h .= '<div class="' . $week_cls . '" data-wi="' . $wi . '"' . $week_vis . '>';
 
         // Wochenkopf: sticky, klebt unter der Navigationsleiste
         $h .= '<div class="gtp-mob-wh">';
@@ -3463,6 +4394,20 @@ function gsh_tp_css() {
   /* Übergänge */
   --gtp-tr:           all 0.3s ease;
   --gtp-tr-fast:      all 0.15s ease;
+  /* Spacing-Tokens (basierend auf 4px-Raster) */
+  --gtp-space-1:  4px;
+  --gtp-space-2:  8px;
+  --gtp-space-3:  12px;
+  --gtp-space-4:  16px;
+  --gtp-space-6:  24px;
+  --gtp-space-8:  32px;
+  /* Border-Radius-Tokens */
+  --gtp-radius-sm:   4px;
+  --gtp-radius-md:   8px;
+  --gtp-radius-lg:   12px;
+  --gtp-radius-xl:   16px;
+  --gtp-radius-pill: 50px;
+  --gtp-radius-full: 50%;
   /* Kategorie – Standard (Neutral/Pastell) – immer als Fallback vorhanden */
   --c-st-bg:#f1f5f9; --c-st-bd:#64748b; --c-st-tx:#334155;
   /* Konfigurierbare Kategorien (dynamisch – via gsh_tp_category_css()) */
@@ -3523,14 +4468,20 @@ function gsh_tp_css() {
   display:block;margin-bottom:.6rem;
 }
 .gtp-filt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gtp-filt-count{
+  font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
+  margin-left:.35em;letter-spacing:.02em;text-transform:none;
+}
 .gtp-fb{
   padding:5px 14px;border:1.5px solid;border-radius:20px;
   font-size:.75rem;cursor:pointer;font-weight:600;line-height:1.5;
-  transition:var(--gtp-tr);
+  transition:var(--gtp-tr);user-select:none;
 }
 .gtp-fb[data-c="standard"] {border-color:var(--c-st-bd);background:var(--c-st-bg);color:var(--c-st-tx)}
 .gtp-fb:hover{filter:brightness(.9);transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.1)}
-.gtp-fb-off{opacity:.25;filter:grayscale(.7)}
+/* Toggle-Zustand: aktiv = volle Farbe, inaktiv = deutlich gedimmt */
+.gtp-fb-on{/* volle Farbe via .gc-* / [data-c] Regeln */}
+.gtp-fb-off{opacity:.28;filter:grayscale(.8);text-decoration:line-through;text-decoration-thickness:1.5px}
 
 /* Reset-Button */
 .gtp-reset{
@@ -3810,6 +4761,27 @@ function gsh_tp_css() {
   .admin-bar .gtp-mob-wh{top:124px}
   .gtp-mob-wh-sub{font-weight:400;color:var(--gtp-text-faint);font-size:.7rem;text-transform:none;letter-spacing:0}
 
+  /* ── Heutige Woche: pulsierender Punkt + hervorgehobener Header ── v3.6.3 */
+  @keyframes gtpMobPulse{
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(1.55)}
+  }
+  .gtp-mob-today-week .gtp-mob-wh{
+    background:var(--gtp-today-bg);
+    color:var(--gtp-today-bd);
+    border-bottom-color:var(--gtp-today-bd);
+  }
+  .gtp-mob-today-week .gtp-mob-wh::before{
+    content:"";display:inline-block;flex-shrink:0;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--gtp-today-bd);margin-right:8px;
+    animation:gtpMobPulse 1.6s ease-in-out infinite;
+  }
+  .gtp-mob-today-week .gtp-mob-wh-sub{color:var(--gtp-today-bd);opacity:.7}
+
+  /* Vergrößerter „HEUTE"-Badge (v3.6.3) */
+  .gtp-mob-badge{font-size:.62rem;padding:2px 6px;border-radius:5px}
+
   /* ── Tag-Zeile (Feed-Karte) ── */
   .gtp-mob-day{
     display:flex;gap:12px;
@@ -3993,6 +4965,39 @@ function gsh_tp_css() {
 @media print{
   .gtp-popup-overlay{display:none!important}
 }
+/* ── Changelog-Modal (Frontend) ────────────────────────────────────────── */
+.gtp-version-btn{
+  background:var(--gtp-surface,#f8fafc);
+  border:1px solid var(--gtp-border,#e2e8f0);border-radius:4px;
+  padding:3px 9px;font-size:11px;color:var(--gtp-text-muted,#64748b);
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+  font-family:inherit;
+}
+.gtp-version-btn:hover{
+  background:var(--gtp-accent,#2563eb);color:#fff;
+  border-color:var(--gtp-accent,#2563eb);
+}
+.gtp-changelog-card{
+  max-width:560px;
+  max-height:75vh;
+  overflow-y:auto;
+}
+.gtp-cl-version{margin-bottom:1.2rem}
+.gtp-cl-vtag{
+  display:inline-block;font-weight:700;font-size:13px;
+  color:var(--gtp-text,#1e293b);margin-bottom:.4rem;
+}
+.gtp-cl-list{margin:.3rem 0 0 1rem;padding:0;list-style:disc}
+.gtp-cl-list li{font-size:13px;color:var(--gtp-text-muted,#64748b);margin:.25rem 0}
+.gtp-cl-tag{
+  display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;padding:1px 6px;border-radius:3px;
+  margin-right:5px;vertical-align:middle;
+}
+.gtp-cl-tag--feature {background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
+.gtp-cl-tag--ux      {background:#dbeafe;color:#2563eb;border:1px solid #bfdbfe}
+.gtp-cl-tag--bugfix  {background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
+.gtp-cl-tag--security{background:#fef3c7;color:#d97706;border:1px solid #fde68a}
 /* ── Dynamische Kategorie-CSS (konfigurierbare Kategorien überschreiben Standard) ── */
 ' . $cat['rules'] . '
 </style>';
@@ -4080,46 +5085,40 @@ function gtpTab(q){
    Reset-Button: Zurück zu "all".
    ══════════════════════════════════════════════════════ */
 
-var gtpMode = "all";   // "all" | "select"
-var gtpSel  = {};      // { kategorie: true, ... } im Modus "select"
+var gtpSel = {}; // { slug: true } → Kategorie VERSTECKT; leer = alle sichtbar
 
 /**
  * Verarbeitet einen Klick auf einen Kategorie-Filterbutton.
- * Erster Klick: wechselt in den Exklusiv-Modus (nur diese Kategorie sichtbar).
- * Weiterer Klick auf aktive Kategorie: deaktiviert sie. Sind alle deaktiviert,
- * kehrt der Modus zu "all" zurück. Aufgerufen durch onclick der .gtp-fb-Buttons.
+ * Jeder Klick schaltet die Kategorie unabhängig ein oder aus (echter Toggle-Modus).
+ * Der Zustand wird in localStorage gespeichert und beim nächsten Besuch wiederhergestellt.
+ * Aufgerufen durch onclick der .gtp-fb-Buttons.
  */
 function gtpFil(btn){
   var c = btn.getAttribute("data-c");
-
-  if(gtpMode === "all"){
-    /* Erster Klick: Exklusiv-Modus starten */
-    gtpMode = "select";
-    gtpSel  = {};
-    gtpSel[c] = true;
+  if(gtpSel[c]){
+    delete gtpSel[c]; /* Kategorie wieder einblenden */
   } else {
-    if(gtpSel[c]){
-      /* Aktive Kategorie ausschalten */
-      delete gtpSel[c];
-      if(Object.keys(gtpSel).length === 0){
-        gtpMode = "all"; /* Alle deaktiviert → zurück zu "alle anzeigen" */
-      }
-    } else {
-      /* Weitere Kategorie hinzuschalten */
-      gtpSel[c] = true;
-    }
+    gtpSel[c] = true; /* Kategorie ausblenden */
   }
   gtpApply();
+  gtpSaveFilters();
 }
 
 /**
- * Setzt den Kategorie-Filter zurück – alle Termine werden wieder angezeigt.
+ * Speichert den aktuellen Filter-Zustand im localStorage.
+ */
+function gtpSaveFilters(){
+  try{ localStorage.setItem("gtp_filters", JSON.stringify(gtpSel)); }catch(e){}
+}
+
+/**
+ * Setzt den Kategorie-Filter zurück – alle Kategorien werden wieder eingeblendet.
  * Aufgerufen durch onclick des Reset-Buttons (#gtp-reset).
  */
 function gtpReset(){
-  gtpMode = "all";
-  gtpSel  = {};
+  gtpSel = {};
   gtpApply();
+  gtpSaveFilters();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -4139,7 +5138,7 @@ function gtpReset(){
  */
 function gtpApplyVisibility(el){
   var c = el.getAttribute("data-c");
-  var categoryOk = (gtpMode === "all") || !!gtpSel[c];
+  var categoryOk = !gtpSel[c]; /* sichtbar wenn Kategorie nicht in der Versteckt-Liste */
 
   /* Kategorie-Filter: komplett verstecken wenn nicht passend */
   el.style.display = categoryOk ? "" : "none";
@@ -4165,15 +5164,27 @@ function gtpApplyVisibility(el){
  * Zeigt oder versteckt den Reset-Button je nach Filterzustand.
  */
 function gtpApply(){
-  var isAll = (gtpMode === "all");
+  var hiddenCount = Object.keys(gtpSel).length;
+  var totalBtns = 0, visibleBtns = 0;
 
   /* Filter-Buttons aktualisieren */
   document.querySelectorAll(".gtp-fb").forEach(function(btn){
-    var c = btn.getAttribute("data-c");
-    var active = isAll || !!gtpSel[c];
+    var c      = btn.getAttribute("data-c");
+    var active = !gtpSel[c]; /* aktiv = NICHT in der Versteckt-Liste */
+    totalBtns++;
+    if(active) visibleBtns++;
     btn.classList.toggle("gtp-fb-on",  active);
     btn.classList.toggle("gtp-fb-off", !active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
+
+  /* Zähler-Label aktualisieren */
+  var countEl = document.getElementById("gtp-filt-count");
+  if(countEl){
+    countEl.textContent = hiddenCount > 0
+      ? "(" + visibleBtns + "\u202f/\u202f" + totalBtns + " sichtbar)"
+      : "";
+  }
 
   /* Termine in Tagesspalten: kombinierter Check (Suche + Kategorie) */
   document.querySelectorAll(".ge[data-c]").forEach(function(el){
@@ -4183,12 +5194,12 @@ function gtpApply(){
   /* Lange Termine + Frist-Notizen: nur Kategorie-Filter */
   document.querySelectorAll(".gn-long[data-c], .gn[data-c]").forEach(function(el){
     var c = el.getAttribute("data-c");
-    el.style.display = (isAll || !!gtpSel[c]) ? "" : "none";
+    el.style.display = !gtpSel[c] ? "" : "none";
   });
 
   /* Reset-Button zeigen / verstecken */
   var resetBtn = document.getElementById("gtp-reset");
-  if(resetBtn) resetBtn.style.display = isAll ? "none" : "";
+  if(resetBtn) resetBtn.style.display = hiddenCount > 0 ? "" : "none";
 }
 
 /* ════════════════════════════════════════════════════════
@@ -4392,6 +5403,11 @@ window.addEventListener("resize",gtpUpdateHeuteBtn,{passive:true});
 /* DOM-Ready: Änderungs-Banner auswerten */
 document.addEventListener("DOMContentLoaded",function(){
   gtpChangesInit();
+  /* Filter-Zustand aus localStorage wiederherstellen */
+  try{
+    var saved = localStorage.getItem("gtp_filters");
+    if(saved){ gtpSel = JSON.parse(saved); gtpApply(); }
+  }catch(e){}
 });
 
 setTimeout(function(){
@@ -4620,6 +5636,36 @@ function gtpPrint(mode,pdfTitle){
    ══════════════════════════════════════════════════════ */
 
 /**
+ * Zeigt "👉 Heute" in der Nav-Mitte wenn die aktuelle Woche im Sichtfenster liegt.
+ * Wird von gtpMobUpdateNav() nach jedem Navigationsschritt aufgerufen.
+ * @param {Element} container  Das .gtp-mob-weeks Element.
+ * @param {Element} mob        Das übergeordnete .gtp-mob Element.
+ * @param {number}  start      Aktueller Fensterbeginn (data-start).
+ * @param {number}  visible    Fenstergröße (data-visible).
+ */
+function gtpMobTodayIndicator(container,mob,start,visible){
+  var todayIdx=parseInt(container.getAttribute("data-today-idx"),10);
+  if(isNaN(todayIdx)) return;
+  var swEl=mob.querySelector(".gtp-mob-nav-sw");
+  if(!swEl) return;
+  var inWindow=(todayIdx>=start&&todayIdx<start+visible);
+  /* Kleinen "Heute"-Hinweis voranstellen wenn die heutige Woche sichtbar ist */
+  if(inWindow){
+    swEl.setAttribute("data-gtp-had-today","1");
+    if(swEl.firstChild&&swEl.firstChild.nodeType===Node.TEXT_NODE){
+      /* Prefix nur einmal hinzufügen */
+      if(swEl.textContent.indexOf("\ud83d\udc49")===0) return;
+      swEl.textContent="\ud83d\udc49\u00a0"+swEl.textContent;
+    }
+  } else {
+    /* Heute nicht im Fenster → Prefix entfernen falls vorhanden */
+    if(swEl.textContent.indexOf("\ud83d\udc49")===0){
+      swEl.textContent=swEl.textContent.replace(/^\ud83d\udc49\u00a0/,"");
+    }
+  }
+}
+
+/**
  * Aktualisiert die Anzeige in der sticky Nav-Leiste.
  * Liest die Inhalte der sichtbaren .gtp-mob-wh Köpfe und zeigt
  * Schulwoche(n) und Datumsbereich kompakt an.
@@ -4656,6 +5702,11 @@ function gtpMobUpdateNav(container){
     var lp=lSub.textContent.split("\u2013");
     dtEl.textContent=(fp[0]||"").trim()+" \u2013 "+(lp[1]||lp[0]||"").trim();
   }
+
+  /* Heute-Indikator in der Nav aktualisieren (v3.6.3) */
+  var start  =parseInt(container.getAttribute("data-start"),  10)||0;
+  var visible=parseInt(container.getAttribute("data-visible"),10)||2;
+  gtpMobTodayIndicator(container,mob,start,visible);
 }
 
 /**
@@ -5162,6 +6213,359 @@ document.addEventListener("click",function(e){
   if(popup && popup.style.display!=="none" && e.target===popup){
     gtpPopupClose();
   }
+  /* Changelog-Modal: Klick auf Overlay-Hintergrund schließt es */
+  var cl=document.getElementById("gtpChangelog");
+  if(cl && cl.style.display!=="none" && e.target===cl){
+    gtpChangelogClose();
+  }
+});
+
+/* ── Changelog-Modal (Frontend) ────────────────────────────── */
+function gtpChangelogOpen(){
+  var m=document.getElementById("gtpChangelog");
+  if(!m)return;
+  m.style.display="flex";
+  m.focus();
+}
+function gtpChangelogClose(){
+  var m=document.getElementById("gtpChangelog");
+  if(m)m.style.display="none";
+}
+
+/* ── Changelog-Modal (Admin) ────────────────────────────────── */
+function gshAdminChangelogOpen(){
+  var m=document.getElementById("gshAdminChangelog");
+  if(m)m.style.display="block";
+}
+function gshAdminChangelogClose(){
+  var m=document.getElementById("gshAdminChangelog");
+  if(m)m.style.display="none";
+}
+
+/* Escape-Taste schließt beide Changelog-Modals */
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){
+    gtpChangelogClose();
+    gshAdminChangelogClose();
+  }
+});
+
+/* ── Theme-Switcher ─────────────────────────────────────────────── */
+
+/**
+ * Theme auf den .gtp-Container anwenden und in localStorage speichern.
+ * @param {string} mode  'light' | 'dark' | 'auto'
+ */
+function gtpSetTheme(mode){
+  if(mode!=="light"&&mode!=="dark"&&mode!=="auto")mode="auto";
+  var container=document.getElementById("gtp");
+  if(container)container.setAttribute("data-gtp-theme",mode);
+  try{localStorage.setItem("gtp-theme",mode);}catch(e){}
+  /* Aktiv-Klasse auf den gewählten Button setzen */
+  document.querySelectorAll(".gtp-theme-opt").forEach(function(btn){
+    btn.classList.toggle("gtp-theme-opt-active",btn.getAttribute("data-gtp-mode")===mode);
+  });
+  gtpThemePanelClose();
+}
+
+/**
+ * Gespeicherte Theme-Einstellung beim Laden anwenden.
+ * Läuft sofort – verhindert Aufblitzen des falschen Themes.
+ */
+function gtpInitTheme(){
+  var saved="auto";
+  try{saved=localStorage.getItem("gtp-theme")||"auto";}catch(e){}
+  if(saved!=="light"&&saved!=="dark"&&saved!=="auto")saved="auto";
+  gtpSetTheme(saved);
+}
+
+/** Theme-Panel öffnen / schließen */
+function gtpThemeToggle(){
+  var panel=document.getElementById("gtp-theme-panel");
+  var btn=document.getElementById("gtp-theme-btn");
+  if(!panel||!btn)return;
+  if(panel.classList.contains("gtp-theme-panel-vis")){
+    gtpThemePanelClose();
+  }else{
+    panel.classList.add("gtp-theme-panel-vis");
+    btn.classList.add("gtp-theme-open");
+    btn.setAttribute("aria-expanded","true");
+  }
+}
+
+function gtpThemePanelClose(){
+  var panel=document.getElementById("gtp-theme-panel");
+  var btn=document.getElementById("gtp-theme-btn");
+  if(panel)panel.classList.remove("gtp-theme-panel-vis");
+  if(btn){btn.classList.remove("gtp-theme-open");btn.setAttribute("aria-expanded","false");}
+}
+
+/* Panel schließen bei Klick außerhalb des Theme-Wrappers */
+document.addEventListener("click",function(e){
+  var wrap=document.getElementById("gtp-theme-wrap");
+  if(wrap&&!wrap.contains(e.target))gtpThemePanelClose();
+});
+
+/* Escape schließt das Panel */
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape")gtpThemePanelClose();
+});
+
+/* System-Theme live übernehmen wenn Modus = auto */
+if(window.matchMedia){
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){
+    var container=document.getElementById("gtp");
+    if(container&&container.getAttribute("data-gtp-theme")==="auto"){
+      /* data-gtp-theme="auto" bleibt – CSS @media-Regel übernimmt die Darstellung */
+      document.querySelectorAll(".gtp-theme-opt").forEach(function(btn){
+        btn.classList.toggle("gtp-theme-opt-active",btn.getAttribute("data-gtp-mode")==="auto");
+      });
+    }
+  });
+}
+
+/* Theme sofort initialisieren (kein Aufblitzen) */
+gtpInitTheme();
+
+/* ── Onboarding-Tour (Shepherd.js) ──────────────────────────── */
+
+/**
+ * Startet die Onboarding-Tour.
+ * @param {boolean} force  true = auch wenn bereits gesehen (manueller Start)
+ */
+function gtpTourStart(force) {
+  // Shepherd.js noch nicht geladen? Abbruch mit Hinweis.
+  if (typeof Shepherd === 'undefined') {
+    console.warn('GSH Tour: Shepherd.js nicht geladen.');
+    return;
+  }
+
+  // Beim ersten Besuch automatisch starten – sonst nur wenn force=true
+  var seen = false;
+  try { seen = !!localStorage.getItem('gtp-tour-seen'); } catch(e) {}
+  if (seen && !force) return;
+
+  var tour = new Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      cancelIcon:  { enabled: true },
+      scrollTo:    { behavior: 'smooth', block: 'center' },
+      modalOverlayOpeningRadius: 8,
+      popperOptions: {
+        modifiers: [{ name: 'offset', options: { offset: [0, 14] } }]
+      }
+    }
+  });
+
+  // Hilfsfunktion: Shepherd-native Buttons-Array bauen
+  function makeButtons(idx, total, isLast) {
+    var btns = [];
+    if (idx > 1) {
+      btns.push({
+        text:    '\u276E',
+        classes: 'shepherd-button shepherd-button-secondary gtp-tour-arrow',
+        action:  function() { tour.back(); }
+      });
+    }
+    btns.push({
+      text:    isLast ? '\u2713' : '\u276F',
+      classes: 'shepherd-button shepherd-button-primary gtp-tour-arrow',
+      action:  function() { isLast ? tour.complete() : tour.next(); }
+    });
+    return btns;
+  }
+
+  var steps = [
+    {
+      id:      'tabs',
+      title:   '\uD83D\uDCC5 Quartal-Navigation',
+      text:    'Mit diesen Tabs wechselst du zwischen den vier Schulquartalen. Das aktuelle Quartal ist beim \u00D6ffnen automatisch ausgew\u00E4hlt.',
+      attachTo: { element: '.gtp-tabs', on: 'bottom' },
+      index:    1
+    },
+    {
+      id:      'filter',
+      title:   '\uD83C\uDFA8 Kategorien filtern',
+      text:    'Hier kannst du einzelne Terminarten ein- oder ausblenden \u2013 z.\u202FB. nur Konferenzen oder nur Ferientermine anzeigen. Einfach auf eine Kategorie klicken.',
+      attachTo: { element: '.gtp-filt-wrap', on: 'bottom' },
+      index:    2
+    },
+    {
+      id:      'search',
+      title:   '\uD83D\uDD0D Terminsuche',
+      text:    'Tippe hier einen Begriff ein um alle Quartale gleichzeitig zu durchsuchen. Treffer werden direkt hervorgehoben.',
+      attachTo: { element: '#gtp-search-input', on: 'bottom' },
+      index:    3
+    },
+    {
+      id:      'pdf',
+      title:   '\uD83D\uDDA8\uFE0F PDF-Export',
+      text:    'Den aktuellen Terminplan als PDF speichern oder drucken \u2013 entweder das aktuelle Quartal oder alle vier auf einmal.',
+      attachTo: { element: '.gtp-btn-pdf', on: 'top' },
+      index:    4
+    },
+    {
+      id:      'theme',
+      title:   '\uD83C\uDF19 Dark Mode',
+      text:    'Hier kannst du zwischen hellem und dunklem Design wechseln \u2013 oder die Einstellung deines Ger\u00E4ts automatisch \u00FCbernehmen lassen.',
+      attachTo: { element: '#gtp-theme-btn', on: 'left' },
+      index:    5
+    }
+  ];
+
+  var total = steps.length;
+
+  steps.forEach(function(s) {
+    var isLast = s.index === total;
+    tour.addStep({
+      id:      s.id,
+      title:   s.title,
+      // Fortschritt direkt im Text-Bereich als kleine Zeile
+      text:    s.text + '<p class="gtp-tour-progress">' + s.index + '\u00A0/\u00A0' + total + '</p>',
+      attachTo: s.attachTo,
+      buttons:  makeButtons(s.index, total, isLast)
+    });
+  });
+
+  // Tour abgeschlossen oder abgebrochen: als gesehen markieren
+  tour.on('complete', function() {
+    try { localStorage.setItem('gtp-tour-seen', '1'); } catch(e) {}
+  });
+  tour.on('cancel', function() {
+    try { localStorage.setItem('gtp-tour-seen', '1'); } catch(e) {}
+  });
+
+  tour.start();
+}
+
+// Automatisch beim ersten Besuch starten (nach kurzem Delay damit die Seite fertig ist)
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() { gtpTourStart(false); }, 800);
+});
+
+/* ── Feedback-Modal (wp_mail via AJAX, seit 3.12.0) ─────────── */
+
+var gtpFeedbackSelectedType = '';
+
+function gtpFeedbackOpen() {
+  var overlay = document.getElementById('gtp-feedback-overlay');
+  if (!overlay) return;
+  gtpFeedbackSelectedType = '';
+  document.querySelectorAll('.gtp-feedback-type').forEach(function(b) {
+    b.classList.remove('gtp-feedback-type-active');
+  });
+  var ta  = document.getElementById('gtp-feedback-text');
+  var cnt = document.getElementById('gtp-feedback-count');
+  var sub = document.getElementById('gtp-feedback-submit');
+  var st  = document.getElementById('gtp-feedback-status');
+  if (ta)  ta.value           = '';
+  var sender = document.getElementById('gtp-feedback-sender');
+  if (sender) sender.value = '';
+  if (cnt) cnt.textContent    = '0';
+  if (sub) sub.disabled       = true;
+  if (st)  { st.style.display = 'none'; st.textContent = ''; }
+  overlay.style.display = 'flex';
+  overlay.focus();
+}
+
+function gtpFeedbackClose() {
+  var overlay = document.getElementById('gtp-feedback-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function gtpFeedbackType(btn) {
+  document.querySelectorAll('.gtp-feedback-type').forEach(function(b) {
+    b.classList.remove('gtp-feedback-type-active');
+  });
+  btn.classList.add('gtp-feedback-type-active');
+  gtpFeedbackSelectedType = btn.getAttribute('data-type') || '';
+  gtpFeedbackCheck();
+}
+
+function gtpFeedbackCheck() {
+  var ta  = document.getElementById('gtp-feedback-text');
+  var sub = document.getElementById('gtp-feedback-submit');
+  if (sub) sub.disabled = !(gtpFeedbackSelectedType && ta && ta.value.trim().length >= 3);
+}
+
+function gtpFeedbackSubmit() {
+  var sub = document.getElementById('gtp-feedback-submit');
+  var ta  = document.getElementById('gtp-feedback-text');
+  var st  = document.getElementById('gtp-feedback-status');
+  if (!sub || sub.disabled) return;
+  var ajaxUrl = (document.getElementById('gtp-ajax-url')       || {}).value || '';
+  var nonce   = (document.getElementById('gtp-feedback-nonce') || {}).value || '';
+  sub.disabled    = true;
+  sub.textContent = 'Wird gesendet\u2026';
+  var body = new URLSearchParams();
+  var hp     = document.getElementById('gtp-feedback-hp');
+  var sender = document.getElementById('gtp-feedback-sender');
+  body.append('action',    'gsh_tp_feedback');
+  body.append('nonce',     nonce);
+  body.append('type',      gtpFeedbackSelectedType);
+  body.append('message',   ta ? ta.value.trim() : '');
+  body.append('sender',    sender ? sender.value.trim() : '');
+  body.append('gsh_tp_hp', hp ? hp.value : '');
+  fetch(ajaxUrl, { method: 'POST', body: body })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!st) return;
+      st.style.display = 'block';
+      if (data.success) {
+        st.className   = 'gtp-feedback-status gtp-feedback-status-ok';
+        st.textContent = '\u2713 ' + (data.data.message || 'Feedback gesendet. Danke!');
+        setTimeout(function() {
+          gtpFeedbackClose();
+          var fbBtn = document.getElementById('gtp-feedback-btn');
+          if (fbBtn) {
+            var orig = fbBtn.innerHTML;
+            fbBtn.innerHTML = '&#10003; Danke!';
+            fbBtn.disabled  = true;
+            setTimeout(function() { fbBtn.innerHTML = orig; fbBtn.disabled = false; }, 3000);
+          }
+        }, 2000);
+      } else {
+        st.className    = 'gtp-feedback-status gtp-feedback-status-err';
+        st.textContent  = '\u2717 ' + (data.data.message || 'Fehler beim Senden.');
+        sub.disabled    = false;
+        sub.textContent = 'Absenden';
+      }
+    })
+    .catch(function() {
+      if (st) {
+        st.style.display = 'block';
+        st.className     = 'gtp-feedback-status gtp-feedback-status-err';
+        st.textContent   = '\u2717 Verbindungsfehler. Bitte erneut versuchen.';
+      }
+      sub.disabled    = false;
+      sub.textContent = 'Absenden';
+    });
+}
+
+// Textarea: Zeichenzähler + Submit-Check
+document.addEventListener('DOMContentLoaded', function() {
+  var ta = document.getElementById('gtp-feedback-text');
+  if (ta) {
+    ta.addEventListener('input', function() {
+      var cnt = document.getElementById('gtp-feedback-count');
+      if (cnt) cnt.textContent = this.value.length;
+      gtpFeedbackCheck();
+    });
+  }
+  // Klick auf Overlay-Hintergrund schließt Modal
+  var overlay = document.getElementById('gtp-feedback-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) gtpFeedbackClose();
+    });
+  }
+});
+
+// Escape schließt Modal
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var overlay = document.getElementById('gtp-feedback-overlay');
+  if (overlay && overlay.style.display !== 'none') gtpFeedbackClose();
 });
 </script>
 JSEOF;
@@ -5187,7 +6591,7 @@ register_deactivation_hook( __FILE__, function () {
     delete_transient( GSH_TP_FRESH_KEY ); // globaler Fallback-Key
     foreach ( gsh_tp_get_profiles() as $p ) {
         $pid = sanitize_key( $p['id'] );
-        delete_transient( 'gsh_tp_fresh_' . $pid );
+        delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
         delete_transient( 'gsh_tp_sched_' . $pid );
     }
 } );
@@ -5230,16 +6634,25 @@ function gsh_tp_uninstall() {
             if ( ! $pid ) {
                 continue;
             }
+            // Versionierte Keys (aktuelle Version und alle Vorgänger)
+            delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid ) );
+            delete_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ) );
+            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
+            delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid ) );
+            // Legacy unversionierte Keys (falls noch vorhanden)
             delete_option( 'gsh_tp_ical_' . $pid );
+            delete_option( 'gsh_tp_sync_logs_' . $pid );
+            delete_transient( 'gsh_tp_fresh_' . $pid );
+            delete_transient( 'gsh_tp_chg_' . $pid );
+            // Unversionierte Keys
             delete_option( 'gsh_tp_backup_' . $pid );
             delete_option( 'gsh_tp_sync_' . $pid );
-            delete_transient( 'gsh_tp_fresh_' . $pid );
             delete_transient( 'gsh_tp_snap_' . $pid );
-            delete_transient( 'gsh_tp_chg_' . $pid );
             delete_transient( 'gsh_tp_sched_' . $pid );
         }
     }
     delete_option( 'gsh_tp_profiles' );
+    delete_option( 'gsh_tp_cache_ver' );
 
     wp_clear_scheduled_hook( 'gsh_tp_cron_refresh' );
 }

@@ -705,18 +705,3 @@ a .gtp-icon:only-child {
     .gtp-btn-feedback,
     #gtp-feedback-overlay { display: none !important; }
 }
-
-/* ================================================================
-   Admin – Kategorien-Tab AJAX-Save
-   Version: 3.14.0
-   ================================================================ */
-#gsh-cat-status {
-    display: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: .84rem;
-    font-weight: 600;
-    margin: 10px 0;
-}
-.gsh-cat-status-ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.gsh-cat-status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
