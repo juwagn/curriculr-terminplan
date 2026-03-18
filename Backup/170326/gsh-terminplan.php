@@ -3,17 +3,23 @@
  * Plugin Name: GSH Terminplan Dashboard
  * Plugin URI:  https://gesamtschule-horst.de
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     3.12.0
+ * Version:     3.13.0
  * Author:      Gesamtschule Horst
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
+ * Changelog 3.13.0:
+ * - [BUGFIX] Stichwörter/Tags: POST-Redirect-GET nach Speichern verhindert Static-Cache-Problem
+ * - [BUGFIX] Suchfeld-Placeholder zeigte "…" statt echtem Auslassungszeichen
+ * - [UX] Feedback-Log als Tab in Plugin-Admin integriert (kein separater Menüpunkt mehr)
+ *
  * Changelog 3.12.0:
- * - [FEATURE] Feedback-Button in der Fusszeile: Fehler melden, Funktionswuensche und Lob direkt einsenden
- * - [FEATURE] Feedback wird per wp_mail() als E-Mail zugestellt – kein externes Formular
- * - [UX] Typ waehlen + Freitext, Bestaetigung erscheint direkt im Modal (kein Tab-Wechsel)
- * - [ADMIN] Empfaenger-E-Mail im System-Tab konfigurierbar
- * - [INFRA] AJAX-Handler mit Nonce-Absicherung
+ * - [FEATURE] Feedback per AJAX + wp_mail(): HTML-E-Mail mit Absendername, Typ, Rate-Limiting, Honeypot
+ * - [FEATURE] DB-Fallback-Log: Feedback immer gespeichert auch bei E-Mail-Fehler (wp_options-basiert)
+ * - [FEATURE] Admin-Seite "Terminplan Feedback": Log einsehen, SMTP-Diagnose-Hinweis
+ * - [BUGFIX] Kategorien-Editor: Löschen-Button reagiert jetzt auch auf Klick ins SVG-Icon
+ * - [BUGFIX] Suchfeld: Placeholder und Text im Dark Mode korrekt kontrastreich dargestellt
+ * - [UX] Optionales Absender-Namensfeld im Feedback-Modal
  *
  * Changelog 3.11.0:
  * - [UX] Alle Emoji-Icons durch konsistente Lucide-SVGs ersetzt (scharf, themefaehig, OS-unabhaengig)
@@ -402,7 +408,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '3.12.0' );
+define( 'GSH_TP_VERSION',       '3.13.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -475,12 +481,22 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
+            'version' => '3.13.0',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX',  'text' => 'Stichwörter im Kategorien-Editor werden jetzt zuverlässig gespeichert' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Suchfeld: Platzhaltertext zeigte \\u2026 statt dem Auslassungszeichen …' ),
+                array( 'tag' => 'UX',      'text' => 'Feedback-Log ist jetzt als Tab in die Plugin-Einstellungen integriert' ),
+            ),
+        ),
+        array(
             'version' => '3.12.0',
             'entries' => array(
                 array( 'tag' => 'FEATURE', 'text' => 'Feedback-Button in der Fußzeile – Fehler, Wünsche und Lob direkt aus dem Terminplan einsenden' ),
-                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als E-Mail zugestellt – kein Wechsel zu externen Formularen nötig' ),
-                array( 'tag' => 'UX',      'text' => 'Bestätigung erscheint direkt im Modal – kein Tab-Wechsel, kein Neuladen' ),
-                array( 'tag' => 'ADMIN',   'text' => 'Empfänger-E-Mail im Admin-Bereich (System-Tab) konfigurierbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als HTML-E-Mail zugestellt – mit Absendername, Typ-Kennzeichnung und Formatierung' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Log im Admin: alle Einträge einsehbar, auch wenn E-Mail-Versand fehlschlug' ),
+                array( 'tag' => 'UX',      'text' => 'Rate-Limiting: max. 3 Feedbacks pro 10 Minuten schützt vor unbeabsichtigtem Mehrfach-Absenden' ),
+                array( 'tag' => 'UX',      'text' => 'SMTP-Diagnose-Hinweis im Admin wenn E-Mail-Versand wiederholt fehlschlägt' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Löschen-Button in Kategorien-Editor: Klick auf Icon-Bereich funktioniert jetzt zuverlässig' ),
             ),
         ),
         array(
@@ -1153,9 +1169,26 @@ function gsh_tp_clear_old_logs( $days = 30 ) {
 function gsh_tp_ajax_feedback() {
     // Nonce prüfen
     check_ajax_referer( 'gsh_tp_feedback_nonce', 'nonce' );
+
+    // Honeypot: verstecktes Feld muss leer sein (Spam-Schutz)
+    if ( ! empty( $_POST['gsh_tp_hp'] ) ) {
+        wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
+    }
+
+    // Rate-Limiting: max. 3 Feedbacks pro IP in 10 Minuten
+    $ip      = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
+    $ip_hash = hash( 'sha256', $ip . wp_salt() );
+    $rl_key  = 'gsh_tp_rl_' . substr( $ip_hash, 0, 20 );
+    $rl      = (int) get_transient( $rl_key );
+    if ( $rl >= 3 ) {
+        wp_send_json_error( array( 'message' => 'Bitte warte einige Minuten bevor du erneut Feedback sendest.' ) );
+    }
+
     // Eingaben bereinigen
+    $sender   = sanitize_text_field( $_POST['sender'] ?? '' );
     $type_key = sanitize_key( $_POST['type'] ?? '' );
     $message  = sanitize_textarea_field( $_POST['message'] ?? '' );
+
     // Erlaubte Typen
     $allowed_types = array(
         'bug'    => '🐛 Fehler melden',
@@ -1163,6 +1196,7 @@ function gsh_tp_ajax_feedback() {
         'praise' => '👍 Lob',
         'other'  => '💬 Sonstiges',
     );
+
     // Validierung
     if ( ! isset( $allowed_types[ $type_key ] ) ) {
         wp_send_json_error( array( 'message' => 'Ungültiger Feedback-Typ.' ) );
@@ -1173,40 +1207,118 @@ function gsh_tp_ajax_feedback() {
     if ( mb_strlen( $message ) > 1000 ) {
         wp_send_json_error( array( 'message' => 'Nachricht zu lang (max. 1000 Zeichen).' ) );
     }
+
     $type_label = $allowed_types[ $type_key ];
+
     // Empfänger aus Einstellungen (Fallback: WordPress-Admin)
     $to = get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) );
     if ( ! is_email( $to ) ) {
         $to = get_bloginfo( 'admin_email' );
     }
+
     // Betreff
     $subject = sprintf( '[GSH Terminplan] %s', $type_label );
-    // E-Mail-Body (Plain Text)
-    $body  = "Neues Feedback aus dem GSH Terminplan:\n";
-    $body .= str_repeat( '-', 40 ) . "\n\n";
-    $body .= sprintf( "Typ:      %s\n\n", $type_label );
-    $body .= sprintf( "Nachricht:\n%s\n\n", $message );
-    $body .= str_repeat( '-', 40 ) . "\n";
-    $body .= sprintf( "Plugin-Version: %s\n", GSH_TP_VERSION );
-    $body .= sprintf( "Zeitpunkt:      %s\n", wp_date( 'd.m.Y, H:i \U\h\r' ) );
-    $body .= sprintf( "Seite:          %s\n", home_url() );
-    // Absender explizit setzen – verhindert Spam-Einstufung durch generisches wordpress@…
-    $from_email = get_bloginfo( 'admin_email' );
-    $from_name  = get_bloginfo( 'name' );
-    add_filter( 'wp_mail_from',      function() use ( $from_email ) { return $from_email; } );
-    add_filter( 'wp_mail_from_name', function() use ( $from_name  ) { return $from_name;  } );
-    // Senden
+
+    // HTML-E-Mail-Body
+    $name_line = $sender ? '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Absender:</td><td style="padding:4px 0">' . esc_html( $sender ) . '</td></tr>' : '';
+    $body = '<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#1e293b;margin:0;padding:0">'
+        . '<div style="max-width:540px;margin:0 auto;padding:32px 24px">'
+        . '<h2 style="margin:0 0 24px;font-size:1.1rem;color:#1e293b">Neues Feedback aus dem GSH Terminplan</h2>'
+        . '<table style="border-collapse:collapse;width:100%">'
+        . $name_line
+        . '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Typ:</td><td style="padding:4px 0">' . esc_html( $type_label ) . '</td></tr>'
+        . '<tr><td style="padding:12px 0 4px;color:#64748b;font-weight:600;vertical-align:top">Nachricht:</td><td style="padding:12px 0 4px"><div style="background:#f8fafc;border-left:3px solid #2563eb;padding:12px 16px;border-radius:0 8px 8px 0;white-space:pre-wrap">' . esc_html( $message ) . '</div></td></tr>'
+        . '</table>'
+        . '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
+        . '<p style="font-size:.78rem;color:#94a3b8;margin:0">Plugin v' . GSH_TP_VERSION . ' &bull; ' . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr &bull; ' . esc_url( home_url() ) . '</p>'
+        . '</div></body></html>';
+
+    // Absender explizit setzen
+    add_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    add_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    add_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
     $sent = wp_mail( $to, $subject, $body );
+
+    remove_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    remove_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    remove_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
+    // Rate-Limit-Zähler erhöhen
+    set_transient( $rl_key, $rl + 1, 10 * MINUTE_IN_SECONDS );
+
+    // DB-Log: immer speichern (auch bei Erfolg – für Diagnose)
+    gsh_tp_feedback_log( $type_key, $sender, $message, $ip_hash, $sent ? 'sent' : 'failed' );
+
     if ( $sent ) {
         wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
     } else {
-        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an den Admin.' ) );
+        // Fehlerzähler für SMTP-Diagnose-Warnung
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 ) + 1;
+        update_option( 'gsh_tp_mail_fail_count', $fail_count );
+        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Dein Feedback wurde aber gespeichert und kann im Admin eingesehen werden.' ) );
     }
 }
 
-/* ================================================================
-   1. ADMIN-EINSTELLUNGEN
-   ================================================================ */
+/**
+ * Setzt den Absender-Namen für Feedback-E-Mails.
+ * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
+ *
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_from_name() {
+    return get_bloginfo( 'name' );
+}
+
+/**
+ * Setzt die Absender-Adresse für Feedback-E-Mails.
+ * Wird nur während gsh_tp_ajax_feedback() als Filter aktiv.
+ *
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_from() {
+    return get_bloginfo( 'admin_email' );
+}
+
+/**
+ * Setzt den Content-Type für Feedback-E-Mails auf HTML.
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_content_type() {
+    return 'text/html';
+}
+
+/**
+ * Speichert einen Feedback-Eintrag in der WordPress-Datenbank (Transient-basiertes Log).
+ *
+ * Nutzt wp_options als einfaches Append-Log (max. 200 Einträge).
+ * Kein Schema, kein CREATE TABLE nötig.
+ *
+ * @since 3.12.0
+ * @param string $type     Feedback-Typ-Schlüssel
+ * @param string $sender   Absender-Name (optional)
+ * @param string $message  Feedback-Text
+ * @param string $ip_hash  SHA-256-Hash der IP (DSGVO-konform)
+ * @param string $status   'sent' oder 'failed'
+ * @return void
+ */
+function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
+    $log     = get_option( 'gsh_tp_feedback_log', array() );
+    if ( ! is_array( $log ) ) {
+        $log = array();
+    }
+    array_unshift( $log, array(
+        'ts'      => current_time( 'Y-m-d H:i:s' ),
+        'type'    => $type,
+        'sender'  => $sender,
+        'message' => $message,
+        'ip'      => $ip_hash,
+        'status'  => $status,
+    ) );
+    // Maximal 200 Einträge behalten
+    $log = array_slice( $log, 0, 200 );
+    update_option( 'gsh_tp_feedback_log', $log, false );
+}
 
 /**
  * Registriert den Einstellungsmenüeintrag im WordPress-Backend.
@@ -1226,6 +1338,75 @@ function gsh_tp_admin_menu() {
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
     );
+    // Kein separater Menüpunkt für Feedback-Log mehr – ist jetzt Tab in der Hauptseite
+}
+
+/**
+ * Rendert den Feedback-Log-Tab in der Plugin-Admin-Seite.
+ *
+ * Umbenannt von gsh_tp_feedback_log_page() – ist jetzt Tab statt eigener Menüpunkt.
+ *
+ * @since 3.12.0 (Tab seit 3.13.0)
+ * @return void
+ */
+function gsh_tp_render_feedback_log_tab() {
+    $log        = get_option( 'gsh_tp_feedback_log', array() );
+    $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+
+    $type_labels = array(
+        'bug'    => '🐛 Fehler',
+        'wish'   => '💡 Wunsch',
+        'praise' => '👍 Lob',
+        'other'  => '💬 Sonstiges',
+    );
+
+    if ( $fail_count >= 3 ) : ?>
+    <div class="notice notice-warning inline" style="margin-bottom:16px">
+        <p><strong>⚠ Hinweis:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+        Bitte prüfe die WordPress-E-Mail-Konfiguration oder installiere ein SMTP-Plugin wie
+        <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP</a>.</p>
+    </div>
+    <?php endif;
+
+    if ( empty( $log ) ) : ?>
+        <p>Noch kein Feedback eingegangen.</p>
+    <?php else : ?>
+        <p><?php echo count( $log ); ?> Einträge (neueste zuerst, max. 200 gespeichert)</p>
+        <table class="widefat striped" style="max-width:1000px">
+            <thead>
+                <tr>
+                    <th style="width:140px">Zeitpunkt</th>
+                    <th style="width:120px">Typ</th>
+                    <th style="width:130px">Absender</th>
+                    <th>Nachricht</th>
+                    <th style="width:70px">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $log as $entry ) : ?>
+                <tr>
+                    <td style="white-space:nowrap"><?php echo esc_html( $entry['ts'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $type_labels[ $entry['type'] ?? '' ] ?? $entry['type'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $entry['sender'] ?: '(anonym)' ); ?></td>
+                    <td style="white-space:pre-wrap"><?php echo esc_html( $entry['message'] ?? '' ); ?></td>
+                    <td>
+                        <?php if ( ( $entry['status'] ?? '' ) === 'sent' ) : ?>
+                            <span style="color:#166534;font-weight:700">✓ gesendet</span>
+                        <?php else : ?>
+                            <span style="color:#991b1b;font-weight:700">✗ Fehler</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>" style="margin-top:16px">
+            <?php wp_nonce_field( 'gsh_tp_clear_feedback_log' ); ?>
+            <input type="hidden" name="gsh_tp_clear_feedback_log" value="1">
+            <?php submit_button( 'Log leeren', 'secondary', 'submit', false ); ?>
+        </form>
+    <?php endif;
 }
 
 
@@ -1905,7 +2086,23 @@ function gsh_tp_settings_page() {
         if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cats_n'] ?? '' ) ), 'gsh_tp_categories_save' ) ) {
             $raw_cats = isset( $_POST['gsh_tp_categories'] ) ? (array) $_POST['gsh_tp_categories'] : array();
             update_option( 'gsh_tp_categories', gsh_tp_sanitize_categories( $raw_cats ) );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kategorien gespeichert.</p></div>';
+            // Bugfix: POST-Redirect-GET verhindert dass die static-gecachten Kategorien
+            // auf der neu gerenderten Seite alte Daten zeigen (PHP static-Variable bleibt
+            // im selben Request erhalten – nach Redirect ist sie zurückgesetzt).
+            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_kategorien&saved=1' ) );
+            exit;
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // ── POST: Feedback-Log leeren ──
+    if ( isset( $_POST['gsh_tp_clear_feedback_log'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'gsh_tp_clear_feedback_log' ) ) {
+            delete_option( 'gsh_tp_feedback_log' );
+            delete_option( 'gsh_tp_mail_fail_count' );
+            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log&cleared=1' ) );
+            exit;
         } else {
             echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
@@ -1922,6 +2119,14 @@ function gsh_tp_settings_page() {
         }
     }
 
+    // Erfolgshinweise nach Redirects
+    if ( isset( $_GET['saved'] ) && '1' === $_GET['saved'] ) {
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kategorien gespeichert.</p></div>';
+    }
+    if ( isset( $_GET['cleared'] ) && '1' === $_GET['cleared'] ) {
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Feedback-Log geleert.</p></div>';
+    }
+
     // ── Tabs aufbauen ──
     $tabs = array();
     foreach ( $profiles as $p ) {
@@ -1933,9 +2138,10 @@ function gsh_tp_settings_page() {
         }
         $tabs[ $p['id'] ] = esc_html( $p['label'] ) . $suffix;
     }
-    $tabs['_kategorien'] = 'Kategorien';
-    $tabs['_system']     = 'Kiosk &amp; System';
-    $tabs['_sync_log']   = 'Sync-Verlauf';
+    $tabs['_kategorien']   = 'Kategorien';
+    $tabs['_system']       = 'Kiosk &amp; System';
+    $tabs['_sync_log']     = 'Sync-Verlauf';
+    $tabs['_feedback_log'] = 'Feedback-Log';
 
     // Tab aus URL-Parameter lesen – Whitelist-Check gegen $tabs
     $active_tab = sanitize_key( $_GET['tab'] ?? '' );
@@ -2054,6 +2260,8 @@ function gsh_tp_settings_page() {
             gsh_tp_render_system_tab();
         } elseif ( '_sync_log' === $active_tab ) {
             gsh_tp_render_sync_log_tab();
+        } elseif ( '_feedback_log' === $active_tab ) {
+            gsh_tp_render_feedback_log_tab();
         } else {
             gsh_tp_render_profile_tab( $active_tab );
         }
@@ -2427,7 +2635,8 @@ function gsh_tp_render_kategorien_tab() {
             });
 
             tbody.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('gsh-cat-del')) return;
+                var delBtn = e.target.closest('.gsh-cat-del');
+                if (!delBtn) return;
                 var rows = tbody.querySelectorAll('.gsh-cat-row');
                 if (rows.length <= 1) {
                     alert('Es muss mindestens eine Kategorie vorhanden sein.');
@@ -2495,6 +2704,15 @@ function gsh_tp_render_system_tab() {
 
     <form method="post" action="options.php">
         <?php settings_fields( 'gsh_tp_options' ); ?>
+        <?php
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+        if ( $fail_count >= 3 ) : ?>
+        <div class="notice notice-warning inline" style="margin-bottom:16px">
+            <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+            Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a> um den E-Mail-Versand zu konfigurieren.
+            <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>">Feedback-Log ansehen</a></p>
+        </div>
+        <?php endif; ?>
         <table class="form-table">
 
             <tr>
@@ -3471,7 +3689,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
-        . ' placeholder="Termin suchen\u2026" autocomplete="off"'
+        . ' placeholder="Termin suchen…" autocomplete="off"' // Bugfix: \u2026 ist nur in JS gültig – UTF-8-Literal verwenden
         . ' oninput="gtpSearchInput(this.value)" />';
     $o .= '</div>';
     $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
@@ -3556,6 +3774,11 @@ function gsh_tp_shortcode( $atts ) {
         . ' aria-label="Schließen">&times;</button>';
     $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">&#128172; Feedback geben</h3>';
     $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.</p>';
+    // Honeypot: verstecktes Anti-Spam-Feld (muss leer bleiben)
+    $o .= '<input type="text" name="gsh_tp_hp" id="gtp-feedback-hp" '
+        . 'autocomplete="off" tabindex="-1" '
+        . 'style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" '
+        . 'aria-hidden="true">';
     // Typ-Auswahl
     $o .= '<div class="gtp-feedback-types" role="group" aria-label="Feedback-Typ wählen">';
     $types = array(
@@ -3569,6 +3792,13 @@ function gsh_tp_shortcode( $atts ) {
             . ' onclick="gtpFeedbackType(this)">'
             . $t['emoji'] . ' ' . esc_html( $t['label'] ) . '</button>';
     }
+    $o .= '</div>';
+    // Optionales Absender-Feld
+    $o .= '<div class="gtp-feedback-field">';
+    $o .= '<label for="gtp-feedback-sender" class="gtp-feedback-label">Dein Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>';
+    $o .= '<input type="text" id="gtp-feedback-sender" class="gtp-feedback-textarea" '
+        . 'style="min-height:auto;resize:none;padding:8px 14px" '
+        . 'maxlength="80" placeholder="z. B. Frau Muster" autocomplete="name">';
     $o .= '</div>';
     // Freitextfeld
     $o .= '<div class="gtp-feedback-field">';
@@ -6229,6 +6459,8 @@ function gtpFeedbackOpen() {
   var sub = document.getElementById('gtp-feedback-submit');
   var st  = document.getElementById('gtp-feedback-status');
   if (ta)  ta.value           = '';
+  var sender = document.getElementById('gtp-feedback-sender');
+  if (sender) sender.value = '';
   if (cnt) cnt.textContent    = '0';
   if (sub) sub.disabled       = true;
   if (st)  { st.style.display = 'none'; st.textContent = ''; }
@@ -6266,10 +6498,14 @@ function gtpFeedbackSubmit() {
   sub.disabled    = true;
   sub.textContent = 'Wird gesendet\u2026';
   var body = new URLSearchParams();
-  body.append('action',  'gsh_tp_feedback');
-  body.append('nonce',   nonce);
-  body.append('type',    gtpFeedbackSelectedType);
-  body.append('message', ta ? ta.value.trim() : '');
+  var hp     = document.getElementById('gtp-feedback-hp');
+  var sender = document.getElementById('gtp-feedback-sender');
+  body.append('action',    'gsh_tp_feedback');
+  body.append('nonce',     nonce);
+  body.append('type',      gtpFeedbackSelectedType);
+  body.append('message',   ta ? ta.value.trim() : '');
+  body.append('sender',    sender ? sender.value.trim() : '');
+  body.append('gsh_tp_hp', hp ? hp.value : '');
   fetch(ajaxUrl, { method: 'POST', body: body })
     .then(function(r) { return r.json(); })
     .then(function(data) {

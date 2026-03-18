@@ -3,17 +3,35 @@
  * Plugin Name: GSH Terminplan Dashboard
  * Plugin URI:  https://gesamtschule-horst.de
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     3.12.0
+ * Version:     3.14.1
  * Author:      Gesamtschule Horst
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
+ * Changelog 3.14.1:
+ * - [BUGFIX] AJAX-Kategorien-Speichern: update_option()-Rückgabewert wird jetzt geprüft – DB-Fehler
+ *   werden als echter Fehler gemeldet statt fälschlicherweise als Erfolg angezeigt
+ * - [BUGFIX] Nach dem Speichern werden auto-generierte Slugs neuer Kategorien ins DOM
+ *   zurückgespielt – verhindert inkonsistente CSS-Klassen bei erneutem Speichern ohne Reload
+ *
+ * Changelog 3.14.0:
+ * - [FEATURE] Kategorien-Editor: Speichern jetzt per AJAX (kein Seiten-Reload, sofortige Rückmeldung)
+ *
+ * Changelog 3.13.1:
+ * - [BUGFIX] Kategorien-Speichern: wp_safe_redirect+exit im Page-Callback brach Response ab (Seite hing)
+ *
+ * Changelog 3.13.0:
+ * - [BUGFIX] Stichwörter/Tags: POST-Redirect-GET nach Speichern verhindert Static-Cache-Problem
+ * - [BUGFIX] Suchfeld-Placeholder zeigte "…" statt echtem Auslassungszeichen
+ * - [UX] Feedback-Log als Tab in Plugin-Admin integriert (kein separater Menüpunkt mehr)
+ *
  * Changelog 3.12.0:
- * - [FEATURE] Feedback-Button in der Fusszeile: Fehler melden, Funktionswuensche und Lob direkt einsenden
- * - [FEATURE] Feedback wird per wp_mail() als E-Mail zugestellt – kein externes Formular
- * - [UX] Typ waehlen + Freitext, Bestaetigung erscheint direkt im Modal (kein Tab-Wechsel)
- * - [ADMIN] Empfaenger-E-Mail im System-Tab konfigurierbar
- * - [INFRA] AJAX-Handler mit Nonce-Absicherung
+ * - [FEATURE] Feedback per AJAX + wp_mail(): HTML-E-Mail mit Absendername, Typ, Rate-Limiting, Honeypot
+ * - [FEATURE] DB-Fallback-Log: Feedback immer gespeichert auch bei E-Mail-Fehler (wp_options-basiert)
+ * - [FEATURE] Admin-Seite "Terminplan Feedback": Log einsehen, SMTP-Diagnose-Hinweis
+ * - [BUGFIX] Kategorien-Editor: Löschen-Button reagiert jetzt auch auf Klick ins SVG-Icon
+ * - [BUGFIX] Suchfeld: Placeholder und Text im Dark Mode korrekt kontrastreich dargestellt
+ * - [UX] Optionales Absender-Namensfeld im Feedback-Modal
  *
  * Changelog 3.11.0:
  * - [UX] Alle Emoji-Icons durch konsistente Lucide-SVGs ersetzt (scharf, themefaehig, OS-unabhaengig)
@@ -402,7 +420,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '3.12.0' );
+define( 'GSH_TP_VERSION',       '3.14.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -475,12 +493,41 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
+            'version' => '3.14.1',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Kategorien-Speichern: DB-Fehler werden jetzt als echter Fehler gemeldet statt fälschlicherweise als Erfolg' ),
+                array( 'tag' => 'BUGFIX', 'text' => 'Neue Kategorien: auto-generierter Slug wird nach dem Speichern ins DOM zurückgespielt – verhindert inkonsistente CSS-Klassen bei Folge-Speichern ohne Reload' ),
+            ),
+        ),
+        array(
+            'version' => '3.14.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Kategorien-Editor: Speichern jetzt per AJAX – kein Seiten-Reload, sofortige Rückmeldung' ),
+            ),
+        ),
+        array(
+            'version' => '3.13.1',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Kategorien speichern: Seite hing sich nicht mehr auf nach dem Speichern' ),
+            ),
+        ),
+        array(
+            'version' => '3.13.0',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX',  'text' => 'Stichwörter im Kategorien-Editor werden jetzt zuverlässig gespeichert' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Suchfeld: Platzhaltertext zeigte \\u2026 statt dem Auslassungszeichen …' ),
+                array( 'tag' => 'UX',      'text' => 'Feedback-Log ist jetzt als Tab in die Plugin-Einstellungen integriert' ),
+            ),
+        ),
+        array(
             'version' => '3.12.0',
             'entries' => array(
                 array( 'tag' => 'FEATURE', 'text' => 'Feedback-Button in der Fußzeile – Fehler, Wünsche und Lob direkt aus dem Terminplan einsenden' ),
-                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als E-Mail zugestellt – kein Wechsel zu externen Formularen nötig' ),
-                array( 'tag' => 'UX',      'text' => 'Bestätigung erscheint direkt im Modal – kein Tab-Wechsel, kein Neuladen' ),
-                array( 'tag' => 'ADMIN',   'text' => 'Empfänger-E-Mail im Admin-Bereich (System-Tab) konfigurierbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback wird als HTML-E-Mail zugestellt – mit Absendername, Typ-Kennzeichnung und Formatierung' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Feedback-Log im Admin: alle Einträge einsehbar, auch wenn E-Mail-Versand fehlschlug' ),
+                array( 'tag' => 'UX',      'text' => 'Rate-Limiting: max. 3 Feedbacks pro 10 Minuten schützt vor unbeabsichtigtem Mehrfach-Absenden' ),
+                array( 'tag' => 'UX',      'text' => 'SMTP-Diagnose-Hinweis im Admin wenn E-Mail-Versand wiederholt fehlschlägt' ),
+                array( 'tag' => 'BUGFIX',  'text' => 'Löschen-Button in Kategorien-Editor: Klick auf Icon-Bereich funktioniert jetzt zuverlässig' ),
             ),
         ),
         array(
@@ -1153,9 +1200,26 @@ function gsh_tp_clear_old_logs( $days = 30 ) {
 function gsh_tp_ajax_feedback() {
     // Nonce prüfen
     check_ajax_referer( 'gsh_tp_feedback_nonce', 'nonce' );
+
+    // Honeypot: verstecktes Feld muss leer sein (Spam-Schutz)
+    if ( ! empty( $_POST['gsh_tp_hp'] ) ) {
+        wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
+    }
+
+    // Rate-Limiting: max. 3 Feedbacks pro IP in 10 Minuten
+    $ip      = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
+    $ip_hash = hash( 'sha256', $ip . wp_salt() );
+    $rl_key  = 'gsh_tp_rl_' . substr( $ip_hash, 0, 20 );
+    $rl      = (int) get_transient( $rl_key );
+    if ( $rl >= 3 ) {
+        wp_send_json_error( array( 'message' => 'Bitte warte einige Minuten bevor du erneut Feedback sendest.' ) );
+    }
+
     // Eingaben bereinigen
+    $sender   = sanitize_text_field( $_POST['sender'] ?? '' );
     $type_key = sanitize_key( $_POST['type'] ?? '' );
     $message  = sanitize_textarea_field( $_POST['message'] ?? '' );
+
     // Erlaubte Typen
     $allowed_types = array(
         'bug'    => '🐛 Fehler melden',
@@ -1163,6 +1227,7 @@ function gsh_tp_ajax_feedback() {
         'praise' => '👍 Lob',
         'other'  => '💬 Sonstiges',
     );
+
     // Validierung
     if ( ! isset( $allowed_types[ $type_key ] ) ) {
         wp_send_json_error( array( 'message' => 'Ungültiger Feedback-Typ.' ) );
@@ -1173,36 +1238,56 @@ function gsh_tp_ajax_feedback() {
     if ( mb_strlen( $message ) > 1000 ) {
         wp_send_json_error( array( 'message' => 'Nachricht zu lang (max. 1000 Zeichen).' ) );
     }
+
     $type_label = $allowed_types[ $type_key ];
+
     // Empfänger aus Einstellungen (Fallback: WordPress-Admin)
     $to = get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) );
     if ( ! is_email( $to ) ) {
         $to = get_bloginfo( 'admin_email' );
     }
+
     // Betreff
     $subject = sprintf( '[GSH Terminplan] %s', $type_label );
-    // E-Mail-Body (Plain Text)
-    $body  = "Neues Feedback aus dem GSH Terminplan:\n";
-    $body .= str_repeat( '-', 40 ) . "\n\n";
-    $body .= sprintf( "Typ:      %s\n\n", $type_label );
-    $body .= sprintf( "Nachricht:\n%s\n\n", $message );
-    $body .= str_repeat( '-', 40 ) . "\n";
-    $body .= sprintf( "Plugin-Version: %s\n", GSH_TP_VERSION );
-    $body .= sprintf( "Zeitpunkt:      %s\n", wp_date( 'd.m.Y, H:i \U\h\r' ) );
-    $body .= sprintf( "Seite:          %s\n", home_url() );
-    // Absender explizit setzen – benannte Callbacks damit remove_filter() greift
-    // (anonyme Funktionen würden sich bei jedem AJAX-Request stapeln)
-    add_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    add_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
-    // Senden
+
+    // HTML-E-Mail-Body
+    $name_line = $sender ? '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Absender:</td><td style="padding:4px 0">' . esc_html( $sender ) . '</td></tr>' : '';
+    $body = '<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#1e293b;margin:0;padding:0">'
+        . '<div style="max-width:540px;margin:0 auto;padding:32px 24px">'
+        . '<h2 style="margin:0 0 24px;font-size:1.1rem;color:#1e293b">Neues Feedback aus dem GSH Terminplan</h2>'
+        . '<table style="border-collapse:collapse;width:100%">'
+        . $name_line
+        . '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Typ:</td><td style="padding:4px 0">' . esc_html( $type_label ) . '</td></tr>'
+        . '<tr><td style="padding:12px 0 4px;color:#64748b;font-weight:600;vertical-align:top">Nachricht:</td><td style="padding:12px 0 4px"><div style="background:#f8fafc;border-left:3px solid #2563eb;padding:12px 16px;border-radius:0 8px 8px 0;white-space:pre-wrap">' . esc_html( $message ) . '</div></td></tr>'
+        . '</table>'
+        . '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
+        . '<p style="font-size:.78rem;color:#94a3b8;margin:0">Plugin v' . GSH_TP_VERSION . ' &bull; ' . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr &bull; ' . esc_url( home_url() ) . '</p>'
+        . '</div></body></html>';
+
+    // Absender explizit setzen
+    add_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    add_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    add_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
     $sent = wp_mail( $to, $subject, $body );
-    // Filter sofort wieder entfernen – kein Einfluss auf andere wp_mail()-Aufrufe
-    remove_filter( 'wp_mail_from',      'gsh_tp_feedback_mail_from' );
-    remove_filter( 'wp_mail_from_name', 'gsh_tp_feedback_mail_from_name' );
+
+    remove_filter( 'wp_mail_from',         'gsh_tp_feedback_mail_from' );
+    remove_filter( 'wp_mail_from_name',    'gsh_tp_feedback_mail_from_name' );
+    remove_filter( 'wp_mail_content_type', 'gsh_tp_feedback_mail_content_type' );
+
+    // Rate-Limit-Zähler erhöhen
+    set_transient( $rl_key, $rl + 1, 10 * MINUTE_IN_SECONDS );
+
+    // DB-Log: immer speichern (auch bei Erfolg – für Diagnose)
+    gsh_tp_feedback_log( $type_key, $sender, $message, $ip_hash, $sent ? 'sent' : 'failed' );
+
     if ( $sent ) {
         wp_send_json_success( array( 'message' => 'Feedback gesendet. Danke!' ) );
     } else {
-        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Bitte wende dich direkt an den Admin.' ) );
+        // Fehlerzähler für SMTP-Diagnose-Warnung
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 ) + 1;
+        update_option( 'gsh_tp_mail_fail_count', $fail_count );
+        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Dein Feedback wurde aber gespeichert und kann im Admin eingesehen werden.' ) );
     }
 }
 
@@ -1225,7 +1310,46 @@ function gsh_tp_feedback_mail_from_name() {
 function gsh_tp_feedback_mail_from() {
     return get_bloginfo( 'admin_email' );
 }
-   ================================================================ */
+
+/**
+ * Setzt den Content-Type für Feedback-E-Mails auf HTML.
+ * @since 3.12.0
+ */
+function gsh_tp_feedback_mail_content_type() {
+    return 'text/html';
+}
+
+/**
+ * Speichert einen Feedback-Eintrag in der WordPress-Datenbank (Transient-basiertes Log).
+ *
+ * Nutzt wp_options als einfaches Append-Log (max. 200 Einträge).
+ * Kein Schema, kein CREATE TABLE nötig.
+ *
+ * @since 3.12.0
+ * @param string $type     Feedback-Typ-Schlüssel
+ * @param string $sender   Absender-Name (optional)
+ * @param string $message  Feedback-Text
+ * @param string $ip_hash  SHA-256-Hash der IP (DSGVO-konform)
+ * @param string $status   'sent' oder 'failed'
+ * @return void
+ */
+function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
+    $log     = get_option( 'gsh_tp_feedback_log', array() );
+    if ( ! is_array( $log ) ) {
+        $log = array();
+    }
+    array_unshift( $log, array(
+        'ts'      => current_time( 'Y-m-d H:i:s' ),
+        'type'    => $type,
+        'sender'  => $sender,
+        'message' => $message,
+        'ip'      => $ip_hash,
+        'status'  => $status,
+    ) );
+    // Maximal 200 Einträge behalten
+    $log = array_slice( $log, 0, 200 );
+    update_option( 'gsh_tp_feedback_log', $log, false );
+}
 
 /**
  * Registriert den Einstellungsmenüeintrag im WordPress-Backend.
@@ -1245,6 +1369,75 @@ function gsh_tp_admin_menu() {
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
     );
+    // Kein separater Menüpunkt für Feedback-Log mehr – ist jetzt Tab in der Hauptseite
+}
+
+/**
+ * Rendert den Feedback-Log-Tab in der Plugin-Admin-Seite.
+ *
+ * Umbenannt von gsh_tp_feedback_log_page() – ist jetzt Tab statt eigener Menüpunkt.
+ *
+ * @since 3.12.0 (Tab seit 3.13.0)
+ * @return void
+ */
+function gsh_tp_render_feedback_log_tab() {
+    $log        = get_option( 'gsh_tp_feedback_log', array() );
+    $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+
+    $type_labels = array(
+        'bug'    => '🐛 Fehler',
+        'wish'   => '💡 Wunsch',
+        'praise' => '👍 Lob',
+        'other'  => '💬 Sonstiges',
+    );
+
+    if ( $fail_count >= 3 ) : ?>
+    <div class="notice notice-warning inline" style="margin-bottom:16px">
+        <p><strong>⚠ Hinweis:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+        Bitte prüfe die WordPress-E-Mail-Konfiguration oder installiere ein SMTP-Plugin wie
+        <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP</a>.</p>
+    </div>
+    <?php endif;
+
+    if ( empty( $log ) ) : ?>
+        <p>Noch kein Feedback eingegangen.</p>
+    <?php else : ?>
+        <p><?php echo count( $log ); ?> Einträge (neueste zuerst, max. 200 gespeichert)</p>
+        <table class="widefat striped" style="max-width:1000px">
+            <thead>
+                <tr>
+                    <th style="width:140px">Zeitpunkt</th>
+                    <th style="width:120px">Typ</th>
+                    <th style="width:130px">Absender</th>
+                    <th>Nachricht</th>
+                    <th style="width:70px">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $log as $entry ) : ?>
+                <tr>
+                    <td style="white-space:nowrap"><?php echo esc_html( $entry['ts'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $type_labels[ $entry['type'] ?? '' ] ?? $entry['type'] ?? '–' ); ?></td>
+                    <td><?php echo esc_html( $entry['sender'] ?: '(anonym)' ); ?></td>
+                    <td style="white-space:pre-wrap"><?php echo esc_html( $entry['message'] ?? '' ); ?></td>
+                    <td>
+                        <?php if ( ( $entry['status'] ?? '' ) === 'sent' ) : ?>
+                            <span style="color:#166534;font-weight:700">✓ gesendet</span>
+                        <?php else : ?>
+                            <span style="color:#991b1b;font-weight:700">✗ Fehler</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>" style="margin-top:16px">
+            <?php wp_nonce_field( 'gsh_tp_clear_feedback_log' ); ?>
+            <input type="hidden" name="gsh_tp_clear_feedback_log" value="1">
+            <?php submit_button( 'Log leeren', 'secondary', 'submit', false ); ?>
+        </form>
+    <?php endif;
 }
 
 
@@ -1318,6 +1511,8 @@ add_action( 'gsh_tp_cron_refresh', 'gsh_tp_do_refresh' );
 // Feedback-AJAX (eingeloggte und nicht-eingeloggte Nutzer)
 add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
 add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
+// Kategorien-AJAX (nur eingeloggte Admins)
+add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );
@@ -1593,6 +1788,50 @@ function gsh_tp_sanitize_categories( $input ) {
         return $a['order'] <=> $b['order'];
     } );
     return $clean;
+}
+
+/**
+ * AJAX-Handler: Kategorien via fetch() speichern.
+ *
+ * Empfängt die Kategorien als JSON-String im POST-Parameter 'tags',
+ * validiert per Nonce + Capability, bereinigt mit gsh_tp_sanitize_categories()
+ * und speichert via update_option().
+ *
+ * @since 3.14.0
+ * @return void  Sendet JSON-Response und beendet die Ausführung.
+ */
+function gsh_tp_ajax_save_categories() {
+    check_ajax_referer( 'gsh_tp_save_categories_action', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => 'Keine Berechtigung.' ), 403 );
+    }
+    $json = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : '[]';
+    $raw  = json_decode( $json, true );
+    if ( ! is_array( $raw ) ) {
+        wp_send_json_error( array( 'message' => 'Ungültige Daten.' ), 400 );
+    }
+    // keywords kommt als String aus dem Formular – sanitize_categories erwartet das so.
+    // Jeder Eintrag im JSON hat keywords bereits als String (kommasepariert).
+    $clean = gsh_tp_sanitize_categories( $raw );
+    $saved = update_option( 'gsh_tp_categories', $clean );
+
+    if ( false === $saved ) {
+        // update_option() gibt false zurück bei:
+        // (a) Wert identisch mit gespeichertem Wert → kein DB-Update nötig, Daten korrekt in DB
+        // (b) Datenbankfehler → Daten wurden NICHT gespeichert
+        // Unterscheidung: gespeicherte Anzahl mit erwarteter vergleichen.
+        $verify = get_option( 'gsh_tp_categories', array() );
+        if ( count( $verify ) !== count( $clean ) ) {
+            wp_send_json_error( array( 'message' => 'Datenbankfehler: Kategorien konnten nicht gespeichert werden.' ), 500 );
+        }
+    }
+
+    // Bereinigte Kategorien zurückgeben (inkl. auto-generierter Slugs für neue Einträge),
+    // damit das JavaScript den DOM sofort aktualisieren kann ohne Seiten-Reload.
+    wp_send_json_success( array(
+        'count'      => count( $clean ),
+        'categories' => $clean,
+    ) );
 }
 
 /**
@@ -1919,12 +2158,13 @@ function gsh_tp_settings_page() {
         }
     }
 
-    // ── POST: Kategorien speichern ──
-    if ( isset( $_POST['gsh_tp_save_categories'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cats_n'] ?? '' ) ), 'gsh_tp_categories_save' ) ) {
-            $raw_cats = isset( $_POST['gsh_tp_categories'] ) ? (array) $_POST['gsh_tp_categories'] : array();
-            update_option( 'gsh_tp_categories', gsh_tp_sanitize_categories( $raw_cats ) );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kategorien gespeichert.</p></div>';
+    // ── POST: Feedback-Log leeren ──
+    if ( isset( $_POST['gsh_tp_clear_feedback_log'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'gsh_tp_clear_feedback_log' ) ) {
+            delete_option( 'gsh_tp_feedback_log' );
+            delete_option( 'gsh_tp_mail_fail_count' );
+            // Bugfix v3.13.1: gleiche Ursache – inline statt Redirect
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Feedback-Log geleert.</p></div>';
         } else {
             echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
@@ -1952,9 +2192,10 @@ function gsh_tp_settings_page() {
         }
         $tabs[ $p['id'] ] = esc_html( $p['label'] ) . $suffix;
     }
-    $tabs['_kategorien'] = 'Kategorien';
-    $tabs['_system']     = 'Kiosk &amp; System';
-    $tabs['_sync_log']   = 'Sync-Verlauf';
+    $tabs['_kategorien']   = 'Kategorien';
+    $tabs['_system']       = 'Kiosk &amp; System';
+    $tabs['_sync_log']     = 'Sync-Verlauf';
+    $tabs['_feedback_log'] = 'Feedback-Log';
 
     // Tab aus URL-Parameter lesen – Whitelist-Check gegen $tabs
     $active_tab = sanitize_key( $_GET['tab'] ?? '' );
@@ -2073,6 +2314,8 @@ function gsh_tp_settings_page() {
             gsh_tp_render_system_tab();
         } elseif ( '_sync_log' === $active_tab ) {
             gsh_tp_render_sync_log_tab();
+        } elseif ( '_feedback_log' === $active_tab ) {
+            gsh_tp_render_feedback_log_tab();
         } else {
             gsh_tp_render_profile_tab( $active_tab );
         }
@@ -2339,6 +2582,8 @@ function gsh_tp_render_profile_tab( $profile_id ) {
  * @return void
  */
 function gsh_tp_render_kategorien_tab() {
+    $existing_cats = gsh_tp_get_categories();
+    $nonce_value   = wp_create_nonce( 'gsh_tp_save_categories_action' );
     ?>
     <p class="description" style="margin-bottom:1rem">
         Legen Sie hier die Terminplan-Kategorien fest. Jede Kategorie hat einen
@@ -2348,149 +2593,236 @@ function gsh_tp_render_kategorien_tab() {
         &bdquo;LK&ldquo; findet &bdquo;LK 3&ldquo;, aber nicht &bdquo;Volk&ldquo;.
     </p>
 
-    <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_kategorien' ) ); ?>">
-        <?php wp_nonce_field( 'gsh_tp_categories_save', 'gsh_tp_cats_n' ); ?>
-        <input type="hidden" name="gsh_tp_save_categories" value="1" />
+    <input type="hidden" id="gsh-cat-nonce" value="<?php echo esc_attr( $nonce_value ); ?>">
 
-        <?php
-        $existing_cats = gsh_tp_get_categories();
-        ?>
-        <div id="gsh-cat-editor">
-        <table class="widefat" id="gsh-cat-table" style="table-layout:fixed;margin-bottom:8px">
-            <thead>
-                <tr>
-                    <th style="width:42px">Reihenf.</th>
-                    <th style="width:160px">Anzeigename</th>
-                    <th style="width:68px">Hintergrund</th>
-                    <th style="width:68px">Rahmen</th>
-                    <th style="width:68px">Text</th>
-                    <th>Stichwörter (kommasepariert)</th>
-                    <th style="width:34px"></th>
-                </tr>
-            </thead>
-            <tbody id="gsh-cat-tbody">
-            <?php foreach ( $existing_cats as $i => $cat ) : ?>
-                <tr class="gsh-cat-row">
-                    <td>
-                        <input type="number" name="gsh_tp_categories[<?php echo $i; ?>][order]"
-                               value="<?php echo esc_attr( $cat['order'] ?? ( $i + 1 ) ); ?>"
-                               min="1" max="99" style="width:38px"
-                               class="gsh-cat-order" />
-                        <input type="hidden" name="gsh_tp_categories[<?php echo $i; ?>][slug]"
-                               value="<?php echo esc_attr( $cat['slug'] ); ?>" />
-                    </td>
-                    <td>
-                        <input type="text" name="gsh_tp_categories[<?php echo $i; ?>][label]"
-                               value="<?php echo esc_attr( $cat['label'] ); ?>"
-                               style="width:100%" class="gsh-cat-label"
-                               placeholder="Anzeigename" />
-                    </td>
-                    <td>
-                        <input type="color" name="gsh_tp_categories[<?php echo $i; ?>][bg]"
-                               value="<?php echo esc_attr( $cat['bg'] ); ?>"
-                               class="gsh-cat-bg" style="width:48px;height:32px;padding:2px;cursor:pointer" />
-                    </td>
-                    <td>
-                        <input type="color" name="gsh_tp_categories[<?php echo $i; ?>][border]"
-                               value="<?php echo esc_attr( $cat['border'] ); ?>"
-                               class="gsh-cat-bd" style="width:48px;height:32px;padding:2px;cursor:pointer" />
-                    </td>
-                    <td>
-                        <input type="color" name="gsh_tp_categories[<?php echo $i; ?>][text]"
-                               value="<?php echo esc_attr( $cat['text'] ); ?>"
-                               class="gsh-cat-tx" style="width:48px;height:32px;padding:2px;cursor:pointer" />
-                    </td>
-                    <td>
-                        <input type="text" name="gsh_tp_categories[<?php echo $i; ?>][keywords]"
-                               value="<?php echo esc_attr( implode( ', ', $cat['keywords'] ) ); ?>"
-                               style="width:100%" class="gsh-cat-kw"
-                               placeholder="Stichwort1, Stichwort2, ..." />
-                        <span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;
-                            padding:2px 8px;border-radius:4px;font-size:12px;
-                            border-left:3px solid <?php echo esc_attr( $cat['border'] ); ?>;
-                            background:<?php echo esc_attr( $cat['bg'] ); ?>;
-                            color:<?php echo esc_attr( $cat['text'] ); ?>">Beispieltermin</span>
-                    </td>
-                    <td>
-                        <button type="button" class="button gsh-cat-del"
-                                title="Kategorie löschen"><?php echo gsh_tp_icon( 'x', '0.9em' ); ?></button>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-        <button type="button" class="button" id="gsh-cat-add">+ Neue Kategorie hinzufügen</button>
-        </div>
+    <div id="gsh-cat-editor">
+    <table class="widefat" id="gsh-cat-table" style="table-layout:fixed;margin-bottom:8px">
+        <thead>
+            <tr>
+                <th style="width:42px">Reihenf.</th>
+                <th style="width:160px">Anzeigename</th>
+                <th style="width:68px">Hintergrund</th>
+                <th style="width:68px">Rahmen</th>
+                <th style="width:68px">Text</th>
+                <th>Stichwörter (kommasepariert)</th>
+                <th style="width:34px"></th>
+            </tr>
+        </thead>
+        <tbody id="gsh-cat-tbody">
+        <?php foreach ( $existing_cats as $i => $cat ) : ?>
+            <tr class="gsh-cat-row">
+                <td>
+                    <input type="number" class="gsh-cat-order"
+                           value="<?php echo esc_attr( $cat['order'] ?? ( $i + 1 ) ); ?>"
+                           min="1" max="99" style="width:38px" />
+                    <input type="hidden" class="gsh-cat-slug"
+                           value="<?php echo esc_attr( $cat['slug'] ); ?>" />
+                </td>
+                <td>
+                    <input type="text" class="gsh-cat-label"
+                           value="<?php echo esc_attr( $cat['label'] ); ?>"
+                           style="width:100%"
+                           placeholder="Anzeigename" />
+                </td>
+                <td>
+                    <input type="color" class="gsh-cat-bg"
+                           value="<?php echo esc_attr( $cat['bg'] ); ?>"
+                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
+                </td>
+                <td>
+                    <input type="color" class="gsh-cat-bd"
+                           value="<?php echo esc_attr( $cat['border'] ); ?>"
+                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
+                </td>
+                <td>
+                    <input type="color" class="gsh-cat-tx"
+                           value="<?php echo esc_attr( $cat['text'] ); ?>"
+                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
+                </td>
+                <td>
+                    <input type="text" class="gsh-cat-kw"
+                           value="<?php echo esc_attr( implode( ', ', $cat['keywords'] ) ); ?>"
+                           style="width:100%"
+                           placeholder="Stichwort1, Stichwort2, ..." />
+                    <span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;
+                        padding:2px 8px;border-radius:4px;font-size:12px;
+                        border-left:3px solid <?php echo esc_attr( $cat['border'] ); ?>;
+                        background:<?php echo esc_attr( $cat['bg'] ); ?>;
+                        color:<?php echo esc_attr( $cat['text'] ); ?>">Beispieltermin</span>
+                </td>
+                <td>
+                    <button type="button" class="button gsh-cat-del"
+                            title="Kategorie löschen"><?php echo gsh_tp_icon( 'x', '0.9em' ); ?></button>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <button type="button" class="button" id="gsh-cat-add">+ Neue Kategorie hinzufügen</button>
+    </div>
 
-        <script>
-        (function(){
-            var tbody  = document.getElementById('gsh-cat-tbody');
-            var addBtn = document.getElementById('gsh-cat-add');
+    <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button type="button" class="button button-primary" id="gsh-cat-save">Stichwörter speichern</button>
+        <div id="gsh-cat-status"></div>
+    </div>
 
-            // Live-Vorschau aktualisieren wenn Farben sich ändern
-            function updatePreview(row) {
-                var bg  = row.querySelector('.gsh-cat-bg').value;
-                var bd  = row.querySelector('.gsh-cat-bd').value;
-                var tx  = row.querySelector('.gsh-cat-tx').value;
-                var pre = row.querySelector('.gsh-cat-preview');
-                if (pre) {
-                    pre.style.background    = bg;
-                    pre.style.borderLeftColor = bd;
-                    pre.style.color         = tx;
-                }
+    <script>
+    (function() {
+        'use strict';
+
+        var tbody    = document.getElementById('gsh-cat-tbody');
+        var addBtn   = document.getElementById('gsh-cat-add');
+        var saveBtn  = document.getElementById('gsh-cat-save');
+        var statusEl = document.getElementById('gsh-cat-status');
+        var nonce    = (document.getElementById('gsh-cat-nonce') || {}).value || '';
+
+        // Live-Vorschau
+        function updatePreview(row) {
+            var bg  = (row.querySelector('.gsh-cat-bg')  || {}).value || '#f0f0f0';
+            var bd  = (row.querySelector('.gsh-cat-bd')  || {}).value || '#cccccc';
+            var tx  = (row.querySelector('.gsh-cat-tx')  || {}).value || '#333333';
+            var pre = row.querySelector('.gsh-cat-preview');
+            if (pre) {
+                pre.style.background      = bg;
+                pre.style.borderLeftColor = bd;
+                pre.style.color           = tx;
             }
+        }
 
+        // Alle Kategorien aus dem DOM sammeln
+        function collectCategories() {
+            var cats = [];
+            tbody.querySelectorAll('.gsh-cat-row').forEach(function(row, idx) {
+                cats.push({
+                    slug:     (row.querySelector('.gsh-cat-slug')  || {}).value || '',
+                    label:    (row.querySelector('.gsh-cat-label') || {}).value || '',
+                    bg:       (row.querySelector('.gsh-cat-bg')    || {}).value || '#f0f0f0',
+                    border:   (row.querySelector('.gsh-cat-bd')    || {}).value || '#cccccc',
+                    text:     (row.querySelector('.gsh-cat-tx')    || {}).value || '#333333',
+                    keywords: (row.querySelector('.gsh-cat-kw')    || {}).value || '',
+                    order:    idx + 1
+                });
+            });
+            return cats;
+        }
+
+        // Status-Meldung anzeigen
+        function showStatus(ok, msg) {
+            statusEl.textContent = msg;
+            statusEl.className   = ok ? 'gsh-cat-status-ok' : 'gsh-cat-status-err';
+            statusEl.style.display = 'block';
+            if (ok) {
+                setTimeout(function() { statusEl.style.display = 'none'; }, 4000);
+            }
+        }
+
+        // Neue Zeile bauen (ohne name-Attribute – Daten werden per AJAX gesendet)
+        function buildRowHtml(idx, cat) {
+            var svgX = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            return '<td>'
+                + '<input type="hidden" class="gsh-cat-slug" value="' + escAttr(cat.slug) + '">'
+                + '<input type="number" class="gsh-cat-order" value="' + (idx + 1) + '" min="1" max="99" style="width:38px">'
+                + '</td>'
+                + '<td><input type="text" class="gsh-cat-label" value="' + escAttr(cat.label) + '" style="width:100%" placeholder="Anzeigename"></td>'
+                + '<td><input type="color" class="gsh-cat-bg" value="' + escAttr(cat.bg) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
+                + '<td><input type="color" class="gsh-cat-bd" value="' + escAttr(cat.border) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
+                + '<td><input type="color" class="gsh-cat-tx" value="' + escAttr(cat.text) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
+                + '<td>'
+                + '<input type="text" class="gsh-cat-kw" value="' + escAttr(cat.keywords) + '" style="width:100%" placeholder="Stichwort1, Stichwort2, ...">'
+                + '<span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;font-size:12px;border-left:3px solid ' + escAttr(cat.border) + ';background:' + escAttr(cat.bg) + ';color:' + escAttr(cat.text) + '">Beispieltermin</span>'
+                + '</td>'
+                + '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
+        }
+
+        function escAttr(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // Speichern via AJAX (fetch)
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                saveBtn.disabled    = true;
+                saveBtn.textContent = 'Wird gespeichert\u2026';
+                statusEl.style.display = 'none';
+
+                var body = new URLSearchParams();
+                body.append('action', 'gsh_tp_save_categories');
+                body.append('nonce',  nonce);
+                body.append('tags',   JSON.stringify(collectCategories()));
+
+                fetch(
+                    (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+                    {
+                        method:  'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body:    body.toString()
+                    }
+                )
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        // Auto-generierte Slugs neuer Kategorien in den DOM zurückspielen.
+                        // Ohne diesen Schritt würde ein erneutes Speichern ohne Reload
+                        // für neue Einträge nochmals einen Slug generieren (möglicherweise
+                        // anderen Namen bei geänderter Reihenfolge).
+                        if (data.data && Array.isArray(data.data.categories)) {
+                            var rows = tbody.querySelectorAll('.gsh-cat-row');
+                            data.data.categories.forEach(function(cat, i) {
+                                if (rows[i]) {
+                                    var slugInput = rows[i].querySelector('.gsh-cat-slug');
+                                    if (slugInput) { slugInput.value = cat.slug; }
+                                }
+                            });
+                        }
+                        showStatus(true, '\u2713 Kategorien gespeichert.');
+                    } else {
+                        var msg = (data.data && data.data.message) ? data.data.message : 'Fehler beim Speichern.';
+                        showStatus(false, '\u2717 ' + msg);
+                    }
+                })
+                .catch(function() {
+                    showStatus(false, '\u2717 Verbindungsfehler. Bitte erneut versuchen.');
+                })
+                .finally(function() {
+                    saveBtn.disabled    = false;
+                    saveBtn.textContent = 'Stichwörter speichern';
+                });
+            });
+        }
+
+        // Eingaben → Live-Vorschau
+        if (tbody) {
             tbody.addEventListener('input', function(e) {
                 var row = e.target.closest('.gsh-cat-row');
                 if (row) updatePreview(row);
             });
 
+            // Löschen
             tbody.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('gsh-cat-del')) return;
+                var delBtn = e.target.closest('.gsh-cat-del');
+                if (!delBtn) return;
                 var rows = tbody.querySelectorAll('.gsh-cat-row');
                 if (rows.length <= 1) {
-                    alert('Es muss mindestens eine Kategorie vorhanden sein.');
+                    alert('Mindestens eine Kategorie muss vorhanden sein.');
                     return;
                 }
                 if (!confirm('Kategorie wirklich löschen?')) return;
-                e.target.closest('.gsh-cat-row').remove();
-                reIndex();
+                delBtn.closest('.gsh-cat-row').remove();
             });
+        }
 
+        // Neue Kategorie hinzufügen
+        if (addBtn) {
             addBtn.addEventListener('click', function() {
-                var idx  = tbody.querySelectorAll('.gsh-cat-row').length;
-                var order = idx + 1;
-                var row  = document.createElement('tr');
+                var idx = tbody.querySelectorAll('.gsh-cat-row').length;
+                var row = document.createElement('tr');
                 row.className = 'gsh-cat-row';
-                row.innerHTML =
-                    '<td>' +
-                        '<input type="number" name="gsh_tp_categories[' + idx + '][order]" value="' + order + '" min="1" max="99" style="width:38px" class="gsh-cat-order" />' +
-                        '<input type="hidden" name="gsh_tp_categories[' + idx + '][slug]" value="" />' +
-                    '</td>' +
-                    '<td><input type="text" name="gsh_tp_categories[' + idx + '][label]" value="" style="width:100%" class="gsh-cat-label" placeholder="Anzeigename" /></td>' +
-                    '<td><input type="color" name="gsh_tp_categories[' + idx + '][bg]" value="#f0f0f0" class="gsh-cat-bg" style="width:48px;height:32px;padding:2px;cursor:pointer" /></td>' +
-                    '<td><input type="color" name="gsh_tp_categories[' + idx + '][border]" value="#cccccc" class="gsh-cat-bd" style="width:48px;height:32px;padding:2px;cursor:pointer" /></td>' +
-                    '<td><input type="color" name="gsh_tp_categories[' + idx + '][text]" value="#333333" class="gsh-cat-tx" style="width:48px;height:32px;padding:2px;cursor:pointer" /></td>' +
-                    '<td>' +
-                        '<input type="text" name="gsh_tp_categories[' + idx + '][keywords]" value="" style="width:100%" class="gsh-cat-kw" placeholder="Stichwort1, Stichwort2, ..." />' +
-                        '<span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;font-size:12px;border-left:3px solid #cccccc;background:#f0f0f0;color:#333333">Beispieltermin</span>' +
-                    '</td>' +
-                    '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen"><svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+                row.innerHTML = buildRowHtml(idx, { slug: '', label: '', bg: '#f0f0f0', border: '#cccccc', text: '#333333', keywords: '' });
                 tbody.appendChild(row);
             });
-
-            function reIndex() {
-                tbody.querySelectorAll('.gsh-cat-row').forEach(function(row, idx) {
-                    row.querySelectorAll('[name]').forEach(function(el) {
-                        el.name = el.name.replace(/\[\d+\]/, '[' + idx + ']');
-                    });
-                });
-            }
-        })();
-        </script>
-
-        <?php submit_button( 'Kategorien speichern' ); ?>
-    </form>
+        }
+    })();
+    </script>
     <?php
 }
 
@@ -2514,6 +2846,15 @@ function gsh_tp_render_system_tab() {
 
     <form method="post" action="options.php">
         <?php settings_fields( 'gsh_tp_options' ); ?>
+        <?php
+        $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
+        if ( $fail_count >= 3 ) : ?>
+        <div class="notice notice-warning inline" style="margin-bottom:16px">
+            <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+            Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a> um den E-Mail-Versand zu konfigurieren.
+            <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>">Feedback-Log ansehen</a></p>
+        </div>
+        <?php endif; ?>
         <table class="form-table">
 
             <tr>
@@ -3490,7 +3831,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
-        . ' placeholder="Termin suchen\u2026" autocomplete="off"'
+        . ' placeholder="Termin suchen…" autocomplete="off"' // Bugfix: \u2026 ist nur in JS gültig – UTF-8-Literal verwenden
         . ' oninput="gtpSearchInput(this.value)" />';
     $o .= '</div>';
     $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
@@ -3575,6 +3916,11 @@ function gsh_tp_shortcode( $atts ) {
         . ' aria-label="Schließen">&times;</button>';
     $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">&#128172; Feedback geben</h3>';
     $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.</p>';
+    // Honeypot: verstecktes Anti-Spam-Feld (muss leer bleiben)
+    $o .= '<input type="text" name="gsh_tp_hp" id="gtp-feedback-hp" '
+        . 'autocomplete="off" tabindex="-1" '
+        . 'style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" '
+        . 'aria-hidden="true">';
     // Typ-Auswahl
     $o .= '<div class="gtp-feedback-types" role="group" aria-label="Feedback-Typ wählen">';
     $types = array(
@@ -3588,6 +3934,13 @@ function gsh_tp_shortcode( $atts ) {
             . ' onclick="gtpFeedbackType(this)">'
             . $t['emoji'] . ' ' . esc_html( $t['label'] ) . '</button>';
     }
+    $o .= '</div>';
+    // Optionales Absender-Feld
+    $o .= '<div class="gtp-feedback-field">';
+    $o .= '<label for="gtp-feedback-sender" class="gtp-feedback-label">Dein Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>';
+    $o .= '<input type="text" id="gtp-feedback-sender" class="gtp-feedback-textarea" '
+        . 'style="min-height:auto;resize:none;padding:8px 14px" '
+        . 'maxlength="80" placeholder="z. B. Frau Muster" autocomplete="name">';
     $o .= '</div>';
     // Freitextfeld
     $o .= '<div class="gtp-feedback-field">';
@@ -6248,6 +6601,8 @@ function gtpFeedbackOpen() {
   var sub = document.getElementById('gtp-feedback-submit');
   var st  = document.getElementById('gtp-feedback-status');
   if (ta)  ta.value           = '';
+  var sender = document.getElementById('gtp-feedback-sender');
+  if (sender) sender.value = '';
   if (cnt) cnt.textContent    = '0';
   if (sub) sub.disabled       = true;
   if (st)  { st.style.display = 'none'; st.textContent = ''; }
@@ -6285,10 +6640,14 @@ function gtpFeedbackSubmit() {
   sub.disabled    = true;
   sub.textContent = 'Wird gesendet\u2026';
   var body = new URLSearchParams();
-  body.append('action',  'gsh_tp_feedback');
-  body.append('nonce',   nonce);
-  body.append('type',    gtpFeedbackSelectedType);
-  body.append('message', ta ? ta.value.trim() : '');
+  var hp     = document.getElementById('gtp-feedback-hp');
+  var sender = document.getElementById('gtp-feedback-sender');
+  body.append('action',    'gsh_tp_feedback');
+  body.append('nonce',     nonce);
+  body.append('type',      gtpFeedbackSelectedType);
+  body.append('message',   ta ? ta.value.trim() : '');
+  body.append('sender',    sender ? sender.value.trim() : '');
+  body.append('gsh_tp_hp', hp ? hp.value : '');
   fetch(ajaxUrl, { method: 'POST', body: body })
     .then(function(r) { return r.json(); })
     .then(function(data) {
