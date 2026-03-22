@@ -268,8 +268,6 @@ def style_terminplan(wb):
 
     # Zeilen stylen
     for row_num in range(2, max_row + 1):
-        e_val = ws.cell(row=row_num, column=5).value   # Wochentag
-        h_val = ws.cell(row=row_num, column=8).value   # Titel
         # Spalte A enthält "SW XX" nur bei echten Schulwochen-Header-Zeilen
         # (gesetzt durch patch_xlsx.py). Leere Datenzeilen haben None in Spalte A.
         a_val = ws.cell(row=row_num, column=1).value
