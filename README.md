@@ -2,7 +2,7 @@
 
 WordPress-Plugin der Gesamtschule Horst zur interaktiven Anzeige des Schulkalenders aus IServ-iCal-Feeds.
 
-**Aktuelle Version: 3.16.1**
+**Aktuelle Version: 3.17.0**
 
 ---
 
@@ -103,6 +103,14 @@ Beim Release müssen vier Stellen synchron gehalten werden:
 ---
 
 ## Changelog (Auszug)
+
+### 3.17.0
+- [FEATURE] Frontend UI-Überarbeitung: zweizeiliger Header, Suche in voller Breite
+- [FEATURE] Quartal-Tab mit Dot-Indikator für das aktuelle Quartal
+- [FEATURE] Filter-Bar mit Mobile-Toggle (aufklappbar)
+- [FEATURE] Footer in Aktions- und Meta-Bereich aufgeteilt
+- [FEATURE] Theme-Switcher und Feedback-Button nutzen SVG-Icons statt Emojis
+- [FEATURE] Entwurfs-Banner via CSS-Klasse statt Inline-Style
 
 ### 3.16.1
 - [FEATURE] Neue Standardkategorie „Inklusion"
