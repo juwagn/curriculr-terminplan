@@ -5,91 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GSH Terminplan → ICS Konverter v1.2</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #f0f2f5;
+    --bg: #f8fafc;
     --surface: #ffffff;
-    --primary: #1a5276;
-    --primary-light: #2980b9;
-    --accent: #27ae60;
-    --danger: #e74c3c;
-    --warn: #f39c12;
-    --text: #2c3e50;
-    --text-muted: #7f8c8d;
-    --border: #dfe6e9;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --accent: #059669;
+    --accent-hover: #047857;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
     --radius: 10px;
-    --shadow: 0 2px 12px rgba(0,0,0,.06);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,.1);
-
-    --cat-konferenz-bg: #d4e6f1; --cat-konferenz-fg: #1a5276;
-    --cat-pruefung-bg: #fadbd8;  --cat-pruefung-fg: #c0392b;
-    --cat-projekt-bg: #d5f5e3;   --cat-projekt-fg: #1e8449;
-    --cat-frei-bg: #e8e8e8;      --cat-frei-fg: #555;
-    --cat-eltern-bg: #fae5d3;    --cat-eltern-fg: #d35400;
-    --cat-frist-bg: #fef9e7;     --cat-frist-fg: #b7950b;
-    --cat-sonstige-bg: #f2f3f4;  --cat-sonstige-fg: #333;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -1px rgba(0,0,0,.04);
+    --shadow-lg: 0 10px 25px -5px rgba(0,0,0,.1), 0 4px 10px -5px rgba(0,0,0,.05);
+    --transition: all .15s cubic-bezier(.4,0,.2,1);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
 
   body {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 15px;
   }
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, var(--primary) 0%, #2c3e50 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
     color: #fff;
-    padding: 28px 32px;
-    display: flex; align-items: center; gap: 16px;
-    box-shadow: 0 4px 20px rgba(26,82,118,.3);
-    position: relative;
+    padding: 0 32px;
+    height: 60px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 4px 20px rgba(79,70,229,.25);
   }
-  .header-logo {
-    width: 48px; height: 48px;
-    background: rgba(255,255,255,.15);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 700;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,.2);
-  }
-  .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; }
-  .header p { font-size: .85rem; opacity: .75; margin-top: 2px; }
+  .header-logo { width: 28px; height: 28px; color: rgba(255,255,255,.9); flex-shrink: 0; }
+  .header-title { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+  .header-sub { font-size: .78rem; opacity: .6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .version-badge {
-    position: absolute; right: 32px; bottom: 12px;
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.25);
-    padding: 3px 12px; border-radius: 20px;
-    font-size: .72rem; color: rgba(255,255,255,.8);
-    cursor: pointer; transition: all .15s;
-    backdrop-filter: blur(4px);
+    margin-left: auto; flex-shrink: 0;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 4px 12px; border-radius: 20px;
+    font-size: .72rem; color: rgba(255,255,255,.85);
+    cursor: pointer; transition: var(--transition);
   }
-  .version-badge:hover { background: rgba(255,255,255,.25); color: #fff; }
+  .version-badge:hover { background: rgba(255,255,255,.22); color: #fff; }
+
+  /* ── Stepper ── */
+  .stepper {
+    display: flex; align-items: center;
+    padding: 12px 32px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; gap: 0;
+  }
+  .step-item { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--border); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; flex-shrink: 0;
+    transition: var(--transition);
+  }
+  .step-label { font-size: .8rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+  .step-item.active .step-num { background: var(--primary); color: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.18); }
+  .step-item.active .step-label { color: var(--primary); font-weight: 600; }
+  .step-item.done .step-num { background: var(--accent); color: #fff; }
+  .step-sep { width: 36px; height: 1px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
 
   /* ── Main ── */
-  .main { max-width: 1300px; margin: 0 auto; padding: 24px 20px 60px; }
+  .main { max-width: 1300px; margin: 0 auto; padding: 20px 24px 60px; }
 
   /* ── Cards ── */
   .card {
     background: var(--surface);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
-    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
     overflow: hidden;
+    transition: box-shadow .2s;
   }
+  .card:focus-within { box-shadow: var(--shadow-md); }
   .card-header {
-    padding: 16px 20px;
+    padding: 12px 18px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 10px;
+    background: #fafbfc;
   }
-  .card-header h2 { font-size: 1rem; font-weight: 600; color: var(--primary); }
+  .card-header-left { display: flex; align-items: center; gap: 9px; }
+  .card-header-icon { color: var(--primary); flex-shrink: 0; }
+  .card-step {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--primary-light); color: var(--primary);
+    font-size: .65rem; font-weight: 700; flex-shrink: 0;
+  }
+  .card-header h2 { font-size: .9rem; font-weight: 600; color: var(--text); }
   .card-body { padding: 20px; }
 
   /* ── Buttons ── */
@@ -97,66 +124,90 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px;
     border: none; border-radius: 8px;
-    font-family: inherit; font-size: .85rem; font-weight: 600;
-    cursor: pointer; transition: all .15s;
-    white-space: nowrap;
+    font-family: inherit; font-size: .84rem; font-weight: 600;
+    cursor: pointer; transition: var(--transition);
+    white-space: nowrap; text-decoration: none;
   }
-  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
-  .btn:active { transform: translateY(0); }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn:active { transform: translateY(0); box-shadow: none; }
+  .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
   .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-hover); }
   .btn-danger { background: var(--danger); color: #fff; }
   .btn-warn { background: var(--warn); color: #fff; }
   .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: #f8f9fa; color: var(--text); }
-  .btn-sm { padding: 5px 10px; font-size: .78rem; }
-  .btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+  .btn-ghost:hover { background: #f1f5f9; color: var(--text); border-color: #cbd5e1; }
+  .btn-sm { padding: 5px 11px; font-size: .78rem; }
+  .btn-lg { padding: 11px 24px; font-size: .95rem; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   /* ── Dropzone ── */
   .dropzone {
     border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 36px 20px;
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
     text-align: center;
     cursor: pointer;
-    transition: all .2s;
+    transition: var(--transition);
     position: relative;
+    background: #fafbfc;
   }
-  .dropzone:hover, .dropzone.drag-over { border-color: var(--primary-light); background: #eaf2f8; }
-  .dropzone-icon { font-size: 2.2rem; margin-bottom: 8px; }
-  .dropzone p { color: var(--text-muted); font-size: .9rem; }
-  .dropzone small { color: var(--text-muted); font-size: .78rem; }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .dropzone.drag-over { border-style: solid; }
+  .dropzone-icon {
+    width: 52px; height: 52px; margin: 0 auto 14px;
+    background: var(--primary-light);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+    transition: var(--transition);
+  }
+  .dropzone:hover .dropzone-icon, .dropzone.drag-over .dropzone-icon {
+    transform: scale(1.08); background: rgba(79,70,229,.15);
+  }
+  .dropzone-title { font-weight: 600; font-size: .95rem; color: var(--text); margin-bottom: 4px; }
+  .dropzone p { color: var(--text-muted); font-size: .88rem; }
+  .dropzone small { color: var(--text-muted); font-size: .75rem; display: block; margin-top: 6px; }
   .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
   /* ── Filter Bar ── */
   .filter-bar {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    padding: 12px 20px;
-    background: #f8f9fa;
+    padding: 10px 16px;
+    background: #f8fafc;
     border-bottom: 1px solid var(--border);
   }
   .filter-bar input[type=search] {
-    flex: 1; min-width: 180px; max-width: 320px;
-    padding: 7px 12px 7px 32px;
+    flex: 1; min-width: 180px; max-width: 300px;
+    padding: 7px 12px 7px 34px;
     border: 1px solid var(--border); border-radius: 8px;
     font-family: inherit; font-size: .84rem;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%237f8c8d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") 10px center no-repeat;
-    transition: border-color .15s;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    transition: var(--transition);
   }
-  .filter-bar input[type=search]:focus { outline: none; border-color: var(--primary-light); }
+  .filter-bar input[type=search]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
   .filter-bar select {
     padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
     font-family: inherit; font-size: .84rem; background: #fff;
+    transition: var(--transition);
   }
+  .filter-bar select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
   .filter-bar .filter-count { font-size: .78rem; color: var(--text-muted); }
 
   /* ── Bulk Bar ── */
   .bulk-bar {
     display: none; gap: 10px; align-items: center; flex-wrap: wrap;
-    padding: 10px 20px;
-    background: #eaf2f8;
-    border-bottom: 1px solid #cde0ed;
+    padding: 9px 16px;
+    background: var(--primary-light);
+    border-bottom: 1px solid #c7d2fe;
     font-size: .84rem; color: var(--primary);
   }
   .bulk-bar.active { display: flex; }
@@ -164,43 +215,43 @@
 
   /* ── Table ── */
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
   thead th {
     background: var(--primary);
     color: #fff;
     padding: 10px 8px;
-    font-weight: 600; font-size: .78rem;
+    font-weight: 600; font-size: .74rem;
     text-align: left;
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
+    letter-spacing: .03em;
   }
-  thead th:first-child { border-radius: 8px 0 0 0; }
-  thead th:last-child { border-radius: 0 8px 0 0; }
 
-  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .1s; }
-  tbody tr:hover { background: #fafbfc; }
-  tbody tr.selected { background: #eaf2f8; }
+  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .1s; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody tr.selected { background: var(--primary-light); }
   tbody tr.filtered-out { display: none; }
-  tbody tr.invalid { background: #fff5f5; }
-  tbody td { padding: 4px 4px; vertical-align: middle; }
+  tbody tr.invalid { background: #fff1f1; }
+  tbody td { padding: 6px 6px; vertical-align: middle; }
 
   .row-num {
-    color: var(--text-muted); font-size: .72rem;
+    color: var(--text-muted); font-size: .7rem;
     font-family: 'JetBrains Mono', monospace;
     text-align: center; width: 32px;
   }
 
   td input, td select {
-    width: 100%; padding: 5px 6px;
+    width: 100%; padding: 6px 8px;
     border: 1px solid transparent; border-radius: 6px;
     font-family: inherit; font-size: .83rem;
     background: transparent;
-    transition: all .15s;
+    transition: var(--transition);
+    color: var(--text);
   }
-  td input:hover, td select:hover { background: #f8f9fa; }
+  td input:hover, td select:hover { background: #f1f5f9; border-color: var(--border); }
   td input:focus, td select:focus {
-    outline: none; border-color: var(--primary-light);
-    background: #fff; box-shadow: 0 0 0 3px rgba(41,128,185,.12);
+    outline: none; border-color: var(--primary);
+    background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.1);
   }
   td input[type=date] { min-width: 130px; }
   td input[type=time] { min-width: 90px; }
@@ -208,97 +259,102 @@
   td .inp-note { min-width: 140px; }
 
   /* Validation markers */
-  td input.field-error { border-color: var(--danger); background: #fff5f5; }
+  td input.field-error { border-color: var(--danger); background: #fff1f1; }
 
   td input[type=checkbox].row-check { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
 
   select.cat-select { min-width: 120px; font-weight: 500; }
-  .cat-konferenz { background: var(--cat-konferenz-bg) !important; color: var(--cat-konferenz-fg) !important; }
-  .cat-pruefung  { background: var(--cat-pruefung-bg) !important; color: var(--cat-pruefung-fg) !important; }
-  .cat-projekt   { background: var(--cat-projekt-bg) !important; color: var(--cat-projekt-fg) !important; }
-  .cat-frei      { background: var(--cat-frei-bg) !important; color: var(--cat-frei-fg) !important; }
-  .cat-eltern    { background: var(--cat-eltern-bg) !important; color: var(--cat-eltern-fg) !important; }
-  .cat-frist     { background: var(--cat-frist-bg) !important; color: var(--cat-frist-fg) !important; }
-  .cat-sonstige  { background: var(--cat-sonstige-bg) !important; color: var(--cat-sonstige-fg) !important; }
 
   td .btn-del {
-    width: 26px; height: 26px; padding: 0;
+    width: 28px; height: 28px; padding: 0;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 6px; font-size: 1rem;
-    background: transparent; color: #ccc; border: none; cursor: pointer;
+    border-radius: 6px;
+    background: transparent; color: #cbd5e1; border: none; cursor: pointer;
+    transition: var(--transition);
   }
-  td .btn-del:hover { background: #fde8e8; color: var(--danger); }
+  td .btn-del:hover { background: #fee2e2; color: var(--danger); }
 
   /* ── Stats ── */
   .stats {
-    display: flex; gap: 16px; flex-wrap: wrap;
-    padding: 12px 20px;
-    background: #f8f9fa;
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    padding: 10px 16px;
+    background: #f8fafc;
     border-top: 1px solid var(--border);
     font-size: .82rem; color: var(--text-muted);
   }
-  .stat-badge { padding: 3px 10px; border-radius: 20px; font-weight: 600; font-size: .75rem; }
+  .stat-badge { padding: 2px 10px; border-radius: 20px; font-weight: 600; font-size: .73rem; }
   .stat-warn { color: var(--danger); font-weight: 600; }
 
   /* ── Toast ── */
   .toast {
     position: fixed; bottom: 24px; right: 24px;
-    background: #2c3e50; color: #fff;
+    background: var(--text); color: #fff;
     padding: 12px 20px; border-radius: 10px;
-    font-size: .88rem; font-weight: 500;
+    font-size: .875rem; font-weight: 500;
     box-shadow: var(--shadow-lg);
     transform: translateY(100px); opacity: 0;
     transition: all .3s cubic-bezier(.4,0,.2,1);
-    z-index: 1000;
+    z-index: 1000; max-width: 320px;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.success { background: var(--accent); }
+  .toast.success { background: #065f46; }
   .toast.error { background: var(--danger); }
   .toast.warn { background: var(--warn); }
 
   /* ── Empty state ── */
-  .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty-state { text-align: center; padding: 56px 20px; color: var(--text-muted); }
+  .empty-state .icon {
+    width: 60px; height: 60px; margin: 0 auto 16px;
+    background: var(--primary-light);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+  }
+  .empty-state p { font-size: .9rem; margin-bottom: 16px; }
 
   /* ── Modal ── */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.5); z-index: 500;
+    background: rgba(15,23,42,.5); backdrop-filter: blur(4px);
+    z-index: 500;
     align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: #fff; border-radius: 12px;
+    background: #fff; border-radius: 14px;
     max-width: 700px; width: 100%;
     max-height: 80vh; overflow: auto;
     box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
   }
   .modal-header {
     padding: 16px 20px;
     border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; background: #fff; z-index: 1;
   }
-  .modal-header h3 { font-size: 1rem; color: var(--primary); }
-  .modal-body { padding: 16px 20px; }
+  .modal-header h3 { font-size: .95rem; font-weight: 600; color: var(--text); }
+  .modal-body { padding: 20px; }
   .modal-body pre {
-    background: #f4f6f8; padding: 16px;
-    border-radius: 8px; font-size: .76rem;
+    background: #f8fafc; padding: 16px;
+    border-radius: 8px; font-size: .74rem;
     font-family: 'JetBrains Mono', monospace;
     white-space: pre-wrap; word-break: break-all;
     max-height: 400px; overflow: auto; line-height: 1.6;
+    border: 1px solid var(--border);
   }
 
   /* ── Changelog ── */
-  .changelog h4 { color: var(--primary); margin: 16px 0 8px; font-size: .95rem; }
+  .changelog h4 { color: var(--text); margin: 16px 0 8px; font-size: .9rem; font-weight: 600; }
   .changelog h4:first-child { margin-top: 0; }
-  .changelog ul { margin: 0 0 8px 20px; font-size: .88rem; line-height: 1.7; }
-  .changelog li { margin-bottom: 2px; }
-  .changelog .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: .72rem; font-weight: 700; margin-right: 6px; }
-  .changelog .tag-fix { background: #fadbd8; color: #c0392b; }
-  .changelog .tag-new { background: #d5f5e3; color: #1e8449; }
-  .changelog .tag-improve { background: #d4e6f1; color: #1a5276; }
+  .changelog ul { margin: 0 0 8px 20px; font-size: .85rem; line-height: 1.7; }
+  .changelog li { margin-bottom: 3px; }
+  .changelog .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: .68rem; font-weight: 700; margin-right: 6px; }
+  .changelog .tag-fix { background: #fee2e2; color: #991b1b; }
+  .changelog .tag-new { background: #d1fae5; color: #065f46; }
+  .changelog .tag-improve { background: #e0e7ff; color: #3730a3; }
 
-  /* ── Allday + Info ── */
+  /* ── Allday ── */
   .allday-label {
     font-size: .7rem; color: var(--text-muted);
     display: flex; align-items: center; gap: 4px;
@@ -306,13 +362,32 @@
   }
   .allday-label input { width: 14px; height: 14px; accent-color: var(--primary); }
 
+  /* ── Info Box ── */
   .info-box {
-    margin-top: 16px; padding: 14px 18px;
-    background: #eaf2f8; border-left: 4px solid var(--primary);
-    border-radius: 0 8px 8px 0; font-size: .85rem; line-height: 1.7;
+    margin-top: 16px; padding: 16px 18px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
-  .info-box strong { color: var(--primary); }
-  .info-box .step { display: block; padding: 2px 0; }
+  .info-box-title {
+    font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; font-size: .875rem;
+  }
+  .info-steps { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .info-step { display: flex; align-items: flex-start; gap: 10px; }
+  .info-step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .67rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .info-step-text { color: var(--text-muted); font-size: .84rem; line-height: 1.5; }
+  .info-step-text strong { color: var(--text); }
+
+  /* ── Export actions ── */
+  .export-primary { margin-bottom: 12px; }
+  .export-secondary { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ── Settings Panel ── */
   .settings-toggle {
@@ -320,21 +395,27 @@
     cursor: pointer; user-select: none;
   }
   .settings-toggle h2 { pointer-events: none; }
-  .settings-toggle .arrow { transition: transform .2s; font-size: .9rem; }
+  .settings-toggle .arrow { transition: transform .2s; color: var(--text-muted); display: flex; }
   .settings-toggle .arrow.open { transform: rotate(180deg); }
   .settings-body { display: none; padding: 20px; }
   .settings-body.open { display: block; }
 
   .cat-editor-table { width: 100%; border-collapse: collapse; font-size: .84rem; margin-bottom: 16px; }
   .cat-editor-table th {
-    text-align: left; padding: 8px 6px; font-size: .76rem; font-weight: 600;
+    text-align: left; padding: 8px 6px; font-size: .72rem; font-weight: 600;
     color: var(--text-muted); border-bottom: 2px solid var(--border);
+    text-transform: uppercase; letter-spacing: .04em;
   }
   .cat-editor-table td { padding: 6px; vertical-align: middle; }
   .cat-editor-table input[type=text] {
     width: 100%; padding: 5px 8px;
     border: 1px solid var(--border); border-radius: 6px;
     font-family: inherit; font-size: .83rem;
+    transition: var(--transition);
+  }
+  .cat-editor-table input[type=text]:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
   }
   .cat-editor-table input[type=color] {
     width: 36px; height: 30px; border: 1px solid var(--border);
@@ -348,27 +429,52 @@
   }
   .cat-editor-table .btn-del-cat {
     width: 28px; height: 28px; border: none; background: transparent;
-    color: #ccc; font-size: 1.1rem; cursor: pointer; border-radius: 6px;
+    color: #cbd5e1; font-size: 1.1rem; cursor: pointer; border-radius: 6px;
+    transition: var(--transition);
   }
-  .cat-editor-table .btn-del-cat:hover { background: #fde8e8; color: var(--danger); }
+  .cat-editor-table .btn-del-cat:hover { background: #fee2e2; color: var(--danger); }
 
   @media (max-width: 768px) {
-    .header { padding: 20px 16px; }
-    .version-badge { right: 16px; bottom: 8px; }
-    .main { padding: 16px 12px 40px; }
-    .card-body { padding: 12px; }
+    .header { padding: 0 16px; }
+    .stepper { padding: 10px 16px; }
+    .header-sub { display: none; }
+    .main { padding: 14px 12px 40px; }
+    .card-body { padding: 14px; }
   }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-logo">📅</div>
-  <div>
-    <h1>GSH Terminplan → ICS Konverter</h1>
-    <p>Excel importieren oder Termine direkt eingeben – dann als ICS-Datei für IServ exportieren</p>
+  <svg class="header-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+  </svg>
+  <span class="header-title">GSH Terminplan → ICS Konverter</span>
+  <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
+  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v1.4</div>
+</div>
+
+<div class="stepper" role="list" aria-label="Workflow-Schritte">
+  <div class="step-item active" id="step-1" role="listitem">
+    <div class="step-num" aria-hidden="true">1</div>
+    <span class="step-label">Kategorien</span>
   </div>
-  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v1.2</div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" id="step-2" role="listitem">
+    <div class="step-num" aria-hidden="true">2</div>
+    <span class="step-label">Importieren</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" id="step-3" role="listitem">
+    <div class="step-num" aria-hidden="true">3</div>
+    <span class="step-label">Bearbeiten</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" id="step-4" role="listitem">
+    <div class="step-num" aria-hidden="true">4</div>
+    <span class="step-label">Exportieren</span>
+  </div>
 </div>
 
 <div class="main">
@@ -376,8 +482,14 @@
   <!-- Settings: Kategorien konfigurieren -->
   <div class="card">
     <div class="card-header settings-toggle" onclick="toggleSettings()">
-      <h2>⚙️ Kategorien & Einstellungen</h2>
-      <span class="arrow" id="settings-arrow">▼</span>
+      <div class="card-header-left">
+        <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="card-step">1</span>
+        <h2>Kategorien & Einstellungen</h2>
+      </div>
+      <span class="arrow" id="settings-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
     </div>
     <div class="settings-body" id="settings-body">
       <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:16px">
@@ -408,16 +520,23 @@
   <!-- Import -->
   <div class="card">
     <div class="card-header">
-      <h2>📂 Excel importieren</h2>
+      <div class="card-header-left">
+        <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span class="card-step">2</span>
+        <h2>Excel importieren</h2>
+      </div>
       <div class="btn-group">
-        <button class="btn btn-ghost btn-sm" onclick="loadExample()">Beispiel laden</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadExample()">Beispieldaten laden</button>
       </div>
     </div>
     <div class="card-body">
       <div class="dropzone" id="dropzone">
-        <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
-        <div class="dropzone-icon">📄</div>
-        <p>Excel-Datei hierher ziehen oder klicken zum Auswählen</p>
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])" aria-label="Excel-Datei auswählen">
+        <div class="dropzone-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <p class="dropzone-title">Datei hierher ziehen oder klicken zum Auswählen</p>
+        <p>Schulwochen-Vorlage und klassisches Format werden automatisch erkannt</p>
         <small>.xlsx · .xls · .csv</small>
       </div>
     </div>
@@ -426,12 +545,22 @@
   <!-- Editor -->
   <div class="card">
     <div class="card-header">
-      <h2>✏️ Termine bearbeiten</h2>
+      <div class="card-header-left">
+        <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span class="card-step">3</span>
+        <h2>Termine bearbeiten</h2>
+      </div>
       <div class="btn-group">
         <button class="btn btn-primary btn-sm" onclick="addRow()">+ Zeile</button>
         <button class="btn btn-primary btn-sm" onclick="addRows(5)">+ 5 Zeilen</button>
-        <button class="btn btn-ghost btn-sm" onclick="sortByDate()">↕ Sortieren</button>
-        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Alle löschen</button>
+        <button class="btn btn-ghost btn-sm" onclick="sortByDate()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M11 5H4M11 9H4M11 13H4"/><path d="m15 5 4 4-4 4"/><path d="M19 9H11"/></svg>
+          Sortieren
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Alle löschen
+        </button>
       </div>
     </div>
 
@@ -475,8 +604,10 @@
         <tbody id="tbody"></tbody>
       </table>
       <div class="empty-state" id="empty-state">
-        <div class="icon">📋</div>
-        <p>Noch keine Termine vorhanden.</p>
+        <div class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <p>Noch keine Termine vorhanden.<br>Excel-Datei importieren oder manuell beginnen.</p>
         <button class="btn btn-primary" onclick="addRows(5)">Erste Zeilen anlegen</button>
       </div>
     </div>
@@ -489,23 +620,48 @@
 
   <!-- Export -->
   <div class="card">
-    <div class="card-header"><h2>📤 ICS exportieren</h2></div>
+    <div class="card-header">
+      <div class="card-header-left">
+        <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="card-step">4</span>
+        <h2>ICS exportieren</h2>
+      </div>
+    </div>
     <div class="card-body">
-      <div class="btn-group">
-        <button class="btn btn-accent" onclick="exportICS()" id="btn-export" disabled>⬇ ICS-Datei herunterladen</button>
-        <button class="btn btn-ghost" onclick="previewICS()" id="btn-preview" disabled>👁 Vorschau</button>
-        <button class="btn btn-ghost" onclick="exportExcel()" id="btn-excel" disabled>📊 Als Excel speichern</button>
-        <button class="btn btn-ghost" onclick="downloadTemplate()">📋 Leere Vorlage herunterladen</button>
+      <div class="export-primary">
+        <button class="btn btn-accent btn-lg" onclick="exportICS()" id="btn-export" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ICS-Datei herunterladen
+        </button>
+      </div>
+      <div class="export-secondary">
+        <button class="btn btn-ghost btn-sm" onclick="previewICS()" id="btn-preview" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Vorschau
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel()" id="btn-excel" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Als Excel speichern
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadTemplate()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Leere Vorlage
+        </button>
       </div>
       <div class="info-box">
-        <strong>So importieren Sie die ICS-Datei in IServ:</strong>
-        <span class="step">1. Loggen Sie sich bei IServ ein.</span>
-        <span class="step">2. Klicken Sie links im Menü auf <strong>Kalender</strong>.</span>
-        <span class="step">3. Klicken Sie oben rechts auf das <strong>Zahnrad-Symbol ⚙</strong>.</span>
-        <span class="step">4. Wählen Sie <strong>„Import"</strong>.</span>
-        <span class="step">5. Klicken Sie auf <strong>„Datei auswählen"</strong> und wählen Sie die heruntergeladene <code>schuljahresterminplan.ics</code>.</span>
-        <span class="step">6. Wählen Sie den gewünschten Zielkalender aus (z.B. „Schuljahresterminplan").</span>
-        <span class="step">7. Klicken Sie auf <strong>„Importieren"</strong> – fertig!</span>
+        <div class="info-box-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          ICS-Datei in IServ importieren
+        </div>
+        <ol class="info-steps">
+          <li class="info-step"><div class="info-step-num">1</div><span class="info-step-text">Bei IServ einloggen.</span></li>
+          <li class="info-step"><div class="info-step-num">2</div><span class="info-step-text">Links im Menü auf <strong>Kalender</strong> klicken.</span></li>
+          <li class="info-step"><div class="info-step-num">3</div><span class="info-step-text">Oben rechts auf das <strong>Zahnrad-Symbol</strong> klicken.</span></li>
+          <li class="info-step"><div class="info-step-num">4</div><span class="info-step-text"><strong>„Import"</strong> auswählen.</span></li>
+          <li class="info-step"><div class="info-step-num">5</div><span class="info-step-text"><strong>„Datei auswählen"</strong> und die heruntergeladene <strong>schuljahresterminplan.ics</strong> öffnen.</span></li>
+          <li class="info-step"><div class="info-step-num">6</div><span class="info-step-text">Zielkalender wählen (z.B. „Schuljahresterminplan").</span></li>
+          <li class="info-step"><div class="info-step-num">7</div><span class="info-step-text"><strong>„Importieren"</strong> klicken – fertig!</span></li>
+        </ol>
       </div>
     </div>
   </div>
@@ -526,10 +682,25 @@
 <div class="modal-overlay" id="modal-changelog" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-header">
-      <h3>📋 Changelog</h3>
+      <h3>Changelog</h3>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-changelog').classList.remove('open')">✕ Schließen</button>
     </div>
     <div class="modal-body changelog">
+      <h4>Version 1.4 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
+      <ul>
+        <li><span class="tag tag-improve">BESSER</span> Modernes Indigo-Design: frische Farbpalette, Fira-Sans-Typografie, einheitliche SVG-Icons</li>
+        <li><span class="tag tag-new">NEU</span> 4-Schritt-Workflow-Stepper im Header – zeigt automatisch die aktuelle Phase (Kategorien → Import → Bearbeiten → Exportieren)</li>
+        <li><span class="tag tag-improve">BESSER</span> Dropzone vergrößert und animiert: Icon-Box, Hover-Puls, klarer Titel</li>
+        <li><span class="tag tag-improve">BESSER</span> Export-Hierarchie: großer grüner ICS-Button als Primär-CTA, Vorschau/Excel/Vorlage als Sekundär-Buttons</li>
+        <li><span class="tag tag-improve">BESSER</span> IServ-Importanleitung: nummerierte Schritte mit Indigo-Kreisen statt Textblock</li>
+        <li><span class="tag tag-improve">BESSER</span> Barrierefreiheit: <code style="font-size:.75rem">prefers-reduced-motion</code>, <code style="font-size:.75rem">focus-visible</code>, alle Dekorations-SVGs mit <code style="font-size:.75rem">aria-hidden</code></li>
+      </ul>
+      <h4>Version 1.3 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
+      <ul>
+        <li><span class="tag tag-new">NEU</span> Schulwochen-Import: Die neue GSH-Schulwochen-Vorlage (SW-Format) wird automatisch erkannt – Schulwochen werden direkt zu Kalenderterminen umgerechnet</li>
+        <li><span class="tag tag-new">NEU</span> Ferien-Import: FERIEN-Blöcke aus der Vorlage werden automatisch als ganztägige Ferieneinträge angelegt</li>
+        <li><span class="tag tag-new">NEU</span> 7 neue Schulkategorien passend zum Plugin: Jahrgang 5/6, Jahrgang 7/8, Jahrgang 9/10, Oberstufe, Inklusion, Feiertage/Ferien, Konferenzen/DB</li>
+      </ul>
       <h4>Version 1.2 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
       <ul>
         <li><span class="tag tag-new">NEU</span> Kategorie-Editor: Kategorien (Name, Farben, Stichwörter, ICS-Wert) direkt im Tool konfigurierbar – kompatibel mit dem Plugin-Kategorie-System</li>
@@ -568,7 +739,7 @@
 <div class="modal-overlay" id="modal-import" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-header">
-      <h3>📊 Import-Zusammenfassung</h3>
+      <h3>Import-Zusammenfassung</h3>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-import').classList.remove('open')">✕ Schließen</button>
     </div>
     <div class="modal-body" id="import-summary"></div>
@@ -583,7 +754,7 @@
 // ═══════════════════════════════════════════════════════════
 // CONFIGURABLE CATEGORY SYSTEM (v1.2)
 // ═══════════════════════════════════════════════════════════
-const VERSION = '1.2';
+const VERSION = '1.4';
 
 // Editable category definitions – these can be changed via the Settings panel
 // or directly in this source code. Each category has:
@@ -593,13 +764,13 @@ const VERSION = '1.2';
 //   icsValue: What goes into the ICS CATEGORIES field (must match plugin keywords)
 //   keywords: Comma-separated keywords for auto-matching during Excel import
 const DEFAULT_CATEGORIES = [
-  { label:'Konferenz',   bg:'#d4e6f1', text:'#1a5276', icsValue:'Konferenz', keywords:'Konferenz,LK,FaKo,Fachkonferenz,TBS,Dienstbesprechung,DB,PK,ZK,SK,SchiLF,Pflegschaft,Schulkonferenz,Teamsitzung,Teamtag,Teamnachmittag,Studientag' },
-  { label:'Prüfung',     bg:'#fadbd8', text:'#c0392b', icsValue:'Prüfung',   keywords:'Prüfung,Pruefung,ZP,Abi,Klausur,Vera,DST,ZKL,mAP,ZAA,Sprachstandstest,Nachprüfung' },
-  { label:'Projekt',     bg:'#d5f5e3', text:'#1e8449', icsValue:'Projekt',   keywords:'Projekt,ProWo,Wandertag,Sportspektakel,Praktikum,SV-Fahrt,Studienfahrt,Abschlussfahrt,Fahrtenwoche,Exkursion,Turnier,Olympiade,Sponsorenlauf,Friedenstag,Antirassismustag,Abifeier,Entlassfeier,Horst forscht' },
-  { label:'Ferien/Frei', bg:'#e8e8e8', text:'#555555', icsValue:'Ferien',    keywords:'Frei,Ferien,Feiertag,Ferientag,Rosenmontag,Weihnacht,Pfingsten,Himmelfahrt,Fronleichnam,Maifeiertag,Tag der Deutschen Einheit' },
-  { label:'Eltern',      bg:'#fae5d3', text:'#d35400', icsValue:'Eltern',    keywords:'Eltern,Beratung,Info-Abend,Infoabend,Potenzialanalyse,KAoA,Kurswahl,Anmeldung,Tag der offenen Tür,Schnuppertag,Berufemarkt,Lernberatungstag' },
-  { label:'Frist',       bg:'#fef9e7', text:'#b7950b', icsValue:'Frist',     keywords:'Frist,Noten,Fachkommentar,Berichtszeugnis,Zeugnis,Evaluation,Foerderplaene,Förderpläne,Meldung mAP' },
-  { label:'Sonstige',    bg:'#f2f3f4', text:'#333333', icsValue:'',          keywords:'' },
+  { label:'Jahrgang 5/6',     bg:'#fadbd8', text:'#922b21', icsValue:'Jahrgang 5/6',     keywords:'Jg 5,Jg 6,Klasse 5,Klasse 6,DST,Sprachstandstest,Einschulung,Orientierungsphase,Neue 5er,Teamtag neue 5,Bücherausgabe,Grundschule,Nicht-Schwimmer' },
+  { label:'Jahrgang 7/8',     bg:'#d5f5e3', text:'#145a32', icsValue:'Jahrgang 7/8',     keywords:'Jg 7,Jg 8,Potenzialanalyse,Sexualerziehung 8,KAoA,Berufsorientierung,Berufsfelderkundung,WPM,WP-Wahl,Sponsorenlauf' },
+  { label:'Jahrgang 9/10',    bg:'#fde8d3', text:'#873600', icsValue:'Jahrgang 9/10',    keywords:'Jg 9,Jg 10,Betriebspraktikum,BP,ZP 10,mAP 10,ZAA,Abschlussfahrt 10,Berufsberatung,gesi-online,Karriere-Kick,Abschlussfahrt' },
+  { label:'Oberstufe',        bg:'#d4e6f1', text:'#1a5276', icsValue:'Oberstufe',        keywords:'EF,Q1,Q2,Abi,Abitur,Klausur,ZKL 11,Laufbahn,Kurswahl,Studienfahrt,Abi-Klausuren,Laufbahnkonferenz,Kurswahlfahrt,Vorklausuren,Laufbahnbesch' },
+  { label:'Inklusion',        bg:'#d1f2eb', text:'#0e6655', icsValue:'Inklusion',        keywords:'IFÖ,AL SuS,AL-SuS,Übergabe Beratungsteam,Förderplan,Förderpläne,AOSF,I-Helfer,Förderlehrer,Fö-LuL,Beratungsteam,Nachteilsausgleich,Inklusion' },
+  { label:'Feiertage/Ferien', bg:'#fdebd0', text:'#784212', icsValue:'Feiertage',        keywords:'Ferien,Feiertag,Schulfrei,Weihnachten,Ostern,Pfingsten,Karfreitag,Himmelfahrt,Fronleichnam,Maifeiertag,Neujahr,Herbstferien,Sommerferien,Osterferien,Pfingstferien,Weihnachtsferien,Rosenmontag,Chanukka,Ramadan,Newroz,Rosch Haschana,Bayram,bwgl. Ferientag' },
+  { label:'Konferenzen/DB',   bg:'#e8daef', text:'#6c3483', icsValue:'Konferenzen',      keywords:'LK,FaKo,PK,ZK,SK,KK,DB,TBS,Dienstbesprechung,Teambesprechung,Teamsitzung,SchiLF,Schulkonferenz,Schulpflegschaft,Pflegschaft,Projektgruppen,Fallberatung,Zeugniskonferenz,Teamsprecherkonferenz,Studientag,Teamnachmittag,Förderplankonferenz' },
 ];
 
 // Live category state
@@ -819,6 +990,99 @@ dz.addEventListener('drop', e => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// SCHULWOCHE-FORMAT HELPERS
+// ═══════════════════════════════════════════════════════════
+
+// Gibt ISO-Datum "YYYY-MM-DD" zurück (addDaysToDateStr gibt kompaktes Format zurück)
+function addDaysISO(dateStr, days) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+// Erkennt Schulwochen-Format: Spalte 0 enthält "SW XX" oder "FERIEN"
+function detectSWFormat(rows) {
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const col0 = String(rows[i]?.[0] || '').trim();
+    if (/^SW\s*\d/i.test(col0)) return true;
+  }
+  return false;
+}
+
+// Importiert Schulwochen-Format: SW-Kopfzeilen + Ereigniszeilen + FERIEN-Blöcke
+function importSWFormat(rows) {
+  clearAllSilent();
+  let imported = 0, skipped = 0;
+  const catCounts = {};
+  const weekdayOffset = { 'Mo': 0, 'Di': 1, 'Mi': 2, 'Do': 3, 'Fr': 4, 'Ganze Woche': 0 };
+
+  let currentMonday = null; // ISO "YYYY-MM-DD" des Montags der aktuellen SW
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const col0 = String(row[0] || '').trim();
+
+    // Kopfzeile der Tabelle ("SW", "Wochentag" …) überspringen
+    if (/^SW$/i.test(col0)) continue;
+
+    // SW-Kopfzeile: "SW 01", "SW 00" usw.
+    if (/^SW\s*\d/i.test(col0)) {
+      const mondayRaw = String(row[1] || '').trim();
+      currentMonday = parseImportDate(mondayRaw) || currentMonday;
+      continue;
+    }
+
+    // FERIEN-Block: Spalte A="FERIEN", B=Start-ISO, D=Anzeigestring, H=Name
+    if (col0.toUpperCase() === 'FERIEN') {
+      const startDate = parseImportDate(String(row[1] || '').trim());
+      // Enddatum aus Anzeigestring (D=index 3) extrahieren: "13.10.2025 – 24.10.2025"
+      let endDate = null;
+      const dispStr = String(row[3] || '');
+      const dateMatches = dispStr.match(/\d{1,2}\.\d{1,2}\.\d{4}/g);
+      if (dateMatches && dateMatches.length >= 2) endDate = parseImportDate(dateMatches[1]);
+      // Name: bevorzugt Spalte H (Titel-Spalte = index 7), Fallback Spalte D
+      const name = String(row[7] || row[3] || 'Ferien').trim();
+      if (startDate && name) {
+        const cat = matchCategory('Feiertage/Ferien');
+        addRow({ title: name, start: startDate, end: endDate || startDate, cat, allday: true });
+        imported++;
+        catCounts[cat || 'Ferien'] = (catCounts[cat || 'Ferien'] || 0) + 1;
+      }
+      continue;
+    }
+
+    // Ereigniszeile: Spalte 0 leer, currentMonday bekannt
+    if (!col0 && currentMonday) {
+      const wochentag = String(row[1] || '').trim();
+      const uhrzeit   = parseImportTime(String(row[2] || '').trim());
+      const endzeit   = parseImportTime(String(row[3] || '').trim());
+      const title     = String(row[4] || '').trim();
+      const catRaw    = String(row[5] || '').trim();
+      const ganztaeg  = String(row[6] || '').trim().toLowerCase() === 'x';
+      const note      = String(row[7] || '').trim();
+
+      if (!title) { skipped++; continue; }
+
+      const offset    = weekdayOffset[wochentag];
+      const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
+      const isGanzWoche = wochentag === 'Ganze Woche';
+      const endDate   = isGanzWoche ? addDaysISO(currentMonday, 4) : (endzeit ? eventDate : '');
+      const allday    = ganztaeg || (!uhrzeit && !endzeit);
+      const cat       = catRaw ? matchCategory(catRaw) : '';
+
+      addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
+      imported++;
+      catCounts[cat || 'Ohne Kategorie'] = (catCounts[cat || 'Ohne Kategorie'] || 0) + 1;
+    }
+  }
+
+  isDirty = imported > 0;
+  validateRows();
+  updateStats();
+  return { imported, skipped, catCounts };
+}
+
+// ═══════════════════════════════════════════════════════════
 // EXCEL IMPORT + P1: DUPLIKAT-ERKENNUNG
 // ═══════════════════════════════════════════════════════════
 function handleFile(file) {
@@ -833,6 +1097,21 @@ function handleFile(file) {
       const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+      // Schulwochen-Format automatisch erkennen und separat importieren
+      if (detectSWFormat(rows)) {
+        const { imported, skipped, catCounts } = importSWFormat(rows);
+        let html = `<p style="font-size:1.1rem;margin-bottom:8px"><strong>${imported}</strong> Termine aus Schulwochen-Vorlage importiert</p>`;
+        if (skipped > 0) html += `<p style="color:var(--text-muted);margin-bottom:12px">${skipped} leere Zeile(n) übersprungen</p>`;
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+        for (const [c, n] of Object.entries(catCounts).sort((a, b) => b[1] - a[1])) {
+          html += `<span class="stat-badge ${getCatClass(c)}">${c}: ${n}</span>`;
+        }
+        html += '</div>';
+        document.getElementById('import-summary').innerHTML = html;
+        document.getElementById('modal-import').classList.add('open');
+        return;
+      }
 
       let headerIdx = -1;
       for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -1242,6 +1521,7 @@ function updateStats() {
   document.getElementById('btn-export').disabled = !canExport;
   document.getElementById('btn-preview').disabled = !canExport;
   document.getElementById('btn-excel').disabled = !canExport;
+  updateStepper();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1429,13 +1709,13 @@ function loadExample() {
   if (getRows().some(r => r.title) && !confirm('Bestehende Termine überschreiben?')) return;
   clearAllSilent();
   [
-    { title: '1. Lehrerkonferenz', start: '2025-08-18', startTime: '08:00', endTime: '13:00', cat: 'Konferenz', allday: false },
-    { title: 'Erster Schultag', start: '2025-08-20', cat: 'Sonstige', allday: true },
-    { title: 'Herbstferien', start: '2025-10-06', end: '2025-10-18', cat: 'Ferien/Frei', allday: true, note: 'NRW' },
-    { title: 'Elternsprechtag Jg. 5–7', start: '2025-11-13', startTime: '15:00', endTime: '19:00', cat: 'Eltern', allday: false },
-    { title: 'Notenschluss 1. HJ', start: '2026-01-19', cat: 'Frist', allday: true },
-    { title: 'ZP 10 Deutsch', start: '2026-05-12', startTime: '09:00', endTime: '11:30', cat: 'Prüfung', allday: false, note: 'Haupttermin' },
-    { title: 'Projektwoche', start: '2026-06-22', end: '2026-06-26', cat: 'Projekt', allday: true },
+    { title: '1. Lehrerkonferenz',     start: '2025-08-25', startTime: '09:30', endTime: '13:00', cat: 'Konferenzen/DB',   allday: false },
+    { title: 'Herbstferien',           start: '2025-10-13', end: '2025-10-24',                    cat: 'Feiertage/Ferien', allday: true,  note: 'NRW' },
+    { title: 'Pflegschaft Jg. 5/6',   start: '2025-11-10', startTime: '18:00',                   cat: 'Jahrgang 5/6',    allday: false },
+    { title: 'Potenzialanalyse Jg. 8', start: '2025-11-24',                                       cat: 'Jahrgang 7/8',    allday: true },
+    { title: 'ZP 10 Deutsch',          start: '2026-05-12', startTime: '09:00', endTime: '11:30', cat: 'Jahrgang 9/10',   allday: false, note: 'Haupttermin' },
+    { title: 'Abi-Klausuren',          start: '2026-04-13',                                       cat: 'Oberstufe',       allday: true },
+    { title: 'Förderplankonferenz Jg. 5', start: '2025-10-01', startTime: '14:15',               cat: 'Inklusion',       allday: false },
   ].forEach(e => addRow(e));
   isDirty = true;
   validateRows(); updateStats();
@@ -1467,8 +1747,28 @@ document.getElementById('tbody').addEventListener('keydown', e => {
   }
 });
 
+// ── Stepper-Update ──
+function updateStepper() {
+  const hasRows = document.getElementById('tbody').children.length > 0;
+  const hasValid = getValidRows().length > 0;
+  const s1 = document.getElementById('step-1');
+  const s2 = document.getElementById('step-2');
+  const s3 = document.getElementById('step-3');
+  const s4 = document.getElementById('step-4');
+  if (!s1) return;
+  s1.className = 'step-item done';
+  if (!hasRows) {
+    s2.className = 'step-item active'; s3.className = 'step-item'; s4.className = 'step-item';
+  } else if (!hasValid) {
+    s2.className = 'step-item done'; s3.className = 'step-item active'; s4.className = 'step-item';
+  } else {
+    s2.className = 'step-item done'; s3.className = 'step-item done'; s4.className = 'step-item active';
+  }
+}
+
 // Init
 updateUI();
+updateStepper();
 </script>
 </body>
 </html>

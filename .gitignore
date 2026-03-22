@@ -1,10 +1,28 @@
 # WordPress-Konfiguration (enthält Datenbankpasswörter!)
 wp-config.php
 
-# Backup-Dateien
+# Backup-Dateien (alte Versionen)
+Backup/
 *.bak
 *_backup_*
 _old/
+
+# Claude Code – interne Dateien
+.claude/
+CLAUDE.md
+
+# Lokale Tools & Aufgaben-Notizen
+tools/
+tasks/
+
+# Binärdateien (Downloads)
+*.zip
+*.xlsx
+*.docx
+
+# Python-Cache
+__pycache__/
+*.pyc
 
 # Betriebssystem-Dateien
 .DS_Store

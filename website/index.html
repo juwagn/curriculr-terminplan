@@ -5,137 +5,157 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GSH Terminplan – Digitaler Schulkalender</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <style>
-/* ───────────────────────────────────────────────────────────
-   DESIGN TOKENS
-─────────────────────────────────────────────────────────── */
+/* ── DESIGN TOKENS ───────────────────────────────────────── */
 :root {
-  --blue-900: #0d2d47;
-  --blue-800: #1a5276;
-  --blue-700: #1f6390;
-  --blue-600: #2980b9;
-  --blue-100: #eaf4fb;
-  --blue-50:  #f4f9fd;
+  --indigo-950: #1e1b4b;
+  --indigo-900: #312e81;
+  --indigo-800: #3730a3;
+  --indigo-700: #4338ca;
+  --indigo-600: #4f46e5;
+  --indigo-500: #6366f1;
+  --indigo-400: #818cf8;
+  --indigo-300: #a5b4fc;
+  --indigo-100: #e0e7ff;
+  --indigo-50:  #eef2ff;
 
-  --ink:       #111827;
-  --ink-2:     #374151;
-  --ink-3:     #6b7280;
-  --ink-4:     #9ca3af;
-  --line:      #e5e7eb;
-  --surface:   #ffffff;
-  --bg:        #f9fafb;
+  --emerald-600: #059669;
+  --emerald-500: #10b981;
+  --emerald-400: #34d399;
+  --emerald-100: #d1fae5;
+  --emerald-50:  #ecfdf5;
 
-  --cat-k-bg: #dbeafe; --cat-k-fg: #1e40af;
-  --cat-p-bg: #fee2e2; --cat-p-fg: #b91c1c;
-  --cat-j-bg: #dcfce7; --cat-j-fg: #15803d;
-  --cat-f-bg: #f3f4f6; --cat-f-fg: #374151;
-  --cat-e-bg: #ffedd5; --cat-e-fg: #c2410c;
-  --cat-r-bg: #fef9c3; --cat-r-fg: #854d0e;
-  --cat-s-bg: #f3f4f6; --cat-s-fg: #6b7280;
+  --violet-600: #7c3aed;
+  --violet-500: #8b5cf6;
+  --violet-100: #ede9fe;
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.05);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.06);
+  --ink:   #1e1b4b;
+  --ink-2: #374151;
+  --ink-3: #6b7280;
+  --ink-4: #9ca3af;
+  --line:  #e5e7eb;
+  --bg:    #f5f3ff;
+  --surface: #ffffff;
 
-  --font-display: 'Syne', system-ui, sans-serif;
-  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Jg 5/6 */ --cat-k-bg: #fadbd8; --cat-k-fg: #922b21;
+  /* Jg 7/8 */ --cat-p-bg: #d5f5e3; --cat-p-fg: #145a32;
+  /* Jg 9/10 */ --cat-j-bg: #fde8d3; --cat-j-fg: #873600;
+  /* Oberstufe */ --cat-f-bg: #d4e6f1; --cat-f-fg: #1a5276;
+  /* Inklusion */ --cat-e-bg: #d1f2eb; --cat-e-fg: #0e6655;
+  /* Feiertage/Ferien */ --cat-r-bg: #fdebd0; --cat-r-fg: #784212;
+  /* Konferenzen/DB */ --cat-s-bg: #e8daef; --cat-s-fg: #6c3483;
 
-  --max-w: 1080px;
-  --section-gap: 96px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+
+  --shadow-sm: 0 1px 3px rgba(79,70,229,.06), 0 1px 2px rgba(79,70,229,.04);
+  --shadow-md: 0 4px 16px rgba(79,70,229,.08), 0 1px 4px rgba(79,70,229,.05);
+  --shadow-lg: 0 16px 48px rgba(79,70,229,.12), 0 4px 16px rgba(79,70,229,.07);
+  --shadow-clay: 6px 6px 0 rgba(99,102,241,.18), 0 2px 8px rgba(99,102,241,.10);
+
+  --font-display: 'Fira Sans', system-ui, sans-serif;
+  --font-body:    'Fira Sans', system-ui, sans-serif;
+  --font-mono:    'Fira Code', monospace;
+
+  --max-w: 1100px;
+  --gap:   96px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-body);
-  background: var(--surface);
+  background: var(--bg);
   color: var(--ink);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ───────────────────────────────────────────────────────────
-   LAYOUT HELPERS
-─────────────────────────────────────────────────────────── */
 .container {
   max-width: var(--max-w);
   margin: 0 auto;
   padding: 0 32px;
 }
-@media (max-width: 640px) { .container { padding: 0 20px; } }
+@media (max-width: 640px) { .container { padding: 0 18px; } }
 
-section { padding: var(--section-gap) 0; }
-section + section { border-top: 1px solid var(--line); }
+section { padding: var(--gap) 0; }
 
-.label-eyebrow {
-  display: inline-block;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--blue-600);
-  margin-bottom: 14px;
+  color: var(--indigo-600);
+  margin-bottom: 16px;
+}
+.eyebrow::before {
+  content: '';
+  width: 18px; height: 2px;
+  background: var(--indigo-500);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 h2.section-title {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 4vw, 2.4rem);
-  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
   color: var(--ink);
-  line-height: 1.15;
-  letter-spacing: -.02em;
+  line-height: 1.1;
+  letter-spacing: -.03em;
 }
 
 .section-sub {
   margin-top: 14px;
   font-size: 1.05rem;
   color: var(--ink-3);
-  max-width: 520px;
-  line-height: 1.65;
+  max-width: 540px;
+  line-height: 1.7;
 }
 
-/* ───────────────────────────────────────────────────────────
-   NAV
-─────────────────────────────────────────────────────────── */
+/* ── NAVIGATION ──────────────────────────────────────────── */
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
+  background: rgba(245,243,255,.88);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  border-bottom: 1px solid rgba(99,102,241,.12);
 }
 .nav-inner {
   max-width: var(--max-w);
   margin: 0 auto;
   padding: 0 32px;
-  height: 58px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
 }
 .nav-logo {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 11px;
   text-decoration: none;
 }
 .nav-logo-mark {
-  width: 32px; height: 32px;
-  background: var(--blue-800);
-  border-radius: 8px;
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--indigo-600) 0%, var(--violet-500) 100%);
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: .85rem; font-weight: 800;
-  font-family: var(--font-display);
+  box-shadow: 0 2px 8px rgba(99,102,241,.35);
 }
+.nav-logo-mark svg { width: 18px; height: 18px; fill: #fff; }
 .nav-logo-text {
   font-weight: 700; font-size: .95rem; color: var(--ink);
   letter-spacing: -.01em;
 }
-.nav-logo-text span { color: var(--ink-3); font-weight: 500; }
+.nav-logo-text span { color: var(--ink-4); font-weight: 500; }
 
 .nav-links {
   display: flex; gap: 28px; list-style: none;
@@ -144,439 +164,563 @@ h2.section-title {
   font-size: .85rem; font-weight: 500; color: var(--ink-3);
   text-decoration: none; transition: color .15s;
 }
-.nav-links a:hover { color: var(--ink); }
+.nav-links a:hover { color: var(--indigo-600); }
 
 .nav-cta {
-  background: var(--blue-800);
+  background: linear-gradient(135deg, var(--indigo-600) 0%, var(--violet-600) 100%);
   color: #fff;
   font-size: .82rem; font-weight: 600;
-  padding: 8px 18px;
-  border-radius: var(--radius-sm);
+  padding: 9px 20px;
+  border-radius: var(--r-sm);
   text-decoration: none;
-  transition: background .15s, transform .1s;
+  transition: opacity .15s, transform .1s;
+  box-shadow: 0 2px 8px rgba(99,102,241,.35);
 }
-.nav-cta:hover { background: var(--blue-700); transform: translateY(-1px); }
+.nav-cta:hover { opacity: .9; transform: translateY(-1px); }
 
 @media (max-width: 640px) {
   .nav-links { display: none; }
+  @media (max-width: 640px) { .nav-inner { padding: 0 18px; } }
 }
 
-/* ───────────────────────────────────────────────────────────
-   HERO
-─────────────────────────────────────────────────────────── */
+/* ── HERO ────────────────────────────────────────────────── */
 .hero {
-  padding: 100px 0 80px;
-  background: linear-gradient(170deg, var(--blue-50) 0%, #fff 55%);
+  padding: 88px 0 72px;
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--line);
 }
 .hero::before {
   content: '';
   position: absolute;
-  top: -120px; right: -120px;
-  width: 560px; height: 560px;
-  background: radial-gradient(circle at center, rgba(41,128,185,.08) 0%, transparent 65%);
+  top: -200px; right: -200px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle at center,
+    rgba(99,102,241,.12) 0%,
+    rgba(139,92,246,.06) 40%,
+    transparent 70%);
   pointer-events: none;
 }
-.hero-kicker {
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -100px; left: -150px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle at center,
+    rgba(16,185,129,.08) 0%,
+    transparent 60%);
+  pointer-events: none;
+}
+
+.hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: var(--blue-100);
-  color: var(--blue-700);
-  font-size: .78rem; font-weight: 600;
+  background: rgba(99,102,241,.1);
+  border: 1px solid rgba(99,102,241,.2);
+  color: var(--indigo-700);
+  font-size: .76rem; font-weight: 600;
   padding: 5px 14px; border-radius: 100px;
-  border: 1px solid rgba(41,128,185,.2);
   margin-bottom: 28px;
 }
-.hero-kicker::before {
-  content: '';
-  width: 7px; height: 7px;
-  background: var(--blue-600);
+.hero-badge-dot {
+  width: 6px; height: 6px;
+  background: var(--emerald-500);
   border-radius: 50%;
-  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--emerald-500);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
 }
 
 .hero h1 {
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -.03em;
+  line-height: 1.07;
+  letter-spacing: -.04em;
   color: var(--ink);
-  max-width: 720px;
+  max-width: 760px;
   margin-bottom: 24px;
 }
 .hero h1 em {
   font-style: normal;
-  color: var(--blue-800);
+  background: linear-gradient(135deg, var(--indigo-600) 0%, var(--violet-500) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-sub {
   font-size: 1.1rem;
   color: var(--ink-3);
   max-width: 520px;
-  line-height: 1.7;
+  line-height: 1.75;
   margin-bottom: 44px;
 }
 
 .hero-actions {
   display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 56px;
 }
 
-.btn-hero-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--blue-800);
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: linear-gradient(135deg, var(--indigo-600) 0%, var(--violet-600) 100%);
   color: #fff;
   font-family: var(--font-body); font-size: .92rem; font-weight: 600;
   padding: 13px 26px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-md);
   text-decoration: none;
-  transition: background .15s, transform .1s, box-shadow .15s;
-  box-shadow: 0 2px 8px rgba(26,82,118,.25);
+  transition: opacity .15s, transform .1s, box-shadow .15s;
+  box-shadow: var(--shadow-clay);
+  cursor: pointer;
 }
-.btn-hero-primary:hover { background: var(--blue-700); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,82,118,.3); }
+.btn-primary:hover { opacity: .92; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,.35); }
 
-.btn-hero-ghost {
+.btn-ghost {
   display: inline-flex; align-items: center; gap: 8px;
   color: var(--ink-2);
   font-family: var(--font-body); font-size: .92rem; font-weight: 500;
-  padding: 13px 20px;
-  border-radius: var(--radius-sm);
+  padding: 13px 22px;
+  border-radius: var(--r-md);
   text-decoration: none;
-  border: 1px solid var(--line);
-  transition: background .15s, border-color .15s;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  transition: border-color .15s, background .15s;
+  cursor: pointer;
 }
-.btn-hero-ghost:hover { background: var(--bg); border-color: #d1d5db; }
+.btn-ghost:hover { border-color: var(--indigo-300); background: var(--indigo-50); }
 
-.hero-meta {
-  margin-top: 52px;
-  display: flex; gap: 36px; flex-wrap: wrap;
+/* Hero Stats */
+.hero-stats {
+  display: flex; gap: 0;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  width: fit-content;
 }
-.hero-meta-item {
-  display: flex; flex-direction: column; gap: 2px;
+.hero-stat {
+  padding: 20px 32px;
+  display: flex; flex-direction: column; gap: 3px;
+  position: relative;
 }
-.hero-meta-item strong {
+.hero-stat + .hero-stat::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 1px;
+  background: var(--line);
+}
+.hero-stat strong {
   font-family: var(--font-display);
-  font-size: 1.5rem; font-weight: 700; color: var(--blue-800);
+  font-size: 1.6rem; font-weight: 800;
+  color: var(--indigo-600);
+  letter-spacing: -.03em;
+  line-height: 1;
 }
-.hero-meta-item span { font-size: .8rem; color: var(--ink-4); }
+.hero-stat span { font-size: .78rem; color: var(--ink-4); font-weight: 500; }
+@media (max-width: 640px) {
+  .hero-stats { flex-wrap: wrap; width: 100%; }
+  .hero-stat { flex: 1 1 50%; }
+  .hero-stat:nth-child(3)::before,
+  .hero-stat:nth-child(4)::before { top: 0; bottom: auto; width: 100%; height: 1px; left: 0; }
+}
 
-/* ───────────────────────────────────────────────────────────
-   DOWNLOAD CARDS
-─────────────────────────────────────────────────────────── */
+/* ── DOWNLOADS ───────────────────────────────────────────── */
+#download { background: transparent; }
+
 .download-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   margin-top: 52px;
 }
-@media (max-width: 720px) { .download-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .download-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 760px) { .download-grid { grid-template-columns: 1fr; } }
 
-.download-card {
+.dl-card {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 40px 36px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: 40px;
+  display: flex; flex-direction: column;
   box-shadow: var(--shadow-md);
-  display: flex; flex-direction: column; gap: 0;
-  transition: box-shadow .2s, transform .2s;
+  transition: box-shadow .25s, transform .25s;
   position: relative;
   overflow: hidden;
+  cursor: default;
 }
-.download-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.dl-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
 
-.download-card::before {
-  content: '';
+.dl-card-accent {
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--blue-800);
+  height: 4px;
+  background: linear-gradient(90deg, var(--indigo-500), var(--violet-500));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
 }
-.download-card.plugin::before { background: linear-gradient(90deg, #27ae60, #16a085); }
+.dl-card.emerald .dl-card-accent {
+  background: linear-gradient(90deg, var(--emerald-500), var(--emerald-400));
+}
+.dl-card.violet .dl-card-accent {
+  background: linear-gradient(90deg, var(--violet-600), var(--violet-500));
+}
 
-.download-card-icon {
-  width: 52px; height: 52px;
-  border-radius: 14px;
+.dl-card-icon {
+  width: 54px; height: 54px;
+  border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+  flex-shrink: 0;
 }
-.download-card .icon-konverter { background: var(--blue-100); }
-.download-card .icon-plugin    { background: #dcfce7; }
+.dl-card-icon.indigo { background: var(--indigo-50); color: var(--indigo-600); }
+.dl-card-icon.indigo svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dl-card-icon.emerald { background: var(--emerald-50); color: var(--emerald-600); }
+.dl-card-icon.emerald svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dl-card-icon.violet { background: var(--violet-100); color: var(--violet-600); }
+.dl-card-icon.violet svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.download-card-version {
+.dl-card-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: .72rem; font-weight: 700;
+  font-size: .7rem; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase;
-  color: var(--blue-700);
-  background: var(--blue-100);
   padding: 3px 10px; border-radius: 100px;
   margin-bottom: 14px;
   align-self: flex-start;
 }
-.download-card.plugin .download-card-version {
-  color: #166534;
-  background: #dcfce7;
-}
+.dl-card-badge.indigo { color: var(--indigo-700); background: var(--indigo-50); border: 1px solid var(--indigo-100); }
+.dl-card-badge.emerald { color: var(--emerald-600); background: var(--emerald-50); border: 1px solid var(--emerald-100); }
+.dl-card-badge.violet { color: var(--violet-600); background: var(--violet-100); border: 1px solid #ddd6fe; }
 
-.download-card h3 {
+.dl-card h3 {
   font-family: var(--font-display);
-  font-size: 1.3rem; font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 10px;
-  letter-spacing: -.01em;
+  font-size: 1.35rem; font-weight: 800;
+  color: var(--ink); margin-bottom: 10px;
+  letter-spacing: -.02em;
 }
-
-.download-card p {
+.dl-card > p {
   font-size: .9rem; color: var(--ink-3);
-  line-height: 1.65;
+  line-height: 1.7;
   margin-bottom: 28px;
 }
 
-.download-card-features {
+.dl-features {
   list-style: none;
-  display: flex; flex-direction: column; gap: 9px;
-  margin-bottom: 32px;
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 36px;
   flex: 1;
 }
-.download-card-features li {
+.dl-features li {
   display: flex; align-items: flex-start; gap: 10px;
-  font-size: .86rem; color: var(--ink-2);
+  font-size: .875rem; color: var(--ink-2); line-height: 1.5;
 }
-.download-card-features li::before {
-  content: '✓';
-  flex-shrink: 0;
-  margin-top: 1px;
-  color: var(--blue-700);
-  font-weight: 700; font-size: .8rem;
+.dl-features li svg {
+  flex-shrink: 0; margin-top: 1px;
+  width: 16px; height: 16px;
+  stroke-width: 2.5;
 }
-.download-card.plugin .download-card-features li::before { color: #15803d; }
+.dl-features li svg.indigo { stroke: var(--indigo-500); fill: none; }
+.dl-features li svg.emerald { stroke: var(--emerald-500); fill: none; }
+.dl-features li svg.violet { stroke: var(--violet-500); fill: none; }
 
-.btn-download {
+.btn-dl {
   display: flex; align-items: center; justify-content: center; gap: 9px;
-  padding: 13px;
-  background: var(--ink);
-  color: #fff;
-  font-family: var(--font-body); font-size: .88rem; font-weight: 600;
-  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: var(--font-body); font-size: .9rem; font-weight: 700;
+  border-radius: var(--r-md);
   text-decoration: none;
-  transition: background .15s, transform .1s;
+  transition: opacity .15s, transform .1s;
+  cursor: pointer;
+  letter-spacing: -.01em;
 }
-.btn-download:hover { background: var(--blue-900); transform: translateY(-1px); }
-.btn-download.plugin { background: #166534; }
-.btn-download.plugin:hover { background: #14532d; }
+.btn-dl.indigo { background: linear-gradient(135deg, var(--indigo-600), var(--violet-600)); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,.3); }
+.btn-dl.emerald { background: linear-gradient(135deg, var(--emerald-600), var(--emerald-500)); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,.3); }
+.btn-dl.violet { background: linear-gradient(135deg, var(--violet-600), var(--violet-500)); color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,.3); }
+.btn-dl:hover { opacity: .9; transform: translateY(-2px); }
+.btn-dl svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ───────────────────────────────────────────────────────────
-   WHATS NEW
-─────────────────────────────────────────────────────────── */
-.whatsnew-header {
+/* ── WHAT'S NEW ──────────────────────────────────────────── */
+#neuigkeiten { background: var(--surface); }
+
+.wn-header {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 20px; flex-wrap: wrap;
   margin-bottom: 52px;
 }
 
-.whatsnew-grid {
+.wn-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
-@media (max-width: 720px) { .whatsnew-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .wn-grid { grid-template-columns: 1fr; } }
 
-.whatsnew-block {
+.wn-block {
   background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border: 1.5px solid rgba(99,102,241,.1);
+  border-radius: var(--r-lg);
   padding: 32px;
 }
-.whatsnew-block-header {
-  display: flex; align-items: center; gap: 12px;
+.wn-block-head {
+  display: flex; align-items: center; gap: 10px;
   margin-bottom: 24px;
 }
-.whatsnew-block-header h3 {
+.wn-block-head-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.wn-block-head-icon.indigo { background: var(--indigo-50); }
+.wn-block-head-icon.indigo svg { width: 18px; height: 18px; stroke: var(--indigo-600); fill: none; stroke-width: 2; }
+.wn-block-head-icon.emerald { background: var(--emerald-50); }
+.wn-block-head-icon.emerald svg { width: 18px; height: 18px; stroke: var(--emerald-600); fill: none; stroke-width: 2; }
+.wn-block-head h3 {
   font-family: var(--font-display);
   font-size: 1rem; font-weight: 700; color: var(--ink);
 }
-.whatsnew-block-header .ver {
-  font-size: .72rem; font-weight: 700;
+.wn-ver {
+  font-size: .68rem; font-weight: 700; letter-spacing: .05em;
   padding: 3px 9px; border-radius: 100px;
-  background: var(--blue-800); color: #fff;
+  color: #fff;
 }
-.whatsnew-block-header .ver.green { background: #15803d; }
+.wn-ver.indigo { background: var(--indigo-600); }
+.wn-ver.emerald { background: var(--emerald-600); }
 
-.change-list { display: flex; flex-direction: column; gap: 11px; }
+.change-list { display: flex; flex-direction: column; gap: 12px; }
 .change-item {
   display: flex; align-items: flex-start; gap: 10px;
-  font-size: .875rem; color: var(--ink-2); line-height: 1.5;
+  font-size: .875rem; color: var(--ink-2); line-height: 1.55;
 }
-.change-tag {
+.ctag {
   flex-shrink: 0;
   display: inline-block;
-  font-size: .65rem; font-weight: 700;
-  letter-spacing: .05em; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 4px;
+  font-size: .62rem; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 5px;
   margin-top: 2px;
+  font-family: var(--font-mono);
 }
-.tag-new  { background: #dcfce7; color: #15803d; }
-.tag-fix  { background: #fee2e2; color: #b91c1c; }
-.tag-imp  { background: #dbeafe; color: #1e40af; }
+.ctag-new  { background: var(--emerald-100); color: #065f46; }
+.ctag-fix  { background: #fee2e2; color: #b91c1c; }
+.ctag-imp  { background: var(--indigo-100); color: var(--indigo-800); }
 
-/* ───────────────────────────────────────────────────────────
-   WORKFLOW
-─────────────────────────────────────────────────────────── */
-.workflow-header { margin-bottom: 56px; }
+/* ── WORKFLOW ────────────────────────────────────────────── */
+#workflow { background: transparent; }
 
-.workflow-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.workflow-wrap {
+  margin-top: 56px;
+  display: flex; flex-direction: column; gap: 0;
   position: relative;
 }
-.workflow-steps::before {
+.workflow-wrap::before {
   content: '';
   position: absolute;
-  left: 23px; top: 48px; bottom: 48px;
+  left: 23px; top: 44px; bottom: 44px;
   width: 1px;
-  background: linear-gradient(to bottom, var(--blue-200, #bfdbfe), transparent);
-  border-left: 1px dashed var(--line);
+  background: linear-gradient(to bottom, var(--indigo-300), transparent);
 }
 
-.workflow-step {
+.wf-step {
   display: grid;
   grid-template-columns: 48px 1fr;
-  gap: 24px;
+  gap: 28px;
   padding: 28px 0;
-  position: relative;
 }
-.workflow-step + .workflow-step { border-top: 1px solid var(--bg); }
+.wf-step + .wf-step { border-top: 1px solid rgba(99,102,241,.08); }
 
-.step-num {
-  width: 48px; height: 48px;
+.wf-num {
+  width: 48px; height: 48px; flex-shrink: 0;
   border-radius: 50%;
-  background: var(--blue-800);
+  background: linear-gradient(135deg, var(--indigo-600), var(--violet-500));
   color: #fff;
   font-family: var(--font-display);
-  font-size: 1rem; font-weight: 700;
+  font-size: 1rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
   position: relative; z-index: 1;
-  box-shadow: 0 0 0 6px #fff;
+  box-shadow: 0 0 0 6px var(--bg), var(--shadow-clay);
 }
 
-.step-content { padding-top: 10px; }
-.step-content h3 {
+.wf-body { padding-top: 10px; }
+.wf-body h3 {
   font-family: var(--font-display);
   font-size: 1.05rem; font-weight: 700;
-  color: var(--ink); margin-bottom: 6px;
+  color: var(--ink); margin-bottom: 7px;
   letter-spacing: -.01em;
 }
-.step-content p {
-  font-size: .9rem; color: var(--ink-3); line-height: 1.6;
+.wf-body p {
+  font-size: .9rem; color: var(--ink-3); line-height: 1.7;
 }
-.step-content code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+.wf-body code {
+  font-family: var(--font-mono);
   font-size: .8rem;
-  background: var(--blue-100); color: var(--blue-800);
+  background: var(--indigo-50); color: var(--indigo-700);
   padding: 2px 7px; border-radius: 5px;
   white-space: nowrap;
+  border: 1px solid var(--indigo-100);
 }
 
-/* ───────────────────────────────────────────────────────────
-   KATEGORIEN
-─────────────────────────────────────────────────────────── */
-.cat-header { margin-bottom: 48px; }
+/* ── BENTO: FEATURES ─────────────────────────────────────── */
+#features { background: var(--surface); }
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 16px;
+  margin-top: 52px;
+}
+@media (max-width: 900px) { .bento-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .bento-grid { grid-template-columns: 1fr; } }
+
+.bento-card {
+  background: var(--bg);
+  border: 1.5px solid rgba(99,102,241,.1);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: box-shadow .2s, transform .2s;
+  cursor: default;
+}
+.bento-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.bento-card.wide { grid-column: span 2; }
+.bento-card.tall { grid-row: span 2; }
+
+@media (max-width: 900px) {
+  .bento-card.wide { grid-column: span 1; }
+}
+
+.bento-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bento-icon svg { width: 22px; height: 22px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bi-indigo  { background: var(--indigo-50);  } .bi-indigo  svg { stroke: var(--indigo-600); }
+.bi-emerald { background: var(--emerald-50); } .bi-emerald svg { stroke: var(--emerald-600); }
+.bi-violet  { background: var(--violet-100); } .bi-violet  svg { stroke: var(--violet-600); }
+.bi-amber   { background: #fef9c3;           } .bi-amber   svg { stroke: #b45309; }
+.bi-red     { background: #fee2e2;           } .bi-red     svg { stroke: #dc2626; }
+.bi-slate   { background: #f1f5f9;           } .bi-slate   svg { stroke: #475569; }
+
+.bento-card h3 {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--ink); letter-spacing: -.01em;
+  line-height: 1.3;
+}
+.bento-card p {
+  font-size: .875rem; color: var(--ink-3); line-height: 1.65;
+}
+
+/* ── KATEGORIEN ──────────────────────────────────────────── */
+#kategorien { background: transparent; }
 
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 14px;
+  margin-top: 48px;
 }
 
 .cat-card {
-  border-radius: var(--radius-md);
-  padding: 20px 22px;
-  display: flex; flex-direction: column; gap: 8px;
+  border-radius: var(--r-md);
+  padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 7px;
+  border: 1.5px solid transparent;
+  transition: box-shadow .2s, transform .2s;
+  cursor: default;
 }
-.cat-name {
-  font-size: .9rem; font-weight: 700;
-}
-.cat-desc { font-size: .78rem; line-height: 1.5; opacity: .8; }
-.cat-keywords {
-  margin-top: 4px;
-  font-size: .7rem; opacity: .6;
-  font-style: italic;
-}
+.cat-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 
-/* ───────────────────────────────────────────────────────────
-   FAQ
-─────────────────────────────────────────────────────────── */
-.faq-header { margin-bottom: 48px; }
+.cat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.6);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.cat-icon svg { width: 18px; height: 18px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cat-name  { font-size: .92rem; font-weight: 700; letter-spacing: -.01em; }
+.cat-desc  { font-size: .78rem; line-height: 1.55; opacity: .82; }
+.cat-keys  { font-size: .68rem; opacity: .55; font-style: italic; margin-top: 2px; }
 
-.faq-list { display: flex; flex-direction: column; gap: 4px; }
+/* ── FAQ ─────────────────────────────────────────────────── */
+#faq { background: var(--surface); }
+
+.faq-wrap {
+  max-width: 740px;
+  margin-top: 48px;
+  display: flex; flex-direction: column; gap: 6px;
+}
 
 .faq-item {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
   overflow: hidden;
   background: var(--surface);
-  transition: box-shadow .15s;
+  transition: border-color .15s, box-shadow .15s;
 }
-.faq-item:hover { box-shadow: var(--shadow-sm); }
+.faq-item:hover { border-color: var(--indigo-200, #c7d2fe); box-shadow: var(--shadow-sm); }
+.faq-item.open { border-color: var(--indigo-300); }
 
-.faq-question {
+.faq-q {
   width: 100%;
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px;
   padding: 20px 24px;
-  background: none;
-  border: none;
-  cursor: pointer;
+  background: none; border: none; cursor: pointer;
   text-align: left;
   font-family: var(--font-body); font-size: .95rem; font-weight: 600;
   color: var(--ink);
   transition: background .1s;
 }
-.faq-question:hover { background: var(--bg); }
+.faq-q:hover { background: var(--bg); }
+.faq-q:focus-visible {
+  outline: 2px solid var(--indigo-500);
+  outline-offset: -2px;
+}
 
-.faq-arrow {
+.faq-chevron {
   flex-shrink: 0;
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   background: var(--bg);
+  border: 1.5px solid var(--line);
   display: flex; align-items: center; justify-content: center;
-  transition: transform .25s, background .15s;
-  font-size: .75rem;
+  transition: transform .3s cubic-bezier(.4,0,.2,1), background .15s, border-color .15s;
 }
-.faq-item.open .faq-arrow {
-  transform: rotate(180deg);
-  background: var(--blue-100);
-  color: var(--blue-800);
-}
+.faq-chevron svg { width: 14px; height: 14px; stroke: var(--ink-3); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke .15s; }
+.faq-item.open .faq-chevron { transform: rotate(180deg); background: var(--indigo-50); border-color: var(--indigo-200, #c7d2fe); }
+.faq-item.open .faq-chevron svg { stroke: var(--indigo-600); }
 
-.faq-answer {
+.faq-a {
   max-height: 0;
   overflow: hidden;
-  transition: max-height .35s cubic-bezier(.4,0,.2,1), padding .3s;
+  transition: max-height .38s cubic-bezier(.4,0,.2,1);
 }
-.faq-item.open .faq-answer { max-height: 500px; }
+.faq-item.open .faq-a { max-height: 500px; }
 
-.faq-answer-inner {
+.faq-a-inner {
   padding: 0 24px 22px;
-  font-size: .9rem; color: var(--ink-3); line-height: 1.7;
+  font-size: .9rem; color: var(--ink-3); line-height: 1.75;
 }
-.faq-answer-inner code {
-  font-family: 'JetBrains Mono', monospace; font-size: .82em;
-  background: var(--blue-100); color: var(--blue-800);
-  padding: 1px 6px; border-radius: 4px;
+.faq-a-inner code {
+  font-family: var(--font-mono); font-size: .82em;
+  background: var(--indigo-50); color: var(--indigo-700);
+  padding: 1px 7px; border-radius: 5px;
+  border: 1px solid var(--indigo-100);
 }
 
-/* ───────────────────────────────────────────────────────────
-   FOOTER
-─────────────────────────────────────────────────────────── */
+/* ── FOOTER ──────────────────────────────────────────────── */
 footer {
   background: var(--ink);
-  color: rgba(255,255,255,.55);
-  padding: 56px 0;
-  margin-top: 0;
+  color: rgba(255,255,255,.5);
+  padding: 60px 0;
 }
 .footer-inner {
   max-width: var(--max-w);
@@ -587,95 +731,126 @@ footer {
   gap: 40px;
   align-items: center;
 }
-@media (max-width: 640px) { .footer-inner { grid-template-columns: 1fr; } }
-
+@media (max-width: 640px) {
+  .footer-inner { grid-template-columns: 1fr; }
+  @media (max-width: 640px) { .footer-inner { padding: 0 18px; } }
+}
 .footer-logo {
   font-family: var(--font-display);
-  font-size: 1.1rem; font-weight: 700;
-  color: #fff;
-  margin-bottom: 8px;
+  font-size: 1.15rem; font-weight: 800;
+  color: #fff; margin-bottom: 8px;
+  letter-spacing: -.02em;
 }
-.footer-sub { font-size: .82rem; line-height: 1.7; }
-
+.footer-sub { font-size: .82rem; line-height: 1.8; }
 .footer-versions {
   display: flex; flex-direction: column; gap: 10px; text-align: right;
 }
 @media (max-width: 640px) { .footer-versions { text-align: left; } }
-
 .ver-pill {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: .78rem; font-weight: 600;
-  color: rgba(255,255,255,.7);
+  color: rgba(255,255,255,.65);
 }
-.ver-pill-dot {
+.ver-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #27ae60;
-  box-shadow: 0 0 6px #27ae60;
+  background: var(--emerald-400);
+  box-shadow: 0 0 7px var(--emerald-400);
   flex-shrink: 0;
 }
 
-/* ───────────────────────────────────────────────────────────
-   ENTRY ANIMATIONS
-─────────────────────────────────────────────────────────── */
+/* ── ANIMATIONS ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* Hero anim */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.anim { opacity: 0; animation: fadeUp .55s cubic-bezier(.22,1,.36,1) forwards; }
-.anim-1 { animation-delay: .05s; }
-.anim-2 { animation-delay: .13s; }
-.anim-3 { animation-delay: .21s; }
-.anim-4 { animation-delay: .29s; }
-.anim-5 { animation-delay: .37s; }
+.anim { opacity: 0; animation: fadeUp .6s cubic-bezier(.22,1,.36,1) forwards; }
+.a1 { animation-delay: .06s; }
+.a2 { animation-delay: .14s; }
+.a3 { animation-delay: .22s; }
+.a4 { animation-delay: .30s; }
+.a5 { animation-delay: .38s; }
 </style>
 </head>
 <body>
 
 <!-- ── NAVIGATION ─────────────────────────────────────────── -->
-<nav class="nav">
+<nav class="nav" role="banner">
   <div class="nav-inner">
-    <a class="nav-logo" href="#">
-      <div class="nav-logo-mark">G</div>
+    <a class="nav-logo" href="#" aria-label="GSH Terminplan Startseite">
+      <div class="nav-logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="white" stroke-width="2"/><path d="M8 2v4M16 2v4M3 10h18" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="15" r="1.5" fill="white"/><circle cx="12" cy="15" r="1.5" fill="white"/><circle cx="16" cy="15" r="1.5" fill="white"/></svg>
+      </div>
       <div class="nav-logo-text">GSH Terminplan <span>/ Gesamtschule Horst</span></div>
     </a>
-    <ul class="nav-links">
+    <ul class="nav-links" role="list">
       <li><a href="#download">Downloads</a></li>
       <li><a href="#neuigkeiten">Neuigkeiten</a></li>
       <li><a href="#workflow">Workflow</a></li>
-      <li><a href="#kategorien">Kategorien</a></li>
+      <li><a href="#features">Features</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
-    <a class="nav-cta" href="#download">⬇ Herunterladen</a>
+    <a class="nav-cta" href="#download">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Herunterladen
+    </a>
   </div>
 </nav>
 
 <!-- ── HERO ───────────────────────────────────────────────── -->
-<section class="hero">
+<section class="hero" aria-labelledby="hero-title">
   <div class="container">
-    <div class="hero-kicker anim anim-1">Gesamtschule Horst · Digitaler Schulkalender</div>
-    <h1 class="anim anim-2">Der <em>Terminplan</em> für IServ, neu gedacht.</h1>
-    <p class="hero-sub anim anim-3">
-      Schultermine strukturiert erfassen, als ICS-Datei exportieren und direkt im IServ-Kalender importieren –
+    <div class="hero-badge anim a1" aria-label="Aktiv">
+      <span class="hero-badge-dot" aria-hidden="true"></span>
+      Gesamtschule Horst · Digitaler Schulkalender
+    </div>
+    <h1 id="hero-title" class="anim a2">
+      Der <em>Terminplan</em><br>für IServ, neu gedacht.
+    </h1>
+    <p class="hero-sub anim a3">
+      Schultermine strukturiert erfassen, als ICS exportieren und direkt im IServ-Kalender importieren –
       vollautomatisch auf der Schulwebsite sichtbar.
     </p>
-    <div class="hero-actions anim anim-4">
-      <a class="btn-hero-primary" href="#download">⬇ Tools herunterladen</a>
-      <a class="btn-hero-ghost" href="#workflow">Wie es funktioniert →</a>
+    <div class="hero-actions anim a4">
+      <a class="btn-primary" href="#download">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Tools herunterladen
+      </a>
+      <a class="btn-ghost" href="#workflow">
+        Wie es funktioniert
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
     </div>
-    <div class="hero-meta anim anim-5">
-      <div class="hero-meta-item">
-        <strong>v1.2</strong>
+
+    <div class="hero-stats anim a5" role="list" aria-label="Kennzahlen">
+      <div class="hero-stat" role="listitem">
+        <strong>v1.4</strong>
         <span>ICS Konverter</span>
       </div>
-      <div class="hero-meta-item">
-        <strong>v3.1</strong>
+      <div class="hero-stat" role="listitem">
+        <strong>v3.16</strong>
         <span>WordPress Plugin</span>
       </div>
-      <div class="hero-meta-item">
+      <div class="hero-stat" role="listitem">
         <strong>7</strong>
         <span>Kategorien</span>
       </div>
-      <div class="hero-meta-item">
+      <div class="hero-stat" role="listitem">
         <strong>100 %</strong>
         <span>Browser-basiert</span>
       </div>
@@ -684,55 +859,146 @@ footer {
 </section>
 
 <!-- ── DOWNLOADS ──────────────────────────────────────────── -->
-<section id="download">
+<section id="download" aria-labelledby="dl-title">
   <div class="container">
-    <span class="label-eyebrow">Downloads</span>
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
-      <h2 class="section-title">Beide Tools, aktuell &amp; bereit.</h2>
-    </div>
+    <span class="eyebrow">Downloads</span>
+    <h2 class="section-title" id="dl-title">Alle Tools, aktuell &amp; bereit.</h2>
     <p class="section-sub">
-      Der Konverter läuft komplett im Browser – keine Installation, keine Server. Das WordPress-Plugin wird einmalig hochgeladen und dann automatisch aktuell gehalten.
+      Der Konverter läuft komplett im Browser – keine Installation, keine Server.
+      Das WordPress-Plugin wird einmalig hochgeladen und automatisch aktuell gehalten.
+      Die Schulwochen-Vorlage ermöglicht schulwochenweise Planung direkt in Excel.
     </p>
 
     <div class="download-grid">
 
       <!-- Konverter -->
-      <div class="download-card">
-        <div class="download-card-icon icon-konverter">📅</div>
-        <div class="download-card-version">v1.2 · März 2026</div>
+      <div class="dl-card reveal">
+        <div class="dl-card-accent" aria-hidden="true"></div>
+        <div class="dl-card-icon indigo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 2v6l2-2 2 2V2"/><path d="M9 13h6M9 17h4"/></svg>
+        </div>
+        <div class="dl-card-badge indigo">v1.4 · März 2026</div>
         <h3>ICS Konverter</h3>
-        <p>Excel-Datei hochladen, Termine prüfen, als ICS exportieren. Alles im Browser – kein Server, kein Login.</p>
-        <ul class="download-card-features">
-          <li>Excel-Import per Drag &amp; Drop (SheetJS)</li>
-          <li>Inline-Editor: Titel, Datum, Zeit, Kategorie</li>
-          <li>Duplikat-Erkennung beim Import</li>
-          <li>Konfigurierbarer Kategorie-Editor mit Stichwort-Matching</li>
-          <li>Excel-Vorlage direkt aus dem Tool herunterladen</li>
-          <li>RFC-5545-konformer ICS-Export mit VTIMEZONE Europe/Berlin</li>
-          <li>Datenverlust-Schutz beim Schließen des Tabs</li>
+        <p>Excel-Datei hochladen, Termine prüfen, als ICS exportieren. Alles im Browser – kein Server, kein Login. Neu: modernes Indigo-Design mit 4-Schritt-Workflow-Stepper.</p>
+        <ul class="dl-features" aria-label="Features">
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            4-Schritt-Workflow-Stepper: Kategorien → Import → Bearbeiten → Exportieren
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Excel-Import per Drag &amp; Drop (SheetJS)
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Schulwochen-Format: automatische Erkennung und Import
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Inline-Editor: Titel, Datum, Zeit, Kategorie
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Kategorie-Editor mit Stichwort-Matching
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            RFC-5545-konformer ICS-Export mit VTIMEZONE Europe/Berlin
+          </li>
+          <li>
+            <svg class="indigo" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Datenverlust-Schutz beim Schließen des Tabs
+          </li>
         </ul>
-        <a class="btn-download" href="Terminplan_Konverter_1_2.html" download>
-          <span>⬇</span> Konverter v1.2 herunterladen
+        <a class="btn-dl indigo" href="downloads/Terminplan_Konverter.html" download="Terminplan_Konverter_v1.4.html">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Konverter v1.4 herunterladen
         </a>
       </div>
 
       <!-- Plugin -->
-      <div class="download-card plugin">
-        <div class="download-card-icon icon-plugin">🔌</div>
-        <div class="download-card-version ver green">v3.1.0 · März 2026</div>
+      <div class="dl-card emerald reveal">
+        <div class="dl-card-accent" aria-hidden="true"></div>
+        <div class="dl-card-icon emerald" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="dl-card-badge emerald">v3.16.1 · März 2026</div>
         <h3>WordPress Plugin</h3>
         <p>Zeigt den Schulkalender direkt aus dem IServ iCal-Feed auf der Schulwebsite an – automatisch aktuell.</p>
-        <ul class="download-card-features">
-          <li>iCal-Feed direkt von IServ (keine manuelle Pflege)</li>
-          <li>Stale-While-Revalidate Caching: keine Wartezeiten</li>
-          <li>WP-Cron: Hintergrund-Aktualisierung ohne Unterbrechung</li>
-          <li>Kiosk-Modus für IServ „Eingebettet"-Option mit Token-Auth</li>
-          <li>Änderungsbenachrichtigungen: farbig markierte neue Termine</li>
-          <li>PDF-Export: A4 Querformat mit professionellem Layout</li>
-          <li>Sticky Quartal-Tabs, Popup-Details, Mobile-optimiert</li>
+        <ul class="dl-features" aria-label="Features">
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            iCal-Feed direkt von IServ (keine manuelle Pflege)
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Stale-While-Revalidate Caching: keine Wartezeiten
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            WP-Cron: Hintergrund-Aktualisierung ohne Unterbrechung
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Kiosk-Modus für IServ „Eingebettet"-Option mit Token-Auth
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Änderungsbenachrichtigungen: farbig markierte neue Termine
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            PDF-Export: A4 Querformat mit professionellem Layout
+          </li>
+          <li>
+            <svg class="emerald" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            7 Kategorien inkl. Inklusion – Mehrere Schuljahres-Profile, Entwurf-Modus
+          </li>
         </ul>
-        <a class="btn-download plugin" href="gsh-terminplan_3_1_0.php" download>
-          <span>⬇</span> Plugin v3.1.0 herunterladen
+        <a class="btn-dl emerald" href="downloads/gsh-terminplan.zip" download="gsh-terminplan.zip">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Plugin v3.16.1 herunterladen
+        </a>
+      </div>
+
+      <!-- Schulwochen-Vorlage -->
+      <div class="dl-card violet reveal">
+        <div class="dl-card-accent" aria-hidden="true"></div>
+        <div class="dl-card-icon violet" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+        </div>
+        <div class="dl-card-badge violet">2025/26 · März 2026</div>
+        <h3>Schulwochen-Vorlage</h3>
+        <p>Vorgefertigte Excel-Datei für die schulwochenweise Terminplanung – von SW 00 bis SW 40, Ferien bereits eingetragen.</p>
+        <ul class="dl-features" aria-label="Features">
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            41 Schulwochen (SW 00–40) mit Montags-Datum vorausgefüllt
+          </li>
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Ferien bereits eingetragen (Sommer, Herbst, Weihnachten, Oster, Pfingsten)
+          </li>
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Wochentag- und Kategorie-Dropdown für jede Zeile
+          </li>
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            8 Terminzeilen pro Schulwoche
+          </li>
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Automatische Erkennung &amp; Import im Konverter v1.4
+          </li>
+          <li>
+            <svg class="violet" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Anleitung im zweiten Tabellenblatt
+          </li>
+        </ul>
+        <a class="btn-dl violet" href="downloads/Terminplan_Schulwochen_Vorlage.xlsx" download>
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Schulwochen-Vorlage herunterladen
         </a>
       </div>
 
@@ -741,89 +1007,89 @@ footer {
 </section>
 
 <!-- ── WHAT'S NEW ─────────────────────────────────────────── -->
-<section id="neuigkeiten">
+<section id="neuigkeiten" aria-labelledby="wn-title">
   <div class="container">
-    <div class="whatsnew-header">
+    <div class="wn-header">
       <div>
-        <span class="label-eyebrow">Neuigkeiten</span>
-        <h2 class="section-title">Was ist neu?</h2>
+        <span class="eyebrow">Neuigkeiten</span>
+        <h2 class="section-title" id="wn-title">Was ist neu?</h2>
       </div>
     </div>
 
-    <div class="whatsnew-grid">
+    <div class="wn-grid">
 
-      <div class="whatsnew-block">
-        <div class="whatsnew-block-header">
-          <span>📅</span>
+      <div class="wn-block reveal">
+        <div class="wn-block-head">
+          <div class="wn-block-head-icon indigo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 2v6l2-2 2 2V2"/><path d="M9 13h6M9 17h4"/></svg>
+          </div>
           <h3>Konverter</h3>
-          <span class="ver">v1.2</span>
+          <span class="wn-ver indigo">v1.4</span>
         </div>
         <div class="change-list">
           <div class="change-item">
-            <span class="change-tag tag-new">NEU</span>
-            Kategorie-Editor: Name, Farben und Stichwörter direkt im Tool konfigurierbar – kompatibel mit dem Plugin-System
+            <span class="ctag ctag-new">NEU</span>
+            4-Schritt-Workflow-Stepper im Header: zeigt automatisch die aktuelle Phase (Kategorien → Import → Bearbeiten → Exportieren)
           </div>
           <div class="change-item">
-            <span class="change-tag tag-new">NEU</span>
-            Excel-Vorlage herunterladen: Generiert eine XLSX-Datei mit aktuellen Kategorien als Dropdown-Referenz
+            <span class="ctag ctag-imp">BESSER</span>
+            Modernes Indigo-Design: frische Farbpalette, SVG-Icons statt Emojis, verbesserte Typografie und Abstände
           </div>
           <div class="change-item">
-            <span class="change-tag tag-new">NEU</span>
-            Sortierung nach Datum – Termine lassen sich mit einem Klick chronologisch ordnen
+            <span class="ctag ctag-imp">BESSER</span>
+            Dropzone vergrößert und animiert – Hover-Effekt und strukturierter Titelbereich
           </div>
           <div class="change-item">
-            <span class="change-tag tag-imp">BESSER</span>
-            Dynamisches CSS: Kategorie-Farben werden live aus der Konfiguration generiert – keine Hardcoded-Werte mehr
+            <span class="ctag ctag-imp">BESSER</span>
+            Export-Hierarchie: großer ICS-Button als Primär-CTA, Vorschau/Excel/Vorlage als Sekundär-Buttons
           </div>
           <div class="change-item">
-            <span class="change-tag tag-imp">BESSER</span>
-            Stichwort-Matching beim Import nutzt die konfigurierten Keywords des Kategorie-Editors
+            <span class="ctag ctag-imp">BESSER</span>
+            IServ-Importanleitung: nummerierte Schritte mit visuellen Indikatoren statt einfachem Textblock
           </div>
           <div class="change-item">
-            <span class="change-tag tag-fix">FIX</span>
-            Zeitzonen-Bug bei Datumsberechnung behoben – mehrtägige Termine verloren durch UTC-Konvertierung einen Tag
+            <span class="ctag ctag-new">NEU in v1.3</span>
+            Schulwochen-Format: automatische Erkennung von SW-Vorlagen, schulwochenweiser Import
           </div>
           <div class="change-item">
-            <span class="change-tag tag-fix">FIX</span>
-            Stundenüberlauf bei Default-Endzeit (23:00 + 1h) erzeugt keine ungültigen ICS-Zeiten mehr
+            <span class="ctag ctag-imp">NEU in v1.2</span>
+            Kategorie-Editor: Name, Farben und Stichwörter direkt im Tool konfigurierbar
           </div>
         </div>
       </div>
 
-      <div class="whatsnew-block">
-        <div class="whatsnew-block-header">
-          <span>🔌</span>
+      <div class="wn-block reveal">
+        <div class="wn-block-head">
+          <div class="wn-block-head-icon emerald" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
           <h3>WordPress Plugin</h3>
-          <span class="ver green">v3.1.0</span>
+          <span class="wn-ver emerald">v3.16.1</span>
         </div>
         <div class="change-list">
           <div class="change-item">
-            <span class="change-tag tag-imp">BESSER</span>
-            PDF-Export komplett überarbeitet: A4 Querformat, Farb-Indikatoren statt farbiger Hintergründe, feine Tabellenränder
+            <span class="ctag ctag-new">NEU</span>
+            Neue Kategorie „Inklusion" (IFÖ, AL SuS, AOSF, Förderplan, Nachteilsausgleich …) – jetzt 7 Kategorien
           </div>
           <div class="change-item">
-            <span class="change-tag tag-imp">BESSER</span>
-            Minimaler PDF-Header: Links GSH-Logo, rechts Titel und Quellenangabe – professionell und schlank
+            <span class="ctag ctag-fix">FIX in v3.14</span>
+            AJAX-Kategorien-Speichern: <code style="font-family:var(--font-mono);font-size:.8em;background:var(--indigo-50);color:var(--indigo-700);padding:1px 6px;border-radius:4px">update_option()</code>-Rückgabewert wird jetzt korrekt geprüft
           </div>
           <div class="change-item">
-            <span class="change-tag tag-imp">BESSER</span>
-            Seitenfußzeile auf jeder PDF-Seite: „Stand: Datum | Erstellt über das GSH-Dashboard"
+            <span class="ctag ctag-fix">FIX in v3.14</span>
+            Auto-generierte Slugs neuer Kategorien werden nach dem Speichern ins DOM zurückgespielt
           </div>
           <div class="change-item">
-            <span class="change-tag tag-new">NEU in v3.0</span>
-            CSS Custom Properties für alle Farben – zentrales Theming per <code>:root</code>
+            <span class="ctag ctag-new">NEU in v3.12</span>
+            Feedback-System: Änderungsbenachrichtigungen per <code style="font-family:var(--font-mono);font-size:.8em;background:var(--emerald-50);color:var(--emerald-600);padding:1px 6px;border-radius:4px">wp_mail</code> direkt aus dem Plugin
           </div>
           <div class="change-item">
-            <span class="change-tag tag-new">NEU in v3.0</span>
-            Sticky Quartal-Tabs, Heute-Puls-Animation, Popup mit Backdrop-Blur
+            <span class="ctag ctag-new">NEU in v3.5</span>
+            Mehrere Schuljahres-Profile: bis zu 5 Profile, Entwurf-Modus, Frontend-Umschalter
           </div>
           <div class="change-item">
-            <span class="change-tag tag-new">NEU in v3.0</span>
-            Suchmodus mit Focus-Dim: Nicht-Treffer werden gedimmt statt versteckt
-          </div>
-          <div class="change-item">
-            <span class="change-tag tag-imp">BESSER in v3.0</span>
-            Mobile: iOS-Feed-Stil mit Frosted-Glass-Nav, Datum als Kreis, sektionierte Wochenköpfe
+            <span class="ctag ctag-imp">BESSER</span>
+            PDF-Export komplett überarbeitet: A4 Querformat, Farb-Indikatoren, feine Tabellenränder
           </div>
         </div>
       </div>
@@ -833,59 +1099,57 @@ footer {
 </section>
 
 <!-- ── WORKFLOW ────────────────────────────────────────────── -->
-<section id="workflow">
+<section id="workflow" aria-labelledby="wf-title">
   <div class="container">
-    <div class="workflow-header">
-      <span class="label-eyebrow">Schritt für Schritt</span>
-      <h2 class="section-title">Der komplette Workflow</h2>
-      <p class="section-sub">Von der leeren Tabelle bis zum automatisch aktualisierten Kalender auf der Schulwebsite.</p>
-    </div>
+    <span class="eyebrow">Schritt für Schritt</span>
+    <h2 class="section-title" id="wf-title">Der komplette Workflow</h2>
+    <p class="section-sub">Von der leeren Tabelle bis zum automatisch aktualisierten Kalender auf der Schulwebsite.</p>
 
-    <div class="workflow-steps">
+    <div class="workflow-wrap" aria-label="Workflow-Schritte">
 
-      <div class="workflow-step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h3>Excel-Vorlage herunterladen</h3>
-          <p>Im Konverter auf <strong>„Vorlage herunterladen"</strong> klicken. Die Vorlage enthält alle aktuellen Kategorien mit Dropdown-Validierung und eine Anleitung im zweiten Tabellenblatt. Alternativ steht die vorausgefüllte Datei <code>Terminplan_2627.xlsx</code> als Startpunkt bereit.</p>
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 1">1</div>
+        <div class="wf-body">
+          <h3>Vorlage herunterladen und öffnen</h3>
+          <p>Die <strong>Schulwochen-Vorlage</strong> (<code>Terminplan_Schulwochen_Vorlage.xlsx</code>) herunterladen. Sie enthält alle 41 Schulwochen (SW 00–40) mit Montags-Datum, voreingetragene Ferien und Dropdown-Listen für Wochentag und Kategorie. Alternativ: die klassische Flat-Vorlage im Konverter unter <strong>„Vorlage herunterladen"</strong> generieren.</p>
         </div>
       </div>
 
-      <div class="workflow-step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h3>Termine in Excel eintragen</h3>
-          <p>Terminbezeichnung und Startdatum sind Pflicht. Zeiten nur bei nicht-ganztägigen Terminen. Endedatum nur bei mehrtägigen Terminen (z.B. Ferien). Datumsformat: <code>TT.MM.JJJJ</code>, Zeitformat: <code>HH:MM</code>. Kategorie aus dem Dropdown wählen.</p>
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 2">2</div>
+        <div class="wf-body">
+          <h3>Termine schulwochenweise eintragen</h3>
+          <p>In der Schulwochen-Vorlage Titel, Wochentag und Kategorie aus dem Dropdown wählen. Bei zeitgenauen Terminen Uhrzeit eintragen, sonst bleibt das Feld leer (= ganztägig). In der klassischen Vorlage: Startdatum (<code>TT.MM.JJJJ</code>), Zeit (<code>HH:MM</code>) und Kategorie befüllen.</p>
         </div>
       </div>
 
-      <div class="workflow-step">
-        <div class="step-num">3</div>
-        <div class="step-content">
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 3">3</div>
+        <div class="wf-body">
           <h3>Datei in den Konverter ziehen</h3>
           <p>Die gespeicherte <code>.xlsx</code>-Datei per Drag &amp; Drop in den Konverter laden. Kategorien werden automatisch erkannt. Duplikate werden übersprungen. Einzelne Termine können im Inline-Editor direkt angepasst werden.</p>
         </div>
       </div>
 
-      <div class="workflow-step">
-        <div class="step-num">4</div>
-        <div class="step-content">
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 4">4</div>
+        <div class="wf-body">
           <h3>ICS-Datei exportieren</h3>
           <p>Auf <strong>„ICS exportieren"</strong> klicken. Die Datei <code>schuljahresterminplan.ics</code> wird heruntergeladen – RFC-5545-konform, mit VTIMEZONE Europe/Berlin für korrekte Sommer-/Winterzeitbehandlung.</p>
         </div>
       </div>
 
-      <div class="workflow-step">
-        <div class="step-num">5</div>
-        <div class="step-content">
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 5">5</div>
+        <div class="wf-body">
           <h3>In IServ importieren</h3>
           <p>In IServ: <strong>Kalender → Zahnrad ⚙ → Import → Datei auswählen → Zielkalender wählen → Importieren</strong>. Der iCal-Feed des Kalenders wird automatisch vom WordPress-Plugin abgerufen – kein weiterer Schritt nötig.</p>
         </div>
       </div>
 
-      <div class="workflow-step">
-        <div class="step-num">6</div>
-        <div class="step-content">
+      <div class="wf-step reveal">
+        <div class="wf-num" aria-label="Schritt 6">6</div>
+        <div class="wf-body">
           <h3>Plugin zeigt alles automatisch an</h3>
           <p>Das WordPress-Plugin liest den IServ iCal-Feed und zeigt ihn auf der Schulwebsite an. Dank <strong>Stale-While-Revalidate</strong>-Caching und WP-Cron-Hintergrundaktualisierung sind immer aktuelle Daten sichtbar – ohne sichtbare Ladezeit. Änderungen in IServ erscheinen automatisch mit Benachrichtigungsbanner.</p>
         </div>
@@ -895,144 +1159,275 @@ footer {
   </div>
 </section>
 
-<!-- ── KATEGORIEN ─────────────────────────────────────────── -->
-<section id="kategorien">
+<!-- ── BENTO FEATURES ─────────────────────────────────────── -->
+<section id="features" aria-labelledby="feat-title">
   <div class="container">
-    <div class="cat-header">
-      <span class="label-eyebrow">Farbsystem</span>
-      <h2 class="section-title">7 Kategorien, konsequent durchgezogen</h2>
-      <p class="section-sub">Dasselbe Kategorie- und Farbschema gilt im Konverter, in der Excel-Vorlage, im iCal-Feed und auf der Website.</p>
+    <span class="eyebrow">Technologie</span>
+    <h2 class="section-title" id="feat-title">Was steckt dahinter?</h2>
+    <p class="section-sub">Robuste Technik, die im Schulalltag zuverlässig funktioniert – ohne IT-Aufwand.</p>
+
+    <div class="bento-grid" aria-label="Feature-Übersicht">
+
+      <div class="bento-card wide reveal">
+        <div class="bento-icon bi-indigo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Stale-While-Revalidate Caching</h3>
+        <p>Der gecachte Stand wird sofort angezeigt, im Hintergrund läuft gleichzeitig eine Aktualisierung per WP-Cron. Besucher sehen dadurch nie eine Ladezeit – auch direkt nach Cache-Ablauf immer aktuelle Daten.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-emerald" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Änderungs&shy;erkennung</h3>
+        <p>Neue, geänderte und gelöschte Termine werden automatisch erkannt und farbig hervorgehoben – mit optionalem E-Mail-Feedback.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-violet" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h3>PDF-Export</h3>
+        <p>A4 Querformat, Farb-Indikatoren, Fußzeile auf jeder Seite – professionell und druckfertig.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-amber" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>RFC-5545-konformer ICS-Export</h3>
+        <p>Korrekte VTIMEZONE-Komponente für Europe/Berlin – Sommer-/Winterzeit wird automatisch berücksichtigt.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-red" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <h3>Kiosk-Modus</h3>
+        <p>Der Kalender wird direkt als IServ-Inhalt eingebettet – via Token-URL ohne Theme, ohne WordPress-Login.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-slate" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+        </div>
+        <h3>Mehrere Schuljahres-Profile</h3>
+        <p>Bis zu 5 Profile parallel, Entwurf-Modus für Planung, Frontend-Umschalter für Besucher.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-indigo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <h3>WordPress Coding Standards</h3>
+        <p>Kein Build-System, kein Composer. Direkte Integration – eine PHP-Datei, eine CSS-Datei, deployment-ready.</p>
+      </div>
+
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-emerald" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <h3>100 % Browser-basierter Konverter</h3>
+        <p>Die HTML-Datei läuft offline – ohne Server, ohne Internet, ohne Installation. Einfach öffnen und loslegen.</p>
+      </div>
+
     </div>
+  </div>
+</section>
+
+<!-- ── KATEGORIEN ─────────────────────────────────────────── -->
+<section id="kategorien" aria-labelledby="cat-title">
+  <div class="container">
+    <span class="eyebrow">Farbsystem</span>
+    <h2 class="section-title" id="cat-title">7 Kategorien, konsequent durchgezogen</h2>
+    <p class="section-sub">Dasselbe Kategorie- und Farbschema gilt im Konverter, in der Excel-Vorlage, im iCal-Feed und auf der Website.</p>
 
     <div class="cat-grid">
-      <div class="cat-card" style="background:var(--cat-k-bg);color:var(--cat-k-fg)">
-        <div class="cat-name">🔵 Konferenz</div>
-        <div class="cat-desc">LK, FaKo, TBS, Dienstbesprechungen, Teamsitzungen, SchiLF</div>
-        <div class="cat-keywords">Konferenz, LK, FaKo, TBS, DB, PK, ZK…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-k-bg);color:var(--cat-k-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="cat-name">Jahrgang 5/6</div>
+        <div class="cat-desc">DST, Einschulung, Orientierungsphase, Nicht-Schwimmer, Bücherausgabe</div>
+        <div class="cat-keys">Jg 5, Jg 6, DST, Einschulung, Neue 5er …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-p-bg);color:var(--cat-p-fg)">
-        <div class="cat-name">🔴 Prüfung</div>
-        <div class="cat-desc">Klausuren, ZP 10, Abitur, DST, Vera, mündliche Prüfungen</div>
-        <div class="cat-keywords">Prüfung, ZP 10, Klausur, Abi, Vera, ZAA…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-p-bg);color:var(--cat-p-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <div class="cat-name">Jahrgang 7/8</div>
+        <div class="cat-desc">KAoA, Berufsfelderkundung, Potenzialanalyse, WP-Wahl, Sponsorenlauf</div>
+        <div class="cat-keys">Jg 7, Jg 8, KAoA, WPM, Potenzialanalyse …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-j-bg);color:var(--cat-j-fg)">
-        <div class="cat-name">🟢 Projekt</div>
-        <div class="cat-desc">ProWo, Wandertag, Praktikum, Sportveranstaltungen, Ausflüge</div>
-        <div class="cat-keywords">ProWo, Wandertag, Praktikum, Sponsorenlauf…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-j-bg);color:var(--cat-j-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        </div>
+        <div class="cat-name">Jahrgang 9/10</div>
+        <div class="cat-desc">Betriebspraktikum, ZP 10, mAP 10, ZAA, Abschlussfahrt, Berufsberatung</div>
+        <div class="cat-keys">Jg 9, Jg 10, BP, ZP 10, Abschlussfahrt …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-f-bg);color:var(--cat-f-fg)">
-        <div class="cat-name">⚫ Ferien/Frei</div>
-        <div class="cat-desc">Ferien, Feiertage, bewegliche Ferientage</div>
-        <div class="cat-keywords">Ferien, Feiertag, Rosenmontag, Pfingsten…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-f-bg);color:var(--cat-f-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="cat-name">Oberstufe</div>
+        <div class="cat-desc">EF, Q1, Q2, Abitur, Klausuren, Laufbahnkonferenz, Kurswahlfahrt</div>
+        <div class="cat-keys">EF, Q1, Q2, Abi, Klausur, Laufbahn …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-e-bg);color:var(--cat-e-fg)">
-        <div class="cat-name">🟠 Eltern</div>
-        <div class="cat-desc">Pflegschaften, Info-Abende, Lernberatung, Tag der offenen Tür</div>
-        <div class="cat-keywords">Eltern, Info-Abend, TaTü, KAoA, Kurswahl…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-e-bg);color:var(--cat-e-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+        </div>
+        <div class="cat-name">Inklusion</div>
+        <div class="cat-desc">IFÖ, AL SuS, AOSF, Förderplan, I-Helfer, Beratungsteam, Nachteilsausgleich</div>
+        <div class="cat-keys">IFÖ, AL SuS, AOSF, Förderplan, Inklusion …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-r-bg);color:var(--cat-r-fg)">
-        <div class="cat-name">🟡 Frist</div>
-        <div class="cat-desc">Notenabgaben, Zeugnisse, Fachkommentare, Evaluationen</div>
-        <div class="cat-keywords">Noten, Abgabe, Zeugnis, Fachkommentar…</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-r-bg);color:var(--cat-r-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="cat-name">Feiertage / Ferien</div>
+        <div class="cat-desc">Ferien, Feiertage, bewegliche Ferientage, Rosenmontag</div>
+        <div class="cat-keys">Ferien, Feiertag, Weihnachten, Ostern …</div>
       </div>
-      <div class="cat-card" style="background:var(--cat-s-bg);color:var(--cat-s-fg)">
-        <div class="cat-name">⬜ Sonstige</div>
-        <div class="cat-desc">Alle Termine ohne automatische Kategorienzuordnung</div>
-        <div class="cat-keywords">Fallback – kein Stichwort zugeordnet</div>
+
+      <div class="cat-card reveal" style="background:var(--cat-s-bg);color:var(--cat-s-fg)">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="cat-name">Konferenzen / DB</div>
+        <div class="cat-desc">LK, FaKo, PK, TBS, Dienstbesprechungen, SchiLF, Studientag</div>
+        <div class="cat-keys">LK, FaKo, DB, TBS, SchiLF, Studientag …</div>
       </div>
+
     </div>
   </div>
 </section>
 
 <!-- ── FAQ ────────────────────────────────────────────────── -->
-<section id="faq">
+<section id="faq" aria-labelledby="faq-title">
   <div class="container">
-    <div class="faq-header">
-      <span class="label-eyebrow">FAQ</span>
-      <h2 class="section-title">Häufige Fragen</h2>
-    </div>
+    <span class="eyebrow">FAQ</span>
+    <h2 class="section-title" id="faq-title">Häufige Fragen</h2>
 
-    <div class="faq-list" style="max-width: 720px">
+    <div class="faq-wrap" role="list">
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Muss ich den Konverter installieren?
-          <span class="faq-arrow">▾</span>
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
+          Was ist der Unterschied zwischen der Schulwochen-Vorlage und der klassischen Vorlage?
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
-            Nein. Der Konverter ist eine einzelne HTML-Datei, die direkt im Browser läuft. Einfach die Datei <code>Terminplan_Konverter_1_2.html</code> herunterladen und öffnen – ohne Server, ohne Installation, ohne Internet-Verbindung nach dem Download.
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
+            Die <strong>Schulwochen-Vorlage</strong> (<code>Terminplan_Schulwochen_Vorlage.xlsx</code>) ist nach Schulwochen (SW 00–40) strukturiert – genau wie die bisherigen Word-Tabellen der Schulleitung. Ferien sind bereits voreingetragen, das Montags-Datum wird automatisch berechnet. Termine werden mit Wochentag eingetragen, nicht mit absolutem Datum. Der Konverter v1.3 erkennt dieses Format automatisch und rechnet die Wochentage in echte Datumsangaben um.<br><br>
+            Die <strong>klassische Flat-Vorlage</strong> (aus dem Konverter unter „Vorlage herunterladen") nutzt eine einfache Tabelle mit absolutem Startdatum pro Zeile – geeignet für gelegentliche Einzeltermine oder die Nachbearbeitung im Konverter.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Was passiert, wenn ich in IServ einen Termin ändere?
-          <span class="faq-arrow">▾</span>
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
+          Muss ich den Konverter installieren?
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
+            Nein. Der Konverter ist eine einzelne HTML-Datei, die direkt im Browser läuft. Einfach die Datei <code>Terminplan_Konverter_1_3.html</code> herunterladen und öffnen – ohne Server, ohne Installation, ohne Internet-Verbindung nach dem Download.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
+          Was passiert, wenn ich in IServ einen Termin ändere?
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
             Das WordPress-Plugin ruft den iCal-Feed von IServ im Hintergrund automatisch ab (WP-Cron). Geänderte, neue und gelöschte Termine werden erkannt. Beim nächsten Seitenaufruf erscheint ein gelber Benachrichtigungsbanner. Neue Termine werden grün hervorgehoben, geänderte Termine orange.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
           Wie binde ich den Kalender in IServ ein?
-          <span class="faq-arrow">▾</span>
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
-            Das Plugin unterstützt den IServ-„Eingebettet"-Modus. Die WordPress-Seite wird per Token-URL ohne Theme eingebettet – das bedeutet: Der Kalender erscheint direkt als IServ-Inhalt, ohne dass der Nutzer WordPress oder ein Login sieht. Die Token-URL ist in den Plugin-Einstellungen konfigurierbar.
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
+            Das Plugin unterstützt den IServ-„Eingebettet"-Modus. Die WordPress-Seite wird per Token-URL ohne Theme eingebettet – der Kalender erscheint direkt als IServ-Inhalt, ohne dass der Nutzer WordPress oder ein Login sieht. Die Token-URL ist in den Plugin-Einstellungen konfigurierbar.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
           Welches Datumsformat erwartet der Konverter?
-          <span class="faq-arrow">▾</span>
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
-            Der Konverter erkennt automatisch <code>TT.MM.JJJJ</code> (deutsches Format, z.B. <code>18.08.2026</code>) und <code>JJJJ-MM-TT</code> (ISO-Format). Zeitangaben im Format <code>HH:MM</code> (z.B. <code>09:30</code>). Leere Zeitfelder erzeugen ganztägige Termine.
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
+            Der Konverter erkennt automatisch <code>TT.MM.JJJJ</code> (deutsches Format, z.&nbsp;B. <code>18.08.2026</code>) und <code>JJJJ-MM-TT</code> (ISO-Format). Zeitangaben im Format <code>HH:MM</code> (z.&nbsp;B. <code>09:30</code>). Leere Zeitfelder erzeugen ganztägige Termine.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
           Kann ich eigene Kategorien anlegen?
-          <span class="faq-arrow">▾</span>
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
-            Ja, ab Konverter v1.2. Im Bereich „⚙ Kategorien &amp; Einstellungen" können Kategorien hinzugefügt, umbenannt, mit eigenen Farben versehen und mit Stichwörtern für das automatische Matching beim Excel-Import ausgestattet werden. Maximal 20 Kategorien.
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
+            Ja, ab Konverter v1.2. Im Bereich „Kategorien &amp; Einstellungen" können Kategorien hinzugefügt, umbenannt, mit eigenen Farben versehen und mit Stichwörtern für das automatische Matching beim Excel-Import ausgestattet werden. Maximal 20 Kategorien.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
           Wie aktuell ist der Kalender auf der Website?
-          <span class="faq-arrow">▾</span>
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
             Das Plugin verwendet Stale-While-Revalidate-Caching: Der gecachte Stand wird sofort angezeigt, im Hintergrund läuft gleichzeitig eine Aktualisierung. Nutzer sehen dadurch keine Ladezeit – auch nach Cache-Ablauf. Der WP-Cron aktualisiert den Feed regelmäßig, unabhängig vom Seitenaufruf.
           </div>
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question" onclick="toggleFaq(this)">
+      <div class="faq-item reveal" role="listitem">
+        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
           Wie importiere ich die ICS-Datei erneut, ohne Duplikate?
-          <span class="faq-arrow">▾</span>
+          <span class="faq-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </button>
-        <div class="faq-answer">
-          <div class="faq-answer-inner">
+        <div class="faq-a" role="region">
+          <div class="faq-a-inner">
             Der Konverter erkennt Duplikate beim Excel-Import automatisch (gleicher Titel + gleiches Startdatum) und überspringt sie. Für den IServ-Import empfiehlt sich die hybride Wartungsstrategie: Die ICS-Datei dient als Jahresvorlage; Änderungen im laufenden Schuljahr werden direkt in IServ gepflegt.
           </div>
         </div>
@@ -1052,40 +1447,40 @@ footer {
         Entwickelt von Julian · Stand März 2026
       </div>
     </div>
-    <div class="footer-versions">
-      <div class="ver-pill"><span class="ver-pill-dot"></span> ICS Konverter v1.2</div>
-      <div class="ver-pill"><span class="ver-pill-dot"></span> WordPress Plugin v3.1.0</div>
-      <div class="ver-pill"><span class="ver-pill-dot"></span> Excel-Vorlage 2026/27</div>
+    <div class="footer-versions" aria-label="Versionen">
+      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> ICS Konverter v1.4</div>
+      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> WordPress Plugin v3.16.1</div>
+      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> Schulwochen-Vorlage 2025/26</div>
     </div>
   </div>
 </footer>
 
 <script>
+/* ── FAQ Toggle ───────────────────────────────────────────── */
 function toggleFaq(btn) {
   const item = btn.closest('.faq-item');
   const isOpen = item.classList.contains('open');
-  // Schließe alle
-  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
-  if (!isOpen) item.classList.add('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+  }
 }
 
-// Scroll-basiertes Einblenden
-const observer = new IntersectionObserver(entries => {
+/* ── Scroll Reveal ────────────────────────────────────────── */
+const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      e.target.style.opacity = '1';
-      e.target.style.transform = 'translateY(0)';
-      observer.unobserve(e.target);
+      e.target.classList.add('visible');
+      revealObserver.unobserve(e.target);
     }
   });
-}, { threshold: 0.12 });
+}, { threshold: 0.10 });
 
-document.querySelectorAll('.download-card, .whatsnew-block, .workflow-step, .cat-card, .faq-item').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(18px)';
-  el.style.transition = 'opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1)';
-  observer.observe(el);
-});
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 </script>
 
 </body>
