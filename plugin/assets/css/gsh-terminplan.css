@@ -311,8 +311,8 @@
 }
 
 /* ================================================================
-   Onboarding-Tour & Hilfe-Button
-   Version: 3.10.0
+   Hilfe-Button & Hilfe-Overlay
+   Version: 3.16.0  (ersetzt Shepherd.js Onboarding-Tour v3.10.0)
    ================================================================ */
 
 /* ── Hilfe-Button im Header ─────────────────────────────────────── */
@@ -337,136 +337,129 @@
     color:        var(--gtp-accent, #2563eb);
 }
 
-/* ── Shepherd.js Theme-Überschreibungen (passt zum Plugin-Design) ── */
-
-/* Haupt-Popup-Karte */
-.shepherd-element {
-    border-radius: 12px !important;
-    box-shadow:    0 16px 48px rgba(0, 0, 0, .18), 0 2px 8px rgba(0, 0, 0, .1) !important;
-    border:        none !important;
-    max-width:     320px !important;
-    font-family:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+/* ── Hilfe-Overlay ──────────────────────────────────────────────── */
+.gtp-help-overlay {
+    position:        fixed;
+    inset:           0;
+    background:      rgba(0, 0, 0, 0.55);
+    z-index:         9999;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    padding:         16px;
+}
+.gtp-help-overlay[hidden] {
+    display: none;
+}
+.gtp-help-panel {
+    background:    var(--gtp-bg, #ffffff);
+    border-radius: 12px;
+    box-shadow:    0 20px 60px rgba(0, 0, 0, 0.25);
+    width:         100%;
+    max-width:     560px;
+    max-height:    85vh;
+    display:       flex;
+    flex-direction: column;
+    overflow:      hidden;
+}
+.gtp-help-header {
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    padding:         20px 24px 16px;
+    border-bottom:   1px solid var(--gtp-border, #e5e7eb);
+    flex-shrink:     0;
+}
+.gtp-help-title {
+    font-size:   1.1rem;
+    font-weight: 700;
+    margin:      0;
+    display:     flex;
+    align-items: center;
+    gap:         8px;
+    color:       var(--gtp-text, #111827);
+}
+.gtp-help-close {
+    background:    none;
+    border:        none;
+    cursor:        pointer;
+    padding:       4px;
+    border-radius: 6px;
+    color:         var(--gtp-text-muted, #6b7280);
+    display:       flex;
+    align-items:   center;
+}
+.gtp-help-close:hover {
+    background: var(--gtp-surface, #f3f4f6);
+    color:      var(--gtp-text, #111827);
+}
+.gtp-help-body {
+    overflow-y: auto;
+    padding:    16px 24px;
+    flex:       1;
+}
+.gtp-help-section {
+    display:       flex;
+    gap:           14px;
+    padding:       12px 0;
+    border-bottom: 1px solid var(--gtp-border, #e5e7eb);
+}
+.gtp-help-section:last-child {
+    border-bottom: none;
+}
+.gtp-help-section-icon {
+    flex-shrink:   0;
+    width:         32px;
+    height:        32px;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    background:    var(--gtp-surface, #f3f4f6);
+    border-radius: 8px;
+    color:         var(--gtp-accent, #2563eb);
+}
+.gtp-help-section-body strong {
+    display:       block;
+    font-size:     0.9rem;
+    color:         var(--gtp-text, #111827);
+    margin-bottom: 2px;
+}
+.gtp-help-section-body p {
+    font-size:   0.82rem;
+    color:       var(--gtp-text-muted, #6b7280);
+    margin:      0;
+    line-height: 1.5;
+}
+.gtp-help-footer {
+    padding:    12px 24px;
+    border-top: 1px solid var(--gtp-border, #e5e7eb);
+    flex-shrink: 0;
+}
+.gtp-help-version {
+    font-size: 0.72rem;
+    color:     var(--gtp-text-faint, #9ca3af);
 }
 
-/* Pfeil */
-.shepherd-arrow::before {
-    background: #1a1a2e !important;
+/* Dark Mode */
+[data-gtp-theme="dark"] .gtp-help-panel {
+    background: var(--gtp-surface, #1e293b);
+}
+[data-gtp-theme="dark"] .gtp-help-section-icon {
+    background: rgba(255, 255, 255, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+    [data-gtp-theme="auto"] .gtp-help-panel {
+        background: var(--gtp-surface, #1e293b);
+    }
+    [data-gtp-theme="auto"] .gtp-help-section-icon {
+        background: rgba(255, 255, 255, 0.06);
+    }
 }
 
-/* Header */
-.shepherd-header {
-    background:    #1a1a2e !important;
-    border-radius: 12px 12px 0 0 !important;
-    padding:       14px 18px 12px !important;
-}
-.shepherd-title {
-    color:       #f1f5f9 !important;
-    font-size:   .95rem !important;
-    font-weight: 700 !important;
-}
-
-/* Schließen-Button */
-.shepherd-cancel-icon {
-    color:     #94a3b8 !important;
-    font-size: 1.2rem !important;
-}
-.shepherd-cancel-icon:hover {
-    color: #f1f5f9 !important;
-}
-
-/* Text */
-.shepherd-text {
-    padding:     14px 18px !important;
-    font-size:   .84rem !important;
-    line-height: 1.6 !important;
-    color:       #334155 !important;
-}
-
-/* Footer mit Buttons */
-.shepherd-footer {
-    padding:         10px 18px 14px !important;
-    border-top:      1px solid #e2e8f0 !important;
-    display:         flex !important;
-    justify-content: flex-end !important;
-    align-items:     center !important;
-    gap:             8px !important;
-}
-
-/* Fortschrittsanzeige (im Text-Bereich unten) */
-.gtp-tour-progress {
-    font-size:   .72rem;
-    color:       #94a3b8;
-    font-weight: 600;
-    margin:      8px 0 0 !important;
-    text-align:  right;
-}
-
-/* Buttons allgemein */
-.shepherd-button {
-    border-radius: 6px !important;
-    font-size:     .8rem !important;
-    font-weight:   600 !important;
-    padding:       6px 14px !important;
-    transition:    all 0.15s ease !important;
-}
-
-/* Pfeil-Buttons: quadratisch und größer dargestellt */
-.gtp-tour-arrow {
-    width:       36px !important;
-    height:      36px !important;
-    padding:     0 !important;
-    font-size:   1.1rem !important;
-    border-radius: 50% !important;
-    display:     inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-.shepherd-button-secondary {
-    background: transparent !important;
-    color:      #64748b !important;
-    border:     1px solid #e2e8f0 !important;
-}
-.shepherd-button-secondary:hover {
-    background:   #f8fafc !important;
-    border-color: #94a3b8 !important;
-    color:        #334155 !important;
-}
-.shepherd-button-primary {
-    background: #2563eb !important;
-    color:      #fff !important;
-    border:     none !important;
-}
-.shepherd-button-primary:hover {
-    background: #1d4ed8 !important;
-}
-
-/* Hervorhebung des aktiven Tour-Elements */
-.shepherd-target-highlighted {
-    outline:        3px solid #2563eb !important;
-    outline-offset: 4px !important;
-    border-radius:  8px !important;
-}
-
-/* Dark Mode Anpassungen */
-[data-gtp-theme="dark"] .shepherd-text {
-    color: #cbd5e1 !important;
-}
-[data-gtp-theme="dark"] .shepherd-footer {
-    border-top-color: #334155 !important;
-}
-[data-gtp-theme="dark"] .shepherd-button-secondary {
-    color:        #94a3b8 !important;
-    border-color: #334155 !important;
-}
-[data-gtp-theme="dark"] .shepherd-button-secondary:hover {
-    background: #1e293b !important;
-}
-
-/* Druck: Tour-Elemente ausblenden */
+/* Druck */
 @media print {
     #gtp-tour-btn,
-    .shepherd-element { display: none !important; }
+    .gtp-help-overlay { display: none !important; }
 }
 
 /* ================================================================
@@ -733,7 +726,7 @@ a .gtp-icon:only-child {
     font-size:        0.75rem;
     font-weight:      600;
     background-color: var(--cat-color, #6c757d);
-    color:            #fff;
+    color:            var(--cat-text, #ffffff);
     margin-right:     4px;
     line-height:      1.4;
 }
@@ -761,7 +754,7 @@ a .gtp-icon:only-child {
 .gsh-tp-cat-filter-btn.active,
 .gsh-tp-cat-filter-btn:hover {
     background-color: var(--btn-color, #6c757d);
-    color:            #fff;
+    color:            var(--btn-text, #ffffff);
 }
 
 /* Dark Mode */
@@ -777,7 +770,7 @@ a .gtp-icon:only-child {
 [data-gtp-theme="dark"] .gsh-tp-cat-filter-btn.active,
 [data-gtp-theme="dark"] .gsh-tp-cat-filter-btn:hover {
     background-color: var(--btn-color, #aaa);
-    color:            #1a1a2e;
+    color:            var(--btn-text, #ffffff);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -788,7 +781,7 @@ a .gtp-icon:only-child {
     [data-gtp-theme="auto"] .gsh-tp-cat-filter-btn.active,
     [data-gtp-theme="auto"] .gsh-tp-cat-filter-btn:hover {
         background-color: var(--btn-color, #aaa);
-        color:            #1a1a2e;
+        color:            var(--btn-text, #ffffff);
     }
 }
 
@@ -796,4 +789,91 @@ a .gtp-icon:only-child {
 @media print {
     .gsh-tp-cat-badge    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .gsh-tp-cat-filters  { display: none !important; }
+}
+
+/* ================================================================
+   Admin – Kategorie-Editor: Slug-Vorschau & Keyword-Editor
+   Version: 3.16.0
+   ================================================================ */
+
+/* Slug-Vorschau unter dem Label-Feld */
+.gsh-cat-slug-preview {
+    font-size:   0.72rem;
+    color:       #6b7280;
+    display:     block;
+    margin-top:  2px;
+    margin-bottom: 4px;
+}
+.gsh-cat-slug-preview code {
+    font-family:   monospace;
+    background:    #f3f4f6;
+    padding:       1px 4px;
+    border-radius: 3px;
+}
+
+/* Keyword-Editor (aufklappbar) */
+.gsh-cat-keywords-wrap {
+    margin-top: 4px;
+}
+.gsh-cat-keywords-wrap summary {
+    cursor:      pointer;
+    font-size:   0.8rem;
+    color:       #6b7280;
+    user-select: none;
+}
+.gsh-cat-keywords-wrap[open] summary {
+    margin-bottom: 6px;
+}
+.gsh-cat-keywords {
+    width:         100%;
+    box-sizing:    border-box;
+    font-size:     0.8rem;
+    resize:        vertical;
+    border:        1px solid #d1d5db;
+    border-radius: 4px;
+    padding:       6px 8px;
+    font-family:   inherit;
+    background:    #fff;
+    color:         #111827;
+}
+.gsh-cat-keywords-hint {
+    font-size:  0.72rem;
+    color:      #6b7280;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+.gsh-cat-kw-count {
+    font-weight: normal;
+    opacity:     0.7;
+}
+
+/* ================================================================
+   UI-Überarbeitung v3.17.0 – neue und ergänzte Komponenten
+   ================================================================ */
+
+/* ── Dark Mode – Draft-Banner ──────────────────────────────────── */
+[data-gtp-theme="dark"] .gtp-draft-banner {
+    background:   #422006;
+    border-color: #92400e;
+    color:        #fef3c7;
+}
+@media (prefers-color-scheme: dark) {
+    [data-gtp-theme="auto"] .gtp-draft-banner {
+        background:   #422006;
+        border-color: #92400e;
+        color:        #fef3c7;
+    }
+}
+
+
+/* ── Desktop: Filter immer sichtbar, Toggle versteckt ─────────── */
+@media (min-width: 768px) {
+    .gtp-filt-toggle { display: none !important; }
+    .gtp-filt        { max-height: none !important; overflow: visible; }
+}
+
+/* ── Footer-Meta auf sehr kleinen Screens stacken ─────────────── */
+@media (max-width: 480px) {
+    .gtp-ft-actions { width: 100%; }
+    .gtp-ft-meta    { width: 100%; }
 }

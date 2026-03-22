@@ -3,10 +3,48 @@
  * Plugin Name: GSH Terminplan Dashboard
  * Plugin URI:  https://gesamtschule-horst.de
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     3.15.0
+ * Version:     3.17.0
  * Author:      Gesamtschule Horst
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 3.17.0:
+ * - [UX] Header zweizeilig: Titel/Subtitle oben, Suche in voller Breite darunter
+ * - [UX] Quartal-Tabs: kleiner Dot markiert das aktuelle Quartal
+ * - [UX] Filter-Bar: Toggle-Button auf Mobile – Filter ein-/ausklappbar
+ * - [UX] Footer: Aktions-Buttons links, Metadaten rechts (strukturiert)
+ * - [UX] Entwurfs-Banner via CSS-Klasse statt Inline-Style
+ * - [UX] Theme-Switcher: Emoji-Icons (☀️🌙💻⚙️) durch konsistente Lucide-SVGs ersetzt
+ * - [UX] Feedback-Button: Emoji durch message-circle-SVG ersetzt
+ * - [INFRA] Schuljahr-Switcher: Inline-Style durch CSS-Klassen (.gtp-sj-btn, .gtp-sj-btn-on) ersetzt
+ * - [INFRA] 4 neue Icons registriert: sun, monitor, message-circle, settings
+ *
+ * Changelog 3.16.1:
+ * - [FEATURE] Neue Standardkategorie „Inklusion" (IFÖ, AL-SuS, Förderpläne, AOSF, I-Helfer etc.)
+ *
+ * Changelog 3.16.0:
+ * - [FEATURE] Aufgabe 1: Slug wird beim Umbenennen einer Kategorie automatisch synchronisiert;
+ *   Slug-Vorschau (readonly) direkt unter dem Label-Feld im Admin sichtbar
+ * - [FEATURE] Aufgabe 2: Stichwörter (Keywords) pro Kategorie editierbar im Admin;
+ *   Datenmodell erweitert um 'keywords'-Feld; GSH_TP_DEFAULT_CATEGORIES enthält alle
+ *   bisherigen Keyword-Listen; gsh_tp_assign_categories_to_event() liest Keywords aus DB
+ * - [FEATURE] Aufgabe 3: Shepherd.js vollständig entfernt; neues schlichtes Hilfe-Overlay
+ *   öffnet sich nur auf Klick (kein Auto-Start), kein externes CDN mehr nötig
+ * - [INFRA] gsh_tp_enqueue_tour_assets() und gtpTourStart() entfernt
+ *
+ * Changelog 3.15.2:
+ * - [BUGFIX] gsh_tp_color_derive(): Textfarbe wird jetzt gegen die helle Pastell-Hintergrundfarbe
+ *   ($bg) berechnet statt gegen die Originalfarbe – verhindert weißen/unsichtbaren Text auf
+ *   hellem Hintergrund (z.B. #27ae60 Dunkelgrün → Pastell ~#e5f7ed → Text jetzt #000000)
+ * - [INFRA] gsh_tp_contrast_color() steht jetzt im Code vor gsh_tp_color_derive() (Abhängigkeit)
+ *
+ * Changelog 3.15.1:
+ * - [BUGFIX] Kategorie-Badges und Filter-Buttons: Textfarbe wird jetzt per WCAG-Formel berechnet
+ *   statt hardcoded #fff – bei hellen Kategoriefarben (Gelb, Hellgrün etc.) ist der Text nun schwarz
+ * - [INFRA] gsh_tp_contrast_color(): neue Hilfsfunktion berechnet #000000 oder #ffffff anhand der
+ *   relativen WCAG-2.1-Luminanz (Schwellenwert 0.179)
+ * - [CSS] --cat-text / --btn-text CSS-Custom-Properties ersetzen hardcoded color-Werte in Badges
+ *   und Filter-Buttons; Dark Mode: kein hardcoded #1a1a2e mehr als Textfarbe
  *
  * Changelog 3.15.0:
  * - [FEATURE] Kategorien-System komplett neu aufgebaut mit GSH_TP_DEFAULT_CATEGORIES-Konstante
@@ -431,7 +469,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '3.15.0' );
+define( 'GSH_TP_VERSION',       '3.17.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -451,40 +489,147 @@ define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteue
  */
 const GSH_TP_DEFAULT_CATEGORIES = [
     [
-        'id'    => 'jg-5-6',
-        'label' => 'Jahrgang 5/6',
-        'color' => '#e74c3c',
-        'slug'  => 'jg56',
+        'id'       => 'jg-5-6',
+        'label'    => 'Jahrgang 5/6',
+        'color'    => '#e74c3c',
+        'slug'     => 'jg56',
+        'keywords' => [
+            'klasse 5', 'klasse 6', 'kl. 5', 'kl. 6',
+            'kl.5', 'kl.6', 'jg 5', 'jg 6', 'jg. 5', 'jg. 6',
+            'jg5', 'jg6', '5a', '5b', '5c', '5d', '5e',
+            '6a', '6b', '6c', '6d', '6e',
+            'einschulung', 'schulanfang', 'orientierungsphase',
+            'kennenlerntag', 'schnuppertag', 'grundschule',
+            'übergangsfeier', 'einführungswoche',
+            'elternabend 5', 'elternabend 6',
+            'wandertag 5', 'wandertag 6',
+            'projekttag 5', 'projekttag 6',
+            'klassenfahrt 5', 'klassenfahrt 6',
+        ],
     ],
     [
-        'id'    => 'jg-7-8',
-        'label' => 'Jahrgang 7/8',
-        'color' => '#27ae60',
-        'slug'  => 'jg78',
+        'id'       => 'jg-7-8',
+        'label'    => 'Jahrgang 7/8',
+        'color'    => '#27ae60',
+        'slug'     => 'jg78',
+        'keywords' => [
+            'klasse 7', 'klasse 8', 'kl. 7', 'kl. 8',
+            'kl.7', 'kl.8', 'jg 7', 'jg 8', 'jg. 7', 'jg. 8',
+            'jg7', 'jg8', '7a', '7b', '7c', '7d', '7e',
+            '8a', '8b', '8c', '8d', '8e',
+            'berufsorientierung', 'berufsfelderkundung',
+            'betriebsbesichtigung', 'praktikumsvorbereitung',
+            'schülerbetriebspraktikum', 'bop',
+            'elternabend 7', 'elternabend 8',
+            'wandertag 7', 'wandertag 8',
+            'projekttag 7', 'projekttag 8',
+            'klassenfahrt 7', 'klassenfahrt 8',
+            'sportfest 7', 'sportfest 8',
+        ],
     ],
     [
-        'id'    => 'jg-9-10',
-        'label' => 'Jahrgang 9/10',
-        'color' => '#e67e22',
-        'slug'  => 'jg910',
+        'id'       => 'jg-9-10',
+        'label'    => 'Jahrgang 9/10',
+        'color'    => '#e67e22',
+        'slug'     => 'jg910',
+        'keywords' => [
+            'klasse 9', 'klasse 10', 'kl. 9', 'kl. 10',
+            'kl.9', 'kl.10', 'jg 9', 'jg 10', 'jg. 9', 'jg. 10',
+            'jg9', 'jg10', '9a', '9b', '9c', '9d', '9e',
+            '10a', '10b', '10c', '10d', '10e',
+            'schülerpraktikum', 'betriebspraktikum', 'praktikum',
+            'berufsberatung', 'berufswegeplanung',
+            'mittlerer schulabschluss', 'msa', 'fachoberschulreife',
+            'abschlussfeier', 'abschlussfahrt',
+            'prüfung klasse 10', 'abschlussprüfung',
+            'elternabend 9', 'elternabend 10',
+            'wandertag 9', 'wandertag 10',
+            'projekttag 9', 'projekttag 10',
+            'klassenfahrt 9', 'klassenfahrt 10',
+        ],
     ],
     [
-        'id'    => 'oberstufe',
-        'label' => 'Oberstufe',
-        'color' => '#2980b9',
-        'slug'  => 'oberstufe',
+        'id'       => 'oberstufe',
+        'label'    => 'Oberstufe',
+        'color'    => '#2980b9',
+        'slug'     => 'oberstufe',
+        'keywords' => [
+            'ef', 'einführungsphase',
+            'q1', 'q2', 'qualifikationsphase',
+            'oberstufe', 'sek ii', 'sek. ii', 'sekundarstufe ii',
+            'abitur', 'abi', 'abiturzeugnis', 'abiturvorbereitung',
+            'abiturprüfung', 'schriftliches abitur', 'mündliches abitur',
+            'zentralabitur', 'abi-feier', 'abiball', 'abschlussball',
+            'abistreich', 'abigottesdienst',
+            'lk', 'leistungskurs', 'grundkurs', 'gk',
+            'projektkurs', 'vertiefungskurs',
+            'kurswahl', 'fachwahl', 'belegung',
+            'studienberatung', 'hochschultag', 'unibesuch',
+            'studienfahrt', 'bildungsfahrt',
+            'elternabend oberstufe', 'elternabend ef',
+            'elternabend q1', 'elternabend q2',
+        ],
     ],
     [
-        'id'    => 'feiertage',
-        'label' => 'Feiertage',
-        'color' => '#f39c12',
-        'slug'  => 'feiertage',
+        'id'       => 'inklusion',
+        'label'    => 'Inklusion',
+        'color'    => '#1abc9c',
+        'slug'     => 'inklusion',
+        'keywords' => [
+            'ifö', 'ifo', 'ifö-sus', 'ifo-sus', 'al sus', 'al-sus',
+            'al 1', 'al 2', 'al 3', 'al1', 'al2', 'al3',
+            'internationale förderschüler', 'übergabe beratungsteam',
+            'inklusion', 'inklusiv', 'inkl.',
+            'sonderpädagogik', 'sonderpädagogisch', 'förderbedarf',
+            'aosf', 'i-helfer', 'integrationshelfer',
+            'beratungsteam', 'förderplan', 'förderpläne',
+            'förderlehrer', 'fö-lul', 'fö lul', 'fö-lehrer',
+            'nachteilsausgleich', 'gemeinsames lernen',
+        ],
     ],
     [
-        'id'    => 'konferenzen',
-        'label' => 'Konferenzen',
-        'color' => '#8e44ad',
-        'slug'  => 'konferenzen',
+        'id'       => 'feiertage',
+        'label'    => 'Feiertage',
+        'color'    => '#f39c12',
+        'slug'     => 'feiertage',
+        'keywords' => [
+            'feiertag', 'gesetzlicher feiertag',
+            'neujahr', 'heilige drei könige',
+            'karfreitag', 'karsamstag', 'ostermontag', 'ostersonntag',
+            'christi himmelfahrt', 'vatertag', 'pfingstmontag',
+            'fronleichnam', 'tag der deutschen einheit',
+            'allerheiligen', 'nikolaus',
+            'heiligabend', 'weihnachten', '1. weihnachtstag', '2. weihnachtstag',
+            'silvester',
+            'ferien', 'schulferien', 'ferientag',
+            'herbstferien', 'weihnachtsferien', 'winterferien',
+            'osterferien', 'pfingstferien', 'sommerferien',
+            'brückentag', 'beweglicher ferientag',
+            'schulfrei', 'unterrichtsfrei',
+            'studientag', 'frei',
+        ],
+    ],
+    [
+        'id'       => 'konferenzen',
+        'label'    => 'Konferenzen',
+        'color'    => '#8e44ad',
+        'slug'     => 'konferenzen',
+        'keywords' => [
+            'konferenz', 'konf.',
+            'lehrerkonferenz', 'gesamtkonferenz', 'geko',
+            'fachkonferenz', 'klassenkonferenz', 'teilkonferenz',
+            'schulkonferenz', 'zeugniskonferenz', 'versetzungskonferenz',
+            'notenkonferenz', 'erziehungskonferenz',
+            'jahrgangsteam', 'jahrgangsbesprechung',
+            'dienstbesprechung', 'teambesprechung', 'teamsitzung',
+            'abteilungsbesprechung', 'steuergruppe',
+            'schulleitungssitzung', 'fortbildung',
+            'pädagogischer tag', 'pädagogische konferenz',
+            'elternpflegschaft', 'schulpflegschaft',
+            'schülervertretung', 'sv-sitzung', 'sv sitzung',
+            'schulvorstand', 'schilf', 'lk', 'fako', 'fachkonferenz',
+            'db', 'pk', 'zk', 'sk', 'pflegschaft',
+        ],
     ],
 ];
 
@@ -520,6 +665,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
         'chevron-right'  => '<polyline points="9 18 15 12 9 6"/>',
         'loader'         => '<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>',
         'clock'          => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        'calendar'       => '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+        'tag'            => '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+        'moon'           => '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+        'info'           => '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+        'help-circle'    => '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        'sun'            => '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+        'monitor'        => '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+        'message-circle' => '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+        'settings'       => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     );
 
     if ( ! isset( $paths[ $name ] ) ) {
@@ -553,6 +707,47 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '3.17.0',
+            'entries' => array(
+                array( 'tag' => 'UX',     'text' => 'Header zweizeilig: Titel/Subtitle oben, Suche in voller Breite darunter' ),
+                array( 'tag' => 'UX',     'text' => 'Quartal-Tabs: kleiner Dot markiert das aktuelle Quartal' ),
+                array( 'tag' => 'UX',     'text' => 'Filter-Bar: Toggle-Button auf Mobile – Filter ein-/ausklappbar' ),
+                array( 'tag' => 'UX',     'text' => 'Footer: Aktions-Buttons links, Metadaten rechts (strukturiert)' ),
+                array( 'tag' => 'UX',     'text' => 'Theme-Switcher und Feedback-Button: Emoji-Icons durch konsistente Lucide-SVGs ersetzt' ),
+                array( 'tag' => 'INFRA',  'text' => '4 neue Icons registriert: sun, monitor, message-circle, settings' ),
+            ),
+        ),
+        array(
+            'version' => '3.16.1',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Neue Standardkategorie „Inklusion" (IFÖ, AL-SuS, Förderpläne, AOSF, I-Helfer, Beratungsteam etc.) in GSH_TP_DEFAULT_CATEGORIES' ),
+            ),
+        ),
+        array(
+            'version' => '3.16.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Aufgabe 1: Slug synchronisiert sich beim Umbenennen automatisch; Slug-Vorschau direkt unter dem Label-Feld im Admin' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Aufgabe 2: Keywords pro Kategorie im Admin editierbar; Datenmodell um \'keywords\'-Feld erweitert; gsh_tp_assign_categories_to_event() liest Keywords aus DB statt hardcoded match-Block' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Aufgabe 3: Shepherd.js entfernt; neues Hilfe-Overlay öffnet sich nur auf Klick – kein Auto-Start, kein externes CDN' ),
+                array( 'tag' => 'INFRA',   'text' => 'gsh_tp_enqueue_tour_assets() und gtpTourStart() entfernt' ),
+            ),
+        ),
+        array(
+            'version' => '3.15.2',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'gsh_tp_color_derive(): Textfarbe wird gegen die helle Pastell-Hintergrundfarbe berechnet statt gegen die Originalfarbe – kein weißer Text mehr auf hellem Hintergrund' ),
+                array( 'tag' => 'INFRA',  'text' => 'gsh_tp_contrast_color() steht jetzt vor gsh_tp_color_derive() (explizite Definitionsreihenfolge)' ),
+            ),
+        ),
+        array(
+            'version' => '3.15.1',
+            'entries' => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Kategorie-Badges und Filter-Buttons: Textfarbe per WCAG-Luminanzformel berechnet – bei hellen Farben (Gelb, Hellgrün) ist der Text jetzt schwarz statt weiß' ),
+                array( 'tag' => 'INFRA',  'text' => 'gsh_tp_contrast_color(): neue Hilfsfunktion berechnet #000000 oder #ffffff nach WCAG-2.1-Relative-Luminanz (Schwellenwert 0.179)' ),
+                array( 'tag' => 'CSS',    'text' => '--cat-text / --btn-text CSS-Custom-Properties ersetzen hardcoded color-Werte; Dark Mode: kein hardcoded #1a1a2e mehr' ),
+            ),
+        ),
         array(
             'version' => '3.15.0',
             'entries' => array(
@@ -1530,39 +1725,8 @@ function gsh_tp_enqueue_frontend_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
 
-/**
- * Shepherd.js für die Onboarding-Tour laden (nur auf der Terminplan-Seite).
- *
- * Shepherd.js wird von cdnjs geladen – dieselbe Quelle wie SheetJS im Admin.
- * CSS und JS werden nur eingebunden wenn der Shortcode auf der Seite vorhanden ist.
- *
- * @since 3.10.0
- * @return void
- */
-function gsh_tp_enqueue_tour_assets() {
-    global $post;
-    if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'gsh_terminplan' ) ) {
-        return;
-    }
-
-    // Shepherd.js CSS
-    wp_enqueue_style(
-        'shepherd-js',
-        'https://cdnjs.cloudflare.com/ajax/libs/shepherd.js/11.2.0/css/shepherd.min.css',
-        array(),
-        '11.2.0'
-    );
-
-    // Shepherd.js Script (im Footer laden – nach dem Plugin-JS)
-    wp_enqueue_script(
-        'shepherd-js',
-        'https://cdnjs.cloudflare.com/ajax/libs/shepherd.js/11.2.0/js/shepherd.min.js',
-        array(),
-        '11.2.0',
-        true // im Footer
-    );
-}
-add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_tour_assets' );
+// ENTFERNT v3.16.0: gsh_tp_enqueue_tour_assets() – Shepherd.js vollständig entfernt.
+// Das Hilfe-Overlay ist jetzt ein schlichtes natives HTML/CSS/JS-Overlay (kein CDN).
 
 /**
  * Meldet alle Plugin-Optionen bei der WordPress Settings API an.
@@ -1777,14 +1941,14 @@ function gsh_tp_get_categories(): array {
  * Speichert Kategorien in der Datenbank und aktualisiert den Request-Cache.
  *
  * Validiert jeden Eintrag (id, label, color, slug) und überspringt
- * unvollständige Einträge. Gibt true bei Erfolg zurück (inkl. dem Fall,
- * dass der Wert identisch war und kein DB-Update nötig war).
+ * unvollständige Einträge. Gibt bei Erfolg das gespeicherte Array zurück
+ * (inkl. dem Fall, dass der Wert identisch war und kein DB-Update nötig war).
  *
  * @since 3.15.0
  * @param  array $categories Roheingabe – wird intern bereinigt.
- * @return bool              true = Kategorien korrekt in DB vorhanden.
+ * @return array|false       Gespeichertes Kategorien-Array oder false bei Fehler.
  */
-function gsh_tp_save_categories( array $categories ): bool {
+function gsh_tp_save_categories( array $categories ) {
     if ( empty( $categories ) ) {
         return false;
     }
@@ -1809,13 +1973,23 @@ function gsh_tp_save_categories( array $categories ): bool {
         }
         $color = preg_match( $hex, $cat['color'] ?? '' ) ? $cat['color'] : '#6c757d';
 
+        // Keywords: kommaseparierter String (aus Admin-Textarea) oder Array → bereinigtes Array
+        $raw_kw = $cat['keywords'] ?? [];
+        if ( is_string( $raw_kw ) ) {
+            $raw_kw = explode( ',', $raw_kw );
+        }
+        $keywords = array_values( array_filter(
+            array_map( 'sanitize_text_field', array_map( 'trim', (array) $raw_kw ) )
+        ) );
+
         $ids[]   = $id;
         $slugs[] = $slug;
         $clean[] = array(
-            'id'    => $id,
-            'label' => $label,
-            'color' => $color,
-            'slug'  => $slug,
+            'id'       => $id,
+            'label'    => $label,
+            'color'    => $color,
+            'slug'     => $slug,
+            'keywords' => $keywords,
         );
     }
 
@@ -1826,20 +2000,17 @@ function gsh_tp_save_categories( array $categories ): bool {
     // update_option() gibt false wenn Wert identisch – das ist kein Fehler
     update_option( 'gsh_tp_categories', $clean, false );
 
-    // Gegencheck: Option muss in DB vorhanden und nicht leer sein
+    // Gegencheck: Option muss in DB vorhanden und nicht leer sein.
+    // Gibt gleichzeitig den gespeicherten Stand zurück (spart zusätzliches get_option() beim Aufrufer).
     $verify = get_option( 'gsh_tp_categories', array() );
     if ( ! is_array( $verify ) || empty( $verify ) ) {
         return false;
     }
 
-    // Request-Cache leeren damit gsh_tp_get_categories() die neuen Daten liefert
-    // (Static-Variable über Closure zurücksetzen ist in PHP nicht möglich;
-    //  stattdessen: Request-Cache über Wrapper-Option signalisieren)
-    // Pragmatische Lösung: Cache-Variable direkt per Referenz auf die gespeicherten
-    // Daten setzen – gsh_tp_get_categories() prüft 'null', nicht den Inhalt.
-    // Da PHP keine static-Variable von außen resettet, reicht der DB-Check oben.
+    // Hinweis: gsh_tp_get_categories() nutzt eine static-Variable die nach dem Speichern
+    // nicht zurückgesetzt werden kann – da der AJAX-Request danach endet, ist das kein Problem.
 
-    return true;
+    return $verify;
 }
 
 /**
@@ -1874,16 +2045,15 @@ function gsh_tp_ajax_save_categories(): void {
         return;
     }
 
-    // 5. Speichern
-    $success = gsh_tp_save_categories( $categories );
+    // 5. Speichern – gibt bei Erfolg das gespeicherte Array zurück, sonst false
+    $saved = gsh_tp_save_categories( $categories );
 
-    if ( ! $success ) {
+    if ( false === $saved ) {
         wp_send_json_error( array( 'message' => 'Speichern fehlgeschlagen.' ), 500 );
         return;
     }
 
-    // 6. Gespeicherten Stand direkt aus DB lesen und zurückgeben
-    $saved = get_option( 'gsh_tp_categories', GSH_TP_DEFAULT_CATEGORIES );
+    // 6. Gespeicherten Stand zurückgeben (kommt direkt aus gsh_tp_save_categories(), kein extra DB-Call)
     wp_send_json_success( array(
         'message'    => 'Kategorien gespeichert.',
         'categories' => $saved,
@@ -1891,13 +2061,59 @@ function gsh_tp_ajax_save_categories(): void {
 }
 
 /**
+ * Berechnet ob auf einer gegebenen Hintergrundfarbe schwarze oder weiße
+ * Schrift besser lesbar ist.
+ *
+ * Basiert auf der WCAG 2.1 Relative-Luminanz-Formel mit Schwellenwert 0.179.
+ * Gibt '#000000' zurück wenn die Farbe hell genug ist, sonst '#ffffff'.
+ * Bei ungültigem Input (kein valider Hex-Code) wird '#ffffff' zurückgegeben.
+ *
+ * Muss vor gsh_tp_color_derive() definiert sein, da diese Funktion sie aufruft.
+ *
+ * @since 3.15.1
+ * @param  string $hex_color Hex-Farbe mit # (z.B. '#e74c3c' oder '#abc').
+ * @return string            '#000000' oder '#ffffff'.
+ */
+function gsh_tp_contrast_color( string $hex_color ): string {
+    $hex = ltrim( $hex_color, '#' );
+
+    // Kurzform (#abc) auf Langform (#aabbcc) expandieren
+    if ( strlen( $hex ) === 3 ) {
+        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    }
+
+    // Ungültige Farbe → Standard: weiß
+    if ( strlen( $hex ) !== 6 || ! ctype_xdigit( $hex ) ) {
+        return '#ffffff';
+    }
+
+    // RGB-Werte (0–255) in lineare Werte (0–1) umrechnen
+    $r = hexdec( substr( $hex, 0, 2 ) ) / 255;
+    $g = hexdec( substr( $hex, 2, 2 ) ) / 255;
+    $b = hexdec( substr( $hex, 4, 2 ) ) / 255;
+
+    // Gamma-Korrektur (sRGB → linear)
+    $r = $r <= 0.03928 ? $r / 12.92 : ( ( $r + 0.055 ) / 1.055 ) ** 2.4;
+    $g = $g <= 0.03928 ? $g / 12.92 : ( ( $g + 0.055 ) / 1.055 ) ** 2.4;
+    $b = $b <= 0.03928 ? $b / 12.92 : ( ( $b + 0.055 ) / 1.055 ) ** 2.4;
+
+    // Relative Luminanz (WCAG 2.1)
+    $luminance = 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
+
+    // Helle Farben (> 0.179) → schwarze Schrift; dunkle → weiße Schrift
+    return $luminance > 0.179 ? '#000000' : '#ffffff';
+}
+
+/**
  * Leitet bg-, border- und text-Farbe aus einer einzelnen Hauptfarbe ab.
  *
  * bg: 12 % der Farbe + 88 % Weiß (sehr heller Pastellton).
  * border: die Hauptfarbe selbst.
- * text: dunkel (#1e293b) wenn helle Farbe (Leuchtdichte > 0.5), sonst hell (#f1f5f9).
+ * text: Kontrastfarbe (#000000 oder #ffffff) berechnet gegen die helle $bg,
+ *       nicht gegen die Originalfarbe – verhindert weißen Text auf hellem Hintergrund.
  *
  * @since 3.15.0
+ * @updated 3.15.2 Textfarbe wird jetzt gegen $bg (Pastelton) berechnet via gsh_tp_contrast_color().
  * @param  string $color Hex-Farbe (#rrggbb).
  * @return array{bg: string, border: string, text: string}
  */
@@ -1908,13 +2124,18 @@ function gsh_tp_color_derive( string $color ): array {
     $r  = hexdec( substr( $color, 1, 2 ) );
     $g  = hexdec( substr( $color, 3, 2 ) );
     $b  = hexdec( substr( $color, 5, 2 ) );
+
+    // Helle Pastell-Hintergrundfarbe berechnen (88 % Weiß + 12 % Originalfarbe)
     $bg = sprintf( '#%02x%02x%02x',
         min( 255, (int) ( $r * 0.12 + 0.88 * 255 ) ),
         min( 255, (int) ( $g * 0.12 + 0.88 * 255 ) ),
         min( 255, (int) ( $b * 0.12 + 0.88 * 255 ) )
     );
-    $luminance = ( 0.299 * $r + 0.587 * $g + 0.114 * $b ) / 255;
-    $tx        = ( $luminance > 0.5 ) ? '#1e293b' : '#f1f5f9';
+
+    // Textfarbe gegen die helle Hintergrundfarbe berechnen – nicht gegen die Originalfarbe.
+    // Pastelfarben sind immer hell → Ergebnis ist immer '#000000' (schwarze Schrift).
+    $tx = gsh_tp_contrast_color( $bg );
+
     return array( 'bg' => $bg, 'border' => $color, 'text' => $tx );
 }
 
@@ -1954,100 +2175,8 @@ function gsh_tp_assign_categories_to_event( array $event ): array {
             mb_strtolower( $cat['slug'],  'UTF-8' ),
         );
 
-        // Schulspezifische Stichwörter je Kategorie-ID
-        $extra = match ( $cat['id'] ) {
-            'jg-5-6' => [
-                'klasse 5', 'klasse 6', 'kl. 5', 'kl. 6',
-                'kl.5', 'kl.6', 'jg 5', 'jg 6', 'jg. 5', 'jg. 6',
-                'jg5', 'jg6', '5a', '5b', '5c', '5d', '5e',
-                '6a', '6b', '6c', '6d', '6e',
-                'einschulung', 'schulanfang', 'orientierungsphase',
-                'kennenlerntag', 'schnuppertag', 'grundschule',
-                'übergangsfeier', 'einführungswoche',
-                'elternabend 5', 'elternabend 6',
-                'wandertag 5', 'wandertag 6',
-                'projekttag 5', 'projekttag 6',
-                'klassenfahrt 5', 'klassenfahrt 6',
-            ],
-            'jg-7-8' => [
-                'klasse 7', 'klasse 8', 'kl. 7', 'kl. 8',
-                'kl.7', 'kl.8', 'jg 7', 'jg 8', 'jg. 7', 'jg. 8',
-                'jg7', 'jg8', '7a', '7b', '7c', '7d', '7e',
-                '8a', '8b', '8c', '8d', '8e',
-                'berufsorientierung', 'berufsfelderkundung',
-                'betriebsbesichtigung', 'praktikumsvorbereitung',
-                'schülerbetriebspraktikum', 'bop',
-                'elternabend 7', 'elternabend 8',
-                'wandertag 7', 'wandertag 8',
-                'projekttag 7', 'projekttag 8',
-                'klassenfahrt 7', 'klassenfahrt 8',
-                'sportfest 7', 'sportfest 8',
-            ],
-            'jg-9-10' => [
-                'klasse 9', 'klasse 10', 'kl. 9', 'kl. 10',
-                'kl.9', 'kl.10', 'jg 9', 'jg 10', 'jg. 9', 'jg. 10',
-                'jg9', 'jg10', '9a', '9b', '9c', '9d', '9e',
-                '10a', '10b', '10c', '10d', '10e',
-                'schülerpraktikum', 'betriebspraktikum', 'praktikum',
-                'berufsberatung', 'berufswegeplanung',
-                'mittlerer schulabschluss', 'msa', 'fachoberschulreife',
-                'abschlussfeier', 'abschlussfahrt',
-                'prüfung klasse 10', 'abschlussprüfung',
-                'elternabend 9', 'elternabend 10',
-                'wandertag 9', 'wandertag 10',
-                'projekttag 9', 'projekttag 10',
-                'klassenfahrt 9', 'klassenfahrt 10',
-            ],
-            'oberstufe' => [
-                'ef', 'einführungsphase',
-                'q1', 'q2', 'qualifikationsphase',
-                'oberstufe', 'sek ii', 'sek. ii', 'sekundarstufe ii',
-                'abitur', 'abi', 'abiturzeugnis', 'abiturvorbereitung',
-                'abiturprüfung', 'schriftliches abitur', 'mündliches abitur',
-                'zentralabitur', 'abi-feier', 'abiball', 'abschlussball',
-                'abistreich', 'abigottesdienst',
-                'lk', 'leistungskurs', 'grundkurs', 'gk',
-                'projektkurs', 'vertiefungskurs',
-                'kurswahl', 'fachwahl', 'belegung',
-                'studienberatung', 'hochschultag', 'unibesuch',
-                'studienfahrt', 'bildungsfahrt',
-                'elternabend oberstufe', 'elternabend ef',
-                'elternabend q1', 'elternabend q2',
-            ],
-            'feiertage' => [
-                'feiertag', 'gesetzlicher feiertag',
-                'neujahr', 'heilige drei könige',
-                'karfreitag', 'karsamstag', 'ostermontag', 'ostersonntag',
-                'christi himmelfahrt', 'vatertag', 'pfingstmontag',
-                'fronleichnam', 'tag der deutschen einheit',
-                'allerheiligen', 'nikolaus',
-                'heiligabend', 'weihnachten', '1. weihnachtstag', '2. weihnachtstag',
-                'silvester',
-                'ferien', 'schulferien', 'ferientag',
-                'herbstferien', 'weihnachtsferien', 'winterferien',
-                'osterferien', 'pfingstferien', 'sommerferien',
-                'brückentag', 'beweglicher ferientag',
-                'schulfrei', 'unterrichtsfrei',
-                'studientag', 'frei',
-            ],
-            'konferenzen' => [
-                'konferenz', 'konf.',
-                'lehrerkonferenz', 'gesamtkonferenz', 'geko',
-                'fachkonferenz', 'klassenkonferenz', 'teilkonferenz',
-                'schulkonferenz', 'zeugniskonferenz', 'versetzungskonferenz',
-                'notenkonferenz', 'erziehungskonferenz',
-                'jahrgangsteam', 'jahrgangsbesprechung',
-                'dienstbesprechung', 'teambesprechung', 'teamsitzung',
-                'abteilungsbesprechung', 'steuergruppe',
-                'schulleitungssitzung', 'fortbildung',
-                'pädagogischer tag', 'pädagogische konferenz',
-                'elternpflegschaft', 'schulpflegschaft',
-                'schülervertretung', 'sv-sitzung', 'sv sitzung',
-                'schulvorstand', 'schilf', 'lk', 'fako', 'fachkonferenz',
-                'db', 'pk', 'zk', 'sk', 'pflegschaft',
-            ],
-            default => array(),
-        };
+        // Schulspezifische Stichwörter aus den Kategoriedaten laden (seit 3.16.0 in DB editierbar)
+        $extra = $cat['keywords'] ?? [];
 
         $all_keywords = array_unique( array_merge( $keywords, $extra ) );
 
@@ -2804,8 +2933,8 @@ function gsh_tp_render_kategorien_tab() {
         Legen Sie hier die Terminplan-Kategorien fest. Jede Kategorie hat einen
         <strong>Anzeigenamen</strong> und eine <strong>Hauptfarbe</strong>.
         Die Hintergrundfarbe und Textfarbe werden automatisch aus der Hauptfarbe abgeleitet.<br>
-        Die <strong>Stichwörter</strong> für das automatische Matching sind schulspezifisch
-        voreingestellt und können nicht im Admin geändert werden.
+        Die <strong>Stichwörter</strong> für das automatische Matching werden pro Kategorie
+        angezeigt und können direkt bearbeitet werden.
     </p>
 
     <input type="hidden" id="gsh-cat-nonce" value="<?php echo esc_attr( $nonce_value ); ?>">
@@ -2834,6 +2963,12 @@ function gsh_tp_render_kategorien_tab() {
                     <input type="text" class="gsh-cat-label"
                            value="<?php echo esc_attr( $cat['label'] ); ?>"
                            style="width:100%" placeholder="Anzeigename" />
+                    <span class="gsh-cat-slug-preview">Slug: <code class="gsh-cat-slug-display"><?php echo esc_html( $cat['slug'] ); ?></code></span>
+                    <details class="gsh-cat-keywords-wrap">
+                        <summary>Stichwörter <span class="gsh-cat-kw-count">(<?php echo count( $cat['keywords'] ?? [] ); ?> Stichwörter)</span></summary>
+                        <textarea class="gsh-cat-keywords" rows="3" placeholder="klasse 5, jg 5, 5a, 5b, ..."><?php echo esc_html( implode( ', ', $cat['keywords'] ?? [] ) ); ?></textarea>
+                        <p class="gsh-cat-keywords-hint">Kommagetrennte Begriffe. Groß-/Kleinschreibung wird ignoriert. Treffer in Titel oder Beschreibung ordnen diesen Kategorie zu.</p>
+                    </details>
                 </td>
                 <td>
                     <input type="color" class="gsh-cat-color"
@@ -2900,6 +3035,16 @@ function gsh_tp_render_kategorien_tab() {
             pre.textContent           = label || 'Vorschau';
         }
 
+        // Slug aus Label-Text generieren (Umlaute → ae/oe/ue/ss, Sonderzeichen → Bindestrich)
+        function makeSlug(label) {
+            return label
+                .toLowerCase()
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
         // Alle Kategorien aus dem DOM sammeln
         function collectFromDOM() {
             var cats = [];
@@ -2908,13 +3053,13 @@ function gsh_tp_render_kategorien_tab() {
                 var slug  = (row.querySelector('.gsh-cat-slug')  || {}).value || '';
                 var label = (row.querySelector('.gsh-cat-label') || {}).value || '';
                 var color = (row.querySelector('.gsh-cat-color') || {}).value || '#6c757d';
+                var kwRaw = (row.querySelector('.gsh-cat-keywords') || {}).value || '';
                 if (!label) return; // Leere Labels überspringen
                 // Slug aus Label generieren wenn noch keiner vorhanden
-                if (!slug) {
-                    slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                }
-                if (!id) { id = slug; }
-                cats.push({ id: id, label: label, color: color, slug: slug });
+                if (!slug) { slug = makeSlug(label); }
+                if (!id)   { id   = slug; }
+                var kwArr = kwRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+                cats.push({ id: id, label: label, color: color, slug: slug, keywords: kwArr });
             });
             return cats;
         }
@@ -2934,10 +3079,18 @@ function gsh_tp_render_kategorien_tab() {
                 return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             }
             var color = cat.color || '#6c757d';
+            var kwStr = Array.isArray(cat.keywords) ? cat.keywords.join(', ') : '';
+            var kwCnt = Array.isArray(cat.keywords) ? cat.keywords.length : 0;
             return '<td>'
                 + '<input type="hidden" class="gsh-cat-id"    value="' + ea(cat.id    || '') + '">'
                 + '<input type="hidden" class="gsh-cat-slug"  value="' + ea(cat.slug  || '') + '">'
                 + '<input type="text"   class="gsh-cat-label" value="' + ea(cat.label || '') + '" style="width:100%" placeholder="Anzeigename">'
+                + '<span class="gsh-cat-slug-preview">Slug: <code class="gsh-cat-slug-display">' + ea(cat.slug || '') + '</code></span>'
+                + '<details class="gsh-cat-keywords-wrap">'
+                + '<summary>Stichwörter <span class="gsh-cat-kw-count">(' + kwCnt + ' Stichwörter)</span></summary>'
+                + '<textarea class="gsh-cat-keywords" rows="3" placeholder="klasse 5, jg 5, 5a, 5b, ...">' + ea(kwStr) + '</textarea>'
+                + '<p class="gsh-cat-keywords-hint">Kommagetrennte Begriffe. Gro\u00df-/Kleinschreibung wird ignoriert.</p>'
+                + '</details>'
                 + '</td>'
                 + '<td><input type="color" class="gsh-cat-color" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
                 + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:#f0f0f0;color:#333">' + ea(cat.label || 'Vorschau') + '</span></td>'
@@ -2947,11 +3100,28 @@ function gsh_tp_render_kategorien_tab() {
 
         // ── Event-Listener ──────────────────────────────────────────────
 
-        // Live-Vorschau bei Farb-/Label-Änderung
+        // Live-Vorschau, Slug-Synchronisation und Keyword-Zähler bei Eingabe
         if (tbody) {
             tbody.addEventListener('input', function (e) {
                 var row = e.target.closest('.gsh-cat-row');
-                if (row) updatePreview(row);
+                if (!row) return;
+                // Slug synchronisieren wenn Label geändert
+                if (e.target.classList.contains('gsh-cat-label')) {
+                    var newSlug     = makeSlug(e.target.value);
+                    var slugField   = row.querySelector('.gsh-cat-slug');
+                    var slugDisplay = row.querySelector('.gsh-cat-slug-display');
+                    if (slugField)   slugField.value        = newSlug;
+                    if (slugDisplay) slugDisplay.textContent = newSlug;
+                }
+                // Keyword-Anzahl live aktualisieren
+                if (e.target.classList.contains('gsh-cat-keywords')) {
+                    var kwCnt = row.querySelector('.gsh-cat-kw-count');
+                    if (kwCnt) {
+                        var kc = e.target.value.split(',').map(function(s){ return s.trim(); }).filter(Boolean).length;
+                        kwCnt.textContent = '(' + kc + ' Stichwörter)';
+                    }
+                }
+                updatePreview(row);
             });
             // Löschen-Button
             tbody.addEventListener('click', function (e) {
@@ -2967,7 +3137,7 @@ function gsh_tp_render_kategorien_tab() {
         // Neue Kategorie hinzufügen
         if (addBtn) {
             addBtn.addEventListener('click', function () {
-                var newCat = { id: 'neu-' + Date.now(), label: '', color: '#6c757d', slug: '' };
+                var newCat = { id: 'neu-' + Date.now(), label: '', color: '#6c757d', slug: '', keywords: [] };
                 var row = document.createElement('tr');
                 row.className = 'gsh-cat-row';
                 row.innerHTML = buildRowHtml(newCat);
@@ -3005,10 +3175,12 @@ function gsh_tp_render_kategorien_tab() {
                             var rows = tbody.querySelectorAll('.gsh-cat-row');
                             result.data.categories.forEach(function (cat, i) {
                                 if (!rows[i]) return;
-                                var idInput   = rows[i].querySelector('.gsh-cat-id');
-                                var slugInput = rows[i].querySelector('.gsh-cat-slug');
-                                if (idInput)   idInput.value   = cat.id   || '';
-                                if (slugInput) slugInput.value = cat.slug || '';
+                                var idInput     = rows[i].querySelector('.gsh-cat-id');
+                                var slugInput   = rows[i].querySelector('.gsh-cat-slug');
+                                var slugDisplay = rows[i].querySelector('.gsh-cat-slug-display');
+                                if (idInput)     idInput.value        = cat.id   || '';
+                                if (slugInput)   slugInput.value       = cat.slug || '';
+                                if (slugDisplay) slugDisplay.textContent = cat.slug || '';
                             });
                         }
                         showStatus(true, '\u2713 Kategorien gespeichert.');
@@ -3969,8 +4141,7 @@ function gsh_tp_shortcode( $atts ) {
 
     // Entwurfs-Banner
     if ( ! empty( $profile['is_draft'] ) ) {
-        $o .= '<div style="background:#fef9c3;border:1px solid #eab308;padding:10px 16px;'
-            . 'border-radius:8px;margin-bottom:16px;font-weight:600;color:#92400e">'
+        $o .= '<div class="gtp-draft-banner">'
             . gsh_tp_icon( 'lock' ) . ' ENTWURF &ndash; Dieser Terminplan ist noch nicht beschlossen.</div>';
     }
 
@@ -3979,37 +4150,40 @@ function gsh_tp_shortcode( $atts ) {
         return ! empty( $p['is_active'] ) && empty( $p['is_draft'] );
     } );
     if ( count( $visible_profiles ) > 1 ) {
-        $o .= '<div class="gtp-sj-switch" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+        $o .= '<div class="gtp-sj-switch">';
         foreach ( $visible_profiles as $vp ) {
-            $on_cls = ( $vp['id'] === $profile_id ) ? ';background:var(--gtp-accent);color:#fff' : '';
+            $active_cls = ( $vp['id'] === $profile_id ) ? ' gtp-sj-btn-on' : '';
             $switch_url = esc_url( add_query_arg( 'sj', rawurlencode( $vp['id'] ) ) );
-            $o .= '<a href="' . $switch_url . '" class="gtp-sj-btn"'
-                . ' style="padding:4px 14px;border-radius:20px;border:1.5px solid var(--gtp-accent);'
-                . 'font-size:13px;font-weight:600;text-decoration:none;color:var(--gtp-accent)' . $on_cls . '">'
+            $o .= '<a href="' . $switch_url . '" class="gtp-sj-btn' . $active_cls . '">'
                 . esc_html( $vp['label'] ) . '</a>';
         }
         $o .= '</div>';
     }
 
-    // Header
+    // Header – zweizeilig: Zeile 1 Titel+Actions, Zeile 2 Suche volle Breite
     $o .= '<div class="gtp-hd">';
+    $o .= '<div class="gtp-hd-top">';
     $o .= '<div class="gtp-hd-left">';
     $o .= '<h2 class="gtp-t">Jahresterminplan</h2>';
     $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Gesamtschule Horst</span>';
     $o .= '</div>';
-    $o .= '<div class="gtp-search">';
+    $o .= '<div class="gtp-hd-actions">';
+    $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
+    $o .= '<button type="button" id="gtp-tour-btn" onclick="gtpHelpOpen()"'
+        . ' aria-label="Hilfe öffnen" title="Hilfe &amp; Funktionsübersicht">'
+        . gsh_tp_icon( 'help-circle', '1.1em' ) . '</button>';
+    $o .= '</div>'; // .gtp-hd-actions
+    $o .= '</div>'; // .gtp-hd-top
+    // Zeile 2: Suche volle Breite
+    $o .= '<div class="gtp-hd-search">';
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
-        . ' placeholder="Termin suchen…" autocomplete="off"' // Bugfix: \u2026 ist nur in JS gültig – UTF-8-Literal verwenden
+        . ' placeholder="Termin suchen…" autocomplete="off"'
         . ' oninput="gtpSearchInput(this.value)" />';
     $o .= '</div>';
     $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
-    $o .= '</div>'; // .gtp-search
-    $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
-    $o .= '<button type="button" id="gtp-tour-btn" onclick="gtpTourStart(true)"'
-        . ' aria-label="Hilfe-Tour starten"'
-        . ' title="Hilfe-Tour starten">&#10067;</button>';
+    $o .= '</div>'; // .gtp-hd-search
     $o .= '</div>'; // .gtp-hd
 
     // Änderungs-Banner (wird per JS befüllt und ggf. eingeblendet)
@@ -4025,32 +4199,40 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-changes-list" id="gtpChangesList" style="display:none"></div>';
     $o .= '</div>';
 
-    // Tabs
+    // Tabs – aktives Quartal erhält Aktuell-Dot
+    $current_q = gsh_tp_current_q( $profile_id );
     $o .= '<div class="gtp-tabs" role="tablist">';
     for ( $i = 1; $i <= 4; $i++ ) {
-        $on = $i === $aq ? ' gtp-tab-on' : '';
+        $on      = $i === $aq ? ' gtp-tab-on' : '';
+        $now_dot = ( $i === $current_q ) ? '<span class="gtp-tab-now" aria-label="aktuelles Quartal"></span>' : '';
         $o .= '<button type="button" class="gtp-tab' . $on . '" data-q="' . $i
             . '" role="tab" aria-selected="' . ( $i === $aq ? 'true' : 'false' )
-            . '" onclick="gtpTab(' . $i . ')">Quartal ' . $i . '</button>';
+            . '" onclick="gtpTab(' . $i . ')">Quartal ' . $i . $now_dot . '</button>';
     }
     $o .= '</div>';
 
     // Filter-Buttons (dynamisch aus Kategorie-Einstellungen – v3.15.0: --btn-color)
     $o .= '<div class="gtp-filt-wrap">';
-    $o .= '<span class="gtp-filt-lbl">Anzeige filtern: <span id="gtp-filt-count" class="gtp-filt-count"></span></span>';
-    $o .= '<div class="gtp-filt">';
+    $o .= '<div class="gtp-filt-header">';
+    $o .= '<span class="gtp-filt-lbl">Filter: <span id="gtp-filt-count" class="gtp-filt-count"></span></span>';
+    $o .= '<button type="button" class="gtp-filt-toggle" onclick="gtpFilterToggle()" aria-expanded="true" aria-controls="gtp-filt-body">'
+        . gsh_tp_icon( 'chevron-right', '0.9em', 'gtp-filt-chevron' ) . '</button>';
+    $o .= '<button type="button" id="gtp-reset" class="gtp-reset" onclick="gtpReset()" style="display:none">'
+        . gsh_tp_icon( 'x', '0.85em' ) . ' Alle anzeigen</button>';
+    $o .= '</div>'; // .gtp-filt-header
+    $o .= '<div class="gtp-filt gtp-filt-open" id="gtp-filt-body">';
     foreach ( gsh_tp_get_categories() as $cat ) {
-        $color = esc_attr( $cat['color'] ?? '#6c757d' );
+        $color      = $cat['color'] ?? '#6c757d';
+        $text_color = gsh_tp_contrast_color( $color );
         $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="'
-            . esc_attr( $cat['slug'] ) . '" style="--btn-color:' . $color . '"'
+            . esc_attr( $cat['slug'] ) . '" style="--btn-color:' . esc_attr( $color ) . ';--btn-text:' . esc_attr( $text_color ) . '"'
             . ' onclick="gtpFil(this)" aria-pressed="true">'
             . esc_html( $cat['label'] ) . '</button>';
     }
     // „Sonstige"-Button für Termine ohne Kategorie-Match
     $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="standard" onclick="gtpFil(this)" aria-pressed="true">Sonstige</button>';
-    $o .= '<button type="button" id="gtp-reset" class="gtp-reset" onclick="gtpReset()" style="display:none">'
-        . gsh_tp_icon( 'x', '0.85em' ) . ' Alle anzeigen</button>';
-    $o .= '</div></div>';
+    $o .= '</div>'; // #gtp-filt-body
+    $o .= '</div>'; // .gtp-filt-wrap
 
     // Quartalspanels
     for ( $q = 1; $q <= 4; $q++ ) {
@@ -4066,17 +4248,21 @@ function gsh_tp_shortcode( $atts ) {
         $o .= '</div>';
     }
 
-    // Footer mit PDF-Buttons
+    // Footer – Aktionen links, Meta rechts
     $o .= '<div class="gtp-ft">';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf()">' . gsh_tp_icon( 'file-text' ) . ' Quartal als PDF</button>';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll()">' . gsh_tp_icon( 'file-text' ) . ' Alle Quartale als PDF</button>';
+    $o .= '<div class="gtp-ft-actions">';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf()">' . gsh_tp_icon( 'file-text' ) . ' Quartal PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll()">' . gsh_tp_icon( 'file-text' ) . ' Alle PDF</button>';
     $o .= '<button type="button" class="gtp-btn gtp-btn-feedback" id="gtp-feedback-btn"'
         . ' onclick="gtpFeedbackOpen()" aria-label="Feedback geben">'
-        . '&#128172; Feedback</button>';
+        . gsh_tp_icon( 'message-circle' ) . ' Feedback</button>';
+    $o .= '</div>'; // .gtp-ft-actions
+    $o .= '<div class="gtp-ft-meta">';
     $o .= '<span class="gtp-src">Quelle: IServ-Kalender</span>';
-    $o .= ' &nbsp;|&nbsp; <button type="button" class="gtp-version-btn" '
-        . 'onclick="gtpChangelogOpen()" aria-label="Changelog anzeigen">'
+    $o .= '<button type="button" class="gtp-version-btn"'
+        . ' onclick="gtpChangelogOpen()" aria-label="Changelog anzeigen">'
         . 'v' . esc_html( GSH_TP_VERSION ) . '</button>';
+    $o .= '</div>'; // .gtp-ft-meta
     $o .= '</div>'; // .gtp-ft
 
     // ── Feedback-Modal (wp_mail, seit 3.12.0) ────────────────────────────────
@@ -4140,20 +4326,20 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div id="gtp-theme-panel" role="group" aria-label="Theme wählen">';
     $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="light" '
         . 'onclick="gtpSetTheme(\'light\')" aria-label="Helles Theme">'
-        . '<span class="gtp-theme-opt-icon">&#9728;&#65039;</span> Hell'
+        . '<span class="gtp-theme-opt-icon">' . gsh_tp_icon( 'sun', '1em' ) . '</span> Hell'
         . '</button>';
     $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="dark" '
         . 'onclick="gtpSetTheme(\'dark\')" aria-label="Dunkles Theme">'
-        . '<span class="gtp-theme-opt-icon">&#127769;</span> Dunkel'
+        . '<span class="gtp-theme-opt-icon">' . gsh_tp_icon( 'moon', '1em' ) . '</span> Dunkel'
         . '</button>';
     $o .= '<button type="button" class="gtp-theme-opt" data-gtp-mode="auto" '
         . 'onclick="gtpSetTheme(\'auto\')" aria-label="System-Theme">'
-        . '<span class="gtp-theme-opt-icon">&#128187;</span> System'
+        . '<span class="gtp-theme-opt-icon">' . gsh_tp_icon( 'monitor', '1em' ) . '</span> System'
         . '</button>';
     $o .= '</div>'; // #gtp-theme-panel
     $o .= '<button type="button" id="gtp-theme-btn" onclick="gtpThemeToggle()" '
         . 'aria-label="Theme wechseln" aria-expanded="false">'
-        . '&#9881;&#65039;'
+        . gsh_tp_icon( 'settings', '1.1em' )
         . '</button>';
     $o .= '</div>'; // #gtp-theme-wrap
 
@@ -4211,6 +4397,46 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>'; // .gtp-changelog-card
     $o .= '</div>'; // #gtpChangelog
+
+    // ── Hilfe-Overlay (seit 3.16.0, ersetzt Shepherd.js-Tour) ───────────────────
+    $o .= '<div id="gtp-help-overlay" class="gtp-help-overlay" role="dialog"'
+        . ' aria-modal="true" aria-label="Hilfe &amp; Funktionsübersicht" hidden>';
+    $o .= '<div class="gtp-help-panel">';
+    $o .= '<div class="gtp-help-header">';
+    $o .= '<h2 class="gtp-help-title">' . gsh_tp_icon( 'help-circle', '1.1em' ) . ' Hilfe &amp; Funktionsübersicht</h2>';
+    $o .= '<button type="button" class="gtp-help-close" onclick="gtpHelpClose()"'
+        . ' aria-label="Hilfe schließen">' . gsh_tp_icon( 'x' ) . '</button>';
+    $o .= '</div>'; // .gtp-help-header
+    $o .= '<div class="gtp-help-body">';
+    $help_sections = array(
+        array( 'icon' => 'calendar',   'title' => 'Quartal-Navigation',
+               'text' => 'Die vier Tabs oben zeigen die Schulquartale. Das aktuelle Quartal wird beim Öffnen automatisch angezeigt. Ein Klick wechselt das Quartal.' ),
+        array( 'icon' => 'tag',        'title' => 'Kategorien filtern',
+               'text' => 'Die farbigen Buttons unter den Quartal-Tabs sind Kategorie-Filter. Ein Klick blendet eine Kategorie ein oder aus – z.B. nur Konferenzen oder nur Ferientermine anzeigen.' ),
+        array( 'icon' => 'search',     'title' => 'Terminsuche',
+               'text' => 'Das Suchfeld durchsucht alle Quartale gleichzeitig. Treffer werden sofort hervorgehoben. Die Suche ignoriert Groß-/Kleinschreibung.' ),
+        array( 'icon' => 'file-text',  'title' => 'PDF-Export',
+               'text' => 'Mit dem PDF-Button unten rechts kannst du das aktuelle Quartal oder alle vier Quartale als druckbares PDF speichern.' ),
+        array( 'icon' => 'moon',       'title' => 'Dark Mode',
+               'text' => 'Das Zahnrad-Symbol unten rechts öffnet die Anzeigeeinstellungen. Dort kannst du zwischen hellem Design, dunklem Design oder automatischer Anpassung an dein Gerät wählen.' ),
+        array( 'icon' => 'info',       'title' => 'Farb-Legende',
+               'text' => 'Jede Kategorie hat eine eigene Farbe. Termine werden automatisch anhand ihrer Beschreibung zugeordnet. Die Legende entspricht den farbigen Filter-Buttons.' ),
+    );
+    foreach ( $help_sections as $s ) {
+        $o .= '<div class="gtp-help-section">';
+        $o .= '<div class="gtp-help-section-icon">' . gsh_tp_icon( $s['icon'], '1.2em' ) . '</div>';
+        $o .= '<div class="gtp-help-section-body">';
+        $o .= '<strong>' . esc_html( $s['title'] ) . '</strong>';
+        $o .= '<p>' . esc_html( $s['text'] ) . '</p>';
+        $o .= '</div>';
+        $o .= '</div>';
+    }
+    $o .= '</div>'; // .gtp-help-body
+    $o .= '<div class="gtp-help-footer">';
+    $o .= '<span class="gtp-help-version">GSH Terminplan Dashboard v' . GSH_TP_VERSION . ' &middot; Gesamtschule Horst</span>';
+    $o .= '</div>';
+    $o .= '</div>'; // .gtp-help-panel
+    $o .= '</div>'; // #gtp-help-overlay
 
     // Versteckte Felder für JS (AJAX-URL und Nonce)
     $o .= '<input type="hidden" id="gtp-ajax-url" value="' . esc_attr( $ajax_url ) . '">';
@@ -4752,15 +4978,44 @@ function gsh_tp_css() {
 }
 
 /* ── Header ── */
-.gtp-hd{
+.gtp-hd{display:flex;flex-direction:column;gap:0;margin-bottom:1rem}
+.gtp-hd-top{
   display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;margin-bottom:1.5rem;padding-bottom:1.25rem;
-  border-bottom:2px solid var(--gtp-border);gap:.75rem;
+  padding-bottom:.875rem;border-bottom:2px solid var(--gtp-border);margin-bottom:.875rem;
 }
 .gtp-hd-left{display:flex;flex-direction:column;gap:.25rem}
+.gtp-hd-actions{display:flex;align-items:center;gap:.75rem}
+.gtp-hd-search{width:100%}
+.gtp-hd-search .gtp-search-wrap{width:100%}
 .gtp-t{font-size:1.6rem;font-weight:800;color:var(--gtp-text);margin:0;letter-spacing:-.03em;line-height:1.15}
 .gtp-subtitle{font-size:.8rem;color:var(--gtp-text-muted);font-weight:400;letter-spacing:.01em}
 .gtp-meta{font-size:.72rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Schuljahr-Umschalter */
+.gtp-sj-switch{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.gtp-sj-btn{
+  padding:4px 14px;border-radius:20px;border:1.5px solid var(--gtp-accent);
+  font-size:.8rem;font-weight:600;text-decoration:none;color:var(--gtp-accent);
+  transition:var(--gtp-tr-fast);
+}
+.gtp-sj-btn:hover{background:var(--gtp-accent-light)}
+.gtp-sj-btn-on{background:var(--gtp-accent);color:#fff}
+.gtp-sj-btn-on:hover{background:var(--gtp-accent-dark)}
+/* Hilfe-Button */
+#gtp-tour-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1.5px solid var(--gtp-border);background:transparent;
+  color:var(--gtp-text-muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:var(--gtp-tr-fast);
+}
+#gtp-tour-btn:hover{border-color:var(--gtp-accent);color:var(--gtp-accent);background:var(--gtp-accent-light)}
+/* Entwurfs-Banner */
+.gtp-draft-banner{
+  display:flex;align-items:center;gap:.5rem;
+  background:#fef9c3;border:1px solid #eab308;
+  padding:10px 16px;border-radius:8px;margin-bottom:16px;
+  font-weight:600;color:#92400e;
+}
 
 /* ── Tabs (sticky beim Scrollen) ── */
 .gtp-tabs{
@@ -4781,6 +5036,12 @@ function gsh_tp_css() {
 }
 .gtp-tab:hover{color:var(--gtp-accent);background:var(--gtp-accent-light)}
 .gtp-tab-on{color:var(--gtp-accent);border-bottom-color:var(--gtp-accent)}
+/* Aktuell-Quartal-Dot */
+.gtp-tab-now{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--gtp-accent);margin-left:5px;vertical-align:middle;
+  opacity:.85;
+}
 .admin-bar .gtp-tabs{top:32px}
 @media screen and (max-width:782px){.admin-bar .gtp-tabs{top:46px}}
 
@@ -4790,11 +5051,21 @@ function gsh_tp_css() {
   background:var(--gtp-surface);border-radius:12px;
   border:1px solid var(--gtp-border);
 }
+/* Filter-Header: Label + Toggle + Reset in einer Zeile */
+.gtp-filt-header{
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem;
+}
 .gtp-filt-lbl{
   font-size:.68rem;font-weight:700;color:var(--gtp-text-muted);
   text-transform:uppercase;letter-spacing:.1em;
-  display:block;margin-bottom:.6rem;
 }
+/* Toggle-Button (nur Mobile sichtbar – per externem CSS gesteuert) */
+.gtp-filt-toggle{
+  display:none;background:transparent;border:none;padding:2px;
+  cursor:pointer;color:var(--gtp-text-muted);line-height:1;
+}
+.gtp-filt-chevron{transition:transform .2s ease}
+.gtp-filt-open .gtp-filt-chevron,.gtp-filt-toggle[aria-expanded="true"] .gtp-filt-chevron{transform:rotate(90deg)}
 .gtp-filt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .gtp-filt-count{
   font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
@@ -4924,10 +5195,12 @@ function gsh_tp_css() {
 /* ── Footer ── */
 .gtp-ft{
   display:flex;flex-wrap:wrap;gap:10px;
-  justify-content:center;align-items:center;
+  justify-content:space-between;align-items:center;
   margin-top:1.5rem;padding-top:1rem;
   border-top:1px solid var(--gtp-border);
 }
+.gtp-ft-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gtp-ft-meta{display:flex;align-items:center;gap:8px;color:var(--gtp-text-faint);font-size:.75rem}
 .gtp-btn{
   padding:8px 16px;background:var(--gtp-text);color:#fff;
   border:none;border-radius:8px;
@@ -4979,6 +5252,10 @@ function gsh_tp_css() {
   display:flex;flex-direction:column;gap:4px;
   flex:1;max-width:300px;
 }
+/* Suchfeld im neuen zweizeiligen Header – volle Breite */
+.gtp-hd-search{
+  display:flex;flex-direction:column;gap:4px;
+}
 .gtp-search-input{
   padding:8px 16px;
   border:1.5px solid var(--gtp-border);border-radius:24px;
@@ -5023,18 +5300,23 @@ function gsh_tp_css() {
   .gtp-mob{display:block}
 
   .gtp{padding:.875rem 1rem;border-radius:12px}
-  .gtp-hd{flex-direction:column;gap:6px;padding-bottom:1rem}
+  .gtp-hd{gap:0}
+  .gtp-hd-top{padding-bottom:.75rem;margin-bottom:.75rem}
   .gtp-t{font-size:1.3rem}
   .gtp-filt-wrap{padding:.625rem .875rem}
-  .gtp-filt{overflow-x:auto;flex-wrap:nowrap;gap:5px;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none}
-  .gtp-filt::-webkit-scrollbar{display:none}
+  /* Filter-Toggle auf Mobile sichtbar */
+  .gtp-filt-toggle{display:flex}
+  /* Filter-Body auf Mobile eingeklappt bis Toggle */
+  .gtp-filt{max-height:0;overflow:hidden;transition:max-height .25s ease;flex-wrap:wrap}
+  .gtp-filt.gtp-filt-open{max-height:400px}
   .gtp-fb{white-space:nowrap;font-size:.72rem;padding:4px 10px}
   .gtp-tabs{margin:0 -1rem;padding:0 1rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
   .gtp-tabs::-webkit-scrollbar{display:none}
   .gtp-tab{padding:.5rem 1rem;font-size:.82rem;white-space:nowrap;flex-shrink:0}
   .gtp-search{max-width:100%;width:100%}
   .gtp-search-input{width:100%}
-  .gtp-ft{flex-direction:column;gap:8px;text-align:center}
+  .gtp-ft{flex-direction:column;gap:8px;align-items:flex-start}
+  .gtp-ft-meta{justify-content:flex-start}
 
   /* ── Navigationsleiste mit Frosted-Glass ── */
   .gtp-mob-nav{
@@ -5447,6 +5729,16 @@ function gtpReset(){
   gtpSel = {};
   gtpApply();
   gtpSaveFilters();
+}
+
+/* Kategorie-Filter auf Mobile ein-/ausklappen */
+function gtpFilterToggle(){
+  var body = document.getElementById("gtp-filt-body");
+  var btn  = document.querySelector(".gtp-filt-toggle");
+  if(!body) return;
+  body.classList.toggle("gtp-filt-open");
+  var open = body.classList.contains("gtp-filt-open");
+  if(btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 /* ════════════════════════════════════════════════════════
@@ -6655,121 +6947,45 @@ if(window.matchMedia){
 /* Theme sofort initialisieren (kein Aufblitzen) */
 gtpInitTheme();
 
-/* ── Onboarding-Tour (Shepherd.js) ──────────────────────────── */
+/* ── Hilfe-Overlay (seit 3.16.0, ersetzt Shepherd.js-Tour) ──────── */
 
-/**
- * Startet die Onboarding-Tour.
- * @param {boolean} force  true = auch wenn bereits gesehen (manueller Start)
- */
-function gtpTourStart(force) {
-  // Shepherd.js noch nicht geladen? Abbruch mit Hinweis.
-  if (typeof Shepherd === 'undefined') {
-    console.warn('GSH Tour: Shepherd.js nicht geladen.');
-    return;
-  }
-
-  // Beim ersten Besuch automatisch starten – sonst nur wenn force=true
-  var seen = false;
-  try { seen = !!localStorage.getItem('gtp-tour-seen'); } catch(e) {}
-  if (seen && !force) return;
-
-  var tour = new Shepherd.Tour({
-    useModalOverlay: true,
-    defaultStepOptions: {
-      cancelIcon:  { enabled: true },
-      scrollTo:    { behavior: 'smooth', block: 'center' },
-      modalOverlayOpeningRadius: 8,
-      popperOptions: {
-        modifiers: [{ name: 'offset', options: { offset: [0, 14] } }]
-      }
-    }
-  });
-
-  // Hilfsfunktion: Shepherd-native Buttons-Array bauen
-  function makeButtons(idx, total, isLast) {
-    var btns = [];
-    if (idx > 1) {
-      btns.push({
-        text:    '\u276E',
-        classes: 'shepherd-button shepherd-button-secondary gtp-tour-arrow',
-        action:  function() { tour.back(); }
-      });
-    }
-    btns.push({
-      text:    isLast ? '\u2713' : '\u276F',
-      classes: 'shepherd-button shepherd-button-primary gtp-tour-arrow',
-      action:  function() { isLast ? tour.complete() : tour.next(); }
-    });
-    return btns;
-  }
-
-  var steps = [
-    {
-      id:      'tabs',
-      title:   '\uD83D\uDCC5 Quartal-Navigation',
-      text:    'Mit diesen Tabs wechselst du zwischen den vier Schulquartalen. Das aktuelle Quartal ist beim \u00D6ffnen automatisch ausgew\u00E4hlt.',
-      attachTo: { element: '.gtp-tabs', on: 'bottom' },
-      index:    1
-    },
-    {
-      id:      'filter',
-      title:   '\uD83C\uDFA8 Kategorien filtern',
-      text:    'Hier kannst du einzelne Terminarten ein- oder ausblenden \u2013 z.\u202FB. nur Konferenzen oder nur Ferientermine anzeigen. Einfach auf eine Kategorie klicken.',
-      attachTo: { element: '.gtp-filt-wrap', on: 'bottom' },
-      index:    2
-    },
-    {
-      id:      'search',
-      title:   '\uD83D\uDD0D Terminsuche',
-      text:    'Tippe hier einen Begriff ein um alle Quartale gleichzeitig zu durchsuchen. Treffer werden direkt hervorgehoben.',
-      attachTo: { element: '#gtp-search-input', on: 'bottom' },
-      index:    3
-    },
-    {
-      id:      'pdf',
-      title:   '\uD83D\uDDA8\uFE0F PDF-Export',
-      text:    'Den aktuellen Terminplan als PDF speichern oder drucken \u2013 entweder das aktuelle Quartal oder alle vier auf einmal.',
-      attachTo: { element: '.gtp-btn-pdf', on: 'top' },
-      index:    4
-    },
-    {
-      id:      'theme',
-      title:   '\uD83C\uDF19 Dark Mode',
-      text:    'Hier kannst du zwischen hellem und dunklem Design wechseln \u2013 oder die Einstellung deines Ger\u00E4ts automatisch \u00FCbernehmen lassen.',
-      attachTo: { element: '#gtp-theme-btn', on: 'left' },
-      index:    5
-    }
-  ];
-
-  var total = steps.length;
-
-  steps.forEach(function(s) {
-    var isLast = s.index === total;
-    tour.addStep({
-      id:      s.id,
-      title:   s.title,
-      // Fortschritt direkt im Text-Bereich als kleine Zeile
-      text:    s.text + '<p class="gtp-tour-progress">' + s.index + '\u00A0/\u00A0' + total + '</p>',
-      attachTo: s.attachTo,
-      buttons:  makeButtons(s.index, total, isLast)
-    });
-  });
-
-  // Tour abgeschlossen oder abgebrochen: als gesehen markieren
-  tour.on('complete', function() {
-    try { localStorage.setItem('gtp-tour-seen', '1'); } catch(e) {}
-  });
-  tour.on('cancel', function() {
-    try { localStorage.setItem('gtp-tour-seen', '1'); } catch(e) {}
-  });
-
-  tour.start();
+function gtpHelpOpen() {
+  var overlay = document.getElementById('gtp-help-overlay');
+  if (!overlay) return;
+  overlay.hidden = false;
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  var closeBtn = overlay.querySelector('.gtp-help-close');
+  if (closeBtn) setTimeout(function(){ closeBtn.focus(); }, 50);
 }
 
-// Automatisch beim ersten Besuch starten (nach kurzem Delay damit die Seite fertig ist)
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() { gtpTourStart(false); }, 800);
+function gtpHelpClose() {
+  var overlay = document.getElementById('gtp-help-overlay');
+  if (!overlay) return;
+  overlay.hidden = true;
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  var btn = document.getElementById('gtp-tour-btn');
+  if (btn) btn.focus();
+}
+
+// ESC schließt das Hilfe-Overlay
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('gtp-help-overlay');
+    if (overlay && !overlay.hidden) gtpHelpClose();
+  }
 });
+
+// Klick auf Hintergrund (außerhalb des Panels) schließt das Overlay
+(function() {
+  var overlay = document.getElementById('gtp-help-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) gtpHelpClose();
+    });
+  }
+})();
 
 /* ── Feedback-Modal (wp_mail via AJAX, seit 3.12.0) ─────────── */
 
