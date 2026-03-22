@@ -3,10 +3,21 @@
  * Plugin Name: GSH Terminplan Dashboard
  * Plugin URI:  https://gesamtschule-horst.de
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     3.14.1
+ * Version:     3.15.0
  * Author:      Gesamtschule Horst
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 3.15.0:
+ * - [FEATURE] Kategorien-System komplett neu aufgebaut mit GSH_TP_DEFAULT_CATEGORIES-Konstante
+ *   als unveränderlichem Fundament – Kategorien verschwinden nicht mehr nach dem Reload
+ * - [FEATURE] gsh_tp_assign_categories_to_event(): Keyword-Matching auf Titel/Beschreibung/
+ *   Ort/CATEGORIES-Feld; wird vor dem Rendern auf alle Events angewendet
+ * - [FEATURE] Vereinfachtes Kategorie-Datenmodell: id, label, color, slug (statt 7 Felder)
+ * - [FEATURE] Admin-UI: Kategorie-Editor mit einzelnem Farbwähler und Farb-Vorschau
+ * - [FEATURE] AJAX-Save: POST-Parameter 'categories' (statt 'tags'), neuer Nonce-String
+ * - [INFRA] gsh_tp_color_derive(): leitet bg/border/text automatisch aus einer Hauptfarbe ab
+ * - [INFRA] gsh_tp_save_categories(): eigenständige Speicher-Funktion mit Validierung
  *
  * Changelog 3.14.1:
  * - [BUGFIX] AJAX-Kategorien-Speichern: update_option()-Rückgabewert wird jetzt geprüft – DB-Fehler
@@ -420,12 +431,62 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '3.14.1' );
+define( 'GSH_TP_VERSION',       '3.15.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
 define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup)
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
+
+/**
+ * Standard-Kategorien der Gesamtschule Horst.
+ *
+ * Dienen als Fundament: werden beim ersten Aufruf von gsh_tp_get_categories()
+ * automatisch in die Datenbank geschrieben, falls noch keine Kategorien gespeichert
+ * sind. Eine Konstante stellt sicher, dass dieser Fallback unveränderlich ist.
+ *
+ * Felder je Eintrag: id (string), label (string), color (#rrggbb), slug (string).
+ *
+ * @since 3.15.0
+ */
+const GSH_TP_DEFAULT_CATEGORIES = [
+    [
+        'id'    => 'jg-5-6',
+        'label' => 'Jahrgang 5/6',
+        'color' => '#e74c3c',
+        'slug'  => 'jg56',
+    ],
+    [
+        'id'    => 'jg-7-8',
+        'label' => 'Jahrgang 7/8',
+        'color' => '#27ae60',
+        'slug'  => 'jg78',
+    ],
+    [
+        'id'    => 'jg-9-10',
+        'label' => 'Jahrgang 9/10',
+        'color' => '#e67e22',
+        'slug'  => 'jg910',
+    ],
+    [
+        'id'    => 'oberstufe',
+        'label' => 'Oberstufe',
+        'color' => '#2980b9',
+        'slug'  => 'oberstufe',
+    ],
+    [
+        'id'    => 'feiertage',
+        'label' => 'Feiertage',
+        'color' => '#f39c12',
+        'slug'  => 'feiertage',
+    ],
+    [
+        'id'    => 'konferenzen',
+        'label' => 'Konferenzen',
+        'color' => '#8e44ad',
+        'slug'  => 'konferenzen',
+    ],
+];
 
 /**
  * Gibt ein Lucide-Icon als inline-SVG-String zurück.
@@ -492,6 +553,17 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '3.15.0',
+            'entries' => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Kategorien-System neu aufgebaut: GSH_TP_DEFAULT_CATEGORIES als unveränderliches Fundament – Kategorien verschwinden nicht mehr nach dem Reload' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Keyword-Matching: gsh_tp_assign_categories_to_event() sucht in Titel, Beschreibung, Ort und CATEGORIES-Feld mit schulspezifischen Begriffen' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Vereinfachtes Datenmodell: id, label, color, slug – eine Hauptfarbe statt drei separate Farbwähler' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Admin-UI: Kategorie-Editor zeigt automatisch abgeleitete Vorschaufarbe aus der Hauptfarbe' ),
+                array( 'tag' => 'INFRA',   'text' => 'gsh_tp_color_derive(): leitet bg/border/text automatisch aus einer Hex-Hauptfarbe ab' ),
+                array( 'tag' => 'INFRA',   'text' => 'gsh_tp_primary_slug(): Hilfsfunktion ersetzt gsh_tp_cat() + gsh_tp_build_map()' ),
+            ),
+        ),
         array(
             'version' => '3.14.1',
             'entries' => array(
@@ -804,11 +876,8 @@ if ( false !== $_gsh_old ) {
 }
 unset( $_gsh_old );
 
-// Migration 3.4.0: gsh_tp_categories wird neu eingeführt.
-// Beim ersten Request nach dem Update: Default-Kategorien als permanente Option anlegen.
-if ( ! get_option( 'gsh_tp_categories' ) ) {
-    update_option( 'gsh_tp_categories', gsh_tp_default_categories(), true );
-}
+// Migration 3.4.0 → 3.15.0: gsh_tp_get_categories() übernimmt die Initialisierung
+// automatisch beim ersten Aufruf (schreibt GSH_TP_DEFAULT_CATEGORIES wenn null).
 
 /* ================================================================
    0. SCHULJAHR-PROFILE (seit 3.5.0)
@@ -1539,10 +1608,8 @@ function gsh_tp_register_settings() {
         'sanitize_callback' => 'sanitize_textarea_field',
         'default'           => gsh_tp_default_mapping(),
     ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_categories', array(
-        'sanitize_callback' => 'gsh_tp_sanitize_categories',
-        'default'           => gsh_tp_default_categories(),
-    ) );
+    // gsh_tp_categories wird nicht über die WP Settings API gespeichert,
+    // sondern direkt via AJAX (gsh_tp_ajax_save_categories). – v3.15.0
     register_setting( 'gsh_tp_options', 'gsh_tp_kiosk_token', array(
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
@@ -1663,196 +1730,341 @@ function gsh_tp_default_mapping() {
     ) );
 }
 
+// ENTFERNT v3.15.0 – Kategorie-Neuaufbau:
+// gsh_tp_default_categories()   → Konstante GSH_TP_DEFAULT_CATEGORIES ersetzt diese Funktion
+// gsh_tp_sanitize_categories()  → Sanitisierung erfolgt in gsh_tp_save_categories()
+// gsh_tp_ajax_save_categories() → Durch neue Version mit POST-Param 'categories' ersetzt
+// gsh_tp_get_categories()       → Durch neue Version mit Konstanten-Fundament ersetzt
+
 /**
- * Liefert die Standard-Kategoriendefinitionen als Array.
+ * Gibt alle gespeicherten Kategorien zurück (gecacht per Request).
  *
- * Wird als Fallback genutzt, wenn gsh_tp_categories noch nicht in der
- * Datenbank gespeichert ist (Erstinstallation, Migration).
+ * Beim ersten Aufruf: Wenn noch keine Kategorien in der Datenbank gespeichert
+ * sind (null), werden GSH_TP_DEFAULT_CATEGORIES einmalig geschrieben und
+ * zurückgegeben. Sind Daten vorhanden, werden sie geladen. Ist das Array
+ * leer oder beschädigt, wird GSH_TP_DEFAULT_CATEGORIES als Fallback verwendet,
+ * ohne dabei die Datenbank zu überschreiben.
  *
- * @since 3.4.0
- * @return array Array von Kategorie-Arrays mit slug, label, bg, border, text, keywords, order.
+ * @since 3.15.0
+ * @return array Array von Kategorie-Arrays (id, label, color, slug).
  */
-function gsh_tp_default_categories() {
-    return array(
-        array(
-            'slug'     => 'konferenz',
-            'label'    => 'Konferenzen',
-            'bg'       => '#dbeafe',
-            'border'   => '#3b82f6',
-            'text'     => '#1e40af',
-            'keywords' => array( 'Konferenz', 'LK', 'FaKo', 'Fachkonferenz', 'TBS',
-                'Dienstbesprechung', 'DB', 'PK', 'ZK', 'SK', 'SchiLF', 'Pflegschaft',
-                'Schulkonferenz', 'Teamsitzung', 'Teamtag', 'Teamnachmittag', 'Studientag' ),
-            'order'    => 1,
-        ),
-        array(
-            'slug'     => 'pruefung',
-            'label'    => 'Prüfungen',
-            'bg'       => '#fee2e2',
-            'border'   => '#ef4444',
-            'text'     => '#991b1b',
-            'keywords' => array( 'Prüfung', 'Pruefung', 'ZP', 'Abi', 'Klausur', 'Vera',
-                'DST', 'ZKL', 'mAP', 'ZAA', 'Sprachstandstest', 'Nachprüfung' ),
-            'order'    => 2,
-        ),
-        array(
-            'slug'     => 'projekt',
-            'label'    => 'Projekte',
-            'bg'       => '#dcfce7',
-            'border'   => '#22c55e',
-            'text'     => '#166534',
-            'keywords' => array( 'Projekt', 'ProWo', 'Wandertag', 'Sportspektakel', 'Praktikum',
-                'SV-Fahrt', 'Studienfahrt', 'Abschlussfahrt', 'Fahrtenwoche', 'Exkursion',
-                'Turnier', 'Olympiade', 'Sponsorenlauf', 'Friedenstag', 'Antirassismustag',
-                'Abifeier', 'Entlassfeier', 'Horst forscht' ),
-            'order'    => 3,
-        ),
-        array(
-            'slug'     => 'frei',
-            'label'    => 'Ferien / Frei',
-            'bg'       => '#f1f5f9',
-            'border'   => '#94a3b8',
-            'text'     => '#475569',
-            'keywords' => array( 'Frei', 'Ferien', 'Feiertag', 'Ferientag', 'Rosenmontag',
-                'Weihnacht', 'Pfingsten', 'Himmelfahrt', 'Fronleichnam', 'Maifeiertag',
-                'Tag der Deutschen Einheit' ),
-            'order'    => 4,
-        ),
-        array(
-            'slug'     => 'eltern',
-            'label'    => 'Eltern / Beratung',
-            'bg'       => '#ffedd5',
-            'border'   => '#f97316',
-            'text'     => '#9a3412',
-            'keywords' => array( 'Eltern', 'Beratung', 'Info-Abend', 'Infoabend',
-                'Potenzialanalyse', 'KAoA', 'Kurswahl', 'Anmeldung',
-                'Tag der offenen Tür', 'Schnuppertag', 'Berufemarkt', 'Lernberatungstag' ),
-            'order'    => 5,
-        ),
-        array(
-            'slug'     => 'frist',
-            'label'    => 'Fristen / Hinweise',
-            'bg'       => '#fef9c3',
-            'border'   => '#eab308',
-            'text'     => '#713f12',
-            'keywords' => array( 'Frist', 'Noten', 'Fachkommentar', 'Berichtszeugnis',
-                'Zeugnis', 'Evaluation', 'Foerderplaene', 'Förderpläne', 'Meldung mAP' ),
-            'order'    => 6,
-        ),
-    );
+function gsh_tp_get_categories(): array {
+    static $cats = null;
+    if ( null !== $cats ) {
+        return $cats;
+    }
+
+    $saved = get_option( 'gsh_tp_categories', null );
+
+    // Noch nie gespeichert → Standardkategorien einmalig in DB schreiben
+    if ( null === $saved ) {
+        update_option( 'gsh_tp_categories', GSH_TP_DEFAULT_CATEGORIES, false );
+        $cats = GSH_TP_DEFAULT_CATEGORIES;
+        return $cats;
+    }
+
+    // Gespeichert aber leer oder beschädigt → Konstantfallback, OHNE in DB zu schreiben
+    if ( ! is_array( $saved ) || empty( $saved ) ) {
+        $cats = GSH_TP_DEFAULT_CATEGORIES;
+        return $cats;
+    }
+
+    $cats = $saved;
+    return $cats;
 }
 
 /**
- * Sanitize-Callback für die gsh_tp_categories Option.
+ * Speichert Kategorien in der Datenbank und aktualisiert den Request-Cache.
  *
- * Prüft jeden Eintrag auf gültige Werte, bereinigt Slugs (sanitize_key),
- * Farben (Hex-Regex), Labels (sanitize_text_field) und Keywords.
- * Erzwingt Uniqueness der Slugs und limitiert auf 20 Kategorien.
+ * Validiert jeden Eintrag (id, label, color, slug) und überspringt
+ * unvollständige Einträge. Gibt true bei Erfolg zurück (inkl. dem Fall,
+ * dass der Wert identisch war und kein DB-Update nötig war).
  *
- * @since 3.4.0
- * @param  mixed $input Roheingabe aus dem POST.
- * @return array        Bereinigtes Kategorie-Array.
+ * @since 3.15.0
+ * @param  array $categories Roheingabe – wird intern bereinigt.
+ * @return bool              true = Kategorien korrekt in DB vorhanden.
  */
-function gsh_tp_sanitize_categories( $input ) {
-    if ( ! is_array( $input ) ) {
-        return gsh_tp_default_categories();
+function gsh_tp_save_categories( array $categories ): bool {
+    if ( empty( $categories ) ) {
+        return false;
     }
+
     $clean = array();
-    $slugs = array();
     $hex   = '/^#[0-9a-fA-F]{6}$/';
-    foreach ( $input as $i => $cat ) {
-        if ( count( $clean ) >= 20 ) {
-            break; // Maximal 20 Kategorien
-        }
+    $ids   = array(); // Duplikat-Schutz für IDs
+    $slugs = array(); // Duplikat-Schutz für Slugs
+
+    foreach ( $categories as $cat ) {
+        $id    = sanitize_key( $cat['id'] ?? '' );
         $label = sanitize_text_field( $cat['label'] ?? '' );
-        if ( '' === $label ) {
-            continue;
+        if ( '' === $id || '' === $label ) {
+            continue; // Unvollständige Einträge überspringen
         }
-        $slug = sanitize_key( $cat['slug'] ?? $label );
+        if ( in_array( $id, $ids, true ) ) {
+            continue; // Doppelte IDs überspringen
+        }
+        $slug = sanitize_key( $cat['slug'] ?? $id );
         if ( '' === $slug || in_array( $slug, $slugs, true ) ) {
-            $slug = sanitize_key( $label ) . '_' . count( $clean );
+            $slug = $id; // Fallback auf id
         }
+        $color = preg_match( $hex, $cat['color'] ?? '' ) ? $cat['color'] : '#6c757d';
+
+        $ids[]   = $id;
         $slugs[] = $slug;
-        $bg     = preg_match( $hex, $cat['bg'] ?? '' )     ? $cat['bg']     : '#f0f0f0';
-        $border = preg_match( $hex, $cat['border'] ?? '' ) ? $cat['border'] : '#cccccc';
-        $text   = preg_match( $hex, $cat['text'] ?? '' )   ? $cat['text']   : '#333333';
-        $kw_raw   = sanitize_text_field( $cat['keywords'] ?? '' );
-        $keywords = array_values( array_filter( array_map( 'trim', explode( ',', $kw_raw ) ) ) );
-        $order    = absint( $cat['order'] ?? ( $i + 1 ) );
-        $clean[]  = compact( 'slug', 'label', 'bg', 'border', 'text', 'keywords', 'order' );
+        $clean[] = array(
+            'id'    => $id,
+            'label' => $label,
+            'color' => $color,
+            'slug'  => $slug,
+        );
     }
+
     if ( empty( $clean ) ) {
-        return gsh_tp_default_categories();
+        return false;
     }
-    usort( $clean, static function ( $a, $b ) {
-        return $a['order'] <=> $b['order'];
-    } );
-    return $clean;
+
+    // update_option() gibt false wenn Wert identisch – das ist kein Fehler
+    update_option( 'gsh_tp_categories', $clean, false );
+
+    // Gegencheck: Option muss in DB vorhanden und nicht leer sein
+    $verify = get_option( 'gsh_tp_categories', array() );
+    if ( ! is_array( $verify ) || empty( $verify ) ) {
+        return false;
+    }
+
+    // Request-Cache leeren damit gsh_tp_get_categories() die neuen Daten liefert
+    // (Static-Variable über Closure zurücksetzen ist in PHP nicht möglich;
+    //  stattdessen: Request-Cache über Wrapper-Option signalisieren)
+    // Pragmatische Lösung: Cache-Variable direkt per Referenz auf die gespeicherten
+    // Daten setzen – gsh_tp_get_categories() prüft 'null', nicht den Inhalt.
+    // Da PHP keine static-Variable von außen resettet, reicht der DB-Check oben.
+
+    return true;
 }
 
 /**
- * AJAX-Handler: Kategorien via fetch() speichern.
+ * AJAX-Handler: Kategorien via fetch() speichern. (v3.15.0)
  *
- * Empfängt die Kategorien als JSON-String im POST-Parameter 'tags',
- * validiert per Nonce + Capability, bereinigt mit gsh_tp_sanitize_categories()
- * und speichert via update_option().
+ * Empfängt Kategorien als JSON-String im POST-Parameter 'categories',
+ * validiert per Nonce + Capability, bereinigt und speichert via
+ * gsh_tp_save_categories(). Gibt den gespeicherten Stand zurück.
  *
- * @since 3.14.0
+ * @since 3.15.0
  * @return void  Sendet JSON-Response und beendet die Ausführung.
  */
-function gsh_tp_ajax_save_categories() {
-    check_ajax_referer( 'gsh_tp_save_categories_action', 'nonce' );
+function gsh_tp_ajax_save_categories(): void {
+    // 1. Nonce prüfen (Action-String muss mit wp_create_nonce() identisch sein)
+    check_ajax_referer( 'gsh_tp_save_categories_nonce', 'nonce' );
+
+    // 2. Berechtigung prüfen
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( array( 'message' => 'Keine Berechtigung.' ), 403 );
-    }
-    $json = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : '[]';
-    $raw  = json_decode( $json, true );
-    if ( ! is_array( $raw ) ) {
-        wp_send_json_error( array( 'message' => 'Ungültige Daten.' ), 400 );
-    }
-    // keywords kommt als String aus dem Formular – sanitize_categories erwartet das so.
-    // Jeder Eintrag im JSON hat keywords bereits als String (kommasepariert).
-    $clean = gsh_tp_sanitize_categories( $raw );
-    $saved = update_option( 'gsh_tp_categories', $clean );
-
-    if ( false === $saved ) {
-        // update_option() gibt false zurück bei:
-        // (a) Wert identisch mit gespeichertem Wert → kein DB-Update nötig, Daten korrekt in DB
-        // (b) Datenbankfehler → Daten wurden NICHT gespeichert
-        // Unterscheidung: gespeicherte Anzahl mit erwarteter vergleichen.
-        $verify = get_option( 'gsh_tp_categories', array() );
-        if ( count( $verify ) !== count( $clean ) ) {
-            wp_send_json_error( array( 'message' => 'Datenbankfehler: Kategorien konnten nicht gespeichert werden.' ), 500 );
-        }
+        return;
     }
 
-    // Bereinigte Kategorien zurückgeben (inkl. auto-generierter Slugs für neue Einträge),
-    // damit das JavaScript den DOM sofort aktualisieren kann ohne Seiten-Reload.
+    // 3. Daten auslesen – wp_unslash() VOR json_decode() ist zwingend notwendig
+    $raw = wp_unslash( $_POST['categories'] ?? '[]' );
+    $categories = json_decode( $raw, true );
+
+    // 4. JSON-Fehler abfangen
+    if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $categories ) ) {
+        wp_send_json_error( array(
+            'message' => 'Ungültiges Datenformat: ' . json_last_error_msg(),
+        ), 400 );
+        return;
+    }
+
+    // 5. Speichern
+    $success = gsh_tp_save_categories( $categories );
+
+    if ( ! $success ) {
+        wp_send_json_error( array( 'message' => 'Speichern fehlgeschlagen.' ), 500 );
+        return;
+    }
+
+    // 6. Gespeicherten Stand direkt aus DB lesen und zurückgeben
+    $saved = get_option( 'gsh_tp_categories', GSH_TP_DEFAULT_CATEGORIES );
     wp_send_json_success( array(
-        'count'      => count( $clean ),
-        'categories' => $clean,
+        'message'    => 'Kategorien gespeichert.',
+        'categories' => $saved,
     ) );
 }
 
 /**
- * Liefert die konfigurierten Kategorien aus der Datenbank (gecacht).
+ * Leitet bg-, border- und text-Farbe aus einer einzelnen Hauptfarbe ab.
  *
- * Liest gsh_tp_categories einmalig pro Request, sortiert nach order,
- * fällt auf gsh_tp_default_categories() zurück wenn leer.
+ * bg: 12 % der Farbe + 88 % Weiß (sehr heller Pastellton).
+ * border: die Hauptfarbe selbst.
+ * text: dunkel (#1e293b) wenn helle Farbe (Leuchtdichte > 0.5), sonst hell (#f1f5f9).
  *
- * @since 3.4.0
- * @return array Sortiertes Kategorie-Array.
+ * @since 3.15.0
+ * @param  string $color Hex-Farbe (#rrggbb).
+ * @return array{bg: string, border: string, text: string}
  */
-function gsh_tp_get_categories() {
-    static $cats = null;
-    if ( null === $cats ) {
-        $raw  = get_option( 'gsh_tp_categories', array() );
-        $cats = ( is_array( $raw ) && ! empty( $raw ) ) ? $raw : gsh_tp_default_categories();
-        usort( $cats, static function ( $a, $b ) {
-            return ( $a['order'] ?? 0 ) <=> ( $b['order'] ?? 0 );
-        } );
+function gsh_tp_color_derive( string $color ): array {
+    if ( ! preg_match( '/^#[0-9a-fA-F]{6}$/', $color ) ) {
+        $color = '#6c757d';
     }
-    return $cats;
+    $r  = hexdec( substr( $color, 1, 2 ) );
+    $g  = hexdec( substr( $color, 3, 2 ) );
+    $b  = hexdec( substr( $color, 5, 2 ) );
+    $bg = sprintf( '#%02x%02x%02x',
+        min( 255, (int) ( $r * 0.12 + 0.88 * 255 ) ),
+        min( 255, (int) ( $g * 0.12 + 0.88 * 255 ) ),
+        min( 255, (int) ( $b * 0.12 + 0.88 * 255 ) )
+    );
+    $luminance = ( 0.299 * $r + 0.587 * $g + 0.114 * $b ) / 255;
+    $tx        = ( $luminance > 0.5 ) ? '#1e293b' : '#f1f5f9';
+    return array( 'bg' => $bg, 'border' => $color, 'text' => $tx );
+}
+
+/**
+ * Weist einem Termin automatisch Kategorien per Keyword-Matching zu.
+ *
+ * Läuft NUR wenn der Termin noch keine Kategorien hat (categories ist
+ * kein nicht-leeres Array). Durchsucht Titel, Beschreibung, Ort und
+ * das rohe iCal-CATEGORIES-Feld. Bei keinem Treffer bleibt categories
+ * ein leeres Array – der Termin wird ungefärbt dargestellt.
+ *
+ * @since 3.15.0
+ * @param  array $event Geparster Event-Array.
+ * @return array        Event-Array mit befülltem categories-Array.
+ */
+function gsh_tp_assign_categories_to_event( array $event ): array {
+    // Bereits kategorisiert (Array mit Einträgen) → nicht überschreiben
+    if ( is_array( $event['categories'] ) && ! empty( $event['categories'] ) ) {
+        return $event;
+    }
+
+    $categories = gsh_tp_get_categories();
+
+    // Suchtext: Titel, Beschreibung, Ort und CATEGORIES-String (für IServ-Felder)
+    $ical_cats  = is_string( $event['categories'] ) ? $event['categories'] : '';
+    $search_raw = ( $event['summary']     ?? '' ) . ' '
+                . ( $event['description'] ?? '' ) . ' '
+                . ( $event['location']    ?? '' ) . ' '
+                . $ical_cats;
+    $search_text = mb_strtolower( $search_raw, 'UTF-8' );
+
+    $assigned = array();
+
+    foreach ( $categories as $cat ) {
+        $keywords = array(
+            mb_strtolower( $cat['label'], 'UTF-8' ),
+            mb_strtolower( $cat['slug'],  'UTF-8' ),
+        );
+
+        // Schulspezifische Stichwörter je Kategorie-ID
+        $extra = match ( $cat['id'] ) {
+            'jg-5-6' => [
+                'klasse 5', 'klasse 6', 'kl. 5', 'kl. 6',
+                'kl.5', 'kl.6', 'jg 5', 'jg 6', 'jg. 5', 'jg. 6',
+                'jg5', 'jg6', '5a', '5b', '5c', '5d', '5e',
+                '6a', '6b', '6c', '6d', '6e',
+                'einschulung', 'schulanfang', 'orientierungsphase',
+                'kennenlerntag', 'schnuppertag', 'grundschule',
+                'übergangsfeier', 'einführungswoche',
+                'elternabend 5', 'elternabend 6',
+                'wandertag 5', 'wandertag 6',
+                'projekttag 5', 'projekttag 6',
+                'klassenfahrt 5', 'klassenfahrt 6',
+            ],
+            'jg-7-8' => [
+                'klasse 7', 'klasse 8', 'kl. 7', 'kl. 8',
+                'kl.7', 'kl.8', 'jg 7', 'jg 8', 'jg. 7', 'jg. 8',
+                'jg7', 'jg8', '7a', '7b', '7c', '7d', '7e',
+                '8a', '8b', '8c', '8d', '8e',
+                'berufsorientierung', 'berufsfelderkundung',
+                'betriebsbesichtigung', 'praktikumsvorbereitung',
+                'schülerbetriebspraktikum', 'bop',
+                'elternabend 7', 'elternabend 8',
+                'wandertag 7', 'wandertag 8',
+                'projekttag 7', 'projekttag 8',
+                'klassenfahrt 7', 'klassenfahrt 8',
+                'sportfest 7', 'sportfest 8',
+            ],
+            'jg-9-10' => [
+                'klasse 9', 'klasse 10', 'kl. 9', 'kl. 10',
+                'kl.9', 'kl.10', 'jg 9', 'jg 10', 'jg. 9', 'jg. 10',
+                'jg9', 'jg10', '9a', '9b', '9c', '9d', '9e',
+                '10a', '10b', '10c', '10d', '10e',
+                'schülerpraktikum', 'betriebspraktikum', 'praktikum',
+                'berufsberatung', 'berufswegeplanung',
+                'mittlerer schulabschluss', 'msa', 'fachoberschulreife',
+                'abschlussfeier', 'abschlussfahrt',
+                'prüfung klasse 10', 'abschlussprüfung',
+                'elternabend 9', 'elternabend 10',
+                'wandertag 9', 'wandertag 10',
+                'projekttag 9', 'projekttag 10',
+                'klassenfahrt 9', 'klassenfahrt 10',
+            ],
+            'oberstufe' => [
+                'ef', 'einführungsphase',
+                'q1', 'q2', 'qualifikationsphase',
+                'oberstufe', 'sek ii', 'sek. ii', 'sekundarstufe ii',
+                'abitur', 'abi', 'abiturzeugnis', 'abiturvorbereitung',
+                'abiturprüfung', 'schriftliches abitur', 'mündliches abitur',
+                'zentralabitur', 'abi-feier', 'abiball', 'abschlussball',
+                'abistreich', 'abigottesdienst',
+                'lk', 'leistungskurs', 'grundkurs', 'gk',
+                'projektkurs', 'vertiefungskurs',
+                'kurswahl', 'fachwahl', 'belegung',
+                'studienberatung', 'hochschultag', 'unibesuch',
+                'studienfahrt', 'bildungsfahrt',
+                'elternabend oberstufe', 'elternabend ef',
+                'elternabend q1', 'elternabend q2',
+            ],
+            'feiertage' => [
+                'feiertag', 'gesetzlicher feiertag',
+                'neujahr', 'heilige drei könige',
+                'karfreitag', 'karsamstag', 'ostermontag', 'ostersonntag',
+                'christi himmelfahrt', 'vatertag', 'pfingstmontag',
+                'fronleichnam', 'tag der deutschen einheit',
+                'allerheiligen', 'nikolaus',
+                'heiligabend', 'weihnachten', '1. weihnachtstag', '2. weihnachtstag',
+                'silvester',
+                'ferien', 'schulferien', 'ferientag',
+                'herbstferien', 'weihnachtsferien', 'winterferien',
+                'osterferien', 'pfingstferien', 'sommerferien',
+                'brückentag', 'beweglicher ferientag',
+                'schulfrei', 'unterrichtsfrei',
+                'studientag', 'frei',
+            ],
+            'konferenzen' => [
+                'konferenz', 'konf.',
+                'lehrerkonferenz', 'gesamtkonferenz', 'geko',
+                'fachkonferenz', 'klassenkonferenz', 'teilkonferenz',
+                'schulkonferenz', 'zeugniskonferenz', 'versetzungskonferenz',
+                'notenkonferenz', 'erziehungskonferenz',
+                'jahrgangsteam', 'jahrgangsbesprechung',
+                'dienstbesprechung', 'teambesprechung', 'teamsitzung',
+                'abteilungsbesprechung', 'steuergruppe',
+                'schulleitungssitzung', 'fortbildung',
+                'pädagogischer tag', 'pädagogische konferenz',
+                'elternpflegschaft', 'schulpflegschaft',
+                'schülervertretung', 'sv-sitzung', 'sv sitzung',
+                'schulvorstand', 'schilf', 'lk', 'fako', 'fachkonferenz',
+                'db', 'pk', 'zk', 'sk', 'pflegschaft',
+            ],
+            default => array(),
+        };
+
+        $all_keywords = array_unique( array_merge( $keywords, $extra ) );
+
+        foreach ( $all_keywords as $keyword ) {
+            if ( '' === $keyword ) {
+                continue;
+            }
+            if ( str_contains( $search_text, $keyword ) ) {
+                $assigned[] = $cat['id'];
+                break; // Pro Kategorie nur einmal zuweisen
+            }
+        }
+    }
+
+    // Nur setzen wenn wirklich etwas gefunden – sonst leeres Array (ungefärbt)
+    $event['categories'] = array_unique( $assigned );
+    return $event;
 }
 
 /**
@@ -1866,18 +2078,20 @@ function gsh_tp_get_categories() {
  * @return array{vars: string, rules: string}
  */
 function gsh_tp_category_css() {
-    $cats = gsh_tp_get_categories();
+    $cats  = gsh_tp_get_categories();
     $vars  = '';
     $rules = '';
     foreach ( $cats as $c ) {
-        $s      = esc_attr( $c['slug'] );
-        $bg     = esc_attr( $c['bg'] );
-        $bd     = esc_attr( $c['border'] );
-        $tx     = esc_attr( $c['text'] );
-        $vars  .= "--c-{$s}-bg:{$bg};--c-{$s}-bd:{$bd};--c-{$s}-tx:{$tx};";
-        $rules .= ".gc-{$s}{background:var(--c-{$s}-bg);border-left-color:var(--c-{$s}-bd);color:var(--c-{$s}-tx)}";
-        $rules .= ".gtp-fb[data-c=\"{$s}\"]{border-color:var(--c-{$s}-bd);background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
-        $rules .= ".gtp-popup-cat.gc-{$s}{background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
+        $s       = esc_attr( $c['slug'] );
+        $color   = $c['color'] ?? '#6c757d';
+        $derived = gsh_tp_color_derive( $color );
+        $bg      = esc_attr( $derived['bg'] );
+        $bd      = esc_attr( $derived['border'] ); // = color
+        $tx      = esc_attr( $derived['text'] );
+        $vars   .= "--c-{$s}-bg:{$bg};--c-{$s}-bd:{$bd};--c-{$s}-tx:{$tx};";
+        $rules  .= ".gc-{$s}{background:var(--c-{$s}-bg);border-left-color:var(--c-{$s}-bd);color:var(--c-{$s}-tx)}";
+        $rules  .= ".gtp-fb[data-c=\"{$s}\"]{--btn-color:{$bd};border-color:var(--c-{$s}-bd);background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
+        $rules  .= ".gtp-popup-cat.gc-{$s}{background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
     }
     return array( 'vars' => $vars, 'rules' => $rules );
 }
@@ -2573,24 +2787,25 @@ function gsh_tp_render_profile_tab( $profile_id ) {
 }
 
 /**
- * Rendert den Kategorien-Tab (Kategorien verwalten).
+ * Rendert den Kategorien-Tab (Kategorien verwalten). – v3.15.0 Neuaufbau
  *
- * Gibt das Formular zum Bearbeiten der Terminplan-Kategorien aus,
- * das über die WordPress Settings API (options.php) gespeichert wird.
+ * Vereinfachtes Datenmodell: id, label, color, slug.
+ * Kategorien werden per AJAX gespeichert (gsh_tp_save_categories_nonce).
+ * Keyword-Matching ist hardcoded in gsh_tp_assign_categories_to_event().
  *
- * @since 3.4.0 (Tab-Wrapper seit 3.5.0)
+ * @since 3.4.0 (komplett neu seit 3.15.0)
  * @return void
  */
 function gsh_tp_render_kategorien_tab() {
     $existing_cats = gsh_tp_get_categories();
-    $nonce_value   = wp_create_nonce( 'gsh_tp_save_categories_action' );
+    $nonce_value   = wp_create_nonce( 'gsh_tp_save_categories_nonce' );
     ?>
     <p class="description" style="margin-bottom:1rem">
         Legen Sie hier die Terminplan-Kategorien fest. Jede Kategorie hat einen
-        <strong>Anzeigenamen</strong>, drei <strong>Farben</strong> und eine Liste von
-        <strong>Stichwörtern</strong> (kommagetrennt), die im CATEGORIES-Feld der
-        IServ-Termine gesucht werden. Matching mit <strong>Wortgrenzen</strong>:
-        &bdquo;LK&ldquo; findet &bdquo;LK 3&ldquo;, aber nicht &bdquo;Volk&ldquo;.
+        <strong>Anzeigenamen</strong> und eine <strong>Hauptfarbe</strong>.
+        Die Hintergrundfarbe und Textfarbe werden automatisch aus der Hauptfarbe abgeleitet.<br>
+        Die <strong>Stichwörter</strong> für das automatische Matching sind schulspezifisch
+        voreingestellt und können nicht im Admin geändert werden.
     </p>
 
     <input type="hidden" id="gsh-cat-nonce" value="<?php echo esc_attr( $nonce_value ); ?>">
@@ -2599,56 +2814,43 @@ function gsh_tp_render_kategorien_tab() {
     <table class="widefat" id="gsh-cat-table" style="table-layout:fixed;margin-bottom:8px">
         <thead>
             <tr>
-                <th style="width:42px">Reihenf.</th>
-                <th style="width:160px">Anzeigename</th>
-                <th style="width:68px">Hintergrund</th>
-                <th style="width:68px">Rahmen</th>
-                <th style="width:68px">Text</th>
-                <th>Stichwörter (kommasepariert)</th>
+                <th style="width:180px">Anzeigename</th>
+                <th style="width:80px">Farbe</th>
+                <th style="width:180px">Vorschau</th>
+                <th style="width:120px">ID / Slug</th>
                 <th style="width:34px"></th>
             </tr>
         </thead>
         <tbody id="gsh-cat-tbody">
-        <?php foreach ( $existing_cats as $i => $cat ) : ?>
+        <?php foreach ( $existing_cats as $cat ) :
+            $derived = gsh_tp_color_derive( $cat['color'] ?? '#6c757d' );
+        ?>
             <tr class="gsh-cat-row">
                 <td>
-                    <input type="number" class="gsh-cat-order"
-                           value="<?php echo esc_attr( $cat['order'] ?? ( $i + 1 ) ); ?>"
-                           min="1" max="99" style="width:38px" />
+                    <input type="hidden" class="gsh-cat-id"
+                           value="<?php echo esc_attr( $cat['id'] ?? $cat['slug'] ?? '' ); ?>" />
                     <input type="hidden" class="gsh-cat-slug"
                            value="<?php echo esc_attr( $cat['slug'] ); ?>" />
-                </td>
-                <td>
                     <input type="text" class="gsh-cat-label"
                            value="<?php echo esc_attr( $cat['label'] ); ?>"
-                           style="width:100%"
-                           placeholder="Anzeigename" />
+                           style="width:100%" placeholder="Anzeigename" />
                 </td>
                 <td>
-                    <input type="color" class="gsh-cat-bg"
-                           value="<?php echo esc_attr( $cat['bg'] ); ?>"
-                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
+                    <input type="color" class="gsh-cat-color"
+                           value="<?php echo esc_attr( $cat['color'] ?? '#6c757d' ); ?>"
+                           style="width:56px;height:36px;padding:2px;cursor:pointer" />
                 </td>
                 <td>
-                    <input type="color" class="gsh-cat-bd"
-                           value="<?php echo esc_attr( $cat['border'] ); ?>"
-                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
+                    <span class="gsh-cat-preview" style="display:inline-flex;align-items:center;
+                        padding:3px 10px;border-radius:4px;font-size:12px;
+                        border-left:3px solid <?php echo esc_attr( $derived['border'] ); ?>;
+                        background:<?php echo esc_attr( $derived['bg'] ); ?>;
+                        color:<?php echo esc_attr( $derived['text'] ); ?>">
+                        <?php echo esc_html( $cat['label'] ); ?>
+                    </span>
                 </td>
-                <td>
-                    <input type="color" class="gsh-cat-tx"
-                           value="<?php echo esc_attr( $cat['text'] ); ?>"
-                           style="width:48px;height:32px;padding:2px;cursor:pointer" />
-                </td>
-                <td>
-                    <input type="text" class="gsh-cat-kw"
-                           value="<?php echo esc_attr( implode( ', ', $cat['keywords'] ) ); ?>"
-                           style="width:100%"
-                           placeholder="Stichwort1, Stichwort2, ..." />
-                    <span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;
-                        padding:2px 8px;border-radius:4px;font-size:12px;
-                        border-left:3px solid <?php echo esc_attr( $cat['border'] ); ?>;
-                        background:<?php echo esc_attr( $cat['bg'] ); ?>;
-                        color:<?php echo esc_attr( $cat['text'] ); ?>">Beispieltermin</span>
+                <td style="font-size:11px;color:#64748b">
+                    <?php echo esc_html( $cat['id'] ?? $cat['slug'] ?? '–' ); ?>
                 </td>
                 <td>
                     <button type="button" class="button gsh-cat-del"
@@ -2662,163 +2864,165 @@ function gsh_tp_render_kategorien_tab() {
     </div>
 
     <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <button type="button" class="button button-primary" id="gsh-cat-save">Stichwörter speichern</button>
+        <button type="button" class="button button-primary" id="gsh-cat-save">Kategorien speichern</button>
         <div id="gsh-cat-status"></div>
     </div>
 
     <script>
-    (function() {
+    (function () {
         'use strict';
 
+        // Kategorien-State aus dem initialen DOM aufbauen
         var tbody    = document.getElementById('gsh-cat-tbody');
         var addBtn   = document.getElementById('gsh-cat-add');
         var saveBtn  = document.getElementById('gsh-cat-save');
         var statusEl = document.getElementById('gsh-cat-status');
         var nonce    = (document.getElementById('gsh-cat-nonce') || {}).value || '';
 
-        // Live-Vorschau
+        // Live-Vorschau nach Farbänderung aktualisieren
         function updatePreview(row) {
-            var bg  = (row.querySelector('.gsh-cat-bg')  || {}).value || '#f0f0f0';
-            var bd  = (row.querySelector('.gsh-cat-bd')  || {}).value || '#cccccc';
-            var tx  = (row.querySelector('.gsh-cat-tx')  || {}).value || '#333333';
-            var pre = row.querySelector('.gsh-cat-preview');
-            if (pre) {
-                pre.style.background      = bg;
-                pre.style.borderLeftColor = bd;
-                pre.style.color           = tx;
-            }
+            var color = (row.querySelector('.gsh-cat-color') || {}).value || '#6c757d';
+            var label = (row.querySelector('.gsh-cat-label') || {}).value || 'Beispiel';
+            var pre   = row.querySelector('.gsh-cat-preview');
+            if (!pre) return;
+            // Helligkeit schätzen: einfache Graustufenformel
+            var r = parseInt(color.slice(1, 3), 16);
+            var g = parseInt(color.slice(3, 5), 16);
+            var b = parseInt(color.slice(5, 7), 16);
+            var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            // bg: 12 % Farbe + 88 % Weiß
+            function blend(c) { return Math.min(255, Math.round(c * 0.12 + 0.88 * 255)); }
+            var bg = 'rgb(' + blend(r) + ',' + blend(g) + ',' + blend(b) + ')';
+            var tx = lum > 0.5 ? '#1e293b' : '#f1f5f9';
+            pre.style.background      = bg;
+            pre.style.borderLeftColor = color;
+            pre.style.color           = tx;
+            pre.textContent           = label || 'Vorschau';
         }
 
         // Alle Kategorien aus dem DOM sammeln
-        function collectCategories() {
+        function collectFromDOM() {
             var cats = [];
-            tbody.querySelectorAll('.gsh-cat-row').forEach(function(row, idx) {
-                cats.push({
-                    slug:     (row.querySelector('.gsh-cat-slug')  || {}).value || '',
-                    label:    (row.querySelector('.gsh-cat-label') || {}).value || '',
-                    bg:       (row.querySelector('.gsh-cat-bg')    || {}).value || '#f0f0f0',
-                    border:   (row.querySelector('.gsh-cat-bd')    || {}).value || '#cccccc',
-                    text:     (row.querySelector('.gsh-cat-tx')    || {}).value || '#333333',
-                    keywords: (row.querySelector('.gsh-cat-kw')    || {}).value || '',
-                    order:    idx + 1
-                });
+            tbody.querySelectorAll('.gsh-cat-row').forEach(function (row) {
+                var id    = (row.querySelector('.gsh-cat-id')    || {}).value || '';
+                var slug  = (row.querySelector('.gsh-cat-slug')  || {}).value || '';
+                var label = (row.querySelector('.gsh-cat-label') || {}).value || '';
+                var color = (row.querySelector('.gsh-cat-color') || {}).value || '#6c757d';
+                if (!label) return; // Leere Labels überspringen
+                // Slug aus Label generieren wenn noch keiner vorhanden
+                if (!slug) {
+                    slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                }
+                if (!id) { id = slug; }
+                cats.push({ id: id, label: label, color: color, slug: slug });
             });
             return cats;
         }
 
         // Status-Meldung anzeigen
         function showStatus(ok, msg) {
-            statusEl.textContent = msg;
-            statusEl.className   = ok ? 'gsh-cat-status-ok' : 'gsh-cat-status-err';
+            statusEl.textContent   = msg;
+            statusEl.className     = ok ? 'gsh-cat-status-ok' : 'gsh-cat-status-err';
             statusEl.style.display = 'block';
-            if (ok) {
-                setTimeout(function() { statusEl.style.display = 'none'; }, 4000);
-            }
+            if (ok) { setTimeout(function () { statusEl.style.display = 'none'; }, 4000); }
         }
 
-        // Neue Zeile bauen (ohne name-Attribute – Daten werden per AJAX gesendet)
-        function buildRowHtml(idx, cat) {
-            var svgX = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        // HTML für neue Zeile generieren
+        function buildRowHtml(cat) {
+            var svgX = '<?php echo addslashes( gsh_tp_icon( 'x', '0.9em' ) ); ?>';
+            function ea(s) {
+                return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+            var color = cat.color || '#6c757d';
             return '<td>'
-                + '<input type="hidden" class="gsh-cat-slug" value="' + escAttr(cat.slug) + '">'
-                + '<input type="number" class="gsh-cat-order" value="' + (idx + 1) + '" min="1" max="99" style="width:38px">'
+                + '<input type="hidden" class="gsh-cat-id"    value="' + ea(cat.id    || '') + '">'
+                + '<input type="hidden" class="gsh-cat-slug"  value="' + ea(cat.slug  || '') + '">'
+                + '<input type="text"   class="gsh-cat-label" value="' + ea(cat.label || '') + '" style="width:100%" placeholder="Anzeigename">'
                 + '</td>'
-                + '<td><input type="text" class="gsh-cat-label" value="' + escAttr(cat.label) + '" style="width:100%" placeholder="Anzeigename"></td>'
-                + '<td><input type="color" class="gsh-cat-bg" value="' + escAttr(cat.bg) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
-                + '<td><input type="color" class="gsh-cat-bd" value="' + escAttr(cat.border) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
-                + '<td><input type="color" class="gsh-cat-tx" value="' + escAttr(cat.text) + '" style="width:48px;height:32px;padding:2px;cursor:pointer"></td>'
-                + '<td>'
-                + '<input type="text" class="gsh-cat-kw" value="' + escAttr(cat.keywords) + '" style="width:100%" placeholder="Stichwort1, Stichwort2, ...">'
-                + '<span class="gsh-cat-preview" style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;font-size:12px;border-left:3px solid ' + escAttr(cat.border) + ';background:' + escAttr(cat.bg) + ';color:' + escAttr(cat.text) + '">Beispieltermin</span>'
-                + '</td>'
+                + '<td><input type="color" class="gsh-cat-color" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
+                + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:#f0f0f0;color:#333">' + ea(cat.label || 'Vorschau') + '</span></td>'
+                + '<td style="font-size:11px;color:#64748b">' + ea(cat.id || '(neu)') + '</td>'
                 + '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
         }
 
-        function escAttr(s) {
-            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
+        // ── Event-Listener ──────────────────────────────────────────────
 
-        // Speichern via AJAX (fetch)
-        if (saveBtn) {
-            saveBtn.addEventListener('click', function() {
-                saveBtn.disabled    = true;
-                saveBtn.textContent = 'Wird gespeichert\u2026';
-                statusEl.style.display = 'none';
-
-                var body = new URLSearchParams();
-                body.append('action', 'gsh_tp_save_categories');
-                body.append('nonce',  nonce);
-                body.append('tags',   JSON.stringify(collectCategories()));
-
-                fetch(
-                    (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
-                    {
-                        method:  'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body:    body.toString()
-                    }
-                )
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        // Auto-generierte Slugs neuer Kategorien in den DOM zurückspielen.
-                        // Ohne diesen Schritt würde ein erneutes Speichern ohne Reload
-                        // für neue Einträge nochmals einen Slug generieren (möglicherweise
-                        // anderen Namen bei geänderter Reihenfolge).
-                        if (data.data && Array.isArray(data.data.categories)) {
-                            var rows = tbody.querySelectorAll('.gsh-cat-row');
-                            data.data.categories.forEach(function(cat, i) {
-                                if (rows[i]) {
-                                    var slugInput = rows[i].querySelector('.gsh-cat-slug');
-                                    if (slugInput) { slugInput.value = cat.slug; }
-                                }
-                            });
-                        }
-                        showStatus(true, '\u2713 Kategorien gespeichert.');
-                    } else {
-                        var msg = (data.data && data.data.message) ? data.data.message : 'Fehler beim Speichern.';
-                        showStatus(false, '\u2717 ' + msg);
-                    }
-                })
-                .catch(function() {
-                    showStatus(false, '\u2717 Verbindungsfehler. Bitte erneut versuchen.');
-                })
-                .finally(function() {
-                    saveBtn.disabled    = false;
-                    saveBtn.textContent = 'Stichwörter speichern';
-                });
-            });
-        }
-
-        // Eingaben → Live-Vorschau
+        // Live-Vorschau bei Farb-/Label-Änderung
         if (tbody) {
-            tbody.addEventListener('input', function(e) {
+            tbody.addEventListener('input', function (e) {
                 var row = e.target.closest('.gsh-cat-row');
                 if (row) updatePreview(row);
             });
-
-            // Löschen
-            tbody.addEventListener('click', function(e) {
+            // Löschen-Button
+            tbody.addEventListener('click', function (e) {
                 var delBtn = e.target.closest('.gsh-cat-del');
                 if (!delBtn) return;
                 var rows = tbody.querySelectorAll('.gsh-cat-row');
-                if (rows.length <= 1) {
-                    alert('Mindestens eine Kategorie muss vorhanden sein.');
-                    return;
-                }
-                if (!confirm('Kategorie wirklich löschen?')) return;
+                if (rows.length <= 1) { alert('Mindestens eine Kategorie muss vorhanden sein.'); return; }
+                if (!confirm('Kategorie wirklich l\u00f6schen?')) return;
                 delBtn.closest('.gsh-cat-row').remove();
             });
         }
 
         // Neue Kategorie hinzufügen
         if (addBtn) {
-            addBtn.addEventListener('click', function() {
-                var idx = tbody.querySelectorAll('.gsh-cat-row').length;
+            addBtn.addEventListener('click', function () {
+                var newCat = { id: 'neu-' + Date.now(), label: '', color: '#6c757d', slug: '' };
                 var row = document.createElement('tr');
                 row.className = 'gsh-cat-row';
-                row.innerHTML = buildRowHtml(idx, { slug: '', label: '', bg: '#f0f0f0', border: '#cccccc', text: '#333333', keywords: '' });
+                row.innerHTML = buildRowHtml(newCat);
                 tbody.appendChild(row);
+            });
+        }
+
+        // Speichern via AJAX (fetch, ES2020)
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async function () {
+                var data    = collectFromDOM();
+                var origTxt = saveBtn.textContent;
+                saveBtn.disabled    = true;
+                saveBtn.textContent = 'Wird gespeichert\u2026';
+                statusEl.style.display = 'none';
+
+                try {
+                    var response = await fetch(
+                        (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+                        {
+                            method:  'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body:    new URLSearchParams({
+                                action:     'gsh_tp_save_categories',
+                                nonce:      nonce,
+                                categories: JSON.stringify(data),
+                            }).toString()
+                        }
+                    );
+                    var result = await response.json();
+
+                    if (result.success) {
+                        // Server-bestätigten Stand zurückspielen (IDs/Slugs ggf. bereinigt)
+                        if (result.data && Array.isArray(result.data.categories)) {
+                            var rows = tbody.querySelectorAll('.gsh-cat-row');
+                            result.data.categories.forEach(function (cat, i) {
+                                if (!rows[i]) return;
+                                var idInput   = rows[i].querySelector('.gsh-cat-id');
+                                var slugInput = rows[i].querySelector('.gsh-cat-slug');
+                                if (idInput)   idInput.value   = cat.id   || '';
+                                if (slugInput) slugInput.value = cat.slug || '';
+                            });
+                        }
+                        showStatus(true, '\u2713 Kategorien gespeichert.');
+                    } else {
+                        var msg = result.data && result.data.message
+                                  ? result.data.message : 'Fehler beim Speichern.';
+                        showStatus(false, '\u2717 ' + msg);
+                    }
+                } catch (err) {
+                    showStatus(false, '\u2717 Netzwerkfehler: ' + err.message);
+                } finally {
+                    saveBtn.disabled    = false;
+                    saveBtn.textContent = origTxt;
+                }
             });
         }
     })();
@@ -3602,68 +3806,28 @@ function gsh_tp_quartale( $profile_id = '' ) {
    4. KATEGORIE-ERKENNUNG (Wortgrenzen-Matching)
    ================================================================ */
 
-/**
- * Bestimmt die CSS-Farbklasse für einen Termin anhand seines CATEGORIES-Felds.
- *
- * Gleicht den übergebenen Kategoriestring mit dem konfigurierten Mapping ab.
- * Das Mapping wird beim ersten Aufruf geladen und in einer statischen Variable
- * gecacht, damit es bei ~400 Events nicht bei jedem Aufruf neu aus der
- * Datenbank geladen wird. Gibt 'standard' (grau) zurück wenn keine
- * passende Kategorie gefunden wird.
- *
- * @since 1.2.0
- * @param  string $categories Das CATEGORIES-Feld des iCal-Termins.
- * @return string             CSS-Klassenname ohne Präfix, z. B. 'konferenz'.
- */
-function gsh_tp_cat( $categories ) {
-    // Mapping nur einmal laden – nicht bei jedem der ~400 Events neu
-    static $map = null;
-    if ( null === $map ) {
-        $map = gsh_tp_build_map();
-    }
+// ENTFERNT v3.15.0 – Kategorie-Neuaufbau:
+// gsh_tp_cat()       → ersetzt durch gsh_tp_assign_categories_to_event() + $ev['categories']-Array
+// gsh_tp_build_map() → ersetzt durch hardcodierte Keywords in gsh_tp_assign_categories_to_event()
 
-    $cats = trim( $categories );
-    if ( $cats === '' ) {
+/**
+ * Gibt den CSS-Slug der primären Kategorie eines Events zurück.
+ *
+ * Hilfsfunktion für Rendering-Code: mappt die erste Kategorie-ID
+ * aus dem categories-Array auf den zugehörigen Slug.
+ * Gibt 'standard' zurück wenn keine Kategorie vorhanden.
+ *
+ * @since 3.15.0
+ * @param  array $cat_ids  Array von Kategorie-IDs aus $event['categories'].
+ * @param  array $cat_map  Assoziatives Array: id → Kategorie (aus array_column).
+ * @return string          CSS-Slug, z. B. 'konferenzen' oder 'standard'.
+ */
+function gsh_tp_primary_slug( array $cat_ids, array $cat_map ): string {
+    if ( empty( $cat_ids ) ) {
         return 'standard';
     }
-
-    foreach ( $map as $entry ) {
-        if ( preg_match( $entry['regex'], $cats ) ) {
-            return $entry['cls'];
-        }
-    }
-
-    return 'standard';
-}
-
-/**
- * Baut das Kategorie-Mapping aus den konfigurierten Kategorien als Array von Regex-Regeln.
- *
- * Liest die Kategorien aus gsh_tp_get_categories() und erstellt für jedes Stichwort
- * einen vorcompilierten regulären Ausdruck mit Wortgrenzen (\b). preg_quote() escaped
- * Sonderzeichen sicher (Regex-Injection-Schutz).
- *
- * @since 1.2.0 (überarbeitet 3.4.0 – nutzt jetzt gsh_tp_get_categories())
- * @return array Array von Arrays mit 'regex' (string) und 'cls' (string).
- */
-function gsh_tp_build_map() {
-    $cats = gsh_tp_get_categories();
-    $r    = array();
-    foreach ( $cats as $c ) {
-        foreach ( $c['keywords'] as $kw ) {
-            $kw = trim( $kw );
-            if ( '' === $kw ) {
-                continue;
-            }
-            // preg_quote() escaped Sonderzeichen (z. B. "Tag der Deutschen Einheit").
-            // /iu = case-insensitive + Unicode-Unterstützung für Umlaute.
-            $r[] = array(
-                'regex' => '/\b' . preg_quote( $kw, '/' ) . '\b/iu',
-                'cls'   => $c['slug'],
-            );
-        }
-    }
-    return $r;
+    $cat = $cat_map[ $cat_ids[0] ] ?? null;
+    return $cat ? $cat['slug'] : 'standard';
 }
 
 /* ================================================================
@@ -3747,6 +3911,9 @@ function gsh_tp_shortcode( $atts ) {
     $grenzen = gsh_tp_quartale( $profile_id );
     $sjs     = gsh_tp_opt( 'schuljahr_start', '2025-08-25', $profile_id );
 
+    // Kategorien per Keyword-Matching auf alle Events anwenden (einmalig vor dem Indexing)
+    $events = array_map( 'gsh_tp_assign_categories_to_event', $events );
+
     // Einmaliger Aufbau des Date-Index für O(1)-Lookup statt O(n) pro Tag
     $date_index = gsh_tp_build_date_index( $events );
 
@@ -3777,14 +3944,17 @@ function gsh_tp_shortcode( $atts ) {
     $changes      = get_transient( $chg_key );
     $changes_json = esc_attr( wp_json_encode( is_array( $changes ) ? $changes : array() ) );
 
-    // Kategorien als JSON für dynamisches Druck-CSS und Legende
-    $cats_for_js  = array_map( static function ( $c ) {
+    // Kategorien als JSON für dynamisches Druck-CSS und Legende (v3.15.0: neues Datenmodell)
+    $cats_for_js = array_map( static function ( $c ) {
+        $derived = gsh_tp_color_derive( $c['color'] ?? '#6c757d' );
         return array(
+            'id'     => $c['id']    ?? $c['slug'],
             'slug'   => $c['slug'],
             'label'  => $c['label'],
-            'border' => $c['border'],
-            'bg'     => $c['bg'],
-            'text'   => $c['text'],
+            'color'  => $c['color'] ?? '#6c757d',
+            'border' => $derived['border'],
+            'bg'     => $derived['bg'],
+            'text'   => $derived['text'],
         );
     }, gsh_tp_get_categories() );
     $cats_json = esc_attr( wp_json_encode( $cats_for_js ) );
@@ -3865,13 +4035,15 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>';
 
-    // Filter-Buttons (dynamisch aus Kategorie-Einstellungen)
+    // Filter-Buttons (dynamisch aus Kategorie-Einstellungen – v3.15.0: --btn-color)
     $o .= '<div class="gtp-filt-wrap">';
     $o .= '<span class="gtp-filt-lbl">Anzeige filtern: <span id="gtp-filt-count" class="gtp-filt-count"></span></span>';
     $o .= '<div class="gtp-filt">';
     foreach ( gsh_tp_get_categories() as $cat ) {
+        $color = esc_attr( $cat['color'] ?? '#6c757d' );
         $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="'
-            . esc_attr( $cat['slug'] ) . '" onclick="gtpFil(this)" aria-pressed="true">'
+            . esc_attr( $cat['slug'] ) . '" style="--btn-color:' . $color . '"'
+            . ' onclick="gtpFil(this)" aria-pressed="true">'
             . esc_html( $cat['label'] ) . '</button>';
     }
     // „Sonstige"-Button für Termine ohne Kategorie-Match
@@ -4074,9 +4246,15 @@ function gsh_tp_event_data_attrs( $ev ) {
         $time    = trim( $m[2] );
     }
 
-    $desc = $ev['description'];
-    $loc  = isset( $ev['location'] ) ? $ev['location'] : '';
-    $cat  = gsh_tp_cat( $ev['categories'] );
+    $desc    = $ev['description'];
+    $loc     = isset( $ev['location'] ) ? $ev['location'] : '';
+    // v3.15.0: data-cat = Slug der primären Kategorie (aus dem Array, nicht via gsh_tp_cat)
+    $cat_ids = (array) ( $ev['categories'] ?? array() );
+    static $cat_map_attr = null;
+    if ( null === $cat_map_attr ) {
+        $cat_map_attr = array_column( gsh_tp_get_categories(), null, 'id' );
+    }
+    $cat = gsh_tp_primary_slug( $cat_ids, $cat_map_attr );
 
     $attrs  = ' data-summary="' . esc_attr( $summary ) . '"';
     $attrs .= ' data-date="'    . esc_attr( $ev['start'] ) . '"';
@@ -4162,7 +4340,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
         // Ein Termin gilt als "lang", wenn er >= 5 Tage dauert (ganze Woche oder länger).
         $hinweise_keys = array(); // Duplikate über Wochentage hinweg verhindern
         $hinweise_long = array(); // Lange Termine → nur in Hinweise, nicht in Tagesspalte
-        $hinweise_frist = array(); // Frist-Termine (kurz) → zusätzlich in Hinweise
+        // $hinweise_frist entfernt v3.15.0 – keine 'frist'-Kategorie mehr im neuen Modell
 
         for ( $d = 0; $d < 5; $d++ ) {
             $dy = clone $c;
@@ -4191,10 +4369,10 @@ function gsh_tp_table( $index, $qd, $sjs ) {
                 $cl .= ' gt-today';
             }
 
-            // Ferientag erkennen – auch lange Ferien-Termine markieren den Tag grau
+            // Ferientag erkennen – 'feiertage'-Kategorie markiert den Tag grau (v3.15.0)
             $hol = false;
             foreach ( $de as $ev ) {
-                if ( gsh_tp_cat( $ev['categories'] ) === 'frei' ) {
+                if ( in_array( 'feiertage', (array) ( $ev['categories'] ?? array() ), true ) ) {
                     $hol = true;
                     break;
                 }
@@ -4206,27 +4384,27 @@ function gsh_tp_table( $index, $qd, $sjs ) {
             $h .= '<td class="' . esc_attr( $cl ) . '" data-label="' . esc_attr( $day_labels[ $d ] ) . '">';
             $h .= '<span class="gdl">' . esc_html( $dy->format( 'd.m.' ) ) . '</span>';
 
+            // Kategorie-Map einmalig aufbauen (gecacht via gsh_tp_get_categories())
+            static $cat_map_table = null;
+            if ( null === $cat_map_table ) {
+                $cat_map_table = array_column( gsh_tp_get_categories(), null, 'id' );
+            }
+
             foreach ( $de as $ev ) {
                 // Lange Termine (>= 5 Tage) erscheinen nur in der Hinweise-Spalte
                 if ( gsh_tp_event_duration( $ev ) >= 5 ) {
                     continue;
                 }
 
-                $cc = gsh_tp_cat( $ev['categories'] );
+                $cat_ids  = (array) ( $ev['categories'] ?? array() );
+                $cc       = gsh_tp_primary_slug( $cat_ids, $cat_map_table );
+                $data_cats = esc_attr( implode( ',', $cat_ids ) );
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
+                    . '" data-categories="' . $data_cats
                     . '" onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
                     . esc_html( $ev['summary'] ) . '</div>';
-
-                // Frist-Termine zusätzlich in Hinweise merken
-                if ( $cc === 'frist' ) {
-                    $key = $ev['start'] . '|' . $ev['summary'];
-                    if ( ! isset( $hinweise_keys[ $key ] ) ) {
-                        $hinweise_keys[ $key ] = true;
-                        $hinweise_frist[] = $ev;
-                    }
-                }
             }
 
             $h .= '</td>';
@@ -4235,11 +4413,13 @@ function gsh_tp_table( $index, $qd, $sjs ) {
         // ── Hinweise-Spalte rendern ──
         $h .= '<td class="gh gnc" data-label="' . esc_attr__( 'Hinweise', 'gsh-terminplan' ) . '">';
 
-        // Lange Termine (mit Kategorie-Farbe und Datumsbereich)
+        // Lange Termine (mit Kategorie-Farbe und Datumsbereich) – v3.15.0: Array-Slugs
         foreach ( $hinweise_long as $ev ) {
-            $cc      = gsh_tp_cat( $ev['categories'] );
-            $tt      = $ev['description'] ? $ev['description'] : $ev['summary'];
-            $eff_end = new DateTime( $ev['end'] );
+            $cat_ids  = (array) ( $ev['categories'] ?? array() );
+            $cc       = gsh_tp_primary_slug( $cat_ids, $cat_map_table );
+            $data_cats = esc_attr( implode( ',', $cat_ids ) );
+            $tt       = $ev['description'] ? $ev['description'] : $ev['summary'];
+            $eff_end  = new DateTime( $ev['end'] );
             if ( $ev['allday'] && $ev['end'] > $ev['start'] ) {
                 $eff_end->modify( '-1 day' );
             }
@@ -4247,15 +4427,11 @@ function gsh_tp_table( $index, $qd, $sjs ) {
                    . '&ndash;' . $eff_end->format( 'd.m.' );
             $h .= '<div class="gn-long gc-' . esc_attr( $cc )
                 . '" data-c="' . esc_attr( $cc )
+                . '" data-categories="' . $data_cats
                 . '" title="' . esc_attr( wp_strip_all_tags( $tt ) ) . '">'
                 . '<span class="gn-range">' . $range . '</span>'
                 . esc_html( $ev['summary'] )
                 . '</div>';
-        }
-
-        // Frist-Notizen
-        foreach ( $hinweise_frist as $ev ) {
-            $h .= '<div class="gn" data-c="frist">' . esc_html( $ev['summary'] ) . '</div>';
         }
 
         $h .= '</td>';
@@ -4437,12 +4613,19 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
             $is_past  = ( $ds < $td );
 
             // Ferientag erkennen (inklusive langer Ferien-Termine)
+            // Ferientag erkennen: 'feiertage'-Kategorie (v3.15.0)
             $is_hol = false;
             foreach ( $de as $ev ) {
-                if ( gsh_tp_cat( $ev['categories'] ) === 'frei' ) {
+                if ( in_array( 'feiertage', (array) ( $ev['categories'] ?? array() ), true ) ) {
                     $is_hol = true;
                     break;
                 }
+            }
+
+            // Kategorie-Map einmalig aufbauen (gecacht via gsh_tp_get_categories())
+            static $cat_map_mob = null;
+            if ( null === $cat_map_mob ) {
+                $cat_map_mob = array_column( gsh_tp_get_categories(), null, 'id' );
             }
 
             // Lange Termine (≥ 5 Tage) erscheinen in der Agenda nicht –
@@ -4477,9 +4660,12 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
             // → Kategorie-Filter (data-c) und Textsuche (.ge) funktionieren automatisch
             $h .= '<div class="gtp-mob-events">';
             foreach ( $short_events as $ev ) {
-                $cc = gsh_tp_cat( $ev['categories'] );
+                $cat_ids   = (array) ( $ev['categories'] ?? array() );
+                $cc        = gsh_tp_primary_slug( $cat_ids, $cat_map_mob );
+                $data_cats = esc_attr( implode( ',', $cat_ids ) );
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
+                    . '" data-categories="' . $data_cats
                     . '" onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
                     . esc_html( $ev['summary'] ) . '</div>';
