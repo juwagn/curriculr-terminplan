@@ -89,7 +89,9 @@ def make_anleitung(wb):
         return c
 
     def add_blank(n=1):
-        nrow(n)
+        for _ in range(n):
+            ws.row_dimensions[r[0]].height = 8
+            nrow()
 
     def add_title(text):
         cell(2, text, bold=True, size=18, color='1E3A5F')
@@ -105,7 +107,7 @@ def make_anleitung(wb):
         c = cell(2, text, size=11, color='374151', wrap=True)
         ws.merge_cells(start_row=r[0]-1, start_column=2,
                        end_row=r[0]-1, end_column=3)
-        ws.row_dimensions[r[0]-1].height = 18
+        ws.row_dimensions[r[0]-1].height = None  # Excel-Autofit
 
     def add_step_row(num, title, detail):
         num_c = ws.cell(row=r[0], column=2, value='  ' + str(num) + '.')
@@ -117,7 +119,7 @@ def make_anleitung(wb):
         txt_c.font = Font(name='Calibri', size=11, color='374151')
         txt_c.fill = PatternFill('solid', fgColor='EEF2FF')
         txt_c.alignment = Alignment(vertical='center', wrap_text=True)
-        ws.row_dimensions[r[0]].height = 22
+        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
         nrow()
 
     def add_table_row(v1, v2, v3, is_header=False):
@@ -129,7 +131,7 @@ def make_anleitung(wb):
             c.fill = PatternFill('solid', fgColor=bg)
             c.alignment = Alignment(vertical='top', wrap_text=True)
             c.border = thin_border()
-        ws.row_dimensions[r[0]].height = 18
+        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
         nrow()
 
     def add_warn(text):
@@ -138,7 +140,7 @@ def make_anleitung(wb):
         c.alignment = Alignment(vertical='center', wrap_text=True)
         ws.merge_cells(start_row=r[0], start_column=2,
                        end_row=r[0], end_column=3)
-        ws.row_dimensions[r[0]].height = 20
+        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
         nrow()
 
     # ---- Inhalt ----
@@ -221,7 +223,7 @@ def make_anleitung(wb):
         c3.font = Font(name='Calibri', size=10, color='374151')
         c3.fill = PatternFill('solid', fgColor='FFFFFF')
         c3.border = thin_border()
-        ws.row_dimensions[r[0]].height = 18
+        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
         nrow()
 
     add_blank(2)
