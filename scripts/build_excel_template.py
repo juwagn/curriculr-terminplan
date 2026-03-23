@@ -210,6 +210,10 @@ def make_anleitung(wb):
     add_warn('>> Spalte D wird automatisch berechnet - nicht bearbeiten.')
     add_warn('>> Ferientermine zuerst im Tab "Ferien" eintragen - danach passen sich alle Daten an.')
     add_warn('>> Aenderungen im laufenden Schuljahr: direkt im IServ-Kalender bearbeiten.')
+    add_warn('>> Teilwochen (z. B. nach Pfingstferien): Beginnt die Schule nicht am Mo,'
+             ' trage schulfreie Tage (Mo/Di) als eigene Zeile ein:'
+             ' Wochentag = Mo/Di, Kategorie = Feiertage/Ferien, Ganztaegig = Ja.'
+             ' Danach die normalen Schultermine der Restwoche eintragen.')
     add_blank()
 
     add_section('Verfuegbare Kategorien')
