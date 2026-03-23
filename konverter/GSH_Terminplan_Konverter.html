@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GSH Terminplan → ICS Konverter v1.2</title>
+<title>GSH Terminplan → ICS Konverter v2.0</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -389,6 +389,113 @@
   .export-primary { margin-bottom: 12px; }
   .export-secondary { display: flex; gap: 8px; flex-wrap: wrap; }
 
+  /* ── WordPress-Hinweis in Info-Box ── */
+  .info-box-wp-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 14px; padding: 10px 12px;
+    background: #d1fae5; border-radius: 8px; border: 1px solid #6ee7b7;
+    font-size: .84rem; color: #065f46; line-height: 1.5;
+  }
+  .info-box-wp-note svg { flex-shrink: 0; margin-top: 2px; color: #059669; }
+
+  /* ── Step-Hinweis unter Card-Header ── */
+  .step-hint {
+    font-size: .875rem; color: var(--text-muted);
+    padding: 10px 20px 0; line-height: 1.6;
+  }
+  .step-hint strong { color: var(--text); }
+
+  /* ── Schnellstart-Box ── */
+  .quickstart-box {
+    background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
+    border: 1px solid #c7d2fe; border-radius: var(--radius-lg);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .quickstart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-bottom: 1px solid #c7d2fe;
+  }
+  .quickstart-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .9rem; font-weight: 600; color: #3730a3;
+  }
+  .quickstart-body { padding: 16px 18px; }
+  .quickstart-steps {
+    display: flex; align-items: flex-start; gap: 6px;
+    flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .qs-step {
+    display: flex; align-items: flex-start; gap: 10px;
+    flex: 1; min-width: 160px;
+    background: #fff; border: 1px solid #e0e7ff;
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .qs-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; flex-shrink: 0;
+  }
+  .qs-text { display: flex; flex-direction: column; gap: 3px; }
+  .qs-text strong { font-size: .85rem; color: var(--text); }
+  .qs-text span { font-size: .79rem; color: var(--text-muted); line-height: 1.4; }
+  .qs-arrow {
+    font-size: 1.4rem; color: #a5b4fc;
+    align-self: center; flex-shrink: 0; padding: 0 2px;
+  }
+  .quickstart-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: .82rem; color: #059669;
+    background: #d1fae5; border-radius: 8px; padding: 8px 12px;
+    border: 1px solid #6ee7b7;
+  }
+  .quickstart-hint svg { flex-shrink: 0; margin-top: 1px; }
+  .quickstart-body.hidden { display: none; }
+
+  /* ── Kalenderansicht Modal ── */
+  .modal-wide { max-width: 860px; }
+  .cal-summary {
+    font-size: .85rem; color: var(--text-muted);
+    margin-bottom: 18px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-month { margin-bottom: 24px; }
+  .cal-month-header {
+    font-size: .95rem; font-weight: 700; color: var(--primary);
+    padding: 6px 0 8px; display: flex; align-items: baseline; gap: 10px;
+    border-bottom: 2px solid var(--primary);
+    margin-bottom: 8px;
+  }
+  .cal-month-count {
+    font-size: .76rem; font-weight: 500;
+    background: #e0e7ff; color: var(--primary);
+    padding: 1px 8px; border-radius: 20px;
+  }
+  .cal-event {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 8px; border-radius: 7px;
+    margin-bottom: 4px; font-size: .84rem;
+  }
+  .cal-event:hover { background: #f8fafc; }
+  .cal-date {
+    min-width: 90px; color: var(--text-muted);
+    font-size: .8rem; padding-top: 2px; flex-shrink: 0;
+  }
+  .cal-time {
+    min-width: 70px; color: var(--text-muted);
+    font-size: .8rem; padding-top: 2px; flex-shrink: 0;
+  }
+  .cal-title { flex: 1; color: var(--text); font-weight: 500; }
+  .cal-cat-badge {
+    font-size: .72rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .cal-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-muted); font-size: .9rem;
+  }
+
   /* ── Settings Panel ── */
   .settings-toggle {
     display: flex; align-items: center; justify-content: space-between;
@@ -452,7 +559,7 @@
   </svg>
   <span class="header-title">GSH Terminplan → ICS Konverter</span>
   <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
-  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v1.4</div>
+  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.0</div>
 </div>
 
 <div class="stepper" role="list" aria-label="Workflow-Schritte">
@@ -479,6 +586,56 @@
 
 <div class="main">
 
+  <!-- Schnellstart-Box -->
+  <div class="quickstart-box" id="quickstart-box">
+    <div class="quickstart-header">
+      <div class="quickstart-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        So funktioniert es – Kurzanleitung
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleQuickstart()" id="btn-quickstart-toggle" aria-expanded="true">Ausblenden</button>
+    </div>
+    <div class="quickstart-body" id="quickstart-body">
+      <div class="quickstart-steps">
+        <div class="qs-step">
+          <div class="qs-num">1</div>
+          <div class="qs-text">
+            <strong>Excel befüllen</strong>
+            <span>Ferientermine im Tab „Ferien" eintragen. Dann Schultermine im Tab „Terminplan" eintragen.</span>
+          </div>
+        </div>
+        <div class="qs-arrow" aria-hidden="true">›</div>
+        <div class="qs-step">
+          <div class="qs-num">2</div>
+          <div class="qs-text">
+            <strong>Hier importieren</strong>
+            <span>Excel-Datei in das Feld unten ziehen. Format wird automatisch erkannt.</span>
+          </div>
+        </div>
+        <div class="qs-arrow" aria-hidden="true">›</div>
+        <div class="qs-step">
+          <div class="qs-num">3</div>
+          <div class="qs-text">
+            <strong>Prüfen</strong>
+            <span>Importierte Termine prüfen. Rot markierte Einträge haben fehlende Angaben.</span>
+          </div>
+        </div>
+        <div class="qs-arrow" aria-hidden="true">›</div>
+        <div class="qs-step">
+          <div class="qs-num">4</div>
+          <div class="qs-text">
+            <strong>ICS herunterladen → IServ</strong>
+            <span>ICS-Datei herunterladen und in IServ → Kalender importieren.</span>
+          </div>
+        </div>
+      </div>
+      <p class="quickstart-hint">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        WordPress wird einmalig von der IT eingerichtet und liest den Kalender automatisch – du musst dort nichts tun.
+      </p>
+    </div>
+  </div>
+
   <!-- Settings: Kategorien konfigurieren -->
   <div class="card">
     <div class="card-header settings-toggle" onclick="toggleSettings()">
@@ -493,8 +650,8 @@
     </div>
     <div class="settings-body" id="settings-body">
       <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:16px">
-        Hier können Sie die Kategorien anpassen – Name, Farben und Stichwörter für die automatische Erkennung beim Excel-Import.
-        Der ICS-Wert bestimmt, was im CATEGORIES-Feld der Kalenderdatei steht (muss zum Plugin-Mapping passen).
+        <strong>Normalerweise musst du hier nichts ändern.</strong> Die Kategorien werden beim Excel-Import automatisch erkannt.
+        Nur anpassen, wenn du eigene Kategorien benötigst oder Farben ändern möchtest.
       </p>
       <table class="cat-editor-table" id="cat-editor">
         <thead>
@@ -530,6 +687,7 @@
       </div>
     </div>
     <div class="card-body">
+      <p class="step-hint">Ziehe deine <strong>GSH-Schulwochen-Excel-Datei</strong> in das Feld unten – das Format wird automatisch erkannt. Auch das klassische Terminplan-Format wird unterstützt.</p>
       <div class="dropzone" id="dropzone">
         <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])" aria-label="Excel-Datei auswählen">
         <div class="dropzone-icon">
@@ -561,8 +719,13 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           Alle löschen
         </button>
+        <button class="btn btn-ghost btn-sm" onclick="showCalendarView()" id="btn-calendar" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Kalenderansicht
+        </button>
       </div>
     </div>
+    <p class="step-hint" id="step3-hint" style="display:none">Überprüfe die importierten Termine. <strong>Rot markierte Einträge</strong> haben fehlende Angaben (Titel oder Datum). Kategorie und Zeit können direkt in der Tabelle angepasst werden.</p>
 
     <!-- Filter bar -->
     <div class="filter-bar" id="filter-bar" style="display:none">
@@ -654,16 +817,31 @@
           ICS-Datei in IServ importieren
         </div>
         <ol class="info-steps">
-          <li class="info-step"><div class="info-step-num">1</div><span class="info-step-text">Bei IServ einloggen.</span></li>
-          <li class="info-step"><div class="info-step-num">2</div><span class="info-step-text">Links im Menü auf <strong>Kalender</strong> klicken.</span></li>
-          <li class="info-step"><div class="info-step-num">3</div><span class="info-step-text">Oben rechts auf das <strong>Zahnrad-Symbol</strong> klicken.</span></li>
-          <li class="info-step"><div class="info-step-num">4</div><span class="info-step-text"><strong>„Import"</strong> auswählen.</span></li>
-          <li class="info-step"><div class="info-step-num">5</div><span class="info-step-text"><strong>„Datei auswählen"</strong> und die heruntergeladene <strong>schuljahresterminplan.ics</strong> öffnen.</span></li>
-          <li class="info-step"><div class="info-step-num">6</div><span class="info-step-text">Zielkalender wählen (z.B. „Schuljahresterminplan").</span></li>
-          <li class="info-step"><div class="info-step-num">7</div><span class="info-step-text"><strong>„Importieren"</strong> klicken – fertig!</span></li>
+          <li class="info-step"><div class="info-step-num">1</div><span class="info-step-text">Bei <strong>IServ einloggen</strong> (iserv.gsh-gelsenkirchen.de).</span></li>
+          <li class="info-step"><div class="info-step-num">2</div><span class="info-step-text">Im linken Menü auf <strong>Kalender</strong> klicken.</span></li>
+          <li class="info-step"><div class="info-step-num">3</div><span class="info-step-text">Oben rechts auf das <strong>Zahnrad-Symbol</strong> (Einstellungen) klicken.</span></li>
+          <li class="info-step"><div class="info-step-num">4</div><span class="info-step-text">Im Menü <strong>„Importieren"</strong> auswählen.</span></li>
+          <li class="info-step"><div class="info-step-num">5</div><span class="info-step-text"><strong>„Datei auswählen"</strong> klicken und die heruntergeladene <strong>schuljahresterminplan.ics</strong> aus dem Download-Ordner öffnen.</span></li>
+          <li class="info-step"><div class="info-step-num">6</div><span class="info-step-text">Zielkalender wählen – am besten einen <strong>öffentlichen Schulkalender</strong> (z.B. „Schuljahresterminplan 26/27").</span></li>
+          <li class="info-step"><div class="info-step-num">7</div><span class="info-step-text"><strong>„Importieren"</strong> klicken. Die Termine erscheinen sofort im Kalender.</span></li>
         </ol>
+        <div class="info-box-wp-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span><strong>WordPress</strong> wurde einmalig von der IT eingerichtet und liest den Kalender automatisch – du musst dort nichts tun.</span>
+        </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Kalenderansicht Modal -->
+<div class="modal-overlay" id="modal-calendar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h3 id="cal-modal-title">Kalenderansicht</h3>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-calendar').classList.remove('open')">✕ Schließen</button>
+    </div>
+    <div class="modal-body" id="cal-modal-body"></div>
   </div>
 </div>
 
@@ -686,6 +864,15 @@
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-changelog').classList.remove('open')">✕ Schließen</button>
     </div>
     <div class="modal-body changelog">
+      <h4>Version 2.0 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
+      <ul>
+        <li><span class="tag tag-new">NEU</span> Schnellstart-Box: Kurzanleitung mit 4-Schritt-Ablauf direkt im Tool (ein-/ausblendbar)</li>
+        <li><span class="tag tag-new">NEU</span> Kalenderansicht: Importierte Termine nach Monat gruppiert mit Kategorie-Farben anzeigen</li>
+        <li><span class="tag tag-improve">BESSER</span> Verfahrensanweisungen in jedem Schritt – klare Hinweistexte was zu tun ist</li>
+        <li><span class="tag tag-improve">BESSER</span> IServ-Anleitung: präzisere Schritttexte und WordPress-Hinweis (IT richtet einmalig ein)</li>
+        <li><span class="tag tag-fix">FIX</span> Ferien-Import: Schuljahres-Info-Zeilen (Erster/Letzter Schultag) werden nicht mehr als Ferien importiert</li>
+        <li><span class="tag tag-improve">BESSER</span> Excel-Vorlage: Anleitung-Tab, ausgeblendete Hilfsspalten, Dropdowns für Wochentag/Kategorie/Ganztägig</li>
+      </ul>
       <h4>Version 1.4 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
       <ul>
         <li><span class="tag tag-improve">BESSER</span> Modernes Indigo-Design: frische Farbpalette, Fira-Sans-Typografie, einheitliche SVG-Icons</li>
@@ -694,6 +881,11 @@
         <li><span class="tag tag-improve">BESSER</span> Export-Hierarchie: großer grüner ICS-Button als Primär-CTA, Vorschau/Excel/Vorlage als Sekundär-Buttons</li>
         <li><span class="tag tag-improve">BESSER</span> IServ-Importanleitung: nummerierte Schritte mit Indigo-Kreisen statt Textblock</li>
         <li><span class="tag tag-improve">BESSER</span> Barrierefreiheit: <code style="font-size:.75rem">prefers-reduced-motion</code>, <code style="font-size:.75rem">focus-visible</code>, alle Dekorations-SVGs mit <code style="font-size:.75rem">aria-hidden</code></li>
+      </ul>
+      <h4>Version 1.3.1 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
+      <ul>
+        <li><span class="tag tag-fix">FIX</span> Schulwochen-Import: Neues Excel-Format (SW-Key in jeder Zeile, 11 Spalten) korrekt importiert – vorher wurden nur ~10 Termine erkannt</li>
+        <li><span class="tag tag-fix">FIX</span> Ferien-Import: Ferien aus dem separaten „Ferien"-Sheet des neuen Formats werden automatisch eingelesen</li>
       </ul>
       <h4>Version 1.3 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
       <ul>
@@ -1000,8 +1192,9 @@ function addDaysISO(dateStr, days) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-// Erkennt Schulwochen-Format: Spalte 0 enthält "SW XX" oder "FERIEN"
+// Erkennt Schulwochen-Format: Spalte 0 enthält "SW XX" oder "FERIEN" oder "SW-Key" (neues Format)
 function detectSWFormat(rows) {
+  if (String(rows[0]?.[0] || '').trim() === 'SW-Key') return true;
   for (let i = 0; i < Math.min(rows.length, 30); i++) {
     const col0 = String(rows[i]?.[0] || '').trim();
     if (/^SW\s*\d/i.test(col0)) return true;
@@ -1009,70 +1202,119 @@ function detectSWFormat(rows) {
   return false;
 }
 
-// Importiert Schulwochen-Format: SW-Kopfzeilen + Ereigniszeilen + FERIEN-Blöcke
-function importSWFormat(rows) {
+// Importiert Schulwochen-Format.
+// Neues Format (Kopfzeile hat "SW-Key"): jede Zeile hat A=SW-Key, B=Montag-ISO,
+//   E=Wochentag, F=Uhrzeit, G=Endzeit, H=Titel, I=Kategorie, J=Ganztägig (Ja/Nein), K=Anmerkung
+// Altes Format: SW-Kopfzeile (A="SW XX", B=Montag) + Event-Zeilen (A=leer)
+// ferienRows: optionale Zeilen aus dem Ferien-Sheet (neues Format)
+function importSWFormat(rows, ferienRows) {
   clearAllSilent();
   let imported = 0, skipped = 0;
   const catCounts = {};
-  const weekdayOffset = { 'Mo': 0, 'Di': 1, 'Mi': 2, 'Do': 3, 'Fr': 4, 'Ganze Woche': 0 };
+  const weekdayOffset = { 'Mo': 0, 'Di': 1, 'Mi': 2, 'Do': 3, 'Fr': 4 };
 
-  let currentMonday = null; // ISO "YYYY-MM-DD" des Montags der aktuellen SW
+  // Neues Format erkennen: Kopfzeile enthält "SW-Key" in Spalte A
+  const isNewFormat = String(rows[0]?.[0] || '').trim() === 'SW-Key';
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i] || [];
-    const col0 = String(row[0] || '').trim();
-
-    // Kopfzeile der Tabelle ("SW", "Wochentag" …) überspringen
-    if (/^SW$/i.test(col0)) continue;
-
-    // SW-Kopfzeile: "SW 01", "SW 00" usw.
-    if (/^SW\s*\d/i.test(col0)) {
-      const mondayRaw = String(row[1] || '').trim();
-      currentMonday = parseImportDate(mondayRaw) || currentMonday;
-      continue;
-    }
-
-    // FERIEN-Block: Spalte A="FERIEN", B=Start-ISO, D=Anzeigestring, H=Name
-    if (col0.toUpperCase() === 'FERIEN') {
-      const startDate = parseImportDate(String(row[1] || '').trim());
-      // Enddatum aus Anzeigestring (D=index 3) extrahieren: "13.10.2025 – 24.10.2025"
-      let endDate = null;
-      const dispStr = String(row[3] || '');
-      const dateMatches = dispStr.match(/\d{1,2}\.\d{1,2}\.\d{4}/g);
-      if (dateMatches && dateMatches.length >= 2) endDate = parseImportDate(dateMatches[1]);
-      // Name: bevorzugt Spalte H (Titel-Spalte = index 7), Fallback Spalte D
-      const name = String(row[7] || row[3] || 'Ferien').trim();
-      if (startDate && name) {
-        const cat = matchCategory('Feiertage/Ferien');
-        addRow({ title: name, start: startDate, end: endDate || startDate, cat, allday: true });
-        imported++;
-        catCounts[cat || 'Ferien'] = (catCounts[cat || 'Ferien'] || 0) + 1;
-      }
-      continue;
-    }
-
-    // Ereigniszeile: Spalte 0 leer, currentMonday bekannt
-    if (!col0 && currentMonday) {
-      const wochentag = String(row[1] || '').trim();
-      const uhrzeit   = parseImportTime(String(row[2] || '').trim());
-      const endzeit   = parseImportTime(String(row[3] || '').trim());
-      const title     = String(row[4] || '').trim();
-      const catRaw    = String(row[5] || '').trim();
-      const ganztaeg  = String(row[6] || '').trim().toLowerCase() === 'x';
-      const note      = String(row[7] || '').trim();
-
+  if (isNewFormat) {
+    // Neues Format: ab Zeile 1 (Zeile 0 = Kopfzeile überspringen)
+    // Ereigniszeile = Zeile mit nicht-leerem Titel in Spalte H (Index 7)
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i] || [];
+      const title = String(row[7] || '').trim();
       if (!title) { skipped++; continue; }
 
+      const monday = parseImportDate(String(row[1] || '').trim());
+      if (!monday) { skipped++; continue; }
+
+      const wochentag = String(row[4] || '').trim();
+      const uhrzeit   = parseImportTime(String(row[5] || '').trim());
+      const endzeit   = parseImportTime(String(row[6] || '').trim());
+      const catRaw    = String(row[8] || '').trim();
+      const ganztaeg  = String(row[9] || '').trim().toLowerCase() === 'ja';
+      const note      = String(row[10] || '').trim();
+
       const offset    = weekdayOffset[wochentag];
-      const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
-      const isGanzWoche = wochentag === 'Ganze Woche';
-      const endDate   = isGanzWoche ? addDaysISO(currentMonday, 4) : (endzeit ? eventDate : '');
+      const eventDate = (offset !== undefined) ? addDaysISO(monday, offset) : monday;
+      const isGanzWoche = !wochentag || wochentag === 'Ganze Woche';
+      const endDate   = isGanzWoche ? addDaysISO(monday, 4) : (endzeit ? eventDate : '');
       const allday    = ganztaeg || (!uhrzeit && !endzeit);
       const cat       = catRaw ? matchCategory(catRaw) : '';
 
       addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
       imported++;
       catCounts[cat || 'Ohne Kategorie'] = (catCounts[cat || 'Ohne Kategorie'] || 0) + 1;
+    }
+
+    // Ferien-Sheet importieren (neues Format: Spalte A=Name, B=Von, C=Bis)
+    // Schleife endet bei der ersten leeren Zeile, um Info-Zeilen (Erster/Letzter Schultag) zu ignorieren
+    if (ferienRows && ferienRows.length > 2) {
+      for (let i = 2; i < ferienRows.length; i++) {
+        const row = ferienRows[i] || [];
+        const name = String(row[0] || '').trim();
+        const startDate = parseImportDate(String(row[1] || '').trim());
+        if (!name || !startDate) break; // Erste leere Zeile = Ende der Ferieneintraege
+        const endDate = parseImportDate(String(row[2] || '').trim()) || startDate;
+        const cat = matchCategory('Feiertage/Ferien');
+        addRow({ title: name, start: startDate, end: endDate, cat, allday: true });
+        imported++;
+        catCounts[cat || 'Ferien'] = (catCounts[cat || 'Ferien'] || 0) + 1;
+      }
+    }
+  } else {
+    // Altes Format: SW-Kopfzeilen (A="SW XX") + Event-Zeilen (A=leer) + FERIEN-Blöcke
+    let currentMonday = null;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] || [];
+      const col0 = String(row[0] || '').trim();
+
+      if (/^SW$/i.test(col0)) continue;
+
+      if (/^SW\s*\d/i.test(col0)) {
+        const mondayRaw = String(row[1] || '').trim();
+        currentMonday = parseImportDate(mondayRaw) || currentMonday;
+        continue;
+      }
+
+      if (col0.toUpperCase() === 'FERIEN') {
+        const startDate = parseImportDate(String(row[1] || '').trim());
+        let endDate = null;
+        const dispStr = String(row[3] || '');
+        const dateMatches = dispStr.match(/\d{1,2}\.\d{1,2}\.\d{4}/g);
+        if (dateMatches && dateMatches.length >= 2) endDate = parseImportDate(dateMatches[1]);
+        const name = String(row[7] || row[3] || 'Ferien').trim();
+        if (startDate && name) {
+          const cat = matchCategory('Feiertage/Ferien');
+          addRow({ title: name, start: startDate, end: endDate || startDate, cat, allday: true });
+          imported++;
+          catCounts[cat || 'Ferien'] = (catCounts[cat || 'Ferien'] || 0) + 1;
+        }
+        continue;
+      }
+
+      if (!col0 && currentMonday) {
+        const wochentag = String(row[1] || '').trim();
+        const uhrzeit   = parseImportTime(String(row[2] || '').trim());
+        const endzeit   = parseImportTime(String(row[3] || '').trim());
+        const title     = String(row[4] || '').trim();
+        const catRaw    = String(row[5] || '').trim();
+        const ganztaeg  = String(row[6] || '').trim().toLowerCase() === 'x';
+        const note      = String(row[7] || '').trim();
+
+        if (!title) { skipped++; continue; }
+
+        const offset    = weekdayOffset[wochentag];
+        const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
+        const isGanzWoche = wochentag === 'Ganze Woche';
+        const endDate   = isGanzWoche ? addDaysISO(currentMonday, 4) : (endzeit ? eventDate : '');
+        const allday    = ganztaeg || (!uhrzeit && !endzeit);
+        const cat       = catRaw ? matchCategory(catRaw) : '';
+
+        addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
+        imported++;
+        catCounts[cat || 'Ohne Kategorie'] = (catCounts[cat || 'Ohne Kategorie'] || 0) + 1;
+      }
     }
   }
 
@@ -1100,7 +1342,12 @@ function handleFile(file) {
 
       // Schulwochen-Format automatisch erkennen und separat importieren
       if (detectSWFormat(rows)) {
-        const { imported, skipped, catCounts } = importSWFormat(rows);
+        // Ferien-Sheet für neues Format übergeben (falls vorhanden)
+        const ferienWs = wb.Sheets['Ferien'];
+        const ferienRows = ferienWs
+          ? XLSX.utils.sheet_to_json(ferienWs, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' })
+          : [];
+        const { imported, skipped, catCounts } = importSWFormat(rows, ferienRows);
         let html = `<p style="font-size:1.1rem;margin-bottom:8px"><strong>${imported}</strong> Termine aus Schulwochen-Vorlage importiert</p>`;
         if (skipped > 0) html += `<p style="color:var(--text-muted);margin-bottom:12px">${skipped} leere Zeile(n) übersprungen</p>`;
         html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
@@ -1521,7 +1768,106 @@ function updateStats() {
   document.getElementById('btn-export').disabled = !canExport;
   document.getElementById('btn-preview').disabled = !canExport;
   document.getElementById('btn-excel').disabled = !canExport;
+  document.getElementById('btn-calendar').disabled = !canExport;
+  // Step-3-Hinweis einblenden sobald Daten vorhanden
+  const hint3 = document.getElementById('step3-hint');
+  if (hint3) hint3.style.display = canExport ? '' : 'none';
   updateStepper();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCHNELLSTART-BOX
+// ═══════════════════════════════════════════════════════════
+function toggleQuickstart() {
+  const body = document.getElementById('quickstart-body');
+  const btn  = document.getElementById('btn-quickstart-toggle');
+  const hidden = body.classList.toggle('hidden');
+  btn.textContent = hidden ? 'Einblenden' : 'Ausblenden';
+  btn.setAttribute('aria-expanded', String(!hidden));
+}
+
+// ═══════════════════════════════════════════════════════════
+// KALENDERANSICHT
+// ═══════════════════════════════════════════════════════════
+function showCalendarView() {
+  const rows = getValidRows();
+  const titleEl = document.getElementById('cal-modal-title');
+  const bodyEl  = document.getElementById('cal-modal-body');
+
+  if (!rows.length) {
+    bodyEl.innerHTML = '<div class="cal-empty">Noch keine gültigen Termine vorhanden.</div>';
+    document.getElementById('modal-calendar').classList.add('open');
+    return;
+  }
+
+  // Sortieren nach Datum
+  const sorted = [...rows].sort((a, b) => {
+    const da = (a.start || '9999') + (a.startTime || '00:00');
+    const db = (b.start || '9999') + (b.startTime || '00:00');
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
+
+  // Nach Monat (YYYY-MM) gruppieren
+  const months = {};
+  const monthNames = ['Januar','Februar','März','April','Mai','Juni',
+                      'Juli','August','September','Oktober','November','Dezember'];
+  const dayNames = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+  sorted.forEach(r => {
+    if (!r.start) return;
+    const key = r.start.slice(0, 7); // YYYY-MM
+    if (!months[key]) months[key] = [];
+    months[key].push(r);
+  });
+
+  // HTML bauen
+  let html = `<div class="cal-summary">${rows.length} Termine in ${Object.keys(months).length} Monaten</div>`;
+
+  Object.entries(months).forEach(([key, events]) => {
+    const [y, m] = key.split('-').map(Number);
+    const monthLabel = monthNames[m - 1] + ' ' + y;
+    html += `<div class="cal-month">`;
+    html += `<div class="cal-month-header">${monthLabel}<span class="cal-month-count">${events.length} Termine</span></div>`;
+
+    events.forEach(r => {
+      // Datum formatieren
+      const d = new Date(r.start + 'T12:00:00');
+      const dayName = dayNames[d.getDay()];
+      const dateStr = dayName + ' ' + String(d.getDate()).padStart(2,'0') + '.' + String(m).padStart(2,'0') + '.';
+      // Zeit
+      const timeStr = r.allday ? 'ganztägig' : (r.startTime || '') + (r.endTime ? '–' + r.endTime : '');
+      // Kategorie-Badge
+      const catBg  = getCatBg(r.cat);
+      const catFg  = getCatFg(r.cat);
+      const catBadge = r.cat
+        ? `<span class="cal-cat-badge" style="background:${catBg};color:${catFg}">${esc(r.cat)}</span>`
+        : '';
+      html += `<div class="cal-event">`;
+      html += `<span class="cal-date">${esc(dateStr)}</span>`;
+      html += `<span class="cal-time">${esc(timeStr)}</span>`;
+      html += `<span class="cal-title">${esc(r.title)}</span>`;
+      html += catBadge;
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  titleEl.textContent = `Kalenderansicht – ${rows.length} Termine`;
+  bodyEl.innerHTML = html;
+  document.getElementById('modal-calendar').classList.add('open');
+}
+
+// Hilfsfunktionen: Kategorie-Farben aus der konfigurierten Kategorieliste lesen
+function getCatBg(label) {
+  if (!label) return '#f3f4f6';
+  const cat = categories.find(c => c.label === label);
+  return cat ? cat.bg : '#f3f4f6';
+}
+function getCatFg(label) {
+  if (!label) return '#374151';
+  const cat = categories.find(c => c.label === label);
+  return cat ? cat.text : '#374151';
 }
 
 // ═══════════════════════════════════════════════════════════
