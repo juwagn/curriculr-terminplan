@@ -64,6 +64,10 @@ def h_fill(hex_color):
 # Anleitung-Sheet
 # ---------------------------------------------------------------------------
 def make_anleitung(wb):
+    # Entferne existierende "Anleitung"-Sheets (verhindert Duplikate)
+    while 'Anleitung' in wb.sheetnames:
+        del wb['Anleitung']
+
     ws = wb.create_sheet('Anleitung', 0)
     ws.sheet_properties.tabColor = C_GREEN_TAB
     ws.sheet_view.showGridLines = False
