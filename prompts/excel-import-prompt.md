@@ -1,7 +1,6 @@
 # Claude Import-Prompt: Word-Datei → Excel-Vorlage
 
-Diesen Prompt in ein neues Claude-Gespräch einfügen und die Word-Datei anhängen
-(oder den Dateinamen im letzten Abschnitt anpassen).
+Diesen Prompt in ein neues Claude-Gespräch einfügen und beide Dateien anhängen.
 
 ---
 
@@ -9,26 +8,23 @@ Ich habe eine Word-Datei mit der Terminplanung für das Schuljahr und möchte al
 Termine in die Excel-Vorlage `Terminplan_Schulwochen_Vorlage.xlsx` übertragen.
 Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 
-## Aufgabe
-
-1. **Word-Datei lesen** – extrahiere alle Termine mit Datum, Titel und ggf. Uhrzeit
-2. **Excel-Vorlage füllen** – trage jeden Termin in die richtige Schulwoche ein
+**Wichtig: Vollständigkeit hat oberste Priorität. Kein Termin darf verloren gehen.**
 
 ## Struktur der Excel-Vorlage
 
-**Sheet „Terminplan"** – Spalten (A–C sind ausgeblendet, nicht anfassen):
+**Sheet „Terminplan"** – Spalten:
 
-| Spalte | Inhalt | Werte |
-|--------|--------|-------|
-| A | SW-Key (ausgeblendet) | `SW 00` … `SW 41` – nie überschreiben |
-| **B** | **Montag-ISO** | ISO-Datum des Montags der Schulwoche (`YYYY-MM-DD`, echter Textwert). In JEDE Zeile schreiben (SW-Header UND Datenzeilen). Kein Formelverweis (`=Ferien!…`). |
-| C | (ausgeblendet) | – |
-| D | Schulwoche | – |
-| **E** | **Wochentag** | Dropdown: `Mo` / `Di` / `Mi` / `Do` / `Fr` / `Ganze Woche` |
-| **F** | **Uhrzeit** | Format: `08:30` – leer lassen wenn ganztägig |
-| **G** | **Endzeit** | Format: `14:30` – leer lassen wenn ganztägig |
+| Spalte | Inhalt | Hinweis |
+|--------|--------|---------|
+| A | SW-Key | `SW 00` … `SW 41` – nie überschreiben |
+| **B** | **Montag-ISO** | ISO-Datum des Montags (`YYYY-MM-DD`, echter Textwert). In JEDE Zeile schreiben (SW-Header UND Datenzeilen). Kein `=Ferien!…`-Formelverweis. |
+| C | (intern) | nie beschreiben |
+| D | Schulwoche | nie beschreiben |
+| **E** | **Wochentag** | `Mo` / `Di` / `Mi` / `Do` / `Fr` / `Ganze Woche` |
+| **F** | **Uhrzeit** | `08:30` – leer wenn ganztägig |
+| **G** | **Endzeit** | `14:30` – leer wenn ganztägig |
 | **H** | **Titel / Veranstaltung** | Freitext |
-| **I** | **Kategorie** | Dropdown – exakt einer der 7 Werte (s. u.) |
+| **I** | **Kategorie** | exakt einer der 7 Werte (s. u.) |
 | **J** | **Ganztägig** | `Ja` oder `Nein` |
 | **K** | **Anmerkung** | Freitext (optional) |
 
@@ -41,54 +37,167 @@ Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 - `Feiertage/Ferien` — Ferien, Feiertage, schulfreie Tage
 - `Konferenzen/DB` — Lehrerkonferenz, FaKo, Teamgespräche
 
+---
+
 ## Vorgehen
 
-**Schritt 1 – Word-Datei analysieren:**
-Liste alle Termine im Format:
+### Schritt 1 – Word-Datei analysieren
+
+Extrahiere alle Termine und nummeriere sie fortlaufend:
+
 ```
-Datum | Titel | Uhrzeit (falls vorhanden) | geschätzte Kategorie
+#001 | 25.08.2026 | Stehkaffee für alle LuL           | Konferenzen/DB
+#002 | 26.08.2026 | Einführungstag EF                  | Oberstufe
+...
 ```
 
-**Schritt 2 – Excel-Struktur verstehen:**
-Öffne die Excel-Vorlage mit openpyxl und lies:
-- Spalte A: identifiziere SW-Header-Zeilen (`a_val.startswith('SW ')`)
-- Spalte B (versteckt): Montags-Datum der jeweiligen Schulwoche
-- Notiere: Zeile → SW-Key → Montags-Datum → erste freie Datenzeile darunter
+Gib die vollständige Liste aus. Diese Zahl ist deine Kontrollgröße.
 
-**Schritt 3 – Termine einordnen:**
-Ordne jeden Termin der richtigen Schulwoche zu:
-- Termin-Datum liegt in der Woche `[Montag, Montag+6]` → diese Schulwoche
-- Wochentag: `datetime.weekday()` → 0=Mo, 1=Di, 2=Mi, 3=Do, 4=Fr
-- Bei Ferien/Feiertagen die gesamte Woche mit `Ganze Woche` eintragen
+### Schritt 2 – Schulmontage berechnen
+
+**Lies Spalte B der Vorlage NICHT** – dort stehen Excel-Formeln, die Python nicht auswerten kann.
+Berechne stattdessen alle Schulmontage selbst:
+
+```python
+from datetime import date, timedelta
+import openpyxl
+
+wb = openpyxl.load_workbook('Terminplan_Schulwochen_Vorlage.xlsx')
+ws_ferien = wb['Ferien']
+
+# Erster Schultag (SW 00) aus B10
+schuljahr_start = ws_ferien.cell(10, 2).value
+if hasattr(schuljahr_start, 'date'):
+    schuljahr_start = schuljahr_start.date()
+
+# Ferienperioden aus B3:C7
+ferien = []
+for r in range(3, 8):
+    von = ws_ferien.cell(r, 2).value
+    bis = ws_ferien.cell(r, 3).value
+    if von and bis:
+        ferien.append((von.date() if hasattr(von,'date') else von,
+                       bis.date() if hasattr(bis,'date') else bis))
+
+def ist_ferien(monday):
+    return any(von <= monday <= bis for von, bis in ferien)
+
+# 42 Schulmontage (SW 00–41) berechnen
+mondays = []
+current = schuljahr_start
+while len(mondays) < 42:
+    if not ist_ferien(current):
+        mondays.append(current)
+    current += timedelta(weeks=1)
+
+# Ergebnis: mondays[0] = SW 00, mondays[1] = SW 01, ...
+```
+
+Gib aus: `SW 00 = YYYY-MM-DD … SW 41 = YYYY-MM-DD`
+
+### Schritt 3 – Termine einordnen
+
+Ordne jeden nummerierten Termin der richtigen Schulwoche zu:
+
+```python
+def finde_schulwoche(termin_datum, mondays):
+    for i, monday in enumerate(mondays):
+        if monday <= termin_datum <= monday + timedelta(days=6):
+            return i, monday
+    return None, None  # außerhalb des Schuljahres
+```
+
+- Wochentag: `termin_datum.weekday()` → 0=Mo, 1=Di, 2=Mi, 3=Do, 4=Fr
+- Ferien/Feiertage ganzer Wochen: Wochentag = `Ganze Woche`, Ganztägig = `Ja`
+- Termine außerhalb aller Schulwochen: merken für den Abschlussbericht
 
 **Teilwochen** (Schule beginnt nicht am Montag, z. B. nach Pfingstferien):
-Jeden schulfreien Tag zu Beginn der Woche als eigene Zeile eintragen:
-Wochentag = `Mo` / `Di`, Titel = `schulfrei`, Kategorie = `Feiertage/Ferien`,
-Ganztägig = `Ja`. Danach normal weitermachen mit den Schulterminen der Restwoche.
+Jeden schulfreien Wochentag am Wochenanfang als eigene Zeile:
+Wochentag = `Mo` / `Di`, Titel = `schulfrei`, Kategorie = `Feiertage/Ferien`, Ganztägig = `Ja`.
 
-**Schritt 4 – Eintragen:**
-Für jeden Termin die nächste freie Datenzeile in der Zielschulwoche füllen:
+### Schritt 4 – Eintragen
+
+Für jede Schulwoche die freien Datenzeilen (A leer, H leer) füllen:
+
 ```python
-ws.cell(row=target_row, column=2).value  = monday_iso  # B: "YYYY-MM-DD" des Montags (Textwert)
-ws.cell(row=target_row, column=5).value  = wochentag   # E
-ws.cell(row=target_row, column=6).value  = uhrzeit     # F (oder None)
-ws.cell(row=target_row, column=7).value  = endzeit     # G (oder None)
-ws.cell(row=target_row, column=8).value  = titel       # H
-ws.cell(row=target_row, column=9).value  = kategorie   # I
-ws.cell(row=target_row, column=10).value = ganztaegig  # J ("Ja"/"Nein")
+ws = wb['Terminplan']
+
+# SW-Header-Zeilen und freie Datenzeilen pro SW aufbauen
+sw_rows = {}  # sw_num -> [erste_freie_zeile, zweite_freie_zeile, ...]
+current_sw = None
+free_rows = []
+for row in range(2, ws.max_row + 1):
+    a = ws.cell(row, 1).value
+    h = ws.cell(row, 8).value
+    if a and str(a).startswith('SW '):
+        if current_sw is not None:
+            sw_rows[current_sw] = free_rows
+        current_sw = int(str(a).split()[1])
+        free_rows = []
+    elif current_sw is not None and not h:
+        free_rows.append(row)
+if current_sw is not None:
+    sw_rows[current_sw] = free_rows
+
+# Eintragen
+nicht_eingetragen = []
+for termin in termine:
+    sw_num, monday = finde_schulwoche(termin.datum, mondays)
+    if sw_num is None:
+        nicht_eingetragen.append((termin.nr, termin.titel, 'außerhalb Schuljahr'))
+        continue
+    if not sw_rows.get(sw_num):
+        nicht_eingetragen.append((termin.nr, termin.titel, f'SW {sw_num:02d} voll'))
+        continue
+    target_row = sw_rows[sw_num].pop(0)
+    ws.cell(target_row, 2).value  = monday.isoformat()   # B
+    ws.cell(target_row, 5).value  = termin.wochentag     # E
+    ws.cell(target_row, 6).value  = termin.uhrzeit       # F
+    ws.cell(target_row, 7).value  = termin.endzeit       # G
+    ws.cell(target_row, 8).value  = termin.titel         # H
+    ws.cell(target_row, 9).value  = termin.kategorie     # I
+    ws.cell(target_row, 10).value = termin.ganztaegig    # J
+    ws.cell(target_row, 11).value = termin.anmerkung     # K
 ```
 
-**Wichtig:**
-- SW-Header-Zeilen (Spalte A = `SW XX`) nie überschreiben
-- Schreibe **B** mit dem Montag-ISO-Datum (`YYYY-MM-DD`, echter Textwert — kein `=Ferien!…`-Formelverweis), **E–K** mit den Termindaten. Spalten A, C, D niemals beschreiben.
-- Ferien müssen trotzdem im Terminplan-Sheet eingetragen werden (für den Export)
-- Wenn mehr Termine als freie Zeilen: sag mir welche Termine nicht passen
+**Spalten A, C, D niemals beschreiben.**
 
-**Schritt 5 – Speichern & Bericht:**
-Speichere als `Terminplan_SCHULJAHR.xlsx` und liste:
-- Anzahl eingetragener Termine
-- Zugeordnete Kategorien (zur Kontrolle)
-- Nicht zuordenbare Termine (falls vorhanden)
+### Schritt 5 – Vollständigkeitsprüfung
+
+```python
+# Prüfen: wie viele Zeilen mit Titel wurden tatsächlich geschrieben?
+eingetragen = sum(1 for row in range(2, ws.max_row+1) if ws.cell(row,8).value)
+```
+
+Berichte:
+- Termine aus Word-Datei: **N**
+- Davon eingetragen: **M**
+- Nicht eingetragen (mit Grund): vollständige Liste
+
+Wenn `M < N`: Untersuche die Differenz und behebe sie bevor du speicherst.
+
+### Schritt 6 – Speichern
+
+```python
+wb.save('Terminplan_2026_27.xlsx')
+```
+
+---
+
+## Abschlussbericht (Pflicht)
+
+```
+Termine in Word-Datei:    XXX
+Erfolgreich eingetragen:  XXX
+Nicht eingetragen:          X
+  - #042 | 15.04.2027 | ... | Grund: SW 24 voll (16/15 Zeilen)
+  - #107 | ...
+
+Kategorien:
+  Konferenzen/DB:    XX
+  Oberstufe:         XX
+  ...
+```
 
 ---
 
