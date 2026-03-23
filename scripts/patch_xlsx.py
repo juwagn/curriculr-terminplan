@@ -23,7 +23,7 @@ from datetime import datetime
 XLSX_PATH = 'website/downloads/Terminplan_Schulwochen_Vorlage.xlsx'
 
 # Hilfstabelle im Ferien-Blatt: Spalten E (Label) und F (Datum)
-# F15 = SW 00, F16 = SW 01, …, F55 = SW 40
+# F15 = SW 00, F16 = SW 01, …, F56 = SW 41
 HELPER_HEADER_ROW = 14
 HELPER_START_ROW  = 15   # SW 00
 HELPER_COL_LABEL  = 5    # Spalte E
