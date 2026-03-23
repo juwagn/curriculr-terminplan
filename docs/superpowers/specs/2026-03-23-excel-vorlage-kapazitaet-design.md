@@ -67,7 +67,7 @@ Effekt: Ferien-Hilfstabelle erhält Eintrag F56 für SW 41, und die Terminplan-F
 
 ### Fix 3 – `build_excel_template.py`: Teilwoche-Hinweis in Anleitung
 
-Neuer `add_warn()`-Block im Anleitung-Tab nach dem bestehenden Schritt-5-Abschnitt (Kategorie):
+Neuer `add_warn()`-Block im Anleitung-Tab im bestehenden „Wichtige Hinweise"-Abschnitt (dort sind bereits alle `add_warn()`-Aufrufe gesammelt, ca. Zeile 208–212 – nach den bestehenden Warn-Blöcken anfügen):
 
 > **Teilwochen (z. B. nach Pfingstferien):** Beginnt die Schule nicht am Montag, trägt diese Woche dennoch eine eigene SW-Zeile. Schulfreie Tage zu Beginn (Mo/Di) als eigene Zeile eintragen: Wochentag = `Mo`/`Di`, Kategorie = `Feiertage/Ferien`, Ganztägig = `Ja`. Danach die normalen Schultermine der restlichen Tage.
 
