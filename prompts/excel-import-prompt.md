@@ -123,32 +123,51 @@ Für jede Schulwoche die freien Datenzeilen (A leer, H leer) füllen:
 ws = wb['Terminplan']
 
 # SW-Header-Zeilen und freie Datenzeilen pro SW aufbauen
-sw_rows = {}  # sw_num -> [erste_freie_zeile, zweite_freie_zeile, ...]
-current_sw = None
-free_rows = []
+sw_rows       = {}  # sw_num -> [freie Zeilennummern]
+sw_last_row   = {}  # sw_num -> letzte Datenzeile des SW-Blocks
+current_sw    = None
+free_rows     = []
+last_row_seen = None
+
 for row in range(2, ws.max_row + 1):
     a = ws.cell(row, 1).value
     h = ws.cell(row, 8).value
     if a and str(a).startswith('SW '):
         if current_sw is not None:
-            sw_rows[current_sw] = free_rows
-        current_sw = int(str(a).split()[1])
-        free_rows = []
-    elif current_sw is not None and not h:
-        free_rows.append(row)
+            sw_rows[current_sw]     = free_rows
+            sw_last_row[current_sw] = last_row_seen
+        current_sw    = int(str(a).split()[1])
+        free_rows     = []
+        last_row_seen = row
+    elif current_sw is not None:
+        last_row_seen = row
+        if not h:
+            free_rows.append(row)
 if current_sw is not None:
-    sw_rows[current_sw] = free_rows
+    sw_rows[current_sw]     = free_rows
+    sw_last_row[current_sw] = last_row_seen
 
-# Eintragen
+# Eintragen – bei vollem SW Zeile einfügen statt Termin weglassen
 nicht_eingetragen = []
+rows_inserted     = 0  # Offset durch eingefügte Zeilen mitführen
+
 for termin in termine:
     sw_num, monday = finde_schulwoche(termin.datum, mondays)
     if sw_num is None:
         nicht_eingetragen.append((termin.nr, termin.titel, 'außerhalb Schuljahr'))
         continue
     if not sw_rows.get(sw_num):
-        nicht_eingetragen.append((termin.nr, termin.titel, f'SW {sw_num:02d} voll'))
-        continue
+        # Neue Zeile nach dem letzten Datenblock dieses SW einfügen
+        insert_at = sw_last_row[sw_num] + 1
+        ws.insert_rows(insert_at)
+        rows_inserted += 1
+        # Alle nachfolgenden SW-Referenzen um 1 verschieben
+        for n in range(sw_num + 1, 42):
+            if n in sw_last_row:
+                sw_last_row[n] += 1
+            sw_rows[n] = [r + 1 for r in sw_rows.get(n, [])]
+        sw_last_row[sw_num] = insert_at
+        sw_rows[sw_num]     = [insert_at]
     target_row = sw_rows[sw_num].pop(0)
     ws.cell(target_row, 2).value  = monday.isoformat()   # B
     ws.cell(target_row, 5).value  = termin.wochentag     # E
@@ -188,9 +207,9 @@ wb.save('GSH_Terminplan_2026_27.xlsx')
 
 ```
 Termine in Word-Datei:    XXX
-Erfolgreich eingetragen:  XXX
+Erfolgreich eingetragen:  XXX  (davon X in eingefügten Zusatzzeilen)
 Nicht eingetragen:          X
-  - #042 | 15.04.2027 | ... | Grund: SW 24 voll (16/15 Zeilen)
+  - #042 | 15.04.2027 | ... | Grund: außerhalb Schuljahr
   - #107 | ...
 
 Kategorien:
