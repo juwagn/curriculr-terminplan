@@ -1337,7 +1337,9 @@ function handleFile(file) {
   reader.onload = e => {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      // "Terminplan"-Sheet by name suchen, Fallback auf erstes Sheet
+      const sheetName = wb.SheetNames.find(n => n.toLowerCase() === 'terminplan') ?? wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
 
       // Schulwochen-Format automatisch erkennen und separat importieren

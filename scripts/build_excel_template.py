@@ -441,10 +441,18 @@ def main():
     print('Style Kategorien-Sheet + Named Range ...')
     style_kategorien(wb)
 
+    # Sheet-Reihenfolge: Terminplan zuerst (Konverter liest SheetNames[0] als Fallback)
+    desired_order = ['Terminplan', 'Ferien', 'Kategorien', 'Anleitung']
+    for idx, name in enumerate(desired_order):
+        if name in wb.sheetnames:
+            current_idx = wb.sheetnames.index(name)
+            if current_idx != idx:
+                wb.move_sheet(name, offset=-(current_idx - idx))
+
     wb.save(str(OUT))
     print('\n OK - Vorlage gespeichert:', OUT)
     print('Bitte in Excel oeffnen und pruefen:')
-    print('  - Tab "Anleitung" ist das erste Tab (gruen)')
+    print('  - Tab "Terminplan" ist das erste Tab')
     print('  - Terminplan: Spalten A-C ausgeblendet, Dropdowns in E/I/J')
     print('  - Ferien: Header-Zeile farbig')
     print('  - Kategorien: farbige Zeilen')

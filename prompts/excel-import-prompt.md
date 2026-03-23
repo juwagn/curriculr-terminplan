@@ -20,8 +20,8 @@ Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 
 | Spalte | Inhalt | Werte |
 |--------|--------|-------|
-| A | SW-Key (ausgeblendet) | `SW 00` … `SW 41` |
-| B | Datum Mo (ausgeblendet) | Montag der Schulwoche |
+| A | SW-Key (ausgeblendet) | `SW 00` … `SW 41` – nie überschreiben |
+| **B** | **Montag-ISO** | ISO-Datum des Montags der Schulwoche (`YYYY-MM-DD`, echter Textwert). In JEDE Zeile schreiben (SW-Header UND Datenzeilen). Kein Formelverweis (`=Ferien!…`). |
 | C | (ausgeblendet) | – |
 | D | Schulwoche | – |
 | **E** | **Wochentag** | Dropdown: `Mo` / `Di` / `Mi` / `Do` / `Fr` / `Ganze Woche` |
@@ -69,6 +69,7 @@ Ganztägig = `Ja`. Danach normal weitermachen mit den Schulterminen der Restwoch
 **Schritt 4 – Eintragen:**
 Für jeden Termin die nächste freie Datenzeile in der Zielschulwoche füllen:
 ```python
+ws.cell(row=target_row, column=2).value  = monday_iso  # B: "YYYY-MM-DD" des Montags (Textwert)
 ws.cell(row=target_row, column=5).value  = wochentag   # E
 ws.cell(row=target_row, column=6).value  = uhrzeit     # F (oder None)
 ws.cell(row=target_row, column=7).value  = endzeit     # G (oder None)
@@ -79,7 +80,7 @@ ws.cell(row=target_row, column=10).value = ganztaegig  # J ("Ja"/"Nein")
 
 **Wichtig:**
 - SW-Header-Zeilen (Spalte A = `SW XX`) nie überschreiben
-- Nur Spalten E–K schreiben, nie A–D
+- Schreibe **B** mit dem Montag-ISO-Datum (`YYYY-MM-DD`, echter Textwert — kein `=Ferien!…`-Formelverweis), **E–K** mit den Termindaten. Spalten A, C, D niemals beschreiben.
 - Ferien müssen trotzdem im Terminplan-Sheet eingetragen werden (für den Export)
 - Wenn mehr Termine als freie Zeilen: sag mir welche Termine nicht passen
 
