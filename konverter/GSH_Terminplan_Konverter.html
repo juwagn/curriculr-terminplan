@@ -1219,12 +1219,24 @@ function importSWFormat(rows, ferienRows) {
   if (isNewFormat) {
     // Neues Format: ab Zeile 1 (Zeile 0 = Kopfzeile überspringen)
     // Ereigniszeile = Zeile mit nicht-leerem Titel in Spalte H (Index 7)
+    // SW-Header-Zeilen (A = "SW XX") setzen currentMonday; Datenzeilen erben es (carry-forward)
+    let currentMonday = null;
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] || [];
+      const col0 = String(row[0] || '').trim();
+
+      // SW-Header-Zeile: currentMonday aktualisieren, Zeile nicht als Termin importieren
+      if (/^SW\s*\d/i.test(col0)) {
+        const m = parseImportDate(String(row[1] || '').trim());
+        if (m) currentMonday = m;
+        continue;
+      }
+
       const title = String(row[7] || '').trim();
       if (!title) { skipped++; continue; }
 
-      const monday = parseImportDate(String(row[1] || '').trim());
+      // Spalte B verwenden falls vorhanden, sonst Montag vom letzten SW-Header (carry-forward)
+      const monday = parseImportDate(String(row[1] || '').trim()) || currentMonday;
       if (!monday) { skipped++; continue; }
 
       const wochentag = String(row[4] || '').trim();
