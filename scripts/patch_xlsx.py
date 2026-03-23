@@ -6,10 +6,10 @@ Problem mit v1:
   - LET/FILTER/SEQUENCE benötigen _xlfn.-Präfix + Dynamic-Array-Markup → Datei-Reparatur
 
 Lösung:
-  1. Hilfstabelle Ferien!E14:F55 – 41 Schulmontage mit IF+WEEKDAY-Kette berechnet.
+  1. Hilfstabelle Ferien!E14:F56 – 42 Schulwochen mit IF+WEEKDAY-Kette berechnet.
      Jede Zeile: vorheriger Montag + 7 Tage, Ferienwochen werden übersprungen.
      Funktioniert in Excel 365, LTSC 2021/2024 und älteren Versionen.
-  2. Terminplan Spalte B: einfacher Bezug =Ferien!$F$15 … $F$55 (kein Kompatibilitätsproblem)
+  2. Terminplan Spalte B: einfacher Bezug =Ferien!$F$15 … $F$56 (kein Kompatibilitätsproblem)
   3. Terminplan Spalte D: TEXT-Formel (Deutsch: TT/MM/JJJJ für German-Excel-Locale)
   4. Zahlenformate: OOXML-konform – YYYY-MM-DD für ISO, DD.MM.YYYY für Deutsch
 
@@ -21,6 +21,8 @@ from openpyxl.styles import Font
 from datetime import datetime
 
 XLSX_PATH = 'website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx'
+
+SW_COUNT = 42  # SW 00–41
 
 # Hilfstabelle im Ferien-Blatt: Spalten E (Label) und F (Datum)
 # F15 = SW 00, F16 = SW 01, …, F56 = SW 41
@@ -130,7 +132,7 @@ ws_f['A1'].value = (
 )
 
 # --- 3. Hilfstabelle aufräumen (idempotent bei mehrfachem Ausführen) ---
-for r in range(HELPER_HEADER_ROW, HELPER_START_ROW + 43):
+for r in range(HELPER_HEADER_ROW, HELPER_START_ROW + SW_COUNT):
     ws_f.cell(r, HELPER_COL_LABEL).value = None
     ws_f.cell(r, HELPER_COL_DATE).value  = None
 
@@ -147,7 +149,7 @@ cell0.number_format = 'DD.MM.YYYY'
 ws_f.cell(HELPER_START_ROW, HELPER_COL_LABEL).value = 'SW 00'
 
 # SW 01–41 (Zeilen 16–56): Kette
-for sw_num in range(1, 42):
+for sw_num in range(1, SW_COUNT):
     row      = HELPER_START_ROW + sw_num
     prev_row = HELPER_START_ROW + sw_num - 1
     cell_d = ws_f.cell(row, HELPER_COL_DATE)
@@ -155,7 +157,8 @@ for sw_num in range(1, 42):
     cell_d.number_format = 'DD.MM.YYYY'
     ws_f.cell(row, HELPER_COL_LABEL).value = f'SW {sw_num:02d}'
 
-print(f'  Ferien-Blatt: Datumswerte, A1-Formel, Hilfstabelle F{HELPER_START_ROW}:F{HELPER_START_ROW+41} gesetzt')
+last_helper_row = HELPER_START_ROW + SW_COUNT - 1
+print(f'  Ferien-Blatt: Datumswerte, A1-Formel, Hilfstabelle F{HELPER_START_ROW}:F{last_helper_row} gesetzt')
 
 
 # ===========================================================================
