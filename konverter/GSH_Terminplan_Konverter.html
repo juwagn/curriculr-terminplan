@@ -1249,7 +1249,8 @@ function importSWFormat(rows, ferienRows) {
       const offset    = weekdayOffset[wochentag];
       const eventDate = (offset !== undefined) ? addDaysISO(monday, offset) : monday;
       const isGanzWoche = !wochentag || wochentag === 'Ganze Woche';
-      const endDate   = isGanzWoche ? addDaysISO(monday, 4) : (endzeit ? eventDate : '');
+      const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+      const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(monday, 4)) : (endzeit ? eventDate : '');
       const allday    = ganztaeg || (!uhrzeit && !endzeit);
       const cat       = catRaw ? matchCategory(catRaw) : '';
 
@@ -1319,7 +1320,8 @@ function importSWFormat(rows, ferienRows) {
         const offset    = weekdayOffset[wochentag];
         const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
         const isGanzWoche = wochentag === 'Ganze Woche';
-        const endDate   = isGanzWoche ? addDaysISO(currentMonday, 4) : (endzeit ? eventDate : '');
+        const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+        const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(currentMonday, 4)) : (endzeit ? eventDate : '');
         const allday    = ganztaeg || (!uhrzeit && !endzeit);
         const cat       = catRaw ? matchCategory(catRaw) : '';
 
