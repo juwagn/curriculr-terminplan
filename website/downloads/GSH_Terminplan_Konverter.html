@@ -1219,12 +1219,24 @@ function importSWFormat(rows, ferienRows) {
   if (isNewFormat) {
     // Neues Format: ab Zeile 1 (Zeile 0 = Kopfzeile überspringen)
     // Ereigniszeile = Zeile mit nicht-leerem Titel in Spalte H (Index 7)
+    // SW-Header-Zeilen (A = "SW XX") setzen currentMonday; Datenzeilen erben es (carry-forward)
+    let currentMonday = null;
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] || [];
+      const col0 = String(row[0] || '').trim();
+
+      // SW-Header-Zeile: currentMonday aktualisieren, Zeile nicht als Termin importieren
+      if (/^SW\s*\d/i.test(col0)) {
+        const m = parseImportDate(String(row[1] || '').trim());
+        if (m) currentMonday = m;
+        continue;
+      }
+
       const title = String(row[7] || '').trim();
       if (!title) { skipped++; continue; }
 
-      const monday = parseImportDate(String(row[1] || '').trim());
+      // Spalte B verwenden falls vorhanden, sonst Montag vom letzten SW-Header (carry-forward)
+      const monday = parseImportDate(String(row[1] || '').trim()) || currentMonday;
       if (!monday) { skipped++; continue; }
 
       const wochentag = String(row[4] || '').trim();
@@ -1237,7 +1249,8 @@ function importSWFormat(rows, ferienRows) {
       const offset    = weekdayOffset[wochentag];
       const eventDate = (offset !== undefined) ? addDaysISO(monday, offset) : monday;
       const isGanzWoche = !wochentag || wochentag === 'Ganze Woche';
-      const endDate   = isGanzWoche ? addDaysISO(monday, 4) : (endzeit ? eventDate : '');
+      const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+      const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(monday, 4)) : (endzeit ? eventDate : '');
       const allday    = ganztaeg || (!uhrzeit && !endzeit);
       const cat       = catRaw ? matchCategory(catRaw) : '';
 
@@ -1307,7 +1320,8 @@ function importSWFormat(rows, ferienRows) {
         const offset    = weekdayOffset[wochentag];
         const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
         const isGanzWoche = wochentag === 'Ganze Woche';
-        const endDate   = isGanzWoche ? addDaysISO(currentMonday, 4) : (endzeit ? eventDate : '');
+        const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+        const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(currentMonday, 4)) : (endzeit ? eventDate : '');
         const allday    = ganztaeg || (!uhrzeit && !endzeit);
         const cat       = catRaw ? matchCategory(catRaw) : '';
 
@@ -1337,7 +1351,9 @@ function handleFile(file) {
   reader.onload = e => {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      // "Terminplan"-Sheet by name suchen, Fallback auf erstes Sheet
+      const sheetName = wb.SheetNames.find(n => n.toLowerCase() === 'terminplan') ?? wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
 
       // Schulwochen-Format automatisch erkennen und separat importieren

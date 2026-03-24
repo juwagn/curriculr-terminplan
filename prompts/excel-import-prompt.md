@@ -9,6 +9,7 @@ Termine in die Excel-Vorlage `GSH_Terminplan_Schulwochen_Vorlage.xlsx` übertrag
 Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 
 **Wichtig: Vollständigkeit hat oberste Priorität. Kein Termin darf verloren gehen.**
+**Das gilt auch für die Anmerkungen-Spalte (letzte Spalte der Word-Tabelle).**
 
 ## Struktur der Excel-Vorlage
 
@@ -22,7 +23,7 @@ Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 | D | Schulwoche | nie beschreiben |
 | **E** | **Wochentag** | `Mo` / `Di` / `Mi` / `Do` / `Fr` / `Ganze Woche` |
 | **F** | **Uhrzeit** | `08:30` – leer wenn ganztägig |
-| **G** | **Endzeit** | `14:30` – leer wenn ganztägig |
+| **G** | **Endzeit / Enddatum** | `14:30` für Uhrzeiten – oder ISO-Datum (`YYYY-MM-DD`) als Enddatum für mehrteilige Ganze-Woche-Einträge |
 | **H** | **Titel / Veranstaltung** | Freitext |
 | **I** | **Kategorie** | exakt einer der 7 Werte (s. u.) |
 | **J** | **Ganztägig** | `Ja` oder `Nein` |
@@ -43,15 +44,40 @@ Bitte lies beide Dateien und fülle die Excel-Vorlage korrekt aus.
 
 ### Schritt 1 – Word-Datei analysieren
 
-Extrahiere alle Termine und nummeriere sie fortlaufend:
+Die Word-Tabelle hat folgende Spalten: **SW-Nr., Schulwoche, Montag, Dienstag, Mittwoch, Donnerstag, Freitag, Anmerkungen**.
+
+**Schritt 1a – Tageseinträge extrahieren (Spalten Montag–Freitag):**
+
+Extrahiere alle Termine aus den Tagesspalten und nummeriere sie fortlaufend:
 
 ```
-#001 | 25.08.2026 | Stehkaffee für alle LuL           | Konferenzen/DB
-#002 | 26.08.2026 | Einführungstag EF                  | Oberstufe
+#001 | 25.08.2026 | Mi | Stehkaffee für alle LuL           | Konferenzen/DB
+#002 | 26.08.2026 | Do | Einführungstag EF                  | Oberstufe
 ...
 ```
 
-Gib die vollständige Liste aus. Diese Zahl ist deine Kontrollgröße.
+Gib die vollständige Liste aus.
+
+**Schritt 1b – Anmerkungen-Spalte extrahieren (letzte Spalte der Word-Tabelle):**
+
+Extrahiere ALLE Einträge aus der Anmerkungen-Spalte und nummeriere sie im Anschluss weiter:
+
+```
+#NNN | SW 01 | Jg 5+6 ganze Woche 1.-5. Std Unterricht
+#NNN | SW 01 | Mittagessen ab Donnerstag
+#NNN | SW 02 | 12.-13.09. Rosch Haschana (jüd. Feiertag)
+#NNN | SW 25 | 09.02.–20.02. Abi Vorklausuren
+#NNN | SW 25 | 02.02.–13.02. Anmeldung SI/SII
+```
+
+Analysiere jeden Anmerkungseintrag:
+- Beginnt der Text mit einem **Datumsbereich** (`DD.MM.–DD.MM.` oder `DD.–DD.MM.` oder `DD.MM.-DD.MM.`)?
+  → Ja: Datum vom Titeltext abtrennen. Merke: Startdatum, Enddatum, Titeltext ohne Datum.
+  → Nein: Eintrag gehört zur gesamten SW (kein Datum, nur Text).
+- Ist es ein **Einzeldatum** (`DD.MM.`)?
+  → Als normalen Tageseintrag behandeln (nicht als "Ganze Woche").
+
+**Gesamtzählung = Tageseinträge + Anmerkungseinträge.** Diese Zahl ist deine Kontrollgröße.
 
 ### Schritt 2 – Schulmontage berechnen
 
@@ -115,6 +141,16 @@ def finde_schulwoche(termin_datum, mondays):
 Jeden schulfreien Wochentag am Wochenanfang als eigene Zeile:
 Wochentag = `Mo` / `Di`, Titel = `schulfrei`, Kategorie = `Feiertage/Ferien`, Ganztägig = `Ja`.
 
+**Anmerkungen einordnen:**
+- Die SW ergibt sich direkt aus der Tabellenzeile der Word-Datei (Anmerkung steht in der Zeile der SW)
+- Wochentag = `Ganze Woche`, Ganztägig = `Ja`
+- Titel (Spalte H) = Titeltext **ohne** Datumspräfix
+- **Spalte G**: ISO-Enddatum (`YYYY-MM-DD`) wenn der Anmerkungseintrag einen Datumsbereich enthielt; sonst leer
+  - Beispiel: `09.02.–20.02. Abi Vorklausuren` → Spalte G = `2027-02-20`, Spalte H = `Abi Vorklausuren`
+  - Wenn Enddatum in einem anderen Schuljahr-Jahr liegt: Jahr korrekt ermitteln (nicht immer 2026!)
+- Kategorie per Keyword-Matching bestimmen (wie normale Termine)
+- Anmerkungen mit Datumsbereich: Schulwoche des **Startdatums** für die Einordnung verwenden
+
 ### Schritt 4 – Eintragen
 
 Für jede Schulwoche die freien Datenzeilen (A leer, H leer) füllen:
@@ -172,7 +208,7 @@ for termin in termine:
     ws.cell(target_row, 2).value  = monday.isoformat()   # B
     ws.cell(target_row, 5).value  = termin.wochentag     # E
     ws.cell(target_row, 6).value  = termin.uhrzeit       # F
-    ws.cell(target_row, 7).value  = termin.endzeit       # G
+    ws.cell(target_row, 7).value  = termin.endzeit       # G  (Uhrzeit ODER ISO-Enddatum für Ganze-Woche-Einträge)
     ws.cell(target_row, 8).value  = termin.titel         # H
     ws.cell(target_row, 9).value  = termin.kategorie     # I
     ws.cell(target_row, 10).value = termin.ganztaegig    # J
@@ -186,11 +222,18 @@ for termin in termine:
 ```python
 # Prüfen: wie viele Zeilen mit Titel wurden tatsächlich geschrieben?
 eingetragen = sum(1 for row in range(2, ws.max_row+1) if ws.cell(row,8).value)
+
+# Zusatz: Ganze-Woche-Einträge zählen (sollte = Anzahl Anmerkungen sein)
+ganze_woche = sum(1 for row in range(2, ws.max_row+1)
+                  if ws.cell(row,5).value == 'Ganze Woche' and ws.cell(row,8).value)
 ```
 
 Berichte:
-- Termine aus Word-Datei: **N**
+- Tageseinträge aus Word-Datei: **N₁**
+- Anmerkungseinträge aus Word-Datei: **N₂**
+- Gesamt: **N = N₁ + N₂**
 - Davon eingetragen: **M**
+- Davon als `Ganze Woche` (Anmerkungen): **G**
 - Nicht eingetragen (mit Grund): vollständige Liste
 
 Wenn `M < N`: Untersuche die Differenz und behebe sie bevor du speicherst.
@@ -206,9 +249,12 @@ wb.save('GSH_Terminplan_2026_27.xlsx')
 ## Abschlussbericht (Pflicht)
 
 ```
-Termine in Word-Datei:    XXX
-Erfolgreich eingetragen:  XXX  (davon X in eingefügten Zusatzzeilen)
-Nicht eingetragen:          X
+Tageseinträge in Word-Datei:       XXX
+Anmerkungseinträge in Word-Datei:   XX
+Gesamt:                            XXX
+Erfolgreich eingetragen:           XXX  (davon X in eingefügten Zusatzzeilen)
+  davon Ganze-Woche (Anmerkungen):  XX  (davon X mit Enddatum in Spalte G)
+Nicht eingetragen:                   X
   - #042 | 15.04.2027 | ... | Grund: außerhalb Schuljahr
   - #107 | ...
 
