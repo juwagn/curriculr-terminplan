@@ -1,227 +1,180 @@
 """
-recalc.py – Verifikation der dynamischen Datumsformeln (v2)
+recalc.py – Verifikation der bearbeitbaren Jahresvorlage (v3)
 
 Prueft:
-  1. Ferien-Blatt: Datumszellen sind echte Datumswerte (keine Textwerte)
-  2. Ferien-Hilfstabelle F15:F55: alle 41 Formeln vorhanden und korrekt verkettet
-  3. Terminplan Spalte B: Bezug auf Ferien!$F$15 .. $F$55 vorhanden
-  4. Terminplan Spalte D: TEXT-Formel vorhanden
-  5. Python-seitige Berechnung: alle 41 Schulmontage 2025/26 stimmen
+  1. Workbook/Sheets sind nicht geschuetzt.
+  2. Ferien & Eckdaten enthalten echte Datumswerte.
+  3. Hilfstabelle F15:F56 bildet SW 00 aus B10 und SW 01 aus B11.
+  4. Folgewochen ueberspringen Ferienperioden und liefern 42 Schulwochen.
+  5. Terminplan-Spalten A-D sind technisch konsistent, E-K bleiben Eingabebereich.
+  6. Keine offensichtlichen Formel-Fehlertexte in Formeln.
 
 Ausgabe: JSON mit status, details, errors
-
 Ausfuehren: python scripts/recalc.py
 """
 
+from __future__ import annotations
+
 import json
+from datetime import date, datetime, timedelta
+from pathlib import Path
+
 import openpyxl
-from datetime import date, timedelta
 
-XLSX_PATH        = 'website/downloads/Terminplan_Schulwochen_Vorlage.xlsx'
-HELPER_START_ROW = 15   # F15 = SW 00, ..., F55 = SW 40
-
-# Bekannte Sollwerte fuer 2025/26
-EXPECTED_2025_26 = {
-    0:  date(2025,  8, 18),  1:  date(2025,  8, 25),
-    2:  date(2025,  9,  1),  3:  date(2025,  9,  8),
-    4:  date(2025,  9, 15),  5:  date(2025,  9, 22),
-    6:  date(2025,  9, 29),  7:  date(2025, 10,  6),
-    8:  date(2025, 10, 27),  9:  date(2025, 11,  3),
-    10: date(2025, 11, 10), 11:  date(2025, 11, 17),
-    12: date(2025, 11, 24), 13:  date(2025, 12,  1),
-    14: date(2025, 12,  8), 15:  date(2025, 12, 15),
-    16: date(2026,  1,  5), 17:  date(2026,  1, 12),
-    18: date(2026,  1, 19), 19:  date(2026,  1, 26),
-    20: date(2026,  2,  2), 21:  date(2026,  2,  9),
-    22: date(2026,  2, 16), 23:  date(2026,  2, 23),
-    24: date(2026,  3,  2), 25:  date(2026,  3,  9),
-    26: date(2026,  3, 16), 27:  date(2026,  3, 23),
-    28: date(2026,  4, 13), 29:  date(2026,  4, 20),
-    30: date(2026,  4, 27), 31:  date(2026,  5,  4),
-    32: date(2026,  5, 11), 33:  date(2026,  5, 18),
-    34: date(2026,  6,  1), 35:  date(2026,  6,  8),
-    36: date(2026,  6, 15), 37:  date(2026,  6, 22),
-    38: date(2026,  6, 29), 39:  date(2026,  7,  6),
-    40: date(2026,  7, 13),
-}
+BASE = Path(__file__).resolve().parent.parent
+XLSX_PATH = BASE / "website" / "downloads" / "Terminplan_Schulwochen_Vorlage.xlsx"
+SW_COUNT = 42
+ROWS_PER_WEEK = 15
+HELPER_START_ROW = 15
 
 
 def read_date(cell):
-    """Gibt date-Objekt oder None zurueck."""
-    from datetime import datetime as dt
-    v = cell.value
-    if isinstance(v, dt):
-        return v.date()
-    if isinstance(v, date):
-        return v
+    value = cell.value
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
     return None
 
 
-def compute_school_mondays(first_day, ferien_periods, count=41):
-    """
-    Repliziert die Excel-Hilfstabellenlogik in Python.
-    ferien_periods: Liste von (von, bis) als date-Objekte; None-Paare werden ignoriert.
-    """
-    mondays = []
-    current = first_day
-    limit   = 0
-    while len(mondays) < count and limit < 200:
-        limit += 1
-        in_holiday = any(
-            von and bis and von <= current <= bis
-            for von, bis in ferien_periods
-        )
-        if not in_holiday:
+def compute_school_mondays(sw00, sw01, holiday_periods, count=SW_COUNT):
+    mondays = [sw00, sw01]
+    current = sw01 + timedelta(days=7)
+    guard = 0
+    while len(mondays) < count and guard < 200:
+        guard += 1
+        if not any(start and end and start <= current <= end for start, end in holiday_periods):
             mondays.append(current)
-        current += timedelta(weeks=1)
+        current += timedelta(days=7)
     return mondays
 
 
-# ---------------------------------------------------------------------------
-errors  = []
+def is_formula(value):
+    return isinstance(value, str) and value.startswith("=")
+
+
+errors = []
 details = []
+print(f"Lade: {XLSX_PATH}")
+wb = openpyxl.load_workbook(XLSX_PATH, data_only=False)
 
-print(f'Lade: {XLSX_PATH}')
-wb   = openpyxl.load_workbook(XLSX_PATH, data_only=False)
-ws_f = wb['Ferien']
-ws_t = wb['Terminplan']
+expected_sheets = ["Terminplan", "Ferien", "Kategorien", "Anleitung"]
+if wb.sheetnames != expected_sheets:
+    errors.append(f"Sheet-Reihenfolge falsch: {wb.sheetnames}")
+else:
+    details.append("Sheet-Reihenfolge Terminplan/Ferien/Kategorien/Anleitung OK")
 
+for ws in wb.worksheets:
+    if ws.protection.sheet:
+        errors.append(f"{ws.title}: Blattschutz ist aktiv")
+    else:
+        details.append(f"{ws.title}: kein Blattschutz OK")
 
-# === 1. Ferien-Blatt: Datumszellen ===
-ferien_check = {
-    'B3': 'Herbstferien Von',   'C3': 'Herbstferien Bis',
-    'B4': 'Weihnachtsferien Von','C4': 'Weihnachtsferien Bis',
-    'B5': 'Osterferien Von',    'C5': 'Osterferien Bis',
-    'B10': 'Erster Schultag',
+ws_f = wb["Ferien"]
+ws_t = wb["Terminplan"]
+
+required_dates = {
+    "B3": "Herbstferien Von",
+    "C3": "Herbstferien Bis",
+    "B4": "Weihnachtsferien Von",
+    "C4": "Weihnachtsferien Bis",
+    "B5": "Osterferien Von",
+    "C5": "Osterferien Bis",
+    "B7": "Sommerferien Von",
+    "C7": "Sommerferien Bis",
+    "B10": "Erster Schultag SW 00",
+    "B11": "Erster Unterrichtstag SW 01",
+    "B12": "Letzter Schultag",
 }
 ferien_dates = {}
-for addr, label in ferien_check.items():
-    d = read_date(ws_f[addr])
-    if d is None:
-        errors.append(f'Ferien!{addr} ({label}): kein Datumswert (Wert={repr(ws_f[addr].value)})')
+for addr, label in required_dates.items():
+    value = read_date(ws_f[addr])
+    if value is None:
+        errors.append(f"Ferien!{addr} ({label}): kein Datumswert, Wert={ws_f[addr].value!r}")
     else:
-        ferien_dates[addr] = d
-        details.append(f'Ferien!{addr} ({label}): {d} OK')
+        ferien_dates[addr] = value
+        details.append(f"Ferien!{addr} ({label}): {value} OK")
 
-# Pfingstferien optional
-pf_von = read_date(ws_f['B6'])
-pf_bis = read_date(ws_f['C6'])
-ferien_dates['B6'] = pf_von
-ferien_dates['C6'] = pf_bis
-if pf_von is None:
-    details.append('Ferien!B6 (Pfingstferien): leer -> wird ignoriert OK')
+for addr in ("B6", "C6"):
+    ferien_dates[addr] = read_date(ws_f[addr])
+
+sw00 = ferien_dates.get("B10")
+sw01 = ferien_dates.get("B11")
+if sw00 and sw00.weekday() != 0:
+    errors.append(f"SW 00 muss Montag sein, ist {sw00}")
+if sw01 and sw01.weekday() != 0:
+    errors.append(f"SW 01 muss Montag sein, ist {sw01}")
+if sw00 and sw01 and sw01 <= sw00:
+    errors.append(f"SW 01 ({sw01}) muss nach SW 00 ({sw00}) liegen")
+
+if is_formula(ws_f["F15"].value) and "$B$10" in ws_f["F15"].value:
+    details.append("Ferien!F15 referenziert SW 00/B10 OK")
 else:
-    details.append(f'Ferien!B6/C6 (Pfingstferien): {pf_von} - {pf_bis} OK')
+    errors.append(f"Ferien!F15 falsche Formel: {ws_f['F15'].value!r}")
 
-# A1: Schuljahr-Formel
-a1 = ws_f['A1'].value
-if isinstance(a1, str) and a1.startswith('=') and 'YEAR' in a1:
-    details.append('Ferien!A1: Schuljahr-Formel vorhanden OK')
+if is_formula(ws_f["F16"].value) and "$B$11" in ws_f["F16"].value:
+    details.append("Ferien!F16 referenziert SW 01/B11 OK")
 else:
-    errors.append(f'Ferien!A1: Schuljahr-Formel fehlt (Wert={repr(a1)})')
+    errors.append(f"Ferien!F16 falsche Formel: {ws_f['F16'].value!r}")
 
+for sw in range(2, SW_COUNT):
+    row = HELPER_START_ROW + sw
+    formula = ws_f.cell(row, 6).value
+    if not is_formula(formula) or f"$F${row - 1}" not in formula:
+        errors.append(f"Ferien!F{row} (SW {sw:02d}): Folgeformel fehlerhaft: {formula!r}")
 
-# === 2. Ferien-Hilfstabelle F15:F55 ===
-helper_errors = []
-for sw_num in range(41):
-    row      = HELPER_START_ROW + sw_num
-    cell_val = ws_f.cell(row, 6).value  # Spalte F
-    if not isinstance(cell_val, str) or not cell_val.startswith('='):
-        helper_errors.append(f'Ferien!F{row} (SW {sw_num:02d}): keine Formel')
-    elif sw_num == 0 and '$B$10' not in cell_val:
-        helper_errors.append(f'Ferien!F{row} (SW 00): $B$10 fehlt')
-    elif sw_num > 0 and f'$F${row - 1}' not in cell_val:
-        helper_errors.append(
-            f'Ferien!F{row} (SW {sw_num:02d}): Verkettung $F${row-1} fehlt'
-        )
+holiday_periods = [
+    (ferien_dates.get("B3"), ferien_dates.get("C3")),
+    (ferien_dates.get("B4"), ferien_dates.get("C4")),
+    (ferien_dates.get("B5"), ferien_dates.get("C5")),
+    (ferien_dates.get("B6"), ferien_dates.get("C6")),
+    (ferien_dates.get("B7"), ferien_dates.get("C7")),
+]
+if sw00 and sw01:
+    computed = compute_school_mondays(sw00, sw01, holiday_periods)
+    if len(computed) != SW_COUNT:
+        errors.append(f"Python-Berechnung: {len(computed)} statt {SW_COUNT} Schulwochen")
+    else:
+        details.append(f"Python-Berechnung: SW00={computed[0]}, SW01={computed[1]}, SW41={computed[-1]} OK")
+    for idx in [0, 1, 7, 8, 15, 16, 27, 28, 40, 41]:
+        if idx < len(computed):
+            details.append(f"Spotcheck SW {idx:02d}: {computed[idx]}")
 
-if helper_errors:
-    errors.extend(helper_errors)
-else:
-    details.append('Ferien-Hilfstabelle F15:F55: alle 41 Formeln korrekt verkettet OK')
-
-
-# === 3. Terminplan: SW-Header-Zeilen ===
-sw_header_rows = []
+header_rows = []
 for row in range(2, ws_t.max_row + 1):
-    val_a = ws_t.cell(row, 1).value
-    if val_a and isinstance(val_a, str) and val_a.startswith('SW ') and val_a != 'SW-Key':
+    value = ws_t.cell(row, 1).value
+    if isinstance(value, str) and value.startswith("SW "):
         try:
-            sw_num = int(val_a.split()[1])
-            sw_header_rows.append((sw_num, row))
-        except (IndexError, ValueError):
-            pass
+            header_rows.append((int(value.split()[1]), row))
+        except ValueError:
+            errors.append(f"Terminplan A{row}: unlesbarer SW-Key {value!r}")
 
-if len(sw_header_rows) != 41:
-    errors.append(f'Terminplan: erwartet 41 SW-Zeilen, gefunden {len(sw_header_rows)}')
+if len(header_rows) != SW_COUNT:
+    errors.append(f"Terminplan: {len(header_rows)} statt {SW_COUNT} SW-Header")
 else:
-    details.append('Terminplan: 41 SW-Header-Zeilen gefunden OK')
+    details.append("Terminplan: 42 SW-Header OK")
 
+for sw, row in header_rows:
+    expected_b = f"=Ferien!$F${HELPER_START_ROW + sw}"
+    if ws_t.cell(row, 2).value != expected_b:
+        errors.append(f"Terminplan B{row}: erwartet {expected_b}, gefunden {ws_t.cell(row, 2).value!r}")
+    if not is_formula(ws_t.cell(row, 4).value) or "TEXT" not in ws_t.cell(row, 4).value:
+        errors.append(f"Terminplan D{row}: Wochenformel fehlt")
 
-# === 4. Formelstruktur B + D ===
-formula_errors = []
-for sw_num, row in sw_header_rows:
-    b_val = ws_t.cell(row, 2).value
-    d_val = ws_t.cell(row, 4).value
-    expected_ref = f'Ferien!$F${HELPER_START_ROW + sw_num}'
+for col in ("A", "B", "C"):
+    if not ws_t.column_dimensions[col].hidden:
+        errors.append(f"Terminplan Spalte {col}: sollte ausgeblendet sein")
 
-    if not isinstance(b_val, str) or not b_val.startswith('='):
-        formula_errors.append(f'SW {sw_num:02d} B{row}: keine Formel')
-    elif expected_ref not in b_val:
-        formula_errors.append(
-            f'SW {sw_num:02d} B{row}: Bezug {expected_ref} fehlt (gefunden: {repr(b_val)})'
-        )
+if ws_t.protection.sheet:
+    errors.append("Terminplan darf nicht geschuetzt sein")
 
-    if not isinstance(d_val, str) or not d_val.startswith('='):
-        formula_errors.append(f'SW {sw_num:02d} D{row}: keine Formel')
-    elif 'TEXT' not in d_val:
-        formula_errors.append(f'SW {sw_num:02d} D{row}: TEXT fehlt')
+bad_terms = ["#REF!", "#DIV/0!", "#VALUE!", "#NAME?", "#N/A"]
+for ws in wb.worksheets:
+    for row in ws.iter_rows():
+        for cell in row:
+            value = cell.value
+            if isinstance(value, str) and any(term in value for term in bad_terms):
+                errors.append(f"{ws.title}!{cell.coordinate}: Formel-/Fehlertext {value!r}")
 
-if formula_errors:
-    errors.extend(formula_errors)
-else:
-    details.append('Formelstruktur B+D: alle 82 Formeln korrekt OK')
-
-
-# === 5. Python-Berechnung: Sollwerte 2025/26 ===
-if ferien_dates.get('B10'):
-    ferien_periods = [
-        (ferien_dates.get('B3'), ferien_dates.get('C3')),
-        (ferien_dates.get('B4'), ferien_dates.get('C4')),
-        (ferien_dates.get('B5'), ferien_dates.get('C5')),
-        (ferien_dates.get('B6'), ferien_dates.get('C6')),
-    ]
-    computed = compute_school_mondays(ferien_dates['B10'], ferien_periods, count=41)
-
-    mismatches = []
-    for sw_num, expected in EXPECTED_2025_26.items():
-        if sw_num < len(computed):
-            got = computed[sw_num]
-            if got != expected:
-                mismatches.append(f'SW {sw_num:02d}: erwartet {expected}, berechnet {got}')
-        else:
-            mismatches.append(f'SW {sw_num:02d}: nicht berechnet')
-
-    if mismatches:
-        errors.extend(mismatches)
-    else:
-        details.append(
-            f'Python-Berechnung 2025/26: alle 41 Schulmontage stimmen '
-            f'({ferien_dates["B10"]} bis {computed[-1]}) OK'
-        )
-
-    details.append('Spotchecks (Schulmontage Ferien-Uebergaenge):')
-    for i in [0, 7, 8, 15, 16, 27, 28, 33, 34, 40]:
-        if i < len(computed):
-            details.append(f'  SW {i:02d}: {computed[i]}')
-
-
-# ---------------------------------------------------------------------------
-status = 'success' if not errors else 'error'
-result = {
-    'status':              status,
-    'sw_header_rows_found': len(sw_header_rows),
-    'errors':              errors,
-    'details':             details,
-}
-print(json.dumps(result, ensure_ascii=True, indent=2))
+status = "success" if not errors else "error"
+print(json.dumps({"status": status, "errors": errors, "details": details}, ensure_ascii=True, indent=2))

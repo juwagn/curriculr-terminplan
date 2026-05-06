@@ -1,462 +1,420 @@
 # -*- coding: utf-8 -*-
 """
 build_excel_template.py
-Ueberarbeitet die GSH-Schulwochen-Vorlage:
-- Neues "Anleitung"-Sheet (Tab 0)
-- Technische Spalten A-C ausblenden
-- Dropdowns fuer Wochentag, Kategorie, Ganztaegig
-- Styling der SW-Header-Zeilen und Einfrieren
-- Kategorien-Sheet mit Named Range
+
+Generiert die bearbeitbare GSH-Schulwochen-Vorlage neu.
+
+Prinzip:
+- Keine Blatt- oder Arbeitsmappensperre. Die Schulleitung kann die Datei jedes Jahr frei anpassen.
+- Ferien & Eckdaten sind die einzige zentrale Eingabestelle fuer Schuljahresdaten.
+- SW 00 wird aus "Erster Schultag (SW 00)" berechnet.
+- SW 01 wird aus "Erster Unterrichtstag (SW 01)" berechnet.
+- Folgewochen springen automatisch ueber eingetragene Ferienperioden.
+- Der Konverter kann die ausgeblendeten technischen Spalten A-C lesen.
 """
 
-import shutil
+from __future__ import annotations
+
+from datetime import date
 from pathlib import Path
-from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.workbook.defined_name import DefinedName
 
 BASE = Path(__file__).resolve().parent.parent
-SRC  = BASE / 'website' / 'downloads' / 'Terminplan_Schulwochen_Vorlage.xlsx'
-OUT  = BASE / 'website' / 'downloads' / 'Terminplan_Schulwochen_Vorlage.xlsx'
-BAK  = BASE / 'website' / 'downloads' / 'Terminplan_Schulwochen_Vorlage.bak.xlsx'
+OUT = BASE / "website" / "downloads" / "Terminplan_Schulwochen_Vorlage.xlsx"
 
-# Farben
-C_INDIGO     = '4F46E5'
-C_HEADER_BG  = '1E3A5F'
-C_WHITE      = 'FFFFFF'
-C_ZEBRA      = 'F8FAFC'
-C_GREEN_TAB  = '70AD47'
-C_BLUE_TAB   = '2F5496'
+SW_COUNT = 42
+ROWS_PER_WEEK = 15
+HELPER_START_ROW = 15
 
-# Kategorie-Farben (bg, fg) ohne #
+# Voreinstellung 2026/27; im Ferien-Sheet frei anpassbar.
+DEFAULTS = {
+    "herbst_start": date(2026, 10, 19),
+    "herbst_end": date(2026, 10, 30),
+    "weihnachten_start": date(2026, 12, 22),
+    "weihnachten_end": date(2027, 1, 3),
+    "ostern_start": date(2027, 3, 22),
+    "ostern_end": date(2027, 4, 2),
+    "pfingsten_start": None,
+    "pfingsten_end": None,
+    "sommer_start": date(2027, 7, 19),
+    "sommer_end": date(2027, 8, 31),
+    "first_school_day": date(2026, 8, 24),
+    "first_lesson_day": date(2026, 8, 31),
+    "last_school_day": date(2027, 7, 16),
+}
+
+C_HEADER_BG = "1E3A5F"
+C_HEADER_2 = "2F5496"
+C_INPUT = "FFF7D6"
+C_INPUT_DARK = "B7791F"
+C_INFO = "EEF2FF"
+C_INFO_TEXT = "3730A3"
+C_WHITE = "FFFFFF"
+C_ZEBRA = "F8FAFC"
+C_BORDER = "D0D5DD"
+C_TECH = "E5E7EB"
+C_WEEK = "4F46E5"
+C_WEEK_SW00 = "047857"
+C_WARN = "FEE2E2"
+C_WARN_TEXT = "991B1B"
+
 CAT_COLORS = {
-    'Jahrgang 5/6':     ('FADBD8', '7B241C'),
-    'Jahrgang 7/8':     ('D5F5E3', '1E8449'),
-    'Jahrgang 9/10':    ('FDE8D3', '784212'),
-    'Oberstufe':        ('D4E6F1', '1A5276'),
-    'Inklusion':        ('D1F2EB', '148F77'),
-    'Feiertage/Ferien': ('FDEBD0', '784212'),
-    'Konferenzen/DB':   ('E8DAEF', '6C3483'),
+    "Jahrgang 5/6": ("FADBD8", "7B241C"),
+    "Jahrgang 7/8": ("D5F5E3", "1E8449"),
+    "Jahrgang 9/10": ("FDE8D3", "784212"),
+    "Oberstufe": ("D4E6F1", "1A5276"),
+    "Inklusion": ("D1F2EB", "148F77"),
+    "Feiertage/Ferien": ("FDEBD0", "784212"),
+    "Konferenzen/DB": ("E8DAEF", "6C3483"),
 }
 
 CAT_EXAMPLES = {
-    'Jahrgang 5/6':     'Einschulung, Sprachstandstest, Neue 5er',
-    'Jahrgang 7/8':     'Potenzialanalyse, WP-Wahl, KAoA',
-    'Jahrgang 9/10':    'Betriebspraktikum, ZP 10, Abschlussfahrt',
-    'Oberstufe':        'Abitur, EF/Q1/Q2 Termine',
-    'Inklusion':        'IFOe, AL SuS, Inklusionsteam',
-    'Feiertage/Ferien': 'Ferien, Feiertage, schulfreie Tage',
-    'Konferenzen/DB':   'Lehrerkonferenz, FaKo, Teamgespraeche',
+    "Jahrgang 5/6": "Einschulung, Sprachstandstest, Neue 5er",
+    "Jahrgang 7/8": "Potenzialanalyse, WP-Wahl, KAoA",
+    "Jahrgang 9/10": "Betriebspraktikum, ZP 10, Abschlussfahrt",
+    "Oberstufe": "Abitur, EF/Q1/Q2 Termine",
+    "Inklusion": "IFOe, AL SuS, Inklusionsteam",
+    "Feiertage/Ferien": "Ferien, Feiertage, schulfreie Tage",
+    "Konferenzen/DB": "Lehrerkonferenz, FaKo, Teamgespraeche",
 }
 
 
-def thin_border():
-    s = Side(style='thin', color='D0D5DD')
-    return Border(left=s, right=s, top=s, bottom=s)
+def fill(hex_color: str) -> PatternFill:
+    return PatternFill("solid", fgColor=hex_color)
 
 
-def h_fill(hex_color):
-    return PatternFill('solid', fgColor=hex_color)
+def thin_border() -> Border:
+    side = Side(style="thin", color=C_BORDER)
+    return Border(left=side, right=side, top=side, bottom=side)
 
 
-# ---------------------------------------------------------------------------
-# Anleitung-Sheet
-# ---------------------------------------------------------------------------
-def make_anleitung(wb):
-    # Entferne existierende "Anleitung"-Sheets (verhindert Duplikate)
-    while 'Anleitung' in wb.sheetnames:
-        del wb['Anleitung']
+def set_date(cell, value):
+    cell.value = value
+    cell.number_format = "DD.MM.YYYY"
 
-    ws = wb.create_sheet('Anleitung', 0)
-    ws.sheet_properties.tabColor = C_GREEN_TAB
+
+def week_formula(prev_row: int) -> str:
+    fp = f"$F${prev_row}"
+
+    def skip(start: str, end: str) -> str:
+        return (
+            f"+IF(ISBLANK({start}),0,"
+            f"IF(({fp}+7>={start})*({fp}+7<={end}),"
+            f"{end}+8-WEEKDAY({end},2)-({fp}+7),0))"
+        )
+
+    return (
+        f"={fp}+7"
+        + skip("$B$3", "$C$3")
+        + skip("$B$4", "$C$4")
+        + skip("$B$5", "$C$5")
+        + skip("$B$6", "$C$6")
+        + skip("$B$7", "$C$7")
+    )
+
+
+def make_ferien(wb: Workbook):
+    ws = wb.create_sheet("Ferien")
+    ws.sheet_properties.tabColor = "ED7D31"
     ws.sheet_view.showGridLines = False
-    ws.column_dimensions['A'].width = 3
-    ws.column_dimensions['B'].width = 35
-    ws.column_dimensions['C'].width = 58
-    ws.column_dimensions['D'].width = 3
+    ws.freeze_panes = "A3"
 
-    r = [1]  # mutable row counter
+    widths = {"A": 34, "B": 16, "C": 16, "D": 46, "E": 12, "F": 16, "G": 28}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
 
-    def nrow(n=1):
-        r[0] += n
+    ws.merge_cells("A1:D1")
+    title = ws["A1"]
+    title.value = '=IFERROR("Schuljahr "&TEXT(YEAR($B$10),"0")&"/"&TEXT(YEAR($B$10)+1-2000,"00")&" - Ferien & Eckdaten","Ferien & Eckdaten")'
+    title.font = Font(name="Calibri", size=16, bold=True, color="1E3A5F")
+    title.alignment = Alignment(vertical="center")
+    ws.row_dimensions[1].height = 30
 
-    def cell(col, value='', bold=False, size=11, color='111827',
-             bg=None, wrap=False, indent=0, italic=False, align='left'):
-        c = ws.cell(row=r[0], column=col, value=value)
-        c.font = Font(name='Calibri', size=size, bold=bold,
-                      color=color, italic=italic)
-        c.alignment = Alignment(horizontal=align, vertical='center',
-                                wrap_text=wrap, indent=indent)
+    headers = ["Bezeichnung", "Von (Datum)", "Bis (Datum)", "Hinweis"]
+    for col, label in enumerate(headers, 1):
+        cell = ws.cell(2, col, label)
+        cell.font = Font(name="Calibri", size=11, bold=True, color=C_WHITE)
+        cell.fill = fill(C_HEADER_BG)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border()
+
+    rows = [
+        (3, "Herbstferien", DEFAULTS["herbst_start"], DEFAULTS["herbst_end"], "Pflichtfeld"),
+        (4, "Weihnachtsferien", DEFAULTS["weihnachten_start"], DEFAULTS["weihnachten_end"], "Pflichtfeld"),
+        (5, "Osterferien", DEFAULTS["ostern_start"], DEFAULTS["ostern_end"], "Pflichtfeld"),
+        (6, "Pfingstferien", DEFAULTS["pfingsten_start"], DEFAULTS["pfingsten_end"], "Optional leer lassen"),
+        (7, "Sommerferien", DEFAULTS["sommer_start"], DEFAULTS["sommer_end"], "Pflichtfeld"),
+    ]
+    for row, name, start, end, note in rows:
+        bg = C_ZEBRA if row % 2 == 0 else C_WHITE
+        ws.cell(row, 1, name)
+        if start:
+            set_date(ws.cell(row, 2), start)
+        if end:
+            set_date(ws.cell(row, 3), end)
+        ws.cell(row, 4, note)
+        for col in range(1, 5):
+            c = ws.cell(row, col)
+            c.fill = fill(C_INPUT if col in (2, 3) else bg)
+            c.font = Font(name="Calibri", size=11, color=(C_INPUT_DARK if col in (2, 3) else "111827"), bold=(col == 1))
+            c.alignment = Alignment(vertical="center", wrap_text=True)
+            c.border = thin_border()
+
+    ws.cell(9, 1, "Schuljahres-Eckdaten")
+    ws.cell(9, 1).font = Font(name="Calibri", size=11, bold=True, color=C_INFO_TEXT)
+
+    info_rows = [
+        (10, "Erster Schultag (SW 00)", DEFAULTS["first_school_day"], "SW 00: Vorbereitungstage, Konferenzen, Schulstart vor Unterricht"),
+        (11, "Erster Unterrichtstag (SW 01)", DEFAULTS["first_lesson_day"], "SW 01: erster regulaerer Unterrichtstag"),
+        (12, "Letzter Schultag", DEFAULTS["last_school_day"], "Kontrollwert; Terminplan markiert letzte Woche"),
+    ]
+    for row, label, value, note in info_rows:
+        ws.cell(row, 1, label)
+        set_date(ws.cell(row, 2), value)
+        ws.cell(row, 4, note)
+        for col in range(1, 5):
+            c = ws.cell(row, col)
+            c.fill = fill(C_INPUT if col == 2 else (C_ZEBRA if row % 2 == 0 else C_WHITE))
+            c.font = Font(name="Calibri", size=11, color=(C_INPUT_DARK if col == 2 else "111827"), bold=(col == 1))
+            c.alignment = Alignment(vertical="center", wrap_text=True)
+            c.border = thin_border()
+
+    ws.cell(14, 5, "Berechnete Schulwochen - nicht manuell pflegen")
+    ws.cell(14, 5).font = Font(name="Calibri", size=10, bold=True, italic=True, color="6B7280")
+    ws.cell(14, 6, "Montag")
+    ws.cell(14, 7, "Hinweis")
+    for col in range(5, 8):
+        c = ws.cell(14, col)
+        c.fill = fill(C_TECH)
+        c.border = thin_border()
+        c.alignment = Alignment(vertical="center")
+
+    for sw in range(SW_COUNT):
+        row = HELPER_START_ROW + sw
+        ws.cell(row, 5, f"SW {sw:02d}")
+        if sw == 0:
+            ws.cell(row, 6, "=$B$10")
+        elif sw == 1:
+            ws.cell(row, 6, "=$B$11")
+        else:
+            ws.cell(row, 6, week_formula(row - 1))
+        ws.cell(row, 6).number_format = "DD.MM.YYYY"
+        ws.cell(row, 7, '=IF(F{0}>$B$12,"nach letztem Schultag","")'.format(row))
+        for col in range(5, 8):
+            c = ws.cell(row, col)
+            c.fill = fill(C_TECH if sw % 2 == 0 else "F3F4F6")
+            c.border = thin_border()
+            c.font = Font(name="Calibri", size=9, color="374151")
+
+    for rng in ["B3:C7", "B10:B12"]:
+        dv = DataValidation(type="date", allow_blank=True, showErrorMessage=True, errorTitle="Datum erwartet", error="Bitte ein echtes Excel-Datum eintragen.")
+        dv.add(rng)
+        ws.add_data_validation(dv)
+
+    return ws
+
+
+def make_kategorien(wb: Workbook):
+    ws = wb.create_sheet("Kategorien")
+    ws.sheet_properties.tabColor = "7030A0"
+    ws.sheet_view.showGridLines = False
+    widths = {"A": 22, "B": 14, "C": 58}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+
+    ws.merge_cells("A1:C1")
+    ws["A1"] = "Kategorien-Referenz"
+    ws["A1"].font = Font(name="Calibri", size=14, bold=True, color="1E3A5F")
+    ws.row_dimensions[1].height = 26
+
+    for col, label in enumerate(["Kategorie", "Farbe", "Automatisch erkannte Stichwoerter"], 1):
+        c = ws.cell(2, col, label)
+        c.font = Font(name="Calibri", size=11, bold=True, color=C_WHITE)
+        c.fill = fill(C_HEADER_BG)
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border = thin_border()
+
+    row = 3
+    for cat, (bg, fg) in CAT_COLORS.items():
+        ws.cell(row, 1, cat)
+        ws.cell(row, 2, f"#{bg}")
+        ws.cell(row, 3, CAT_EXAMPLES.get(cat, ""))
+        for col in range(1, 4):
+            c = ws.cell(row, col)
+            c.fill = fill(bg)
+            c.font = Font(name="Calibri", size=11, bold=(col == 1), color=fg)
+            c.alignment = Alignment(vertical="center", wrap_text=True)
+            c.border = thin_border()
+        row += 1
+
+    wb.defined_names.add(DefinedName("KategorienListe", attr_text=f"Kategorien!$A$3:$A${row - 1}"))
+    return ws
+
+
+def make_terminplan(wb: Workbook):
+    ws = wb.create_sheet("Terminplan", 0)
+    ws.sheet_properties.tabColor = "2F5496"
+    ws.sheet_view.showGridLines = False
+    ws.freeze_panes = "E2"
+
+    widths = {"A": 8, "B": 14, "C": 8, "D": 24, "E": 14, "F": 10, "G": 12, "H": 44, "I": 20, "J": 12, "K": 34}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+    for col in ("A", "B", "C"):
+        ws.column_dimensions[col].hidden = True
+
+    headers = ["SW-Key", "Montag-ISO", "SW", "Schulwoche", "Wochentag", "Uhrzeit", "Endzeit", "Titel / Veranstaltung", "Kategorie", "Ganztaegig", "Anmerkung"]
+    for col, label in enumerate(headers, 1):
+        c = ws.cell(1, col, label)
+        c.fill = fill(C_HEADER_BG)
+        c.font = Font(name="Calibri", size=10, bold=True, color=C_WHITE)
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border = thin_border()
+    ws.row_dimensions[1].height = 22
+
+    row = 2
+    for sw in range(SW_COUNT):
+        helper_row = HELPER_START_ROW + sw
+        visible_week = f"SW {sw:02d}"
+        ws.cell(row, 1, visible_week)
+        ws.cell(row, 2, f"=Ferien!$F${helper_row}")
+        ws.cell(row, 2).number_format = "YYYY-MM-DD"
+        ws.cell(row, 3, visible_week)
+        ws.cell(row, 4, f'=TEXT(B{row},"TT.MM.")&" - "&TEXT(B{row}+4,"TT.MM.JJJJ")')
+        ws.cell(row, 11, f'=IF(Ferien!$G${helper_row}="", "", Ferien!$G${helper_row})')
+        header_fill = C_WEEK_SW00 if sw == 0 else C_WEEK
+        for col in range(1, 12):
+            c = ws.cell(row, col)
+            c.fill = fill(header_fill if col >= 4 else C_TECH)
+            c.font = Font(name="Calibri", size=10, bold=True, color=(C_WHITE if col >= 4 else "374151"))
+            c.alignment = Alignment(vertical="center", horizontal=("left" if col in (4, 11) else "center"), wrap_text=True)
+            c.border = thin_border()
+        ws.row_dimensions[row].height = 21
+        row += 1
+
+        for _ in range(ROWS_PER_WEEK):
+            ws.cell(row, 1, None)
+            ws.cell(row, 2, f"=Ferien!$F${helper_row}")
+            ws.cell(row, 2).number_format = "YYYY-MM-DD"
+            ws.cell(row, 3, visible_week)
+            ws.cell(row, 4, None)
+            bg = C_ZEBRA if row % 2 == 0 else C_WHITE
+            for col in range(1, 12):
+                c = ws.cell(row, col)
+                c.fill = fill(bg if col >= 4 else C_TECH)
+                c.font = Font(name="Calibri", size=11, color="111827")
+                c.alignment = Alignment(vertical="center", wrap_text=(col in (8, 11)))
+                c.border = thin_border()
+            ws.row_dimensions[row].height = 18
+            row += 1
+
+    max_row = row - 1
+    validations = [
+        ("E2:E" + str(max_row), '"Mo,Di,Mi,Do,Fr,Ganze Woche"', "Bitte Wochentag aus Dropdown waehlen."),
+        ("I2:I" + str(max_row), "KategorienListe", "Bitte Kategorie aus Dropdown waehlen."),
+        ("J2:J" + str(max_row), '"Ja,Nein"', 'Bitte "Ja" oder "Nein" auswaehlen.'),
+    ]
+    for sqref, formula, error in validations:
+        dv = DataValidation(type="list", formula1=formula, allow_blank=True, showErrorMessage=True, errorTitle="Ungueltige Eingabe", error=error)
+        dv.add(sqref)
+        ws.add_data_validation(dv)
+
+    return ws
+
+
+def make_anleitung(wb: Workbook):
+    ws = wb.create_sheet("Anleitung")
+    ws.sheet_properties.tabColor = "70AD47"
+    ws.sheet_view.showGridLines = False
+    ws.column_dimensions["A"].width = 3
+    ws.column_dimensions["B"].width = 34
+    ws.column_dimensions["C"].width = 72
+
+    r = 1
+
+    def write(row: int, col: int, value: str, *, bold=False, size=11, color="374151", bg=None, wrap=True):
+        c = ws.cell(row, col, value)
+        c.font = Font(name="Calibri", size=size, bold=bold, color=color)
+        c.alignment = Alignment(vertical="top", wrap_text=wrap)
         if bg:
-            c.fill = PatternFill('solid', fgColor=bg)
+            c.fill = fill(bg)
         return c
 
-    def add_blank(n=1):
-        for _ in range(n):
-            ws.row_dimensions[r[0]].height = 8
-            nrow()
+    def section(text: str):
+        nonlocal r
+        r += 1
+        write(r, 2, text, bold=True, size=12, color=C_INFO_TEXT)
+        r += 1
 
-    def add_title(text):
-        cell(2, text, bold=True, size=18, color='1E3A5F')
-        ws.row_dimensions[r[0]].height = 32
-        nrow()
+    write(2, 2, "GSH Schuljahreskalender - Anleitung", bold=True, size=18, color="1E3A5F", wrap=False)
+    r = 4
+    section("Jedes Jahr neu einrichten")
+    steps = [
+        ("1. Ferien & Eckdaten", "Im Tab 'Ferien' Ferienperioden, Erster Schultag (SW 00), Erster Unterrichtstag (SW 01) und Letzter Schultag eintragen."),
+        ("2. Termine", "Im Tab 'Terminplan' nur in den sichtbaren Spalten E-K arbeiten."),
+        ("3. Konverter", "Excel-Datei in Terminplan_Konverter.html ziehen und ICS-Datei erzeugen."),
+        ("4. IServ", "ICS-Datei in IServ importieren."),
+    ]
+    for title, detail in steps:
+        write(r, 2, title, bold=True, bg=C_INFO, color=C_INFO_TEXT)
+        write(r, 3, detail, bg=C_INFO)
+        ws.row_dimensions[r].height = None
+        r += 1
 
-    def add_section(text):
-        cell(2, text, bold=True, size=12, color='4F46E5')
-        ws.row_dimensions[r[0]].height = 22
-        nrow()
+    section("Wichtig")
+    notes = [
+        "Keine Sperre: Die Datei bleibt bewusst bearbeitbar. Technische Spalten A-C sind nur ausgeblendet.",
+        "SW 00 und SW 01 werden bewusst getrennt: Vorbereitung/Schulstart und erster regulaerer Unterricht.",
+        "Ferien im Ferien-Tab pflegen. Ferien nicht zusaetzlich als eigene Terminplan-Zeilen eintragen, sonst entstehen Dubletten.",
+        "Teilwochen: schulfreie Tage zu Beginn als eigene Termine eintragen, Kategorie Feiertage/Ferien, Ganztägig = Ja.",
+    ]
+    for note in notes:
+        write(r, 2, ">> " + note)
+        ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=3)
+        ws.row_dimensions[r].height = None
+        r += 1
 
-    def add_para(text):
-        c = cell(2, text, size=11, color='374151', wrap=True)
-        ws.merge_cells(start_row=r[0]-1, start_column=2,
-                       end_row=r[0]-1, end_column=3)
-        ws.row_dimensions[r[0]-1].height = None  # Excel-Autofit
-
-    def add_step_row(num, title, detail):
-        num_c = ws.cell(row=r[0], column=2, value='  ' + str(num) + '.')
-        num_c.font = Font(name='Calibri', size=11, bold=True, color='4F46E5')
-        num_c.fill = PatternFill('solid', fgColor='EEF2FF')
-        num_c.alignment = Alignment(horizontal='left', vertical='center')
-        txt = title + ' - ' + detail if detail else title
-        txt_c = ws.cell(row=r[0], column=3, value=txt)
-        txt_c.font = Font(name='Calibri', size=11, color='374151')
-        txt_c.fill = PatternFill('solid', fgColor='EEF2FF')
-        txt_c.alignment = Alignment(vertical='center', wrap_text=True)
-        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
-        nrow()
-
-    def add_table_row(v1, v2, v3, is_header=False):
-        bg = C_HEADER_BG if is_header else (C_ZEBRA if r[0] % 2 == 0 else C_WHITE)
-        fc = 'FFFFFF' if is_header else '374151'
-        for col, val in [(2, v1), (3, v2)]:
-            c = ws.cell(row=r[0], column=col, value=val)
-            c.font = Font(name='Calibri', size=10, bold=is_header, color=fc)
-            c.fill = PatternFill('solid', fgColor=bg)
-            c.alignment = Alignment(vertical='top', wrap_text=True)
-            c.border = thin_border()
-        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
-        nrow()
-
-    def add_warn(text):
-        c = ws.cell(row=r[0], column=2, value=text)
-        c.font = Font(name='Calibri', size=11, color='374151')
-        c.alignment = Alignment(vertical='center', wrap_text=True)
-        ws.merge_cells(start_row=r[0], start_column=2,
-                       end_row=r[0], end_column=3)
-        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
-        nrow()
-
-    # ---- Inhalt ----
-    add_blank()
-    add_title('GSH Schuljahreskalender - Anleitung')
-    add_blank()
-
-    add_section('Was ist das?')
-    add_para('Diese Excel-Datei ist der Schuljahreskalender der Gesamtschule Horst.')
-    add_para('Hier traegst du alle Termine ein. Danach konvertierst du die Datei mit')
-    add_para('dem Konverter-Tool zu einer ICS-Datei und importierst sie in IServ.')
-    add_blank()
-
-    add_section('Gesamter Ablauf (einmal pro Schuljahr)')
-    add_step_row(1, 'Ferien eintragen',
-                 'Tab "Ferien" oeffnen und Ferientermine fuer das neue Schuljahr eintragen.')
-    add_step_row(2, 'Termine eintragen',
-                 'Tab "Terminplan" oeffnen und alle Schultermine eintragen.')
-    add_step_row(3, 'Konverter oeffnen',
-                 'Datei Terminplan_Konverter.html im Browser oeffnen (Chrome empfohlen).')
-    add_step_row(4, 'Excel importieren',
-                 'Diese Excel-Datei in das Konverter-Tool ziehen.')
-    add_step_row(5, 'ICS herunterladen',
-                 'Auf "ICS herunterladen" klicken. Datei wird im Download-Ordner gespeichert.')
-    add_step_row(6, 'ICS in IServ importieren',
-                 'In IServ -> Kalender -> Einstellungen -> Importieren -> ICS-Datei auswaehlen.')
-    add_blank()
-
-    add_section('So traegst du Termine ein (Tab "Terminplan")')
-    add_step_row(1, 'Schulwoche finden',
-                 'Spalte D zeigt die Woche (z.B. "25.08. - 29.08.2025"). Richtige Woche suchen.')
-    add_step_row(2, 'Wochentag waehlen',
-                 'In Spalte E klicken - Dropdown erscheint (Mo / Di / Mi / Do / Fr / Ganze Woche).')
-    add_step_row(3, 'Uhrzeit eintragen',
-                 'Start- und Endzeit in Spalte F/G eintragen (Format: 08:30). Leer = ganztaegig.')
-    add_step_row(4, 'Titel eintragen',
-                 'Bezeichnung des Termins in Spalte H eintragen (Pflichtfeld).')
-    add_step_row(5, 'Kategorie waehlen',
-                 'In Spalte I klicken - Dropdown mit allen Kategorien erscheint.')
-    add_step_row(6, 'Ganztaegig setzen',
-                 'In Spalte J "Ja" waehlen, wenn der Termin den ganzen Tag dauert.')
-    add_blank()
-
-    add_section('Spalten des Terminplans')
-    add_table_row('Spalte', 'Bedeutung und Beispiel', '', is_header=True)
-    add_table_row('D  Schulwoche',
-                  'Wird automatisch berechnet - NICHT bearbeiten! (z.B. "25.08. - 29.08.2025")', '')
-    add_table_row('E  Wochentag',
-                  'Dropdown: Mo / Di / Mi / Do / Fr / Ganze Woche', '')
-    add_table_row('F  Uhrzeit',
-                  'Startzeit (Format: 09:30). Leer lassen wenn ganztaegig.', '')
-    add_table_row('G  Endzeit',
-                  'Endzeit (Format: 11:00). Optional.', '')
-    add_table_row('H  Titel',
-                  'Bezeichnung des Termins - Pflichtfeld! (z.B. "Lehrerkonferenz")', '')
-    add_table_row('I  Kategorie',
-                  'Dropdown: eine der 7 Kategorien auswaehlen', '')
-    add_table_row('J  Ganztaegig',
-                  'Dropdown: "Ja" wenn kein fester Zeitraum', '')
-    add_table_row('K  Anmerkung',
-                  'Optionaler Hinweistext (z.B. "Bitte alle Lehrkraefte")', '')
-    add_blank()
-
-    add_section('Wichtige Hinweise')
-    add_warn('>> Graue Header-Zeilen markieren den Wochenbeginn - dort NICHTS eintragen!')
-    add_warn('>> Spalten A, B, C sind ausgeblendet (technische Daten) - nicht einblenden.')
-    add_warn('>> Spalte D wird automatisch berechnet - nicht bearbeiten.')
-    add_warn('>> Ferientermine zuerst im Tab "Ferien" eintragen - danach passen sich alle Daten an.')
-    add_warn('>> Aenderungen im laufenden Schuljahr: direkt im IServ-Kalender bearbeiten.')
-    add_warn('>> Teilwochen (z. B. nach Pfingstferien): Beginnt die Schule nicht am Mo,'
-             ' trage schulfreie Tage (Mo/Di) als eigene Zeile ein:'
-             ' Wochentag = Mo/Di, Kategorie = Feiertage/Ferien, Ganztaegig = Ja.'
-             ' Danach die normalen Schultermine der Restwoche eintragen.')
-    add_blank()
-
-    add_section('Verfuegbare Kategorien')
-    for cat, (bg, fg) in CAT_COLORS.items():
-        ex = CAT_EXAMPLES.get(cat, '')
-        c2 = ws.cell(row=r[0], column=2, value=cat)
-        c2.font = Font(name='Calibri', size=10, bold=True, color=fg)
-        c2.fill = PatternFill('solid', fgColor=bg)
-        c2.border = thin_border()
-        c3 = ws.cell(row=r[0], column=3, value=ex)
-        c3.font = Font(name='Calibri', size=10, color='374151')
-        c3.fill = PatternFill('solid', fgColor='FFFFFF')
-        c3.border = thin_border()
-        ws.row_dimensions[r[0]].height = None  # Excel-Autofit
-        nrow()
-
-    add_blank(2)
-    footer = ws.cell(row=r[0], column=2,
-                     value='Bei Fragen: IT-Beauftragter der Gesamtschule Horst')
-    footer.font = Font(name='Calibri', size=10, italic=True, color='9CA3AF')
-    ws.merge_cells(start_row=r[0], start_column=2,
-                   end_row=r[0], end_column=3)
+    section("Spalten")
+    rows = [
+        ("D Schulwoche", "Berechnet aus Ferien & Eckdaten."),
+        ("E Wochentag", "Mo, Di, Mi, Do, Fr oder Ganze Woche."),
+        ("F/G Uhrzeit", "Start und optional Ende, Format 08:30."),
+        ("H Titel", "Pflichtfeld fuer Konverter."),
+        ("I Kategorie", "Dropdown aus Kategorien."),
+        ("J Ganztägig", "Ja oder Nein."),
+        ("K Anmerkung", "Optional, bei SW-Headern auch Warnhinweise."),
+    ]
+    for left, right in rows:
+        write(r, 2, left, bold=True, bg=C_ZEBRA)
+        write(r, 3, right, bg=C_ZEBRA)
+        r += 1
 
     return ws
 
 
-# ---------------------------------------------------------------------------
-# Terminplan-Sheet
-# ---------------------------------------------------------------------------
-def style_terminplan(wb):
-    ws = wb['Terminplan']
-    ws.sheet_properties.tabColor = C_BLUE_TAB
-    max_row = ws.max_row
-
-    # Spalten A-C ausblenden
-    for col_letter in ('A', 'B', 'C'):
-        ws.column_dimensions[col_letter].hidden = True
-
-    # Spaltenbreiten sichtbarer Spalten
-    for col, w in [('D', 24), ('E', 14), ('F', 9), ('G', 9),
-                   ('H', 40), ('I', 18), ('J', 10), ('K', 28)]:
-        ws.column_dimensions[col].width = w
-
-    # Kopfzeile Zeile 1
-    labels = {4: 'Schulwoche', 5: 'Wochentag', 6: 'Uhrzeit',
-              7: 'Endzeit', 8: 'Titel / Veranstaltung',
-              9: 'Kategorie', 10: 'Ganztaegig', 11: 'Anmerkung'}
-    for col_idx, label in labels.items():
-        c = ws.cell(row=1, column=col_idx, value=label)
-        c.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
-        c.fill = h_fill(C_HEADER_BG)
-        c.alignment = Alignment(horizontal='center', vertical='center')
-        c.border = thin_border()
-    ws.row_dimensions[1].height = 22
-
-    # Einfrieren bei E2 (Zeile 1 + Spalten A-D fixiert)
-    ws.freeze_panes = 'E2'
-
-    # Zeilen stylen
-    for row_num in range(2, max_row + 1):
-        # Spalte A enthält "SW XX" nur bei echten Schulwochen-Header-Zeilen
-        # (gesetzt durch patch_xlsx.py). Leere Datenzeilen haben None in Spalte A.
-        a_val = ws.cell(row=row_num, column=1).value
-        is_header = bool(a_val and isinstance(a_val, str) and a_val.startswith('SW '))
-
-        for col in range(4, 12):
-            c = ws.cell(row=row_num, column=col)
-            if is_header:
-                c.font = Font(name='Calibri', size=10,
-                              bold=(col == 4), color='FFFFFF')
-                c.fill = h_fill(C_INDIGO)
-                c.alignment = Alignment(horizontal='left', vertical='center',
-                                        indent=(1 if col == 4 else 0))
-            else:
-                bg = C_ZEBRA if row_num % 2 == 0 else C_WHITE
-                c.fill = h_fill(bg)
-                c.font = Font(name='Calibri', size=11, color='111827')
-                c.alignment = Alignment(vertical='center',
-                                        wrap_text=(col == 8))
-            c.border = thin_border()
-        ws.row_dimensions[row_num].height = 18
-
-    # Dropdown Wochentag (E)
-    dv_wt = DataValidation(
-        type='list',
-        formula1='"Mo,Di,Mi,Do,Fr,Ganze Woche"',
-        allow_blank=True,
-        showErrorMessage=True,
-        error='Bitte Wochentag aus Dropdown waehlen.',
-        errorTitle='Ungueltige Eingabe',
-    )
-    dv_wt.sqref = 'E2:E' + str(max_row)
-    ws.add_data_validation(dv_wt)
-
-    # Dropdown Ganztaegig (J)
-    dv_gt = DataValidation(
-        type='list', formula1='"Ja,Nein"',
-        allow_blank=True, showErrorMessage=False,
-    )
-    dv_gt.sqref = 'J2:J' + str(max_row)
-    ws.add_data_validation(dv_gt)
-
-    # Dropdown Kategorie (I) - referenziert Named Range
-    dv_cat = DataValidation(
-        type='list', formula1='KategorienListe',
-        allow_blank=True, showErrorMessage=False,
-    )
-    dv_cat.sqref = 'I2:I' + str(max_row)
-    ws.add_data_validation(dv_cat)
-
-    return ws
-
-
-# ---------------------------------------------------------------------------
-# Ferien-Sheet
-# ---------------------------------------------------------------------------
-def style_ferien(wb):
-    ws = wb['Ferien']
-    ws.sheet_properties.tabColor = 'ED7D31'
-
-    for col, w in [('A', 26), ('B', 16), ('C', 16), ('D', 30)]:
-        ws.column_dimensions[col].width = w
-
-    # Zeile 2 = Spaltenkopf
-    for col in range(1, 5):
-        c = ws.cell(row=2, column=col)
-        c.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
-        c.fill = h_fill(C_HEADER_BG)
-        c.alignment = Alignment(horizontal='center', vertical='center')
-        c.border = thin_border()
-    ws.row_dimensions[2].height = 20
-
-    # Datenzeilen 3-7
-    for row_num in range(3, 8):
-        bg = C_ZEBRA if row_num % 2 == 0 else C_WHITE
-        for col in range(1, 5):
-            c = ws.cell(row=row_num, column=col)
-            if c.value is None:
-                continue
-            c.font = Font(name='Calibri', size=11, color='111827')
-            c.fill = h_fill(bg)
-            c.alignment = Alignment(vertical='center')
-            c.border = thin_border()
-        ws.row_dimensions[row_num].height = 18
-
-    # Hinweis-Zeile
-    c = ws.cell(row=9, column=1,
-                value='Schuljahres-Eckdaten (automatisch berechnet - nicht aendern)')
-    c.font = Font(name='Calibri', size=10, italic=True, color='4F46E5')
-
-    return ws
-
-
-# ---------------------------------------------------------------------------
-# Kategorien-Sheet
-# ---------------------------------------------------------------------------
-def style_kategorien(wb):
-    ws = wb['Kategorien']
-    ws.sheet_properties.tabColor = '7030A0'
-
-    for col, w in [('A', 22), ('B', 14), ('C', 55)]:
-        ws.column_dimensions[col].width = w
-
-    # Zeile 1: Titel
-    c1 = ws.cell(row=1, column=1)
-    c1.font = Font(name='Calibri', size=13, bold=True, color='1E3A5F')
-    ws.row_dimensions[1].height = 22
-
-    # Zeile 2: Header
-    for col in range(1, 4):
-        c = ws.cell(row=2, column=col)
-        c.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
-        c.fill = h_fill(C_HEADER_BG)
-        c.alignment = Alignment(horizontal='center', vertical='center')
-        c.border = thin_border()
-    ws.row_dimensions[2].height = 20
-
-    # Kategoriezeilen (Zeile 3+)
-    cat_last_row = 2
-    for row_num in range(3, ws.max_row + 1):
-        cat_name = ws.cell(row=row_num, column=1).value
-        if not cat_name:
-            continue
-        cat_last_row = row_num
-        bg, fg = CAT_COLORS.get(str(cat_name), ('F3F4F6', '111827'))
-        for col in range(1, 4):
-            c = ws.cell(row=row_num, column=col)
-            c.fill = h_fill(bg)
-            c.font = Font(name='Calibri', size=11, bold=(col == 1), color=fg)
-            c.alignment = Alignment(vertical='center', wrap_text=(col == 3))
-            c.border = thin_border()
-        ws.row_dimensions[row_num].height = 18
-
-    # Named Range fuer Kategorie-Dropdown im Terminplan
-    dn = DefinedName('KategorienListe',
-                     attr_text='Kategorien!$A$3:$A$' + str(cat_last_row))
-    wb.defined_names['KategorienListe'] = dn
-
-    return ws
-
-
-# ---------------------------------------------------------------------------
-def main():
-    print('Lade Vorlage:', SRC)
-    assert SRC.exists(), 'Quelldatei nicht gefunden: ' + str(SRC)
-
-    shutil.copy(SRC, BAK)
-    print('Backup erstellt:', BAK)
-
-    wb = load_workbook(str(SRC))  # data_only=False -> Formeln bleiben erhalten
-
-    print('Erstelle Anleitung-Sheet ...')
+def build_workbook() -> Workbook:
+    wb = Workbook()
+    del wb[wb.sheetnames[0]]
+    make_terminplan(wb)
+    make_ferien(wb)
+    make_kategorien(wb)
     make_anleitung(wb)
-
-    print('Style Terminplan-Sheet ...')
-    style_terminplan(wb)
-
-    print('Style Ferien-Sheet ...')
-    style_ferien(wb)
-
-    print('Style Kategorien-Sheet + Named Range ...')
-    style_kategorien(wb)
-
-    # Sheet-Reihenfolge: Terminplan zuerst (Konverter liest SheetNames[0] als Fallback)
-    desired_order = ['Terminplan', 'Ferien', 'Kategorien', 'Anleitung']
-    for idx, name in enumerate(desired_order):
-        if name in wb.sheetnames:
-            current_idx = wb.sheetnames.index(name)
-            if current_idx != idx:
-                wb.move_sheet(name, offset=-(current_idx - idx))
-
-    wb.save(str(OUT))
-    print('\n OK - Vorlage gespeichert:', OUT)
-    print('Bitte in Excel oeffnen und pruefen:')
-    print('  - Tab "Terminplan" ist das erste Tab')
-    print('  - Terminplan: Spalten A-C ausgeblendet, Dropdowns in E/I/J')
-    print('  - Ferien: Header-Zeile farbig')
-    print('  - Kategorien: farbige Zeilen')
+    wb.active = 0
+    return wb
 
 
-if __name__ == '__main__':
+def main():
+    wb = build_workbook()
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(OUT)
+    print("OK - neue bearbeitbare Vorlage gespeichert:", OUT)
+    print("Tabs:", ", ".join(wb.sheetnames))
+    print("Schutz: keiner. Technische Spalten A-C im Terminplan sind ausgeblendet.")
+
+
+if __name__ == "__main__":
     main()

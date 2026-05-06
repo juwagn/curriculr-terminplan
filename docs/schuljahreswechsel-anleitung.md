@@ -14,50 +14,47 @@ Dieses Dokument beschreibt alles, was zum Beginn eines neuen Schuljahres zu tun 
 
 ## Teil 1 – Excel-Vorlage aktualisieren
 
-### Schritt 1: Feriendaten eintragen
+### Schritt 1: Vorlage neu generieren
 
-Öffne `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` und wechsle zum **Ferien**-Tab.
+Die Jahresvorlage wird ab jetzt aus **einem** Script frisch erzeugt:
 
-Trage die Feriendaten des neuen Schuljahres ein (Format: `TT.MM.JJJJ`):
+```bash
+python scripts/build_excel_template.py
+```
+
+Ergebnis:
+
+```text
+website/downloads/Terminplan_Schulwochen_Vorlage.xlsx
+```
+
+Die Datei hat keinen Blattschutz. Technische Spalten A-C im Terminplan sind nur ausgeblendet.
+
+---
+
+### Schritt 2: Ferien & Eckdaten eintragen
+
+Öffne `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` und wechsle zum Tab **Ferien**.
+
+Trage dort die Daten des Schuljahres ein:
 
 | Zelle | Inhalt |
 |-------|--------|
-| B3 | Herbstferien: erster Ferientag (Montag) |
-| C3 | Herbstferien: letzter Ferientag (Freitag) |
+| B3 | Herbstferien: erster Ferientag |
+| C3 | Herbstferien: letzter Ferientag |
 | B4 | Weihnachtsferien: erster Ferientag |
 | C4 | Weihnachtsferien: letzter Ferientag |
 | B5 | Osterferien: erster Ferientag |
 | C5 | Osterferien: letzter Ferientag |
-| B6 | Pfingstferien: erster Ferientag (darf leer bleiben) |
-| C6 | Pfingstferien: letzter Ferientag (darf leer bleiben) |
+| B6 | Pfingstferien: erster Ferientag, optional |
+| C6 | Pfingstferien: letzter Ferientag, optional |
 | B7 | Sommerferien: erster Ferientag |
 | C7 | Sommerferien: letzter Ferientag |
-| B10 | Erster Schultag des neuen Schuljahres (muss ein **Montag** sein) |
-| B11 | Letzter Schultag |
-| B12 | (optional) weiteres Datum |
+| B10 | Erster Schultag, SW 00 |
+| B11 | Erster Unterrichtstag, SW 01 |
+| B12 | Letzter Schultag |
 
-**Speichern und schließen**, bevor die Scripts laufen.
-
----
-
-### Schritt 2: Scripts ausführen
-
-Alle drei Scripts vom Projektordner aus ausführen, **in dieser Reihenfolge**:
-
-```bash
-# 1. Nur bei Strukturänderungen (mehr Zeilen pro SW, andere SW-Anzahl etc.)
-#    Normalerweise NICHT jedes Jahr nötig – nur wenn die Struktur geändert wurde.
-python scripts/patch_rows.py
-
-# 2. Jedes Jahr: Datumsformeln setzen (Schulmontage berechnen)
-python scripts/patch_xlsx.py
-
-# 3. Jedes Jahr: Formatierung, Dropdowns, Anleitung-Tab neu schreiben
-python scripts/build_excel_template.py
-```
-
-> **Wann ist `patch_rows.py` nötig?**
-> Nur wenn die Vorlage strukturell verändert wurde (z. B. mehr Zeilen pro Schulwoche, andere Anzahl Schulwochen). Bei normalem Schuljahreswechsel reichen Script 2 + 3.
+**Wichtig:** SW 00 und SW 01 sind bewusst getrennt. SW 00 kann Vorbereitungstage enthalten, SW 01 ist erster regulärer Unterricht.
 
 ---
 
@@ -67,23 +64,27 @@ python scripts/build_excel_template.py
 python scripts/recalc.py
 ```
 
-Das Script prüft, ob alle Schulmontage korrekt berechnet wurden, und gibt eine JSON-Ausgabe. Alle Einträge sollten `"status": "ok"` zeigen.
+Das Script prüft:
 
-> **Hinweis:** `recalc.py` enthält aktuell Sollwerte für 2025/26. Bei einem anderen Schuljahr werden die Werte als abweichend gemeldet – das ist erwartet, solange die Formeln korrekt sind. Wichtig ist, dass die Datumsformeln vorhanden sind (kein `null`).
+- keine Blattsperren
+- echte Datumswerte
+- SW 00 aus B10
+- SW 01 aus B11
+- Ferien-Skip in Folgewochen
+- 42 SW-Header im Terminplan
+- keine offensichtlichen Formel-Fehler
 
 ---
 
 ### Schritt 4: Datei prüfen
 
-Öffne die fertige Vorlage `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` in Excel:
+Öffne die fertige Vorlage in Excel:
 
-- [ ] Ferien-Tab: Datumszellen zeigen echte Datumswerte (nicht reine Zahlen)
-- [ ] Terminplan-Tab: Spalte B zeigt Datumsangaben für alle SW-Zeilen
-- [ ] Terminplan-Tab: Spalte D zeigt Wochenbezeichnungen (z. B. `18.08. – 22.08.2025`)
-- [ ] Anleitung-Tab: vorhanden, lesbar, enthält aktuelles Schuljahr
-- [ ] Keine doppelten Tabs
-
----
+- [ ] Tab Ferien: Eingabezellen B3:C7 und B10:B12 sind bearbeitbar
+- [ ] Tab Terminplan: sichtbare Spalten E-K sind bearbeitbar
+- [ ] Technische Spalten A-C sind ausgeblendet
+- [ ] Spalte D zeigt Wochenbezeichnungen
+- [ ] Keine Schutzmeldung beim Bearbeiten
 
 ## Teil 2 – Termine aus Word-Datei importieren
 
