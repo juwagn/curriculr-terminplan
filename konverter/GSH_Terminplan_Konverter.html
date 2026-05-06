@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GSH Terminplan → ICS Konverter v2.0</title>
+<title>GSH Terminplan → ICS Konverter v2.2</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -354,6 +354,39 @@
   .changelog .tag-new { background: #d1fae5; color: #065f46; }
   .changelog .tag-improve { background: #e0e7ff; color: #3730a3; }
 
+  /* ── Import summary ── */
+  .import-summary-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .import-summary-meta {
+    color: var(--text-muted);
+    font-size: .86rem;
+    margin-bottom: 12px;
+  }
+  .import-warning-list {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .import-warning {
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #9a3412;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+  .import-cat-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
   /* ── Allday ── */
   .allday-label {
     font-size: .7rem; color: var(--text-muted);
@@ -559,7 +592,7 @@
   </svg>
   <span class="header-title">GSH Terminplan → ICS Konverter</span>
   <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
-  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.0</div>
+  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.2</div>
 </div>
 
 <div class="stepper" role="list" aria-label="Workflow-Schritte">
@@ -864,6 +897,12 @@
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-changelog').classList.remove('open')">✕ Schließen</button>
     </div>
     <div class="modal-body changelog">
+      <h4>Version 2.2 <span style="font-size:.75rem;color:#888;font-weight:400">– Mai 2026</span></h4>
+      <ul>
+        <li><span class="tag tag-new">NEU</span> Bearbeitbare Jahresvorlage ohne Blattschutz: Ferien & Eckdaten steuern SW 00, SW 01 und Folgewochen.</li>
+        <li><span class="tag tag-fix">FIX</span> Schulwochen-Import berechnet Montag-Daten auch dann korrekt, wenn Spalte B Formelverweise enthaelt.</li>
+        <li><span class="tag tag-improve">BESSER</span> Import-Zusammenfassung warnt bei unbekannten Kategorien und ueberspringt doppelte Ferienzeilen.</li>
+      </ul>
       <h4>Version 2.0 <span style="font-size:.75rem;color:#888;font-weight:400">– März 2026</span></h4>
       <ul>
         <li><span class="tag tag-new">NEU</span> Schnellstart-Box: Kurzanleitung mit 4-Schritt-Ablauf direkt im Tool (ein-/ausblendbar)</li>
@@ -946,7 +985,7 @@
 // ═══════════════════════════════════════════════════════════
 // CONFIGURABLE CATEGORY SYSTEM (v1.2)
 // ═══════════════════════════════════════════════════════════
-const VERSION = '1.4';
+const VERSION = '2.2';
 
 // Editable category definitions – these can be changed via the Settings panel
 // or directly in this source code. Each category has:
@@ -1192,6 +1231,68 @@ function addDaysISO(dateStr, days) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
+function dateKey(dateStr) {
+  return String(dateStr || '').replace(/-/g, '');
+}
+
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function parseSwNumber(value) {
+  const m = String(value || '').match(/^SW\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function buildHolidayNameSet(ferienRows) {
+  const names = new Set();
+  if (!ferienRows || ferienRows.length <= 2) return names;
+  for (let i = 2; i < ferienRows.length; i++) {
+    const name = normalizeText(ferienRows[i]?.[0]);
+    const start = parseImportDate(String(ferienRows[i]?.[1] || '').trim());
+    if (!name && !start) break;
+    if (!name || !start) continue;
+    names.add(name);
+  }
+  return names;
+}
+
+function readSchoolConfig(ferienRows) {
+  if (!ferienRows || ferienRows.length < 10) return null;
+  const firstDay = parseImportDate(String(ferienRows[9]?.[1] || '').trim());
+  const firstLessonDay = parseImportDate(String(ferienRows[10]?.[1] || '').trim()) || (firstDay ? addDaysISO(firstDay, 7) : '');
+  if (!firstDay || !firstLessonDay) return null;
+
+  const periods = [];
+  for (let i = 2; i <= 6 && i < ferienRows.length; i++) {
+    const start = parseImportDate(String(ferienRows[i]?.[1] || '').trim());
+    const end = parseImportDate(String(ferienRows[i]?.[2] || '').trim());
+    if (start && end) periods.push({ start, end });
+  }
+  return { firstDay, firstLessonDay, periods };
+}
+
+function isDateInPeriod(dateStr, period) {
+  const d = dateKey(dateStr);
+  return d >= dateKey(period.start) && d <= dateKey(period.end);
+}
+
+function computeSchoolMondays(ferienRows, count = 42) {
+  const config = readSchoolConfig(ferienRows);
+  if (!config) return [];
+  const mondays = [config.firstDay, config.firstLessonDay];
+  let current = addDaysISO(config.firstLessonDay, 7);
+  let guard = 0;
+  while (mondays.length < count && guard < 160) {
+    guard++;
+    if (!config.periods.some(period => isDateInPeriod(current, period))) {
+      mondays.push(current);
+    }
+    current = addDaysISO(current, 7);
+  }
+  return mondays.slice(0, count);
+}
+
 // Erkennt Schulwochen-Format: Spalte 0 enthält "SW XX" oder "FERIEN" oder "SW-Key" (neues Format)
 function detectSWFormat(rows) {
   if (String(rows[0]?.[0] || '').trim() === 'SW-Key') return true;
@@ -1221,38 +1322,51 @@ function importSWFormat(rows, ferienRows) {
     // Ereigniszeile = Zeile mit nicht-leerem Titel in Spalte H (Index 7)
     // SW-Header-Zeilen (A = "SW XX") setzen currentMonday; Datenzeilen erben es (carry-forward)
     let currentMonday = null;
+    const schoolMondays = computeSchoolMondays(ferienRows);
+    const holidayNames = buildHolidayNameSet(ferienRows);
+    const warnings = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] || [];
       const col0 = String(row[0] || '').trim();
+      const title = String(row[7] || '').trim();
+      const swNum = parseSwNumber(col0);
 
-      // SW-Header-Zeile: currentMonday aktualisieren, Zeile nicht als Termin importieren
-      if (/^SW\s*\d/i.test(col0)) {
-        const m = parseImportDate(String(row[1] || '').trim());
+      // SW-Header-Zeile: nur Zeilen ohne Titel sind Kopfzeilen.
+      if (swNum !== null && !title) {
+        const m = parseImportDate(String(row[1] || '').trim()) || schoolMondays[swNum] || '';
         if (m) currentMonday = m;
         continue;
       }
 
-      const title = String(row[7] || '').trim();
       if (!title) { skipped++; continue; }
 
       // Spalte B verwenden falls vorhanden, sonst Montag vom letzten SW-Header (carry-forward)
-      const monday = parseImportDate(String(row[1] || '').trim()) || currentMonday;
+      const monday = parseImportDate(String(row[1] || '').trim()) || (swNum !== null ? schoolMondays[swNum] : '') || currentMonday;
       if (!monday) { skipped++; continue; }
 
       const wochentag = String(row[4] || '').trim();
       const uhrzeit   = parseImportTime(String(row[5] || '').trim());
-      const endzeit   = parseImportTime(String(row[6] || '').trim());
+      const rawEnd    = String(row[6] || '').trim();
+      const endDateRaw = parseImportDate(rawEnd);
+      const endzeit   = parseImportTime(rawEnd);
       const catRaw    = String(row[8] || '').trim();
       const ganztaeg  = String(row[9] || '').trim().toLowerCase() === 'ja';
       const note      = String(row[10] || '').trim();
 
+      if (holidayNames.has(normalizeText(title)) && matchCategory(catRaw || 'Feiertage/Ferien') === 'Feiertage/Ferien') {
+        skipped++;
+        warnings.push(`Ferien-Zeile "${title}" im Terminplan uebersprungen, weil sie aus dem Ferien-Tab importiert wird.`);
+        continue;
+      }
+
       const offset    = weekdayOffset[wochentag];
       const eventDate = (offset !== undefined) ? addDaysISO(monday, offset) : monday;
       const isGanzWoche = !wochentag || wochentag === 'Ganze Woche';
-      const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+      const isoEndInG = isGanzWoche && endDateRaw ? endDateRaw : null;
       const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(monday, 4)) : (endzeit ? eventDate : '');
       const allday    = ganztaeg || (!uhrzeit && !endzeit);
       const cat       = catRaw ? matchCategory(catRaw) : '';
+      if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
 
       addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
       imported++;
@@ -1266,17 +1380,23 @@ function importSWFormat(rows, ferienRows) {
         const row = ferienRows[i] || [];
         const name = String(row[0] || '').trim();
         const startDate = parseImportDate(String(row[1] || '').trim());
-        if (!name || !startDate) break; // Erste leere Zeile = Ende der Ferieneintraege
+        if (!name && !startDate) break; // Erste komplett leere Zeile = Ende der Ferieneintraege
+        if (!name || !startDate) continue; // optionale Ferienzeile, z. B. Pfingsten, darf leer bleiben
         const endDate = parseImportDate(String(row[2] || '').trim()) || startDate;
         const cat = matchCategory('Feiertage/Ferien');
-        addRow({ title: name, start: startDate, end: endDate, cat, allday: true });
+        addRow({ title: name, start: startDate, end: endDate, cat, allday: true, note: String(row[3] || '').trim() });
         imported++;
         catCounts[cat || 'Ferien'] = (catCounts[cat || 'Ferien'] || 0) + 1;
       }
     }
+    isDirty = imported > 0;
+    validateRows();
+    updateStats();
+    return { imported, skipped, catCounts, warnings };
   } else {
     // Altes Format: SW-Kopfzeilen (A="SW XX") + Event-Zeilen (A=leer) + FERIEN-Blöcke
     let currentMonday = null;
+    const warnings = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i] || [];
@@ -1309,7 +1429,9 @@ function importSWFormat(rows, ferienRows) {
       if (!col0 && currentMonday) {
         const wochentag = String(row[1] || '').trim();
         const uhrzeit   = parseImportTime(String(row[2] || '').trim());
-        const endzeit   = parseImportTime(String(row[3] || '').trim());
+        const rawEnd    = String(row[3] || '').trim();
+        const endDateRaw = parseImportDate(rawEnd);
+        const endzeit   = parseImportTime(rawEnd);
         const title     = String(row[4] || '').trim();
         const catRaw    = String(row[5] || '').trim();
         const ganztaeg  = String(row[6] || '').trim().toLowerCase() === 'x';
@@ -1320,22 +1442,42 @@ function importSWFormat(rows, ferienRows) {
         const offset    = weekdayOffset[wochentag];
         const eventDate = (offset !== undefined) ? addDaysISO(currentMonday, offset) : currentMonday;
         const isGanzWoche = wochentag === 'Ganze Woche';
-        const isoEndInG = isGanzWoche && /^\d{4}-\d{2}-\d{2}$/.test(endzeit) ? endzeit : null;
+        const isoEndInG = isGanzWoche && endDateRaw ? endDateRaw : null;
         const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(currentMonday, 4)) : (endzeit ? eventDate : '');
         const allday    = ganztaeg || (!uhrzeit && !endzeit);
         const cat       = catRaw ? matchCategory(catRaw) : '';
+        if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
 
         addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
         imported++;
         catCounts[cat || 'Ohne Kategorie'] = (catCounts[cat || 'Ohne Kategorie'] || 0) + 1;
       }
     }
+    isDirty = imported > 0;
+    validateRows();
+    updateStats();
+    return { imported, skipped, catCounts, warnings };
   }
+}
 
-  isDirty = imported > 0;
-  validateRows();
-  updateStats();
-  return { imported, skipped, catCounts };
+function renderImportSummary({ title, imported, skipped = 0, dupes = 0, catCounts = {}, warnings = [] }) {
+  let html = `<div class="import-summary-title"><strong>${imported}</strong> ${esc(title)}</div>`;
+  const meta = [];
+  if (skipped > 0) meta.push(`${skipped} Zeile(n) uebersprungen`);
+  if (dupes > 0) meta.push(`${dupes} Duplikat(e) uebersprungen`);
+  if (meta.length) html += `<div class="import-summary-meta">${esc(meta.join(' · '))}</div>`;
+  if (warnings.length) {
+    html += '<div class="import-warning-list">';
+    warnings.slice(0, 12).forEach(w => { html += `<div class="import-warning">${esc(w)}</div>`; });
+    if (warnings.length > 12) html += `<div class="import-warning">${warnings.length - 12} weitere Warnung(en) ausgeblendet.</div>`;
+    html += '</div>';
+  }
+  html += '<div class="import-cat-list">';
+  for (const [c, n] of Object.entries(catCounts).sort((a, b) => b[1] - a[1])) {
+    html += `<span class="stat-badge ${getCatClass(c)}">${esc(c)}: ${n}</span>`;
+  }
+  html += '</div>';
+  return html;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1363,15 +1505,11 @@ function handleFile(file) {
         const ferienRows = ferienWs
           ? XLSX.utils.sheet_to_json(ferienWs, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' })
           : [];
-        const { imported, skipped, catCounts } = importSWFormat(rows, ferienRows);
-        let html = `<p style="font-size:1.1rem;margin-bottom:8px"><strong>${imported}</strong> Termine aus Schulwochen-Vorlage importiert</p>`;
-        if (skipped > 0) html += `<p style="color:var(--text-muted);margin-bottom:12px">${skipped} leere Zeile(n) übersprungen</p>`;
-        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
-        for (const [c, n] of Object.entries(catCounts).sort((a, b) => b[1] - a[1])) {
-          html += `<span class="stat-badge ${getCatClass(c)}">${c}: ${n}</span>`;
-        }
-        html += '</div>';
-        document.getElementById('import-summary').innerHTML = html;
+        const result = importSWFormat(rows, ferienRows);
+        document.getElementById('import-summary').innerHTML = renderImportSummary({
+          ...result,
+          title: 'Termine aus Schulwochen-Vorlage importiert',
+        });
         document.getElementById('modal-import').classList.add('open');
         return;
       }
@@ -1409,6 +1547,7 @@ function handleFile(file) {
       let imported = 0, skipped = 0, dupes = 0;
       const seen = new Set(); // P1: Duplikat-Erkennung
       const catCounts = {};
+      const warnings = [];
 
       for (let i = headerIdx + 1; i < rows.length; i++) {
         const r = rows[i];
@@ -1427,7 +1566,9 @@ function handleFile(file) {
         const startTime = parseImportTime(r[cm.startTime]);
         const end = parseImportDate(r[cm.end]);
         const endTime = parseImportTime(r[cm.endTime]);
-        const cat = matchCategory(String(r[cm.cat] || ''));
+        const catRaw = String(r[cm.cat] || '');
+        const cat = matchCategory(catRaw);
+        if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
         const note = String(r[cm.note] || '').trim();
         const allday = !startTime && !endTime;
 
@@ -1441,15 +1582,14 @@ function handleFile(file) {
       updateStats();
 
       // P1: Import-Zusammenfassung als Modal
-      let html = `<p style="font-size:1.1rem;margin-bottom:16px"><strong>${imported}</strong> Termine importiert</p>`;
-      if (dupes > 0) html += `<p style="color:var(--warn);margin-bottom:8px">⚠ ${dupes} Duplikat(e) übersprungen (gleicher Titel + Datum)</p>`;
-      if (skipped > 0) html += `<p style="color:var(--text-muted);margin-bottom:12px">${skipped} leere/ungültige Zeile(n) übersprungen</p>`;
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
-      for (const [c, n] of Object.entries(catCounts).sort((a, b) => b[1] - a[1])) {
-        html += `<span class="stat-badge ${getCatClass(c)}">${c}: ${n}</span>`;
-      }
-      html += '</div>';
-      document.getElementById('import-summary').innerHTML = html;
+      document.getElementById('import-summary').innerHTML = renderImportSummary({
+        title: 'Termine importiert',
+        imported,
+        skipped,
+        dupes,
+        catCounts,
+        warnings,
+      });
       document.getElementById('modal-import').classList.add('open');
 
     } catch (err) {
@@ -1494,7 +1634,7 @@ function matchCategory(val) {
   for (const entry of catKeywords) {
     if (lower.includes(entry.kw)) return categories[entry.idx].label;
   }
-  return val ? categories[categories.length - 1]?.label || '' : '';
+  return '';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1922,7 +2062,7 @@ function buildICS() {
   ];
 
   rows.forEach((r, i) => {
-    const uid = `gsh-${stamp}-${i}@gesamtschule-horst.de`;
+    const uid = stableEventUid(r, i);
     const lines = [
       'BEGIN:VEVENT',
       `UID:${uid}`,
@@ -1974,18 +2114,44 @@ function buildICS() {
 }
 
 function foldLine(line) {
-  if (line.length <= 75) return line;
-  let result = line.slice(0, 75);
-  let pos = 75;
-  while (pos < line.length) {
-    result += '\r\n ' + line.slice(pos, pos + 74);
-    pos += 74;
+  const enc = new TextEncoder();
+  if (enc.encode(line).length <= 75) return line;
+  const parts = [];
+  let current = '';
+  let limit = 75;
+  for (const ch of line) {
+    if (current && enc.encode(current + ch).length > limit) {
+      parts.push(current);
+      current = ch;
+      limit = 74;
+    } else {
+      current += ch;
+    }
   }
-  return result;
+  if (current) parts.push(current);
+  return parts.map((part, idx) => idx === 0 ? part : ' ' + part).join('\r\n');
 }
 
 function fmtDT(d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''); }
 function icsEsc(s) { return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+
+function stableEventUid(r, index) {
+  const source = [
+    r.start || '',
+    r.startTime || '',
+    r.end || '',
+    r.endTime || '',
+    normalizeText(r.title),
+    normalizeText(r.cat),
+    index,
+  ].join('|');
+  let hash = 2166136261;
+  for (let i = 0; i < source.length; i++) {
+    hash ^= source.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return `gsh-${hash.toString(16).padStart(8, '0')}@gesamtschule-horst.de`;
+}
 
 function exportICS() {
   const ics = buildICS();
