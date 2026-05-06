@@ -1,6 +1,6 @@
 # Schuljahreswechsel – Schritt-für-Schritt-Anleitung
 
-Dieses Dokument beschreibt alles, was zum Beginn eines neuen Schuljahres zu tun ist.
+Dieses Dokument beschreibt alles, was zum Beginn eines neuen Schuljahres zu tun ist. Die verbindliche Betriebsanweisung steht in `docs/sop-terminplan-schuljahr.md`.
 
 ---
 
