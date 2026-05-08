@@ -1,8 +1,8 @@
-# SOP – GSH Terminplan Schuljahreswechsel
+# SOP – Terminplan Schuljahreswechsel
 
 ## Zweck
 
-Diese SOP beschreibt den sicheren Jahresprozess fuer den GSH-Terminplan: Excel-Vorlage erzeugen, durch die Schulleitung pflegen lassen, in ICS konvertieren und in IServ importieren.
+Diese SOP beschreibt den sicheren Jahresprozess fuer den Terminplan: Excel-Vorlage erzeugen, durch die Schulleitung pflegen lassen, in ICS konvertieren und in IServ importieren.
 
 Ziel: Die Schulleitung kann jedes Jahr Ferien, SW 00, SW 01, letzten Schultag und Termine selbst pflegen. Die IT stellt nur Vorlage, Konverter und Pruefung bereit.
 

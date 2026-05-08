@@ -2,7 +2,7 @@
 """
 build_excel_template.py
 
-Generiert die bearbeitbare GSH-Schulwochen-Vorlage neu.
+Generiert die bearbeitbare Schulwochen-Vorlage neu.
 
 Prinzip:
 - Keine Blatt- oder Arbeitsmappensperre. Die Schulleitung kann die Datei jedes Jahr frei anpassen.
@@ -350,7 +350,7 @@ def make_anleitung(wb: Workbook):
         write(r, 2, text, bold=True, size=12, color=C_INFO_TEXT)
         r += 1
 
-    write(2, 2, "GSH Schuljahreskalender - Anleitung", bold=True, size=18, color="1E3A5F", wrap=False)
+    write(2, 2, "Schuljahreskalender - Anleitung", bold=True, size=18, color="1E3A5F", wrap=False)
     r = 4
     section("Jedes Jahr neu einrichten")
     steps = [

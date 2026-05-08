@@ -1,6 +1,6 @@
-# GSH Terminplan Dashboard
+# Schul-Terminplan Dashboard
 
-WordPress-Plugin der Gesamtschule Horst zur interaktiven Anzeige des Schulkalenders aus IServ-iCal-Feeds.
+WordPress-Plugin zur interaktiven Anzeige des Schulkalenders aus IServ-iCal-Feeds.
 
 **Aktuelle Version: 3.17.0**
 
@@ -33,7 +33,7 @@ WordPress-Plugin der Gesamtschule Horst zur interaktiven Anzeige des Schulkalend
 
 1. Den Ordner `plugin/` als `gsh-terminplan` nach `wp-content/plugins/` kopieren
 2. Plugin in WordPress aktivieren
-3. Einstellungen unter **Einstellungen → GSH Terminplan** konfigurieren
+3. Einstellungen unter **Einstellungen → Schul-Terminplan** konfigurieren
 4. iCal-URL des IServ-Kalenders eintragen und Cache aufbauen
 5. Shortcode auf einer Seite einfügen:
 
@@ -135,4 +135,4 @@ Beim Release müssen vier Stellen synchron gehalten werden:
 
 ## Lizenz
 
-Privates Schulprojekt – Gesamtschule Horst
+GPL v2 or later

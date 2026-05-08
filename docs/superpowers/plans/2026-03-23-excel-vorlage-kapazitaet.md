@@ -93,7 +93,7 @@ print('Weiter mit: python scripts/patch_xlsx.py')
 - [ ] **Step 2: Script ausführen**
 
 ```bash
-cd "c:/Users/juwag/OneDrive - Gesamtschule Horst/02 Orga/04 IT Dienstleistungen/Wordpress Plugin Terminplaner"
+cd "~/projects/wordpress-plugin-terminplaner"
 python scripts/patch_rows.py
 ```
 
