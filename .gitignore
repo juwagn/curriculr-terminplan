@@ -20,6 +20,10 @@ tasks/
 *.xlsx
 *.docx
 
+# Ausnahme: Vorlagen sind bewusst im Repository
+!vorlagen/*.xlsx
+!vorlagen/*.docx
+
 # Python-Cache
 __pycache__/
 *.pyc
