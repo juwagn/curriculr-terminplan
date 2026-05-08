@@ -60,12 +60,25 @@ on:
         required: true
         default: '2027-08-31'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
+
+      - name: Struktur pruefen
+        run: |
+          echo "=== Working Directory ==="
+          pwd
+          ls -la
+          echo "=== Vorlagen-Verzeichnis ==="
+          ls -la vorlagen/ || echo "vorlagen/ NICHT GEFUNDEN"
+          echo "=== Scripts-Verzeichnis ==="
+          ls -la scripts/ || echo "scripts/ NICHT GEFUNDEN"
 
       - name: Python einrichten
         uses: actions/setup-python@v5
@@ -104,7 +117,7 @@ jobs:
           with open("ferien_config.json", "w", encoding="utf-8") as f:
               json.dump(cfg, f, indent=2, ensure_ascii=False)
 
-          print("Konfiguration:")
+          print("=== Konfiguration ===")
           print(json.dumps(cfg, indent=2, ensure_ascii=False))
           PYEOF
         env:
@@ -125,7 +138,15 @@ jobs:
 
       - name: Vorlage generieren
         run: |
+          echo "=== ferien_config.json ==="
+          cat ferien_config.json
+          echo "=== Generator-Output ==="
           python scripts/generate_school_template.py --config ferien_config.json
+
+      - name: Ergebnis pruefen
+        run: |
+          echo "=== Generierte Dateien ==="
+          ls -la Terminplan_Schulwochen_Vorlage_*.xlsx || echo "KEINE DATEI GEFUNDEN"
 
       - name: Als Artifact hochladen
         uses: actions/upload-artifact@v4

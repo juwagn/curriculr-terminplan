@@ -121,74 +121,88 @@ def interactive_config():
 
 def generate(cfg):
     """Erzeuge die Schulwochen-Vorlage."""
-    if not TEMPLATE_PATH.exists():
-        print(f"Fehler: Template nicht gefunden: {TEMPLATE_PATH}")
-        sys.exit(1)
+    import traceback
+    try:
+        print(f"Arbeitsverzeichnis: {Path.cwd().absolute()}")
+        print(f"Erwartetes Template: {TEMPLATE_PATH.absolute()}")
+        print(f"Template existiert: {TEMPLATE_PATH.exists()}")
 
-    print(f"Lade Template: {TEMPLATE_PATH}")
-    wb = openpyxl.load_workbook(TEMPLATE_PATH, data_only=False)
+        if not TEMPLATE_PATH.exists():
+            # Fallback: suche im aktuellen Verzeichnis
+            alt_path = Path("vorlagen") / "Terminplan_2026_27.xlsx"
+            print(f"Fallback-Pfad: {alt_path.absolute()} -> existiert: {alt_path.exists()}")
+            if alt_path.exists():
+                wb = openpyxl.load_workbook(alt_path, data_only=False)
+            else:
+                print(f"Fehler: Template nicht gefunden: {TEMPLATE_PATH}")
+                sys.exit(1)
+        else:
+            print(f"Lade Template: {TEMPLATE_PATH}")
+            wb = openpyxl.load_workbook(TEMPLATE_PATH, data_only=False)
 
-    # ═══════════════════════════════════════════════════════════
-    # 1. FERIEN-SHEET aktualisieren
-    # ═══════════════════════════════════════════════════════════
-    ws_ferien = wb["Ferien"]
+        # ═══════════════════════════════════════════════════════════
+        # 1. FERIEN-SHEET aktualisieren
+        # ═══════════════════════════════════════════════════════════
+        ws_ferien = wb["Ferien"]
 
-    # Ferienzeilen: B3-B7 = Startdaten, C3-C7 = Enddaten
-    holiday_rows = [3, 4, 5, 6, 7]  # Herbst, Weihnachten, Ostern, Pfingsten, Sommer
-    for i, h in enumerate(cfg["holidays"]):
-        row = holiday_rows[i]
-        start = parse_date(h.get("start"))
-        end = parse_date(h.get("end"))
+        # Ferienzeilen: B3-B7 = Startdaten, C3-C7 = Enddaten
+        holiday_rows = [3, 4, 5, 6, 7]  # Herbst, Weihnachten, Ostern, Pfingsten, Sommer
+        for i, h in enumerate(cfg["holidays"]):
+            row = holiday_rows[i]
+            start = parse_date(h.get("start"))
+            end = parse_date(h.get("end"))
+            print(f"  Ferien {i+1} ({h.get('name')}): Start={start}, End={end} -> Zeile {row}")
 
-        if start:
             ws_ferien.cell(row=row, column=2, value=start)
-        else:
-            ws_ferien.cell(row=row, column=2, value=None)
-
-        if end:
             ws_ferien.cell(row=row, column=3, value=end)
-        else:
-            ws_ferien.cell(row=row, column=3, value=None)
 
-        # Hinweis-Spalte aktualisieren
-        hint = "Pflichtfeld" if start else "Optional leer lassen"
-        ws_ferien.cell(row=row, column=4, value=hint)
+            # Hinweis-Spalte aktualisieren
+            hint = "Pflichtfeld" if start else "Optional leer lassen"
+            ws_ferien.cell(row=row, column=4, value=hint)
 
-    # Eckdaten
-    ws_ferien.cell(row=10, column=2, value=parse_date(cfg["sw00"]))   # Erster Schultag
-    ws_ferien.cell(row=11, column=2, value=parse_date(cfg["sw01"]))   # Erster Unterrichtstag
-    ws_ferien.cell(row=12, column=2, value=parse_date(cfg["last_day"]))  # Letzter Schultag
+        # Eckdaten
+        sw00 = parse_date(cfg["sw00"])
+        sw01 = parse_date(cfg["sw01"])
+        last = parse_date(cfg["last_day"])
+        print(f"  Eckdaten: sw00={sw00}, sw01={sw01}, last_day={last}")
 
-    # ═══════════════════════════════════════════════════════════
-    # 2. ANLEITUNG aktualisieren
-    # ═══════════════════════════════════════════════════════════
-    ws_anl = wb["Anleitung"]
-    ws_anl.cell(row=2, column=2, value=f"Schuljahreskalender {cfg['schuljahr']} - Anleitung")
+        ws_ferien.cell(row=10, column=2, value=sw00)
+        ws_ferien.cell(row=11, column=2, value=sw01)
+        ws_ferien.cell(row=12, column=2, value=last)
 
-    # ═══════════════════════════════════════════════════════════
-    # 3. KATEGORIEN aktualisieren (falls gewuenscht)
-    # ═══════════════════════════════════════════════════════════
-    if cfg.get("categories"):
-        ws_kat = wb["Kategorien"]
-        # Kategorien ab Zeile 3
-        for i, cat in enumerate(cfg["categories"], start=3):
-            ws_kat.cell(row=i, column=1, value=cat["label"])
-            ws_kat.cell(row=i, column=2, value=cat.get("color", ""))
-            ws_kat.cell(row=i, column=3, value=cat.get("keywords", ""))
+        # ═══════════════════════════════════════════════════════════
+        # 2. ANLEITUNG aktualisieren
+        # ═══════════════════════════════════════════════════════════
+        ws_anl = wb["Anleitung"]
+        ws_anl.cell(row=2, column=2, value=f"Schuljahreskalender {cfg['schuljahr']} - Anleitung")
 
-    # ═══════════════════════════════════════════════════════════
-    # 4. SPEICHERN
-    # ═══════════════════════════════════════════════════════════
-    safe_name = cfg["schuljahr"].replace("/", "_").replace("\\", "_")
-    out_name = f"Terminplan_Schulwochen_Vorlage_{safe_name}.xlsx"
-    out_path = Path(out_name)
+        # ═══════════════════════════════════════════════════════════
+        # 3. KATEGORIEN aktualisieren (falls gewuenscht)
+        # ═══════════════════════════════════════════════════════════
+        if cfg.get("categories"):
+            ws_kat = wb["Kategorien"]
+            for i, cat in enumerate(cfg["categories"], start=3):
+                ws_kat.cell(row=i, column=1, value=cat["label"])
+                ws_kat.cell(row=i, column=2, value=cat.get("color", ""))
+                ws_kat.cell(row=i, column=3, value=cat.get("keywords", ""))
 
-    wb.save(out_path)
-    print(f"\nErfolg! Vorlage gespeichert: {out_path.absolute()}")
-    print(f"  - {ws_ferien.max_row} Zeilen im Ferien-Sheet")
-    print(f"  - {wb['Terminplan'].max_row} Zeilen im Terminplan-Sheet")
-    print(f"  - Alle Formeln, Dropdowns und Formatierungen erhalten")
-    return out_path
+        # ═══════════════════════════════════════════════════════════
+        # 4. SPEICHERN
+        # ═══════════════════════════════════════════════════════════
+        safe_name = cfg["schuljahr"].replace("/", "_").replace("\\", "_")
+        out_name = f"Terminplan_Schulwochen_Vorlage_{safe_name}.xlsx"
+        out_path = Path(out_name)
+
+        wb.save(out_path)
+        print(f"\nErfolg! Vorlage gespeichert: {out_path.absolute()}")
+        print(f"  - {ws_ferien.max_row} Zeilen im Ferien-Sheet")
+        print(f"  - {wb['Terminplan'].max_row} Zeilen im Terminplan-Sheet")
+        print(f"  - Alle Formeln, Dropdowns und Formatierungen erhalten")
+        return out_path
+    except Exception as e:
+        print(f"\nFehler bei der Generierung: {e}")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 def main():
