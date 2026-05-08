@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const html = fs.readFileSync('konverter/GSH_Terminplan_Konverter.html', 'utf8');
+const html = fs.readFileSync('konverter/Terminplan_Konverter.html', 'utf8');
 const js = html.match(/<script>\s*\/\/ ═+[\s\S]*?<\/script>/)?.[0]
   .replace(/^<script>/, '')
   .replace(/<\/script>$/, '');
@@ -11,13 +11,16 @@ if (!js) {
   throw new Error('Konverter-Script nicht gefunden');
 }
 
+// Normalisiere Zeilenumbrueche fuer Windows/Unix-Kompatibilitaet
+const jsNormalized = js.replace(/\r\n/g, '\n');
+
 function sliceByMarkers(start, end) {
-  const a = js.indexOf(start);
-  const b = js.indexOf(end);
+  const a = jsNormalized.indexOf(start);
+  const b = jsNormalized.indexOf(end);
   if (a === -1 || b === -1 || b <= a) {
     throw new Error(`Marker nicht gefunden: ${start} -> ${end}`);
   }
-  return js.slice(a, b);
+  return jsNormalized.slice(a, b);
 }
 
 const code = [

@@ -619,16 +619,21 @@
   <div class="step-sep" aria-hidden="true"></div>
   <div class="step-item" id="step-2" role="listitem">
     <div class="step-num" aria-hidden="true">2</div>
-    <span class="step-label">Importieren</span>
+    <span class="step-label">Vorlage</span>
   </div>
   <div class="step-sep" aria-hidden="true"></div>
   <div class="step-item" id="step-3" role="listitem">
     <div class="step-num" aria-hidden="true">3</div>
-    <span class="step-label">Bearbeiten</span>
+    <span class="step-label">Importieren</span>
   </div>
   <div class="step-sep" aria-hidden="true"></div>
   <div class="step-item" id="step-4" role="listitem">
     <div class="step-num" aria-hidden="true">4</div>
+    <span class="step-label">Bearbeiten</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" id="step-5" role="listitem">
+    <div class="step-num" aria-hidden="true">5</div>
     <span class="step-label">Exportieren</span>
   </div>
 </div>
@@ -729,82 +734,41 @@
       <div class="card-header-left">
         <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
         <span class="card-step">2</span>
-        <h2>Schulwochen-Vorlage generieren</h2>
+        <h2>Schulwochen-Vorlage erhalten</h2>
       </div>
     </div>
     <div class="card-body">
-      <p class="step-hint">Ferien und Eckdaten für das neue Schuljahr eingeben – der Konverter erstellt eine fertige Excel-Vorlage mit berechneten Schulwochen.</p>
-      <div class="template-form" id="template-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tpl-schuljahr">Schuljahr</label>
-            <input type="text" id="tpl-schuljahr" placeholder="z.B. 2026/27" value="2026/27">
-          </div>
-          <div class="form-group">
-            <label for="tpl-sw00">Erster Schultag (SW 00)</label>
-            <input type="date" id="tpl-sw00" value="2026-08-24">
-          </div>
-          <div class="form-group">
-            <label for="tpl-sw01">Erster Unterrichtstag (SW 01)</label>
-            <input type="date" id="tpl-sw01" value="2026-08-31">
-          </div>
-          <div class="form-group">
-            <label for="tpl-last">Letzter Schultag</label>
-            <input type="date" id="tpl-last" value="2027-07-16">
-          </div>
+      <p class="step-hint">Eine professionelle Excel-Vorlage mit automatischen Schulwochen-Berechnungen, Dropdown-Menüs und Formatierung.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:18px;">
+          <h3 style="font-size:.95rem;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Online generieren
+          </h3>
+          <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
+            Keine Installation nötig. Ferien und Eckdaten im Browser eingeben – die Vorlage wird automatisch erstellt und steht zum Download bereit.
+          </p>
+          <a class="btn btn-primary btn-sm" href="https://github.com/juwagn/gsh-terminplan/actions/workflows/generate-template.yml" target="_blank" rel="noopener">
+            Zum Generator
+          </a>
         </div>
-        <div class="form-row">
-          <div class="form-group holiday">
-            <label>Herbstferien</label>
-            <div class="date-range">
-              <input type="date" id="tpl-herbst-von" value="2026-10-19">
-              <span>bis</span>
-              <input type="date" id="tpl-herbst-bis" value="2026-10-30">
-            </div>
-          </div>
-          <div class="form-group holiday">
-            <label>Weihnachtsferien</label>
-            <div class="date-range">
-              <input type="date" id="tpl-weihnachten-von" value="2026-12-22">
-              <span>bis</span>
-              <input type="date" id="tpl-weihnachten-bis" value="2027-01-03">
-            </div>
-          </div>
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:18px;">
+          <h3 style="font-size:.95rem;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Lokal mit Python
+          </h3>
+          <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
+            Für wiederkehrende Generierung oder Offline-Nutzung. Ein Kommandozeilen-Skript mit interaktiver Eingabe.
+          </p>
+          <a class="btn btn-ghost btn-sm" href="../docs/anleitung-vorlagen-generator.md" target="_blank">
+            Anleitung öffnen
+          </a>
         </div>
-        <div class="form-row">
-          <div class="form-group holiday">
-            <label>Osterferien</label>
-            <div class="date-range">
-              <input type="date" id="tpl-ostern-von" value="2027-03-22">
-              <span>bis</span>
-              <input type="date" id="tpl-ostern-bis" value="2027-04-02">
-            </div>
-          </div>
-          <div class="form-group holiday">
-            <label>Pfingstferien <small>(optional)</small></label>
-            <div class="date-range">
-              <input type="date" id="tpl-pfingsten-von">
-              <span>bis</span>
-              <input type="date" id="tpl-pfingsten-bis">
-            </div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group holiday">
-            <label>Sommerferien</label>
-            <div class="date-range">
-              <input type="date" id="tpl-sommer-von" value="2027-07-19">
-              <span>bis</span>
-              <input type="date" id="tpl-sommer-bis" value="2027-08-31">
-            </div>
-          </div>
-        </div>
-        <div class="template-actions">
-          <button class="btn btn-primary btn-lg" onclick="generateSchoolTemplate()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Schulwochen-Vorlage herunterladen
-          </button>
-        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px 14px;background:#eef2ff;border-radius:8px;border-left:3px solid var(--primary);">
+        <p style="font-size:.8rem;color:var(--text-muted);margin:0;line-height:1.5;">
+          <strong>Hinweis:</strong> Der Browser kann keine Excel-Dateien mit Formeln erstellen. Daher erfolgt die Generierung über den Online-Generator (GitHub Actions) oder ein lokales Python-Skript – beide Varianten bewahren alle Formeln, Dropdowns und Formatierungen der Vorlage.
+        </p>
       </div>
     </div>
   </div>
@@ -2349,246 +2313,8 @@ function downloadXlsx(wb, filename) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// SCHOOL TEMPLATE GENERATOR
-// ═══════════════════════════════════════════════════════════
-
-function parseIsoDate(s) {
-  if (!s) return null;
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function formatIso(d) {
-  if (!d) return '';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function addDays(d, n) {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function nextMondayAfter(d) {
-  const day = d.getDay(); // 0=So, 1=Mo, ... 6=Sa
-  const daysUntilMonday = day === 0 ? 1 : (day === 1 ? 7 : 8 - day);
-  return addDays(d, daysUntilMonday);
-}
-
-function isInRange(date, start, end) {
-  if (!start || !end) return false;
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  return d >= s && d <= e;
-}
-
-function calculateSchoolMondays(sw00, sw01, lastDay, holidays) {
-  const result = [];
-  result.push({ sw: 'SW 00', monday: new Date(sw00) });
-  result.push({ sw: 'SW 01', monday: new Date(sw01) });
-  let current = new Date(sw01);
-  for (let i = 2; i <= 41; i++) {
-    current = addDays(current, 7);
-    // Skip holidays: repeat until current Monday is outside all holidays
-    let moved = true;
-    while (moved) {
-      moved = false;
-      for (const h of holidays) {
-        if (h.start && h.end && isInRange(current, h.start, h.end)) {
-          current = nextMondayAfter(addDays(h.end, 1));
-          moved = true;
-        }
-      }
-    }
-    result.push({ sw: 'SW ' + String(i).padStart(2, '0'), monday: new Date(current) });
-  }
-  return result;
-}
-
-function generateSchoolTemplate() {
-  if (typeof XLSX === 'undefined') { toast('SheetJS nicht geladen', 'error'); return; }
-
-  // Read inputs
-  const schuljahr = document.getElementById('tpl-schuljahr').value.trim() || '2026/27';
-  const sw00 = parseIsoDate(document.getElementById('tpl-sw00').value);
-  const sw01 = parseIsoDate(document.getElementById('tpl-sw01').value);
-  const lastDay = parseIsoDate(document.getElementById('tpl-last').value);
-
-  const holidays = [
-    { name: 'Herbstferien', start: parseIsoDate(document.getElementById('tpl-herbst-von').value), end: parseIsoDate(document.getElementById('tpl-herbst-bis').value) },
-    { name: 'Weihnachtsferien', start: parseIsoDate(document.getElementById('tpl-weihnachten-von').value), end: parseIsoDate(document.getElementById('tpl-weihnachten-bis').value) },
-    { name: 'Osterferien', start: parseIsoDate(document.getElementById('tpl-ostern-von').value), end: parseIsoDate(document.getElementById('tpl-ostern-bis').value) },
-    { name: 'Pfingstferien', start: parseIsoDate(document.getElementById('tpl-pfingsten-von').value), end: parseIsoDate(document.getElementById('tpl-pfingsten-bis').value) },
-    { name: 'Sommerferien', start: parseIsoDate(document.getElementById('tpl-sommer-von').value), end: parseIsoDate(document.getElementById('tpl-sommer-bis').value) },
-  ];
-
-  if (!sw00 || !sw01) {
-    toast('Bitte Erster Schultag und Erster Unterrichtstag ausfüllen.', 'error');
-    return;
-  }
-
-  const schoolWeeks = calculateSchoolMondays(sw00, sw01, lastDay, holidays);
-
-  // ═══════════════════════════════════════════════════════════
-  // Build Ferien Sheet
-  // ═══════════════════════════════════════════════════════════
-  const ferienData = [
-    [`Schuljahr ${schuljahr} – Ferien & Eckdaten`, null, null, null, null, null, null],
-    ['Bezeichnung', 'Von (Datum)', 'Bis (Datum)', 'Hinweis', null, null, null],
-  ];
-  holidays.forEach(h => {
-    ferienData.push([h.name, h.start || null, h.end || null, h.start ? 'Pflichtfeld' : 'Optional leer lassen', null, null, null]);
-  });
-  ferienData.push([null, null, null, null, null, null, null]);
-  ferienData.push(['Schuljahres-Eckdaten', null, null, null, null, null, null]);
-  ferienData.push(['Erster Schultag (SW 00)', sw00, null, 'SW 00: Vorbereitungstage, Konferenzen, Schulstart vor Unterricht', null, null, null]);
-  ferienData.push(['Erster Unterrichtstag (SW 01)', sw01, null, 'SW 01: erster regulärer Unterrichtstag', null, null, null]);
-  ferienData.push(['Letzter Schultag', lastDay || null, null, 'Kontrollwert; Terminplan markiert letzte Woche', null, null, null]);
-  ferienData.push([null, null, null, null, null, null, null]);
-  ferienData.push([null, null, null, null, 'Berechnete Schulwochen – nicht manuell pflegen', 'Montag', 'Hinweis']);
-
-  // SW rows in Ferien sheet (starting at row 15 = index 14)
-  schoolWeeks.forEach((sw, idx) => {
-    const mondayIso = formatIso(sw.monday);
-    const hint = lastDay && sw.monday > lastDay ? 'nach letztem Schultag' : '';
-    ferienData.push([null, null, null, null, sw.sw, sw.monday, hint]);
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // Build Terminplan Sheet
-  // ═══════════════════════════════════════════════════════════
-  const tpData = [
-    ['SW-Key', 'Montag-ISO', 'SW', 'Schulwoche', 'Wochentag', 'Uhrzeit', 'Endzeit', 'Titel / Veranstaltung', 'Kategorie', 'Ganztägig', 'Anmerkung']
-  ];
-
-  const tpFormulas = []; // { r, c, f } list for post-processing
-
-  schoolWeeks.forEach((sw, swIdx) => {
-    const ferienRow = 15 + swIdx; // Row in Ferien sheet
-    const headerRowNum = tpData.length + 1; // 1-based row number in Excel
-    const mondayDate = sw.monday;
-    const hint = lastDay && mondayDate > lastDay ? 'nach letztem Schultag' : '';
-    // Header row for this SW
-    tpData.push([
-      sw.sw,
-      mondayDate, // value (not formula) so converter can read it directly
-      sw.sw,
-      null, // formula set below
-      null, null, null, null, null, null,
-      null  // formula set below
-    ]);
-    tpFormulas.push(
-      { r: tpData.length - 1, c: 3, f: `=TEXT(B${headerRowNum},"TT.MM.")&" - "&TEXT(B${headerRowNum}+4,"TT.MM.JJJJ")` },
-      { r: tpData.length - 1, c: 10, f: `=IF("${hint}"="","","${hint}")` }
-    );
-    // 15 empty data rows per SW
-    for (let r = 0; r < 15; r++) {
-      tpData.push([
-        null,
-        mondayDate, // value (not formula) so converter can read it directly
-        sw.sw,
-        null,
-        null, null, null, null, null, null, null
-      ]);
-    }
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // Build Kategorien Sheet
-  // ═══════════════════════════════════════════════════════════
-  const katData = [
-    ['Kategorien-Referenz', null, null],
-    ['Kategorie', 'Farbe', 'Automatisch erkannte Stichwörter'],
-  ];
-  categories.forEach(c => katData.push([c.label, c.bg, c.keywords]));
-
-  // ═══════════════════════════════════════════════════════════
-  // Build Anleitung Sheet
-  // ═══════════════════════════════════════════════════════════
-  const anlData = [
-    [null, null, null],
-    [null, `Schuljahreskalender ${schuljahr} – Anleitung`, null],
-    [null, null, null],
-    [null, null, null],
-    [null, 'Jedes Jahr neu einrichten', null],
-    [null, '1. Ferien & Eckdaten', "Im Tab 'Ferien' Ferienperioden, Erster Schultag (SW 00), Erster Unterrichtstag (SW 01) und Letzter Schultag eintragen."],
-    [null, '2. Termine', "Im Tab 'Terminplan' nur in den sichtbaren Spalten E–K arbeiten."],
-    [null, '3. Konverter', 'Excel-Datei in Terminplan_Konverter.html ziehen und ICS-Datei erzeugen.'],
-    [null, '4. IServ', 'ICS-Datei in IServ importieren.'],
-    [null, null, null],
-    [null, 'Wichtig', null],
-    [null, '>> Keine Sperre: Die Datei bleibt bewusst bearbeitbar. Technische Spalten A–C sind nur ausgeblendet.', null],
-    [null, '>> SW 00 und SW 01 werden bewusst getrennt: Vorbereitung/Schulstart und erster regulärer Unterricht.', null],
-    [null, '>> Ferien im Ferien-Tab pflegen. Ferien nicht zusätzlich als eigene Terminplan-Zeilen eintragen, sonst entstehen Dubletten.', null],
-    [null, '>> Teilwochen: schulfreie Tage zu Beginn als eigene Termine eintragen, Kategorie Feiertage/Ferien, Ganztägig = Ja.', null],
-    [null, null, null],
-    [null, 'Spalten', null],
-    [null, 'D Schulwoche', 'Berechnet aus Ferien & Eckdaten.'],
-    [null, 'E Wochentag', 'Mo, Di, Mi, Do, Fr oder Ganze Woche.'],
-    [null, 'F/G Uhrzeit', 'Start und optional Ende, Format 08:30.'],
-    [null, 'H Titel', 'Pflichtfeld für Konverter.'],
-    [null, 'I Kategorie', 'Dropdown aus Kategorien.'],
-    [null, 'J Ganztägig', 'Ja oder Nein.'],
-    [null, 'K Anmerkung', 'Optional, bei SW-Headern auch Warnhinweise.'],
-  ];
-
-  // ═══════════════════════════════════════════════════════════
-  // Assemble workbook
-  // ═══════════════════════════════════════════════════════════
-  const wb = XLSX.utils.book_new();
-
-  // Ferien sheet
-  const wsFerien = XLSX.utils.aoa_to_sheet(ferienData);
-  wsFerien['!cols'] = [{wch:30},{wch:16},{wch:16},{wch:50},{wch:20},{wch:14},{wch:30}];
-  XLSX.utils.book_append_sheet(wb, wsFerien, 'Ferien');
-
-  // Terminplan sheet
-  const wsTp = XLSX.utils.aoa_to_sheet(tpData);
-  // Apply formula cells
-  tpFormulas.forEach(({r, c, f}) => {
-    const addr = XLSX.utils.encode_cell({r, c});
-    wsTp[addr] = { f: f, v: f, t: 's' };
-  });
-  wsTp['!cols'] = [{wch:10},{wch:14},{wch:10},{wch:22},{wch:14},{wch:10},{wch:10},{wch:40},{wch:18},{wch:12},{wch:30}];
-  // Hide columns A-C
-  if (!wsTp['!cols']) wsTp['!cols'] = [];
-  ['A','B','C'].forEach((c) => {
-    const idx = XLSX.utils.decode_col(c);
-    if (!wsTp['!cols'][idx]) wsTp['!cols'][idx] = {};
-    wsTp['!cols'][idx].hidden = true;
-  });
-  XLSX.utils.book_append_sheet(wb, wsTp, 'Terminplan');
-
-  // Kategorien sheet
-  const wsKat = XLSX.utils.aoa_to_sheet(katData);
-  wsKat['!cols'] = [{wch:20},{wch:12},{wch:60}];
-  XLSX.utils.book_append_sheet(wb, wsKat, 'Kategorien');
-
-  // Anleitung sheet
-  const wsAnl = XLSX.utils.aoa_to_sheet(anlData);
-  wsAnl['!cols'] = [{wch:4},{wch:50},{wch:60}];
-  XLSX.utils.book_append_sheet(wb, wsAnl, 'Anleitung');
-
-  const filename = `Terminplan_Schulwochen_Vorlage_${schuljahr.replace('/','_')}.xlsx`;
-  downloadXlsx(wb, filename);
-  toast(`Schulwochen-Vorlage für ${schuljahr} generiert`, 'success');
-}
-
-function formatDateDE(isoDate) {
-  if (!isoDate) return '';
-  const [y, m, d] = isoDate.split('-');
-  return `${d}.${m}.${y}`;
-}
-
-function openChangelog() {
-  document.getElementById('modal-changelog').classList.add('open');
-}
-
+// Schulwochen-Vorlage wird ueber GitHub Actions generiert
+// Siehe: .github/workflows/generate-template.yml
 // ═══════════════════════════════════════════════════════════
 // EXAMPLE DATA
 // ═══════════════════════════════════════════════════════════
@@ -2642,14 +2368,15 @@ function updateStepper() {
   const s2 = document.getElementById('step-2');
   const s3 = document.getElementById('step-3');
   const s4 = document.getElementById('step-4');
+  const s5 = document.getElementById('step-5');
   if (!s1) return;
   s1.className = 'step-item done';
   if (!hasRows) {
-    s2.className = 'step-item active'; s3.className = 'step-item'; s4.className = 'step-item';
+    s2.className = 'step-item active'; s3.className = 'step-item'; s4.className = 'step-item'; s5.className = 'step-item';
   } else if (!hasValid) {
-    s2.className = 'step-item done'; s3.className = 'step-item active'; s4.className = 'step-item';
+    s2.className = 'step-item done'; s3.className = 'step-item done'; s4.className = 'step-item active'; s5.className = 'step-item';
   } else {
-    s2.className = 'step-item done'; s3.className = 'step-item done'; s4.className = 'step-item active';
+    s2.className = 'step-item done'; s3.className = 'step-item done'; s4.className = 'step-item done'; s5.className = 'step-item active';
   }
 }
 
