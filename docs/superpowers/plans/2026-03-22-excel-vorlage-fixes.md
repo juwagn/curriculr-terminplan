@@ -57,7 +57,7 @@ is_header = bool(a_val and isinstance(a_val, str) and a_val.startswith('SW '))
 - [ ] **Step 3: Skript ausführen**
 
 ```bash
-cd "c:/Users/juwag/OneDrive - Gesamtschule Horst/02 Orga/04 IT Dienstleistungen/Wordpress Plugin Terminplaner"
+cd "~/projects/wordpress-plugin-terminplaner"
 python scripts/build_excel_template.py
 ```
 

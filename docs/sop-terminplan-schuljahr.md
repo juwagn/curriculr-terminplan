@@ -1,8 +1,8 @@
-# SOP – GSH Terminplan Schuljahreswechsel
+# SOP – Terminplan Schuljahreswechsel
 
 ## Zweck
 
-Diese SOP beschreibt den sicheren Jahresprozess fuer den GSH-Terminplan: Excel-Vorlage erzeugen, durch die Schulleitung pflegen lassen, in ICS konvertieren und in IServ importieren.
+Diese SOP beschreibt den sicheren Jahresprozess fuer den Terminplan: Excel-Vorlage erzeugen, durch die Schulleitung pflegen lassen, in ICS konvertieren und in IServ importieren.
 
 Ziel: Die Schulleitung kann jedes Jahr Ferien, SW 00, SW 01, letzten Schultag und Termine selbst pflegen. Die IT stellt nur Vorlage, Konverter und Pruefung bereit.
 
@@ -19,9 +19,9 @@ Ziel: Die Schulleitung kann jedes Jahr Ferien, SW 00, SW 01, letzten Schultag un
 
 | Datei | Zweck |
 |-------|-------|
-| `website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx` | Bearbeitbare Jahresvorlage |
-| `konverter/GSH_Terminplan_Konverter.html` | Lokaler Excel-zu-ICS-Konverter |
-| `website/downloads/GSH_Terminplan_Konverter.html` | Downloadkopie des Konverters |
+| `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` | Bearbeitbare Jahresvorlage |
+| `konverter/Terminplan_Konverter.html` | Lokaler Excel-zu-ICS-Konverter |
+| `website/downloads/Terminplan_Konverter.html` | Downloadkopie des Konverters |
 | `scripts/build_excel_template.py` | Erzeugt die Jahresvorlage neu |
 | `scripts/recalc.py` | Prueft Struktur, Formeln und Bearbeitbarkeit |
 | `scripts/test_converter_logic.mjs` | Prueft Konverter-Importlogik |
@@ -49,7 +49,7 @@ python scripts/build_excel_template.py
 Ergebnis:
 
 ```text
-website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx
+website/downloads/Terminplan_Schulwochen_Vorlage.xlsx
 ```
 
 ### 2. Technische Vorpruefung
@@ -134,7 +134,7 @@ Erst danach Datei an IT / IServ-Admin geben.
 IT oeffnet:
 
 ```text
-konverter/GSH_Terminplan_Konverter.html
+konverter/Terminplan_Konverter.html
 ```
 
 Dann:
@@ -169,8 +169,8 @@ Nach Import pruefen:
 
 Wenn Vorlage oder Konverter geaendert wurden:
 
-1. `website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx` aktualisieren.
-2. `website/downloads/GSH_Terminplan_Konverter.html` aktualisieren.
+1. `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` aktualisieren.
+2. `website/downloads/Terminplan_Konverter.html` aktualisieren.
 3. Changelog im Konverter pruefen.
 4. Git-Commit erstellen.
 

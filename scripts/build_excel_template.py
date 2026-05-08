@@ -2,7 +2,7 @@
 """
 build_excel_template.py
 
-Generiert die bearbeitbare GSH-Schulwochen-Vorlage neu.
+Generiert die bearbeitbare Schulwochen-Vorlage neu.
 
 Prinzip:
 - Keine Blatt- oder Arbeitsmappensperre. Die Schulleitung kann die Datei jedes Jahr frei anpassen.
@@ -24,7 +24,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.workbook.defined_name import DefinedName
 
 BASE = Path(__file__).resolve().parent.parent
-OUT = BASE / "website" / "downloads" / "GSH_Terminplan_Schulwochen_Vorlage.xlsx"
+OUT = BASE / "website" / "downloads" / "Terminplan_Schulwochen_Vorlage.xlsx"
 
 SW_COUNT = 42
 ROWS_PER_WEEK = 15
@@ -350,13 +350,13 @@ def make_anleitung(wb: Workbook):
         write(r, 2, text, bold=True, size=12, color=C_INFO_TEXT)
         r += 1
 
-    write(2, 2, "GSH Schuljahreskalender - Anleitung", bold=True, size=18, color="1E3A5F", wrap=False)
+    write(2, 2, "Schuljahreskalender - Anleitung", bold=True, size=18, color="1E3A5F", wrap=False)
     r = 4
     section("Jedes Jahr neu einrichten")
     steps = [
         ("1. Ferien & Eckdaten", "Im Tab 'Ferien' Ferienperioden, Erster Schultag (SW 00), Erster Unterrichtstag (SW 01) und Letzter Schultag eintragen."),
         ("2. Termine", "Im Tab 'Terminplan' nur in den sichtbaren Spalten E-K arbeiten."),
-        ("3. Konverter", "Excel-Datei in GSH_Terminplan_Konverter.html ziehen und ICS-Datei erzeugen."),
+        ("3. Konverter", "Excel-Datei in Terminplan_Konverter.html ziehen und ICS-Datei erzeugen."),
         ("4. IServ", "ICS-Datei in IServ importieren."),
     ]
     for title, detail in steps:

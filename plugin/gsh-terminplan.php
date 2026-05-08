@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: GSH Terminplan Dashboard
- * Plugin URI:  https://gesamtschule-horst.de
+ * Plugin Name: Schul-Terminplan Dashboard
+ * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
  * Version:     3.17.0
- * Author:      Gesamtschule Horst
+ * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
@@ -246,7 +246,7 @@
  * Changelog 3.1.0:
  * - PDF-Export komplett überarbeitet (gtpPrint()):
  *   A4 Querformat, unterer Seitenrand 16 mm für Footer.
- * - Minimal-Header: Flex-Layout – links "GSH | Gesamtschule Horst" (Logo-Mark +
+ * - Minimal-Header: Flex-Layout – links "Schul-Logo | Deine Schule" (Logo-Mark +
  *   Trennlinie + Schulname), rechts Titel "Schuljahresterminplan 2025/26" + Quelle.
  * - Typografie: 9 pt für Events, 8 pt fett für Datumsangaben (.gdl).
  * - Feine Tabellenränder: 0.1 pt solid #ddd für body-Zellen.
@@ -423,7 +423,7 @@
  *   synchronisieren.
  *
  * Wo werden Einstellungen gemacht?
- *   WordPress Admin → Einstellungen → GSH Terminplan
+ *   WordPress Admin → Einstellungen → Schul-Terminplan
  *   Dort: iCal-URL eintragen, Cache-Dauer anpassen, Quartalsgrenzen
  *   setzen, Kategorie-Stichwörter pflegen, manuell synchronisieren.
  *
@@ -434,7 +434,7 @@
  *   [gsh_terminplan schuljahr="sj_2026_27"]   → Bestimmtes Schuljahr
  *   [gsh_terminplan schuljahr="entwurf"]      → Entwurf-Vorschau (nur Admins)
  *
- * Wie verwaltet man mehrere Schuljahre? (Admin → Einstellungen → GSH Terminplan)
+ * Wie verwaltet man mehrere Schuljahre? (Admin → Einstellungen → Schul-Terminplan)
  *   - Tab-System: Jedes Schuljahr hat einen eigenen Tab mit allen Einstellungen.
  *   - Neues Schuljahr: "+ Neues Schuljahr" Button in der Tab-Leiste.
  *   - Entwurf: Nicht-beschlossene Pläne sind nur für Admins sichtbar.
@@ -477,7 +477,7 @@ define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
 
 /**
- * Standard-Kategorien der Gesamtschule Horst.
+ * Standard-Kategorien des Schul-Terminplans.
  *
  * Dienen als Fundament: werden beim ersten Aufruf von gsh_tp_get_categories()
  * automatisch in die Datenbank geschrieben, falls noch keine Kategorien gespeichert
@@ -1512,13 +1512,13 @@ function gsh_tp_ajax_feedback() {
     }
 
     // Betreff
-    $subject = sprintf( '[GSH Terminplan] %s', $type_label );
+    $subject = sprintf( '[Schul-Terminplan] %s', $type_label );
 
     // HTML-E-Mail-Body
     $name_line = $sender ? '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Absender:</td><td style="padding:4px 0">' . esc_html( $sender ) . '</td></tr>' : '';
     $body = '<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#1e293b;margin:0;padding:0">'
         . '<div style="max-width:540px;margin:0 auto;padding:32px 24px">'
-        . '<h2 style="margin:0 0 24px;font-size:1.1rem;color:#1e293b">Neues Feedback aus dem GSH Terminplan</h2>'
+        . '<h2 style="margin:0 0 24px;font-size:1.1rem;color:#1e293b">Neues Feedback aus dem Schul-Terminplan</h2>'
         . '<table style="border-collapse:collapse;width:100%">'
         . $name_line
         . '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Typ:</td><td style="padding:4px 0">' . esc_html( $type_label ) . '</td></tr>'
@@ -1618,7 +1618,7 @@ function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
 /**
  * Registriert den Einstellungsmenüeintrag im WordPress-Backend.
  *
- * Der Menüpunkt erscheint unter „Einstellungen → GSH Terminplan" und ist nur
+ * Der Menüpunkt erscheint unter „Einstellungen → Schul-Terminplan" und ist nur
  * für Benutzer mit der Berechtigung „manage_options" (Admins) sichtbar.
  *
  * @since 1.2.0
@@ -1627,8 +1627,8 @@ function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
 add_action( 'admin_menu', 'gsh_tp_admin_menu' );
 function gsh_tp_admin_menu() {
     add_options_page(
-        'GSH Terminplan',
-        'GSH Terminplan',
+        'Schul-Terminplan',
+        'Schul-Terminplan',
         'manage_options',
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
@@ -2547,7 +2547,7 @@ function gsh_tp_settings_page() {
     }
     ?>
     <div class="wrap">
-        <h1>GSH Terminplan &ndash; Einstellungen
+        <h1>Schul-Terminplan &ndash; Einstellungen
             <button type="button"
                     id="gsh-admin-cl-btn"
                     onclick="gshAdminChangelogOpen()"
@@ -4165,7 +4165,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-hd-top">';
     $o .= '<div class="gtp-hd-left">';
     $o .= '<h2 class="gtp-t">Jahresterminplan</h2>';
-    $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Gesamtschule Horst</span>';
+    $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Deine Schule</span>';
     $o .= '</div>';
     $o .= '<div class="gtp-hd-actions">';
     $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
@@ -4433,7 +4433,7 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>'; // .gtp-help-body
     $o .= '<div class="gtp-help-footer">';
-    $o .= '<span class="gtp-help-version">GSH Terminplan Dashboard v' . GSH_TP_VERSION . ' &middot; Gesamtschule Horst</span>';
+    $o .= '<span class="gtp-help-version">Schul-Terminplan Dashboard v' . GSH_TP_VERSION . ' &middot; Deine Schule</span>';
     $o .= '</div>';
     $o .= '</div>'; // .gtp-help-panel
     $o .= '</div>'; // #gtp-help-overlay

@@ -25,7 +25,7 @@ python scripts/build_excel_template.py
 Ergebnis:
 
 ```text
-website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx
+website/downloads/Terminplan_Schulwochen_Vorlage.xlsx
 ```
 
 Die Datei hat keinen Blattschutz. Technische Spalten A-C im Terminplan sind nur ausgeblendet.
@@ -34,7 +34,7 @@ Die Datei hat keinen Blattschutz. Technische Spalten A-C im Terminplan sind nur 
 
 ### Schritt 2: Ferien & Eckdaten eintragen
 
-Öffne `website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx` und wechsle zum Tab **Ferien**.
+Öffne `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` und wechsle zum Tab **Ferien**.
 
 Trage dort die Daten des Schuljahres ein:
 
@@ -99,7 +99,7 @@ Wenn die Schule nicht am Montag beginnt, trägt Claude die schulfreien Tage (Mo/
 
 ## Teil 3 – Konverter-Tool testen
 
-1. Fertige Excel-Datei im Konverter-Tool `konverter/GSH_Terminplan_Konverter.html` öffnen (lokal im Browser)
+1. Fertige Excel-Datei im Konverter-Tool `konverter/Terminplan_Konverter.html` öffnen (lokal im Browser)
 2. Datei hochladen → Vorschau prüfen
 3. Bei Fehlern: Excel-Datei korrigieren, erneut hochladen
 
@@ -117,13 +117,13 @@ Wenn die Schule nicht am Montag beginnt, trägt Claude die schulfreien Tage (Mo/
 
 | Datei | Zweck |
 |-------|-------|
-| `website/downloads/GSH_Terminplan_Schulwochen_Vorlage.xlsx` | Die fertige Vorlage (wird von Scripts generiert) |
+| `website/downloads/Terminplan_Schulwochen_Vorlage.xlsx` | Die fertige Vorlage (wird von Scripts generiert) |
 | `scripts/patch_rows.py` | Grundstruktur schreiben (einmalig bei Strukturänderung) |
 | `scripts/patch_xlsx.py` | Datumsformeln setzen (jährlich) |
 | `scripts/build_excel_template.py` | Formatierung + Anleitung-Tab (jährlich) |
 | `scripts/recalc.py` | Verifikation der Datumsformeln |
 | `prompts/excel-import-prompt.md` | Claude-Prompt für Termin-Import aus Word |
-| `konverter/GSH_Terminplan_Konverter.html` | Standalone Konverter-Tool (Browser) |
+| `konverter/Terminplan_Konverter.html` | Standalone Konverter-Tool (Browser) |
 | `plugin/gsh-terminplan.php` | WordPress-Plugin |
 
 ---
