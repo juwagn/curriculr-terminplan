@@ -1,7 +1,6 @@
 name: Schulwochen-Vorlage generieren
 
 on:
-  # Manuell starten ueber GitHub-Webinterface (fuer Schulleitungen)
   workflow_dispatch:
     inputs:
       schuljahr:
@@ -78,27 +77,55 @@ jobs:
 
       - name: Konfigurationsdatei erstellen
         run: |
-          cat > ferien_config.json << 'EOF'
-          {
-            "schuljahr": "${{ github.event.inputs.schuljahr }}",
-            "sw00": "${{ github.event.inputs.sw00 }}",
-            "sw01": "${{ github.event.inputs.sw01 }}",
-            "last_day": "${{ github.event.inputs.last_day }}",
-            "holidays": [
-              {"name": "Herbstferien", "start": "${{ github.event.inputs.herbst_von }}", "end": "${{ github.event.inputs.herbst_bis }}"},
-              {"name": "Weihnachtsferien", "start": "${{ github.event.inputs.weihnachten_von }}", "end": "${{ github.event.inputs.weihnachten_bis }}"},
-              {"name": "Osterferien", "start": "${{ github.event.inputs.ostern_von }}", "end": "${{ github.event.inputs.ostern_bis }}"},
-              {"name": "Pfingstferien", "start": "${{ github.event.inputs.pfingsten_von }}", "end": "${{ github.event.inputs.pfingsten_bis }}"},
-              {"name": "Sommerferien", "start": "${{ github.event.inputs.sommer_von }}", "end": "${{ github.event.inputs.sommer_bis }}"}
-            ]
+          python3 << 'PYEOF'
+          import json
+          import os
+
+          def get_input(name):
+              return os.environ.get(f"INPUT_{name}", "")
+
+          def make_date(val):
+              return val if val else None
+
+          cfg = {
+              "schuljahr": get_input("schuljahr"),
+              "sw00": get_input("sw00"),
+              "sw01": get_input("sw01"),
+              "last_day": get_input("last_day"),
+              "holidays": [
+                  {"name": "Herbstferien", "start": get_input("herbst_von"), "end": get_input("herbst_bis")},
+                  {"name": "Weihnachtsferien", "start": get_input("weihnachten_von"), "end": get_input("weihnachten_bis")},
+                  {"name": "Osterferien", "start": get_input("ostern_von"), "end": get_input("ostern_bis")},
+                  {"name": "Pfingstferien", "start": make_date(get_input("pfingsten_von")), "end": make_date(get_input("pfingsten_bis"))},
+                  {"name": "Sommerferien", "start": get_input("sommer_von"), "end": get_input("sommer_bis")}
+              ]
           }
-          EOF
+
+          with open("ferien_config.json", "w", encoding="utf-8") as f:
+              json.dump(cfg, f, indent=2, ensure_ascii=False)
+
+          print("Konfiguration:")
+          print(json.dumps(cfg, indent=2, ensure_ascii=False))
+          PYEOF
+        env:
+          INPUT_schuljahr: ${{ github.event.inputs.schuljahr }}
+          INPUT_sw00: ${{ github.event.inputs.sw00 }}
+          INPUT_sw01: ${{ github.event.inputs.sw01 }}
+          INPUT_last_day: ${{ github.event.inputs.last_day }}
+          INPUT_herbst_von: ${{ github.event.inputs.herbst_von }}
+          INPUT_herbst_bis: ${{ github.event.inputs.herbst_bis }}
+          INPUT_weihnachten_von: ${{ github.event.inputs.weihnachten_von }}
+          INPUT_weihnachten_bis: ${{ github.event.inputs.weihnachten_bis }}
+          INPUT_ostern_von: ${{ github.event.inputs.ostern_von }}
+          INPUT_ostern_bis: ${{ github.event.inputs.ostern_bis }}
+          INPUT_pfingsten_von: ${{ github.event.inputs.pfingsten_von }}
+          INPUT_pfingsten_bis: ${{ github.event.inputs.pfingsten_bis }}
+          INPUT_sommer_von: ${{ github.event.inputs.sommer_von }}
+          INPUT_sommer_bis: ${{ github.event.inputs.sommer_bis }}
 
       - name: Vorlage generieren
         run: |
-          cd scripts
-          python generate_school_template.py --config ../ferien_config.json
-          mv Terminplan_Schulwochen_Vorlage_*.xlsx ../
+          python scripts/generate_school_template.py --config ferien_config.json
 
       - name: Als Artifact hochladen
         uses: actions/upload-artifact@v4
