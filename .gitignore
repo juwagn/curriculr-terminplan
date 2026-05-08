@@ -35,3 +35,8 @@ desktop.ini
 # Sensible Testdaten (falls vorhanden)
 *.sql
 /tests/private/
+
+# Node.js (nur fuer Entwicklungstests)
+node_modules/
+package-lock.json
+package.json
