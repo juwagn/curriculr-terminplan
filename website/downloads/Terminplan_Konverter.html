@@ -814,7 +814,7 @@
     <div class="card-header">
       <div class="card-header-left">
         <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span class="card-step">2</span>
+        <span class="card-step">3</span>
         <h2>Excel importieren</h2>
       </div>
       <div class="btn-group">
@@ -840,7 +840,7 @@
     <div class="card-header">
       <div class="card-header-left">
         <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        <span class="card-step">3</span>
+        <span class="card-step">4</span>
         <h2>Termine bearbeiten</h2>
       </div>
       <div class="btn-group">
@@ -921,7 +921,7 @@
     <div class="card-header">
       <div class="card-header-left">
         <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span class="card-step">4</span>
+        <span class="card-step">5</span>
         <h2>ICS exportieren</h2>
       </div>
     </div>
@@ -2301,7 +2301,7 @@ function exportExcel() {
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = [{wch:40},{wch:14},{wch:10},{wch:14},{wch:10},{wch:16},{wch:40}];
   XLSX.utils.book_append_sheet(wb, ws, 'Termine');
-  XLSX.writeFile(wb, 'schuljahresterminplan.xlsx');
+  downloadXlsx(wb, 'schuljahresterminplan.xlsx');
   toast(`${rows.length} Termine als Excel exportiert`, 'success');
 }
 
@@ -2324,8 +2324,29 @@ function downloadTemplate() {
   const ws2 = XLSX.utils.aoa_to_sheet(catData);
   ws2['!cols'] = [{wch:20},{wch:16},{wch:60}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Kategorien');
-  XLSX.writeFile(wb, 'Terminplan_Vorlage.xlsx');
+  downloadXlsx(wb, 'Terminplan_Vorlage.xlsx');
   toast('Vorlage heruntergeladen', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOWNLOAD HELPER
+// ═══════════════════════════════════════════════════════════
+function downloadXlsx(wb, filename) {
+  try {
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    toast('Fehler beim Download: ' + err.message, 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2495,8 +2516,8 @@ function generateSchoolTemplate() {
     [null, null, null],
     [null, null, null],
     [null, 'Jedes Jahr neu einrichten', null],
-    [null, '1. Ferien & Eckdaten', "Im Tab ‚Ferien' Ferienperioden, Erster Schultag (SW 00), Erster Unterrichtstag (SW 01) und Letzter Schultag eintragen.'],
-    [null, '2. Termine', "Im Tab ‚Terminplan' nur in den sichtbaren Spalten E–K arbeiten."],
+    [null, '1. Ferien & Eckdaten', "Im Tab 'Ferien' Ferienperioden, Erster Schultag (SW 00), Erster Unterrichtstag (SW 01) und Letzter Schultag eintragen."],
+    [null, '2. Termine', "Im Tab 'Terminplan' nur in den sichtbaren Spalten E–K arbeiten."],
     [null, '3. Konverter', 'Excel-Datei in Terminplan_Konverter.html ziehen und ICS-Datei erzeugen.'],
     [null, '4. IServ', 'ICS-Datei in IServ importieren.'],
     [null, null, null],
@@ -2554,7 +2575,7 @@ function generateSchoolTemplate() {
   XLSX.utils.book_append_sheet(wb, wsAnl, 'Anleitung');
 
   const filename = `Terminplan_Schulwochen_Vorlage_${schuljahr.replace('/','_')}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  downloadXlsx(wb, filename);
   toast(`Schulwochen-Vorlage für ${schuljahr} generiert`, 'success');
 }
 
