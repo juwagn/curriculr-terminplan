@@ -1,0 +1,115 @@
+name: Schulwochen-Vorlage generieren
+
+on:
+  # Manuell starten ueber GitHub-Webinterface (fuer Schulleitungen)
+  workflow_dispatch:
+    inputs:
+      schuljahr:
+        description: 'Schuljahr (z.B. 2026/27)'
+        required: true
+        default: '2026/27'
+      sw00:
+        description: 'Erster Schultag (SW 00) - Format: JJJJ-MM-TT'
+        required: true
+        default: '2026-08-24'
+      sw01:
+        description: 'Erster Unterrichtstag (SW 01) - Format: JJJJ-MM-TT'
+        required: true
+        default: '2026-08-31'
+      last_day:
+        description: 'Letzter Schultag - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-07-16'
+      herbst_von:
+        description: 'Herbstferien von - Format: JJJJ-MM-TT'
+        required: true
+        default: '2026-10-19'
+      herbst_bis:
+        description: 'Herbstferien bis - Format: JJJJ-MM-TT'
+        required: true
+        default: '2026-10-30'
+      weihnachten_von:
+        description: 'Weihnachtsferien von - Format: JJJJ-MM-TT'
+        required: true
+        default: '2026-12-22'
+      weihnachten_bis:
+        description: 'Weihnachtsferien bis - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-01-03'
+      ostern_von:
+        description: 'Osterferien von - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-03-22'
+      ostern_bis:
+        description: 'Osterferien bis - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-04-02'
+      pfingsten_von:
+        description: 'Pfingstferien von (optional) - Format: JJJJ-MM-TT'
+        required: false
+        default: ''
+      pfingsten_bis:
+        description: 'Pfingstferien bis (optional) - Format: JJJJ-MM-TT'
+        required: false
+        default: ''
+      sommer_von:
+        description: 'Sommerferien von - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-07-19'
+      sommer_bis:
+        description: 'Sommerferien bis - Format: JJJJ-MM-TT'
+        required: true
+        default: '2027-08-31'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Abhaengigkeiten installieren
+        run: pip install openpyxl
+
+      - name: Konfigurationsdatei erstellen
+        run: |
+          cat > ferien_config.json << 'EOF'
+          {
+            "schuljahr": "${{ github.event.inputs.schuljahr }}",
+            "sw00": "${{ github.event.inputs.sw00 }}",
+            "sw01": "${{ github.event.inputs.sw01 }}",
+            "last_day": "${{ github.event.inputs.last_day }}",
+            "holidays": [
+              {"name": "Herbstferien", "start": "${{ github.event.inputs.herbst_von }}", "end": "${{ github.event.inputs.herbst_bis }}"},
+              {"name": "Weihnachtsferien", "start": "${{ github.event.inputs.weihnachten_von }}", "end": "${{ github.event.inputs.weihnachten_bis }}"},
+              {"name": "Osterferien", "start": "${{ github.event.inputs.ostern_von }}", "end": "${{ github.event.inputs.ostern_bis }}"},
+              {"name": "Pfingstferien", "start": "${{ github.event.inputs.pfingsten_von }}", "end": "${{ github.event.inputs.pfingsten_bis }}"},
+              {"name": "Sommerferien", "start": "${{ github.event.inputs.sommer_von }}", "end": "${{ github.event.inputs.sommer_bis }}"}
+            ]
+          }
+          EOF
+
+      - name: Vorlage generieren
+        run: |
+          cd scripts
+          python generate_school_template.py --config ../ferien_config.json
+          mv Terminplan_Schulwochen_Vorlage_*.xlsx ../
+
+      - name: Als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Schulwochen-Vorlage-${{ github.event.inputs.schuljahr }}
+          path: Terminplan_Schulwochen_Vorlage_*.xlsx
+
+      - name: Datei zur Release-Seite hinzufuegen (falls Release existiert)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Terminplan_Schulwochen_Vorlage_*.xlsx
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

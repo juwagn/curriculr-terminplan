@@ -11,13 +11,16 @@ if (!js) {
   throw new Error('Konverter-Script nicht gefunden');
 }
 
+// Normalisiere Zeilenumbrueche fuer Windows/Unix-Kompatibilitaet
+const jsNormalized = js.replace(/\r\n/g, '\n');
+
 function sliceByMarkers(start, end) {
-  const a = js.indexOf(start);
-  const b = js.indexOf(end);
+  const a = jsNormalized.indexOf(start);
+  const b = jsNormalized.indexOf(end);
   if (a === -1 || b === -1 || b <= a) {
     throw new Error(`Marker nicht gefunden: ${start} -> ${end}`);
   }
-  return js.slice(a, b);
+  return jsNormalized.slice(a, b);
 }
 
 const code = [

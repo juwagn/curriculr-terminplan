@@ -1,0 +1,13 @@
+{
+  "schuljahr": "2026/27",
+  "sw00": "2026-08-24",
+  "sw01": "2026-08-31",
+  "last_day": "2027-07-16",
+  "holidays": [
+    {"name": "Herbstferien", "start": "2026-10-19", "end": "2026-10-30"},
+    {"name": "Weihnachtsferien", "start": "2026-12-22", "end": "2027-01-03"},
+    {"name": "Osterferien", "start": "2027-03-22", "end": "2027-04-02"},
+    {"name": "Pfingstferien", "start": null, "end": null},
+    {"name": "Sommerferien", "start": "2027-07-19", "end": "2027-08-31"}
+  ]
+}
