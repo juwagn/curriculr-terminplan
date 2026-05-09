@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" width="220" height="40" role="img" aria-label="Curricu:lr">
+  <title>Curricu:lr</title>
+  <text x="0" y="30" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="700" fill="#ffffff" letter-spacing="-0.5">Curricu</text>
+  <circle cx="147" cy="11" r="5" fill="#FFC857"/>
+  <circle cx="147" cy="28" r="5" fill="#FFC857"/>
+  <text x="157" y="30" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="700" fill="#ffffff" letter-spacing="-0.5">lr</text>
+</svg>
