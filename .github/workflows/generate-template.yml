@@ -150,9 +150,10 @@ jobs:
 
       - name: Artifact-Namen bereinigen
         id: artifact_name
+        env:
+          SCHULJAHR: ${{ github.event.inputs.schuljahr }}
         run: |
-          RAW="${{ github.event.inputs.schuljahr }}"
-          SAFE="${RAW//\//_}"
+          SAFE="${SCHULJAHR//\//_}"
           echo "safe=$SAFE" >> "$GITHUB_OUTPUT"
           echo "Artifact-Name: $SAFE"
 
