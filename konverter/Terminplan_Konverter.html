@@ -1470,7 +1470,7 @@ function importSWFormat(rows, ferienRows) {
       const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(monday, 4)) : (endzeit ? eventDate : '');
       const allday    = ganztaeg || (!uhrzeit && !endzeit);
       const cat       = catRaw ? matchCategory(catRaw) : '';
-      if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
+      if (catRaw && !cat) warnings.push(`Kategorie "${catRaw}" bei "${title}" nicht zugeordnet – prüfen: Kategorien-Sheet befüllen oder Schreibweise angleichen.`);
 
       addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
       imported++;
@@ -1550,7 +1550,7 @@ function importSWFormat(rows, ferienRows) {
         const endDate   = isGanzWoche ? (isoEndInG || addDaysISO(currentMonday, 4)) : (endzeit ? eventDate : '');
         const allday    = ganztaeg || (!uhrzeit && !endzeit);
         const cat       = catRaw ? matchCategory(catRaw) : '';
-        if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
+        if (catRaw && !cat) warnings.push(`Kategorie "${catRaw}" bei "${title}" nicht zugeordnet – prüfen: Kategorien-Sheet befüllen oder Schreibweise angleichen.`);
 
         addRow({ title, start: eventDate, startTime: uhrzeit, end: endDate, endTime: endzeit, cat, note, allday });
         imported++;
@@ -1682,7 +1682,7 @@ function handleFile(file) {
         const endTime = parseImportTime(r[cm.endTime]);
         const catRaw = String(r[cm.cat] || '');
         const cat = matchCategory(catRaw);
-        if (catRaw && !cat) warnings.push(`Unbekannte Kategorie "${catRaw}" bei "${title}". Bitte Kategorie pruefen.`);
+        if (catRaw && !cat) warnings.push(`Kategorie "${catRaw}" bei "${title}" nicht zugeordnet – prüfen: Kategorien-Sheet befüllen oder Schreibweise angleichen.`);
         const note = String(r[cm.note] || '').trim();
         const allday = !startTime && !endTime;
 
