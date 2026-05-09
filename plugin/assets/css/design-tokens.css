@@ -1,0 +1,71 @@
+/*
+ * Curricu:lr Design Tokens
+ * Einzige Quelle aller CSS Custom Properties.
+ * Niemals direkt Hex-Werte in anderen CSS-Dateien verwenden.
+ */
+:root {
+  /* Brand Blues */
+  --primary-900: #00345C;
+  --primary-700: #00467D;
+  --primary-500: #0058A0;
+  --primary-100: #E6F4FF;
+
+  /* Semantic Colors */
+  --accent-warning: #FFC857;
+  --accent-warning-bg: #FFF8E6;
+  --accent-success: #0E9F6E;
+  --accent-success-bg: #ECFDF5;
+  --accent-error: #E02424;
+  --accent-error-bg: #FEF2F2;
+
+  /* Backgrounds */
+  --bg-body: #F3F5F9;
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-solid: #FFFFFF;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.6);
+  --border-strong: #D1D5DB;
+  --border-input: #9CA3AF;
+
+  /* Text */
+  --text-main: #111827;
+  --text-muted: #4B5563;
+  --text-on-dark: #FFFFFF;
+  --text-on-primary: #FFFFFF;
+
+  /* Radius */
+  --radius-card: 14px;
+  --radius-btn: 9999px;
+  --radius-input: 8px;
+  --radius-badge: 9999px;
+  --radius-sm: 6px;
+
+  /* Shadows */
+  --shadow-card: 0 18px 40px rgba(15, 23, 42, 0.15);
+  --shadow-btn: 0 2px 8px rgba(0, 70, 125, 0.25);
+  --shadow-focus: 0 0 0 3px rgba(0, 70, 125, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Typography */
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-base: 15px;
+  --line-height-base: 1.6;
+
+  /* Transitions */
+  --transition: 150ms ease-out;
+  --transition-slow: 250ms ease-out;
+
+  /* Glass card shorthand */
+  --glass-bg: var(--bg-surface);
+  --glass-border: 1px solid var(--border-subtle);
+  --glass-blur: blur(16px);
+}
