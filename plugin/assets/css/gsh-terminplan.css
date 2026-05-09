@@ -1,879 +1,727 @@
 /*
- * GHS Terminplaner – Fluid-Grid & Card-Layout
+ * Curricu:lr — Plugin Frontend CSS
+ * Styles für den Shortcode-Frontend (Terminplan-Tabelle + Kalenderansicht).
+ * Design-Tokens via WordPress-Enqueue aus design-tokens.css geladen.
  *
- * Ergänzt das Inline-CSS aus gsh_tp_css() additiv.
- * Keine bestehenden Klassen werden verändert oder entfernt.
- *
- * @since 3.7.0
+ * @since 4.0.0
  */
 
-/* ═══════════════════════════════════════════════════════════════
-   CSS Custom Properties – Fluid-Grid-spezifische Variablen
-   (Erweiterung der :root-Werte aus dem Inline-CSS)
-   ═══════════════════════════════════════════════════════════════ */
-:root {
-    --gtp-grid-gap:      1rem;
-    --gtp-min-col-width: 280px;
-    --gtp-card-radius:   6px;
-    --gtp-card-border:   var(--gtp-border, #e2e8f0);
-    --gtp-label-color:   var(--gtp-text-muted, #64748b);
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Reset (scoped) ── */
+.gtp-wrap *, .gtp-wrap *::before, .gtp-wrap *::after {
+    box-sizing: border-box;
+}
+
+/* ── Root Wrapper ── */
+.gtp-wrap {
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--text-main);
+    background: var(--bg-body);
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: var(--space-lg) var(--space-md);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Flexbox-Fallback für ältere Browser (kein CSS-Grid-Support)
+   HEADER
    ═══════════════════════════════════════════════════════════════ */
-.gtp-fluid-grid {
-    display:   flex;
+
+.gtp-header {
+    background: var(--primary-900);
+    color: var(--text-on-dark);
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
     flex-wrap: wrap;
-    gap:       var(--gtp-grid-gap);
 }
 
-.gtp-fluid-grid > * {
-    flex: 1 1 var(--gtp-min-col-width);
+.gtp-header-logo {
+    height: 28px;
+    width: auto;
+    flex-shrink: 0;
 }
 
-/* CSS Grid überschreibt Flexbox in allen modernen Browsern */
-@supports (display: grid) {
-    .gtp-fluid-grid {
-        display:               grid;
-        grid-template-columns: repeat(auto-fit, minmax(var(--gtp-min-col-width), 1fr));
-        gap:                   var(--gtp-grid-gap);
-    }
+.gtp-header-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-on-dark);
+    margin: 0;
+}
+
+.gtp-header-sub {
+    font-size: 0.78rem;
+    opacity: 0.65;
+    margin: 0;
+}
+
+.gtp-header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Tabellen → Cards im Zwischen-Bereich (1024 – 1200 px)
-
-   In diesem Bereich wäre die Desktop-Tabelle (.gt) zu schmal für
-   komfortables Lesen. Die Zeilen werden deshalb als Cards gestapelt.
-   thead wird ausgeblendet; jedes td zeigt den Spaltenname via
-   data-label-Attribut als Label-Prefix (kein JavaScript nötig).
+   QUARTER TABS (Navigation)
    ═══════════════════════════════════════════════════════════════ */
-@media (min-width: 1024px) and (max-width: 1200px) {
 
-    /* Tabelle als Block-Element rendern */
-    .gt {
-        display: block;
-        width:   100%;
-    }
-
-    /* Spaltenköpfe ausblenden – Labels kommen via data-label */
-    .gt thead {
-        display: none;
-    }
-
-    .gt tbody {
-        display: block;
-    }
-
-    /* Jede Tabellenzeile wird zur Card */
-    .gt tr {
-        display:         flex;
-        flex-direction:  column;
-        border:          1px solid var(--gtp-card-border);
-        border-radius:   var(--gtp-card-radius);
-        margin-bottom:   0.75rem;
-        padding:         0.75rem;
-        background:      var(--gtp-bg, #fff);
-        box-shadow:      0 1px 4px rgba(0, 0, 0, .04);
-        transition:      box-shadow 0.15s ease;
-    }
-
-    .gt tr:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
-    }
-
-    /* Vergangene Wochen etwas heller */
-    .gt tr.gtp-past {
-        opacity: 0.7;
-    }
-
-    /* Zellen-Basisstile innerhalb der Card */
-    .gt td {
-        border:  none;
-        padding: 0.25rem 0;
-    }
-
-    /* Spaltenname als Label-Prefix aus data-label-Attribut */
-    .gt td::before {
-        content:         attr(data-label);
-        font-weight:     600;
-        display:         block;
-        font-size:       0.70rem;
-        color:           var(--gtp-label-color);
-        text-transform:  uppercase;
-        letter-spacing:  0.05em;
-        margin-bottom:   0.125rem;
-    }
-
-    /* Schulwochen-Spalte (SW) als Card-Header hervorheben */
-    .gt td.gs {
-        font-size:     1rem;
-        border-bottom: 1px solid var(--gtp-card-border);
-        padding-bottom: 0.5rem;
-        margin-bottom:  0.25rem;
-    }
-
-    /* Hinweise-Spalte */
-    .gt td.gh {
-        padding-top: 0.375rem;
-    }
-
-    /* Tageszellen ohne Inhalts-Events minimieren */
-    .gt td.gd .gdl {
-        font-size:   0.8rem;
-        color:       var(--gtp-text-muted, #64748b);
-        font-weight: 500;
-    }
+.gtp-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--primary-900);
+    flex-wrap: wrap;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ================================================================
-   Dark Mode & Theme-Switcher
-   Version: 3.9.0
-   ================================================================ */
-
-/* ── Dark-Theme-Variablen ───────────────────────────────────────── */
-[data-gtp-theme="dark"] {
-    --gtp-accent:        #60a5fa;
-    --gtp-accent-dark:   #3b82f6;
-    --gtp-accent-light:  #1e3a5f;
-    --gtp-text:          #f1f5f9;
-    --gtp-text-muted:    #94a3b8;
-    --gtp-text-faint:    #64748b;
-    --gtp-bg:            #0f172a;
-    --gtp-surface:       #1e293b;
-    --gtp-border:        #334155;
-    --gtp-today-bg:      #1e3a5f;
-    --gtp-today-bd:      #60a5fa;
+.gtp-tab {
+    padding: 6px var(--space-md);
+    border-radius: var(--radius-btn);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+    white-space: nowrap;
 }
 
-/* ── Systemeinstellung automatisch übernehmen (Modus: auto) ─────── */
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] {
-        --gtp-accent:        #60a5fa;
-        --gtp-accent-dark:   #3b82f6;
-        --gtp-accent-light:  #1e3a5f;
-        --gtp-text:          #f1f5f9;
-        --gtp-text-muted:    #94a3b8;
-        --gtp-text-faint:    #64748b;
-        --gtp-bg:            #0f172a;
-        --gtp-surface:       #1e293b;
-        --gtp-border:        #334155;
-        --gtp-today-bg:      #1e3a5f;
-        --gtp-today-bd:      #60a5fa;
-    }
+.gtp-tab:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-on-dark);
 }
 
-/* ── Tabellen-Farbkorrekturen im Dark Mode ──────────────────────── */
-[data-gtp-theme="dark"] .gt-hol {
-    background: var(--gtp-surface) !important;
-}
-[data-gtp-theme="dark"] .gt-today {
-    background: var(--gtp-today-bg) !important;
-}
-
-/* thead th: im Light Mode nutzt --gtp-text als dunkles Hintergrundblau.
-   Im Dark Mode wird --gtp-text zu fast-weiß → Header wird weiß auf weiß.
-   Fix: explizit --gtp-surface als Hintergrund + --gtp-text als Schrift. */
-[data-gtp-theme="dark"] .gt thead th {
-    background:   var(--gtp-surface) !important;
-    color:        var(--gtp-text) !important;
-    border-right: 1px solid var(--gtp-border) !important;
-}
-[data-gtp-theme="dark"] .gt thead th:last-child {
-    border-right: none !important;
+.gtp-tab.active,
+.gtp-tab[aria-selected="true"] {
+    background: var(--primary-700);
+    color: var(--text-on-dark);
+    border-color: var(--primary-700);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 700;
 }
 
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gt-hol  { background: var(--gtp-surface) !important; }
-    [data-gtp-theme="auto"] .gt-today { background: var(--gtp-today-bg) !important; }
-
-    [data-gtp-theme="auto"] .gt thead th {
-        background:   var(--gtp-surface) !important;
-        color:        var(--gtp-text) !important;
-        border-right: 1px solid var(--gtp-border) !important;
-    }
-    [data-gtp-theme="auto"] .gt thead th:last-child {
-        border-right: none !important;
-    }
+.gtp-tab .gtp-current-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-warning);
+    margin-left: 5px;
+    vertical-align: middle;
 }
 
-/* ── Theme-Switcher: schwebendes Gear-Icon ──────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   FILTER BAR
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Wrapper: positioniert direkt über dem Heute-Button */
-#gtp-theme-wrap {
-    position:        fixed;
-    bottom:          28px;
-    right:           28px;
-    z-index:         10000;
-    display:         flex;
-    flex-direction:  column;
-    align-items:     flex-end;
-    gap:             8px;
-    font-family:     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* Heute-Button nach oben schieben damit er nicht hinter dem Gear verschwindet */
-#gtp-heute-btn {
-    bottom: 88px !important;
+.gtp-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--bg-surface-solid);
+    border-bottom: 1px solid var(--border-strong);
+    flex-wrap: wrap;
 }
 
-/* Gear-Button */
-#gtp-theme-btn {
-    width:            44px;
-    height:           44px;
-    border-radius:    50%;
-    border:           none;
-    background:       var(--gtp-surface, #f8fafc);
-    color:            var(--gtp-text-muted, #64748b);
-    font-size:        1.1rem;
-    cursor:           pointer;
-    box-shadow:       0 2px 12px rgba(0, 0, 0, .15);
-    transition:       all 0.2s ease;
-    display:          flex;
-    align-items:      center;
-    justify-content:  center;
-}
-#gtp-theme-btn:hover {
-    background:  var(--gtp-border, #e2e8f0);
-    color:       var(--gtp-text, #1e293b);
-    transform:   rotate(30deg);
-}
-#gtp-theme-btn.gtp-theme-open {
-    transform:   rotate(90deg);
-    background:  var(--gtp-accent, #2563eb);
-    color:       #fff;
+.gtp-filter-pill {
+    padding: 4px var(--space-md);
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition), background var(--transition);
+    white-space: nowrap;
 }
 
-/* Aufklappbares Optionen-Panel */
-#gtp-theme-panel {
-    display:          flex;
-    flex-direction:   column;
-    gap:              4px;
-    opacity:          0;
-    pointer-events:   none;
-    transform:        translateY(8px) scale(0.95);
-    transition:       opacity 0.18s ease, transform 0.18s ease;
-    transform-origin: bottom right;
-}
-#gtp-theme-panel.gtp-theme-panel-vis {
-    opacity:        1;
-    pointer-events: auto;
-    transform:      translateY(0) scale(1);
+.gtp-filter-pill:hover {
+    border-color: var(--primary-700);
+    color: var(--primary-700);
+    background: var(--primary-100);
 }
 
-/* Einzelne Theme-Option */
-.gtp-theme-opt {
-    display:      flex;
-    align-items:  center;
-    gap:          8px;
-    padding:      7px 14px 7px 10px;
-    border-radius: 24px;
-    border:       1.5px solid var(--gtp-border, #e2e8f0);
-    background:   var(--gtp-bg, #fff);
-    color:        var(--gtp-text-muted, #64748b);
-    font-size:    .82rem;
-    font-weight:  600;
-    cursor:       pointer;
-    white-space:  nowrap;
-    box-shadow:   0 2px 8px rgba(0, 0, 0, .1);
-    transition:   all 0.15s ease;
+.gtp-filter-pill.active {
+    background: var(--primary-700);
+    border-color: var(--primary-700);
+    color: var(--text-on-dark);
 }
-.gtp-theme-opt:hover {
-    border-color: var(--gtp-accent, #2563eb);
-    color:        var(--gtp-accent, #2563eb);
-    background:   var(--gtp-accent-light, #eff6ff);
+
+.gtp-filter-toggle {
+    padding: 5px var(--space-md);
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition);
 }
-.gtp-theme-opt.gtp-theme-opt-active {
-    border-color: var(--gtp-accent, #2563eb);
-    background:   var(--gtp-accent, #2563eb);
-    color:        #fff;
+
+.gtp-filter-toggle:hover {
+    border-color: var(--primary-700);
+    color: var(--primary-700);
 }
-.gtp-theme-opt-icon {
-    font-size:   1rem;
+
+.gtp-search {
+    padding: 6px var(--space-md);
+    border-radius: var(--radius-input);
+    border: 1px solid var(--border-input);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-main);
+    background: var(--bg-surface-solid);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    min-width: 180px;
+}
+
+.gtp-search:focus {
+    outline: none;
+    border-color: var(--primary-700);
+    box-shadow: var(--shadow-focus);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENT TABLE
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-table-wrap {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.gt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.gt thead th {
+    background: var(--primary-900);
+    color: var(--text-on-dark);
+    padding: 10px var(--space-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border: none;
+    white-space: nowrap;
+}
+
+.gt tbody tr {
+    border-bottom: 1px solid var(--border-strong);
+    transition: background var(--transition);
+}
+
+.gt tbody tr:last-child {
+    border-bottom: none;
+}
+
+.gt tbody tr:hover {
+    background: var(--primary-100);
+}
+
+.gt td {
+    padding: 10px var(--space-md);
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+/* Weekend / holiday rows */
+.gt-hol td,
+.gt tr.gt-hol td {
+    background: #f9fafb;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Schulwochen-Header rows */
+.gt-sw td,
+.gt tr.gt-sw td {
+    background: var(--primary-100);
+    color: var(--primary-900);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    padding: 6px var(--space-md);
+    border-top: 2px solid var(--primary-700);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CATEGORY BADGES
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: var(--radius-badge);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS (Kalenderansicht)
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-lg);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.gtp-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.gtp-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.gtp-card-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Grid for calendar card view */
+.gtp-fluid-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-md);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 8px var(--space-lg);
+    border-radius: var(--radius-btn);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    text-decoration: none;
     line-height: 1;
 }
 
-/* Mobile Anpassung */
-@media (max-width: 767px) {
-    #gtp-theme-wrap {
-        bottom: 20px;
-        right:  20px;
-    }
-    #gtp-heute-btn {
-        bottom: 80px !important;
-    }
+.gtp-btn-primary {
+    background: var(--primary-700);
+    color: var(--text-on-dark);
+    box-shadow: var(--shadow-btn);
 }
 
-/* Druck: Theme-Switcher ausblenden */
-@media print {
-    #gtp-theme-wrap { display: none !important; }
+.gtp-btn-primary:hover {
+    background: var(--primary-500);
+    box-shadow: 0 4px 12px rgba(0, 70, 125, 0.35);
+    transform: translateY(-1px);
+    color: var(--text-on-dark);
+    text-decoration: none;
 }
 
-/* ================================================================
-   Hilfe-Button & Hilfe-Overlay
-   Version: 3.16.0  (ersetzt Shepherd.js Onboarding-Tour v3.10.0)
-   ================================================================ */
+.gtp-btn-primary:active {
+    transform: none;
+    box-shadow: var(--shadow-btn);
+}
 
-/* ── Hilfe-Button im Header ─────────────────────────────────────── */
-#gtp-tour-btn {
-    background:    none;
-    border:        1.5px solid var(--gtp-border, #e2e8f0);
-    border-radius: 50%;
-    width:         32px;
-    height:        32px;
-    font-size:     .9rem;
-    color:         var(--gtp-text-muted, #64748b);
-    cursor:        pointer;
-    transition:    all 0.15s ease;
-    display:       flex;
-    align-items:   center;
+.gtp-btn-secondary {
+    background: transparent;
+    color: var(--primary-700);
+    border: 1.5px solid var(--primary-700);
+}
+
+.gtp-btn-secondary:hover {
+    background: var(--primary-100);
+    text-decoration: none;
+}
+
+.gtp-btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
+}
+
+.gtp-btn-ghost:hover {
+    color: var(--text-main);
+    border-color: var(--border-input);
+    background: var(--bg-body);
+}
+
+.gtp-btn:disabled,
+.gtp-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.gtp-btn-sm {
+    padding: 5px 14px;
+    font-size: 0.82rem;
+}
+
+.gtp-btn-lg {
+    padding: 11px 28px;
+    font-size: 0.95rem;
+}
+
+/* Icon button (square) */
+.gtp-btn-icon {
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    flex-shrink:   0;
-}
-#gtp-tour-btn:hover {
-    background:   var(--gtp-accent-light, #eff6ff);
-    border-color: var(--gtp-accent, #2563eb);
-    color:        var(--gtp-accent, #2563eb);
 }
 
-/* ── Hilfe-Overlay ──────────────────────────────────────────────── */
-.gtp-help-overlay {
-    position:        fixed;
-    inset:           0;
-    background:      rgba(0, 0, 0, 0.55);
-    z-index:         9999;
-    display:         flex;
-    align-items:     center;
-    justify-content: center;
-    padding:         16px;
+.gtp-btn-icon:hover {
+    color: var(--primary-700);
+    border-color: var(--primary-700);
+    background: var(--primary-100);
 }
-.gtp-help-overlay[hidden] {
-    display: none;
-}
-.gtp-help-panel {
-    background:    var(--gtp-bg, #ffffff);
-    border-radius: 12px;
-    box-shadow:    0 20px 60px rgba(0, 0, 0, 0.25);
-    width:         100%;
-    max-width:     560px;
-    max-height:    85vh;
-    display:       flex;
-    flex-direction: column;
-    overflow:      hidden;
-}
-.gtp-help-header {
-    display:         flex;
-    align-items:     center;
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-footer {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    padding:         20px 24px 16px;
-    border-bottom:   1px solid var(--gtp-border, #e5e7eb);
-    flex-shrink:     0;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-surface-solid);
+    border-top: 1px solid var(--border-strong);
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
 }
-.gtp-help-title {
-    font-size:   1.1rem;
-    font-weight: 700;
-    margin:      0;
-    display:     flex;
+
+.gtp-footer-actions {
+    display: flex;
     align-items: center;
-    gap:         8px;
-    color:       var(--gtp-text, #111827);
-}
-.gtp-help-close {
-    background:    none;
-    border:        none;
-    cursor:        pointer;
-    padding:       4px;
-    border-radius: 6px;
-    color:         var(--gtp-text-muted, #6b7280);
-    display:       flex;
-    align-items:   center;
-}
-.gtp-help-close:hover {
-    background: var(--gtp-surface, #f3f4f6);
-    color:      var(--gtp-text, #111827);
-}
-.gtp-help-body {
-    overflow-y: auto;
-    padding:    16px 24px;
-    flex:       1;
-}
-.gtp-help-section {
-    display:       flex;
-    gap:           14px;
-    padding:       12px 0;
-    border-bottom: 1px solid var(--gtp-border, #e5e7eb);
-}
-.gtp-help-section:last-child {
-    border-bottom: none;
-}
-.gtp-help-section-icon {
-    flex-shrink:   0;
-    width:         32px;
-    height:        32px;
-    display:       flex;
-    align-items:   center;
-    justify-content: center;
-    background:    var(--gtp-surface, #f3f4f6);
-    border-radius: 8px;
-    color:         var(--gtp-accent, #2563eb);
-}
-.gtp-help-section-body strong {
-    display:       block;
-    font-size:     0.9rem;
-    color:         var(--gtp-text, #111827);
-    margin-bottom: 2px;
-}
-.gtp-help-section-body p {
-    font-size:   0.82rem;
-    color:       var(--gtp-text-muted, #6b7280);
-    margin:      0;
-    line-height: 1.5;
-}
-.gtp-help-footer {
-    padding:    12px 24px;
-    border-top: 1px solid var(--gtp-border, #e5e7eb);
-    flex-shrink: 0;
-}
-.gtp-help-version {
-    font-size: 0.72rem;
-    color:     var(--gtp-text-faint, #9ca3af);
+    gap: var(--space-sm);
 }
 
-/* Dark Mode */
-[data-gtp-theme="dark"] .gtp-help-panel {
-    background: var(--gtp-surface, #1e293b);
-}
-[data-gtp-theme="dark"] .gtp-help-section-icon {
-    background: rgba(255, 255, 255, 0.06);
-}
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gtp-help-panel {
-        background: var(--gtp-surface, #1e293b);
-    }
-    [data-gtp-theme="auto"] .gtp-help-section-icon {
-        background: rgba(255, 255, 255, 0.06);
-    }
-}
-
-/* Druck */
-@media print {
-    #gtp-tour-btn,
-    .gtp-help-overlay { display: none !important; }
-}
-
-/* ================================================================
-   Icon-Set: Lucide inline-SVG Basisstil
-   Version: 3.11.0
-   ================================================================ */
-
-/* Basisstil für alle Lucide-Icons */
-.gtp-icon {
-    display:        inline-block;
-    vertical-align: -0.15em;
-    flex-shrink:    0;
-    line-height:    1;
-}
-
-/* Icons in Buttons: kleiner Abstand zum Text */
-button .gtp-icon,
-a .gtp-icon {
-    margin-right: 0.35em;
-}
-
-/* Icon-only Buttons ohne rechten Abstand */
-button .gtp-icon:only-child,
-a .gtp-icon:only-child {
-    margin-right: 0;
-}
-
-/* Suchfeld mit Icon */
-.gtp-search-wrap {
-    position:    relative;
-    display:     flex;
-    align-items: center;
-}
-.gtp-search-icon {
-    position:       absolute;
-    left:           12px;
-    color:          var(--gtp-text-faint);
-    pointer-events: none;
-    width:          1rem;
-    height:         1rem;
-}
-.gtp-search-input {
-    padding-left: 2.25rem !important;
-}
-
-/* Placeholder-Farbe explizit setzen – Browser-Standard oft unsichtbar */
-.gtp-search-input::placeholder {
-    color: var(--gtp-text-faint, #94a3b8);
-    opacity: 1; /* Firefox setzt ::placeholder opacity auf 0.54 */
-}
-
-/* Dark Mode: Suchfeld Kontrast sicherstellen */
-[data-gtp-theme="dark"] .gtp-search-input,
-[data-gtp-theme="dark"] .gtp-search-input:focus {
-    color: var(--gtp-text);
-    background: var(--gtp-surface);
-    border-color: var(--gtp-border);
-}
-[data-gtp-theme="dark"] .gtp-search-input::placeholder {
-    color: var(--gtp-text-faint);
-}
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gtp-search-input {
-        color: var(--gtp-text);
-        background: var(--gtp-surface);
-    }
-    [data-gtp-theme="auto"] .gtp-search-input::placeholder {
-        color: var(--gtp-text-faint);
-    }
-}
-
-/* Druck: Icons mitdrucken */
-@media print {
-    .gtp-icon { display: inline-block; }
-}
-
-/* ================================================================
-   Feedback-Button & Modal
-   Version: 3.12.0
-   ================================================================ */
-
-/* ── Feedback-Button in der Fußzeile ────────────────────────────── */
-.gtp-btn-feedback {
-    background:  var(--gtp-bg);
-    border:      1.5px solid var(--gtp-border);
-    color:       var(--gtp-text-muted);
-    box-shadow:  none;
-    font-size:   .78rem;
-}
-.gtp-btn-feedback:hover {
-    border-color: var(--gtp-accent);
-    color:        var(--gtp-accent);
-    background:   var(--gtp-accent-light);
-    transform:    translateY(-1px);
-}
-
-/* ── Feedback-Modal-Karte ───────────────────────────────────────── */
-.gtp-feedback-card {
-    max-width: 460px !important;
-}
-
-.gtp-feedback-intro {
-    font-size:   .82rem;
-    color:       var(--gtp-text-muted);
-    margin:      -.25rem 0 1.1rem;
-    line-height: 1.6;
-}
-
-/* ── Typ-Auswahl ────────────────────────────────────────────────── */
-.gtp-feedback-types {
-    display:       flex;
-    flex-wrap:     wrap;
-    gap:           8px;
-    margin-bottom: 1.1rem;
-}
-
-.gtp-feedback-type {
-    padding:       7px 14px;
-    border-radius: 24px;
-    border:        1.5px solid var(--gtp-border);
-    background:    var(--gtp-surface);
-    color:         var(--gtp-text-muted);
-    font-size:     .8rem;
-    font-weight:   600;
-    cursor:        pointer;
-    transition:    all 0.15s ease;
-    white-space:   nowrap;
-    font-family:   inherit;
-}
-.gtp-feedback-type:hover {
-    border-color: var(--gtp-accent);
-    color:        var(--gtp-accent);
-    background:   var(--gtp-accent-light);
-}
-.gtp-feedback-type.gtp-feedback-type-active {
-    border-color: var(--gtp-accent);
-    background:   var(--gtp-accent);
-    color:        #fff;
-}
-
-/* ── Freitextfeld ───────────────────────────────────────────────── */
-.gtp-feedback-field {
-    margin-bottom: 1.1rem;
-}
-
-.gtp-feedback-label {
-    display:        block;
-    font-size:      .78rem;
-    font-weight:    700;
-    color:          var(--gtp-text-muted);
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    margin-bottom:  .5rem;
-}
-
-.gtp-feedback-textarea {
-    width:          100%;
-    box-sizing:     border-box;
-    padding:        10px 14px;
-    border:         1.5px solid var(--gtp-border);
-    border-radius:  10px;
-    background:     var(--gtp-surface);
-    color:          var(--gtp-text);
-    font-size:      .84rem;
-    font-family:    inherit;
-    line-height:    1.55;
-    resize:         vertical;
-    min-height:     90px;
-    transition:     border-color 0.15s ease, box-shadow 0.15s ease;
-    outline:        none;
-}
-.gtp-feedback-textarea:focus {
-    border-color: var(--gtp-accent);
-    box-shadow:   0 0 0 3px rgba(37, 99, 235, .1);
-    background:   var(--gtp-bg);
-}
-
-.gtp-feedback-counter {
+.gtp-footer-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
     text-align: right;
-    font-size:  .7rem;
-    color:      var(--gtp-text-faint);
-    margin-top: 4px;
 }
 
-/* ── Status-Meldung (Erfolg / Fehler) ───────────────────────── */
-.gtp-feedback-status {
-    padding:       10px 14px;
-    border-radius: 8px;
-    font-size:     .82rem;
-    font-weight:   600;
-    margin-bottom: 1rem;
-}
-.gtp-feedback-status-ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.gtp-feedback-status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+/* ═══════════════════════════════════════════════════════════════
+   DRAFT BANNER
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ── Aktions-Buttons ────────────────────────────────────────────── */
-.gtp-feedback-actions {
-    display:         flex;
-    gap:             10px;
-    justify-content: flex-end;
-    flex-wrap:       wrap;
+.gtp-draft-banner {
+    background: var(--accent-warning-bg);
+    border-left: 4px solid var(--accent-warning);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: 0.85rem;
+    color: #92400E;
 }
 
-#gtp-feedback-submit:disabled {
-    opacity:    .45;
-    cursor:     not-allowed;
-    transform:  none !important;
-    background: var(--gtp-text);
-}
-#gtp-feedback-submit:not(:disabled) {
-    background: var(--gtp-accent);
-    color:      #fff;
-    border:     none;
-}
-#gtp-feedback-submit:not(:disabled):hover {
-    background: var(--gtp-accent-dark);
-    transform:  translateY(-1px);
+/* ═══════════════════════════════════════════════════════════════
+   STATUS MESSAGES + NOTICES
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-status-success { color: var(--accent-success); }
+.gtp-status-error   { color: var(--accent-error); }
+.gtp-status-warn    { color: var(--accent-warning); }
+
+.gtp-notice {
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    border-left: 3px solid;
 }
 
-/* Dark Mode */
-[data-gtp-theme="dark"] .gtp-feedback-textarea {
-    background:   var(--gtp-surface);
-    color:        var(--gtp-text);
-    border-color: var(--gtp-border);
+.gtp-notice-success {
+    background: var(--accent-success-bg);
+    border-color: var(--accent-success);
+    color: #065F46;
 }
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gtp-feedback-textarea {
-        background:   var(--gtp-surface);
-        color:        var(--gtp-text);
-        border-color: var(--gtp-border);
+
+.gtp-notice-error {
+    background: var(--accent-error-bg);
+    border-color: var(--accent-error);
+    color: #991B1B;
+}
+
+.gtp-notice-warn {
+    background: var(--accent-warning-bg);
+    border-color: var(--accent-warning);
+    color: #92400E;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCHULJAHR SWITCHER
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-sj-btn {
+    padding: 4px var(--space-md);
+    border-radius: var(--radius-btn);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.gtp-sj-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-on-dark);
+}
+
+.gtp-sj-btn-on {
+    background: var(--accent-warning);
+    border-color: var(--accent-warning);
+    color: #1C1917;
+    font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME SWITCHER
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-theme-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.gtp-theme-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-on-dark);
+}
+
+.gtp-theme-btn.active {
+    background: var(--primary-700);
+    border-color: var(--primary-700);
+    color: var(--text-on-dark);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FEEDBACK BUTTON + MODAL
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-feedback-btn {
+    padding: 5px var(--space-md);
+    border-radius: var(--radius-btn);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.gtp-feedback-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-on-dark);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤ 768px)
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .gtp-wrap {
+        padding: var(--space-md) var(--space-sm);
+    }
+
+    .gtp-header {
+        padding: var(--space-md);
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        gap: var(--space-sm);
+    }
+
+    .gtp-header-logo {
+        height: 22px;
+    }
+
+    .gtp-tabs {
+        padding: var(--space-sm);
+        gap: var(--space-xs);
+    }
+
+    .gtp-filter-bar {
+        padding: var(--space-sm);
+        gap: var(--space-xs);
+    }
+
+    .gtp-search {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .gtp-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gtp-footer-meta {
+        text-align: left;
+    }
+
+    /* Table → Card layout on mobile */
+    .gt thead { display: none; }
+    .gt,
+    .gt tbody,
+    .gt tr,
+    .gt td { display: block; width: 100%; }
+
+    .gt tr {
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--space-sm);
+        padding: var(--space-sm);
+        background: var(--bg-surface-solid);
+    }
+
+    .gt tr:hover {
+        background: var(--primary-100);
+    }
+
+    .gt td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .gt td {
+        border: none;
+        padding: 4px 0;
+    }
+
+    /* Holiday rows on mobile */
+    .gt-hol { border-color: var(--border-strong); }
+    .gt-sw { display: none; } /* Schulwochen headers hidden on mobile */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — INTERMEDIATE (769px – 1200px)
+   Table collapses to stacked cards
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    .gt {
+        display: block;
+        width: 100%;
+    }
+
+    .gt thead { display: none; }
+    .gt tbody { display: block; }
+
+    .gt tr {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-card);
+        margin-bottom: var(--space-sm);
+        padding: var(--space-md);
+        background: var(--bg-surface-solid);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow var(--transition);
+    }
+
+    .gt tr:hover {
+        box-shadow: var(--shadow-card);
+        background: var(--primary-100);
+    }
+
+    .gt td {
+        border: none;
+        padding: 3px 0;
+    }
+
+    .gt-sw tr,
+    .gt tr.gt-sw {
+        background: var(--primary-100);
+        border-color: var(--primary-700);
     }
 }
 
-/* Druck */
-@media print {
-    .gtp-btn-feedback,
-    #gtp-feedback-overlay { display: none !important; }
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+    outline: 2px solid var(--primary-700);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
 }
 
-/* ================================================================
-   Admin – Kategorien-Tab AJAX-Save
-   Version: 3.14.0
-   ================================================================ */
-#gsh-cat-status {
-    display: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: .84rem;
-    font-weight: 600;
-    margin: 10px 0;
-}
-.gsh-cat-status-ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.gsh-cat-status-err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+/* ═══════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ================================================================
-   Kategorie-System v3.15.0 – Badges & Filter-Buttons
-   ================================================================ */
-
-/* Kategorie-Badges in Terminen */
-.gsh-tp-cat-badge {
-    display:          inline-block;
-    padding:          2px 8px;
-    border-radius:    12px;
-    font-size:        0.75rem;
-    font-weight:      600;
-    background-color: var(--cat-color, #6c757d);
-    color:            var(--cat-text, #ffffff);
-    margin-right:     4px;
-    line-height:      1.4;
-}
-
-/* Filter-Container */
-.gsh-tp-cat-filters {
-    display:       flex;
-    flex-wrap:     wrap;
-    gap:           8px;
-    margin-bottom: 16px;
-}
-
-/* Filter-Buttons (neue Klasse, nutzt --btn-color vom PHP) */
-.gsh-tp-cat-filter-btn {
-    padding:       4px 14px;
-    border-radius: 20px;
-    border:        2px solid var(--btn-color, #6c757d);
-    background:    transparent;
-    color:         var(--btn-color, #6c757d);
-    cursor:        pointer;
-    font-size:     0.85rem;
-    font-weight:   600;
-    transition:    background 0.15s, color 0.15s;
-}
-.gsh-tp-cat-filter-btn.active,
-.gsh-tp-cat-filter-btn:hover {
-    background-color: var(--btn-color, #6c757d);
-    color:            var(--btn-text, #ffffff);
-}
-
-/* Dark Mode */
-[data-gtp-theme="dark"] .gsh-tp-cat-badge {
-    /* Badge-Farbe bleibt, nur Kontrast sicherstellen */
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
-}
-
-[data-gtp-theme="dark"] .gsh-tp-cat-filter-btn {
-    border-color: var(--btn-color, #aaa);
-    color:        var(--btn-color, #aaa);
-}
-[data-gtp-theme="dark"] .gsh-tp-cat-filter-btn.active,
-[data-gtp-theme="dark"] .gsh-tp-cat-filter-btn:hover {
-    background-color: var(--btn-color, #aaa);
-    color:            var(--btn-text, #ffffff);
-}
-
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gsh-tp-cat-filter-btn {
-        border-color: var(--btn-color, #aaa);
-        color:        var(--btn-color, #aaa);
+@media (prefers-reduced-motion: reduce) {
+    .gtp-wrap *,
+    .gtp-wrap *::before,
+    .gtp-wrap *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
-    [data-gtp-theme="auto"] .gsh-tp-cat-filter-btn.active,
-    [data-gtp-theme="auto"] .gsh-tp-cat-filter-btn:hover {
-        background-color: var(--btn-color, #aaa);
-        color:            var(--btn-text, #ffffff);
-    }
-}
-
-/* Druck */
-@media print {
-    .gsh-tp-cat-badge    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    .gsh-tp-cat-filters  { display: none !important; }
-}
-
-/* ================================================================
-   Admin – Kategorie-Editor: Slug-Vorschau & Keyword-Editor
-   Version: 3.16.0
-   ================================================================ */
-
-/* Slug-Vorschau unter dem Label-Feld */
-.gsh-cat-slug-preview {
-    font-size:   0.72rem;
-    color:       #6b7280;
-    display:     block;
-    margin-top:  2px;
-    margin-bottom: 4px;
-}
-.gsh-cat-slug-preview code {
-    font-family:   monospace;
-    background:    #f3f4f6;
-    padding:       1px 4px;
-    border-radius: 3px;
-}
-
-/* Keyword-Editor (aufklappbar) */
-.gsh-cat-keywords-wrap {
-    margin-top: 4px;
-}
-.gsh-cat-keywords-wrap summary {
-    cursor:      pointer;
-    font-size:   0.8rem;
-    color:       #6b7280;
-    user-select: none;
-}
-.gsh-cat-keywords-wrap[open] summary {
-    margin-bottom: 6px;
-}
-.gsh-cat-keywords {
-    width:         100%;
-    box-sizing:    border-box;
-    font-size:     0.8rem;
-    resize:        vertical;
-    border:        1px solid #d1d5db;
-    border-radius: 4px;
-    padding:       6px 8px;
-    font-family:   inherit;
-    background:    #fff;
-    color:         #111827;
-}
-.gsh-cat-keywords-hint {
-    font-size:  0.72rem;
-    color:      #6b7280;
-    margin-top: 4px;
-    margin-bottom: 0;
-}
-.gsh-cat-kw-count {
-    font-weight: normal;
-    opacity:     0.7;
-}
-
-/* ================================================================
-   UI-Überarbeitung v3.17.0 – neue und ergänzte Komponenten
-   ================================================================ */
-
-/* ── Dark Mode – Draft-Banner ──────────────────────────────────── */
-[data-gtp-theme="dark"] .gtp-draft-banner {
-    background:   #422006;
-    border-color: #92400e;
-    color:        #fef3c7;
-}
-@media (prefers-color-scheme: dark) {
-    [data-gtp-theme="auto"] .gtp-draft-banner {
-        background:   #422006;
-        border-color: #92400e;
-        color:        #fef3c7;
-    }
-}
-
-
-/* ── Desktop: Filter immer sichtbar, Toggle versteckt ─────────── */
-@media (min-width: 768px) {
-    .gtp-filt-toggle { display: none !important; }
-    .gtp-filt        { max-height: none !important; overflow: visible; }
-}
-
-/* ── Footer-Meta auf sehr kleinen Screens stacken ─────────────── */
-@media (max-width: 480px) {
-    .gtp-ft-actions { width: 100%; }
-    .gtp-ft-meta    { width: 100%; }
 }
