@@ -1613,9 +1613,9 @@ function handleFile(file) {
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
 
       // Kategorien-Sheet mergen (falls vorhanden) – vor Format-Erkennung, damit beide Pfade profitieren
-      const katWs = wb.Sheets['Kategorien'];
-      if (katWs) {
-        mergeExcelCategories(XLSX.utils.sheet_to_json(katWs, { header: 1, raw: false }));
+      const katSheetName = wb.SheetNames.find(n => n.toLowerCase() === 'kategorien');
+      if (katSheetName) {
+        mergeExcelCategories(XLSX.utils.sheet_to_json(wb.Sheets[katSheetName], { header: 1, raw: false }));
       }
 
       // Schulwochen-Format automatisch erkennen und separat importieren
@@ -1686,7 +1686,7 @@ function handleFile(file) {
         const startTime = parseImportTime(r[cm.startTime]);
         const end = parseImportDate(r[cm.end]);
         const endTime = parseImportTime(r[cm.endTime]);
-        const catRaw = String(r[cm.cat] || '');
+        const catRaw = String(r[cm.cat] || '').trim();
         const cat = matchCategory(catRaw);
         if (catRaw && !cat) warnings.push(`Kategorie "${catRaw}" bei "${title}" nicht zugeordnet – prüfen: Kategorien-Sheet befüllen oder Schreibweise angleichen.`);
         const note = String(r[cm.note] || '').trim();
