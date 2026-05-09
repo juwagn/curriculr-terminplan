@@ -5,27 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terminplan → ICS Konverter v2.3</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-light: #eef2ff;
-    --accent: #059669;
+    --primary-900: #00345C;
+    --primary-700: #00467D;
+    --primary-500: #0058A0;
+    --primary-100: #E6F4FF;
+    --accent-warning: #FFC857;
+    --accent-success: #0E9F6E;
+    --accent-error: #E02424;
+    --bg-body: #F3F5F9;
+    --bg-surface: rgba(255,255,255,0.85);
+    --bg-surface-solid: #FFFFFF;
+    --border-subtle: rgba(255,255,255,0.6);
+    --border-strong: #D1D5DB;
+    --border-input: #9CA3AF;
+    --text-main: #111827;
+    --text-muted: #4B5563;
+    --text-on-dark: #FFFFFF;
+    --radius-card: 14px;
+    --radius-btn: 9999px;
+    --radius-input: 8px;
+    --shadow-card: 0 18px 40px rgba(15,23,42,0.15);
+    --shadow-btn: 0 2px 8px rgba(0,70,125,0.25);
+    --shadow-focus: 0 0 0 3px rgba(0,70,125,0.25);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --transition: 150ms ease-out;
+    /* Compatibility aliases für nicht-ersetzte CSS-Bereiche */
+    --bg: var(--bg-body);
+    --surface: var(--bg-surface-solid);
+    --primary: var(--primary-700);
+    --primary-hover: var(--primary-500);
+    --primary-light: var(--primary-100);
+    --accent: var(--accent-success);
     --accent-hover: #047857;
-    --danger: #dc2626;
-    --warn: #d97706;
-    --text: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --radius: 10px;
-    --radius-lg: 14px;
-    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --danger: var(--accent-error);
+    --warn: var(--accent-warning);
+    --text: var(--text-main);
+    --border: var(--border-strong);
+    --radius: var(--radius-input);
+    --radius-lg: var(--radius-card);
+    --shadow: var(--shadow-sm);
     --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -1px rgba(0,0,0,.04);
-    --shadow-lg: 0 10px 25px -5px rgba(0,0,0,.1), 0 4px 10px -5px rgba(0,0,0,.05);
-    --transition: all .15s cubic-bezier(.4,0,.2,1);
+    --shadow-lg: var(--shadow-card);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,9 +58,9 @@
   }
 
   body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-body);
+    color: var(--text-main);
     min-height: 100vh;
     line-height: 1.6;
     font-size: 15px;
@@ -45,21 +68,21 @@
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-    color: #fff;
+    background: var(--primary-900);
+    color: var(--text-on-dark);
     padding: 0 32px;
     height: 60px;
     display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 4px 20px rgba(79,70,229,.25);
+    box-shadow: 0 4px 20px rgba(0,52,92,0.4);
   }
-  .header-logo { width: 28px; height: 28px; color: rgba(255,255,255,.9); flex-shrink: 0; }
+  .header-logo { height: 26px; width: auto; flex-shrink: 0; }
   .header-title { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
   .header-sub { font-size: .78rem; opacity: .6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .version-badge {
     margin-left: auto; flex-shrink: 0;
     background: rgba(255,255,255,.12);
     border: 1px solid rgba(255,255,255,.2);
-    padding: 4px 12px; border-radius: 20px;
+    padding: 4px 12px; border-radius: var(--radius-btn);
     font-size: .72rem; color: rgba(255,255,255,.85);
     cursor: pointer; transition: var(--transition);
   }
@@ -69,79 +92,84 @@
   .stepper {
     display: flex; align-items: center;
     padding: 12px 32px;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface-solid);
+    border-bottom: 1px solid var(--border-strong);
     overflow-x: auto; gap: 0;
   }
   .step-item { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .step-num {
     width: 26px; height: 26px; border-radius: 50%;
-    background: var(--border); color: var(--text-muted);
+    background: var(--border-strong); color: var(--text-muted);
     display: flex; align-items: center; justify-content: center;
-    font-size: .72rem; font-weight: 700; flex-shrink: 0;
-    transition: var(--transition);
+    font-size: .78rem; font-weight: 700; flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
   }
-  .step-label { font-size: .8rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
-  .step-item.active .step-num { background: var(--primary); color: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.18); }
-  .step-item.active .step-label { color: var(--primary); font-weight: 600; }
-  .step-item.done .step-num { background: var(--accent); color: #fff; }
-  .step-sep { width: 36px; height: 1px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
+  .step-label { font-size: .82rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+  .step-item.active .step-num { background: var(--primary-700); color: var(--text-on-dark); }
+  .step-item.active .step-label { color: var(--primary-700); font-weight: 700; }
+  .step-item.done .step-num { background: var(--accent-success); color: var(--text-on-dark); }
+  .step-sep { width: 24px; height: 1px; background: var(--border-strong); margin: 0 4px; flex-shrink: 0; }
 
   /* ── Main ── */
-  .main { max-width: 1300px; margin: 0 auto; padding: 20px 24px 60px; }
+  .main { max-width: 1120px; margin: 0 auto; padding: 32px 24px; }
 
   /* ── Cards ── */
   .card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    margin-bottom: 14px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 20px;
     overflow: hidden;
-    transition: box-shadow .2s;
+    transition: box-shadow var(--transition);
   }
-  .card:focus-within { box-shadow: var(--shadow-md); }
+  .card:hover { box-shadow: 0 24px 48px rgba(15,23,42,0.2); }
+  .card:focus-within { box-shadow: 0 24px 48px rgba(15,23,42,0.2); }
   .card-header {
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-strong);
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 10px;
-    background: #fafbfc;
+    background: var(--bg-surface-solid);
   }
   .card-header-left { display: flex; align-items: center; gap: 9px; }
-  .card-header-icon { color: var(--primary); flex-shrink: 0; }
+  .card-header-icon { color: var(--primary-700); flex-shrink: 0; }
   .card-step {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--primary-light); color: var(--primary);
-    font-size: .65rem; font-weight: 700; flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary-700); color: var(--text-on-dark);
+    font-size: .72rem; font-weight: 700; flex-shrink: 0;
   }
-  .card-header h2 { font-size: .9rem; font-weight: 600; color: var(--text); }
+  .card-header h2 { font-size: .95rem; font-weight: 700; color: var(--text-main); margin: 0; }
   .card-body { padding: 20px; }
 
   /* ── Buttons ── */
   .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px;
-    border: none; border-radius: 8px;
-    font-family: inherit; font-size: .84rem; font-weight: 600;
-    cursor: pointer; transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 20px;
+    border: none; border-radius: var(--radius-btn);
+    font-family: inherit; font-size: .875rem; font-weight: 600;
+    cursor: pointer; transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
     white-space: nowrap; text-decoration: none;
   }
-  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-  .btn:active { transform: translateY(0); box-shadow: none; }
-  .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-accent { background: var(--accent); color: #fff; }
-  .btn-accent:hover { background: var(--accent-hover); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-warn { background: var(--warn); color: #fff; }
-  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: #f1f5f9; color: var(--text); border-color: #cbd5e1; }
-  .btn-sm { padding: 5px 11px; font-size: .78rem; }
-  .btn-lg { padding: 11px 24px; font-size: .95rem; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:focus-visible { outline: 2px solid var(--primary-700); outline-offset: 2px; }
+  .btn-primary { background: var(--primary-700); color: var(--text-on-dark); box-shadow: var(--shadow-btn); }
+  .btn-primary:hover { background: var(--primary-500); box-shadow: 0 4px 12px rgba(0,70,125,0.35); }
+  .btn-primary:active { transform: none; }
+  .btn-accent { background: var(--accent-success); color: var(--text-on-dark); }
+  .btn-accent:hover { background: #047857; }
+  .btn-danger { background: var(--accent-error); color: var(--text-on-dark); }
+  .btn-warn { background: var(--accent-warning); color: var(--text-main); }
+  .btn-secondary { background: transparent; color: var(--primary-700); border: 1.5px solid var(--primary-700); }
+  .btn-secondary:hover { background: var(--primary-100); }
+  .btn-ghost { background: transparent; color: var(--primary-700); border: 1.5px solid var(--primary-700); }
+  .btn-ghost:hover { background: var(--primary-100); }
+  .btn-sm { padding: 5px 14px; font-size: .82rem; }
+  .btn-lg { padding: 11px 28px; font-size: .95rem; }
+  .btn:disabled, .btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   /* ── Dropzone ── */
@@ -602,9 +630,12 @@
 <body>
 
 <div class="header">
-  <svg class="header-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" width="150" height="26" class="header-logo" role="img" aria-label="Curricu:lr">
+    <title>Curricu:lr</title>
+    <text x="0" y="29" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="-0.5">Curricu</text>
+    <circle cx="142" cy="12" r="4.5" fill="#FFC857"/>
+    <circle cx="142" cy="27" r="4.5" fill="#FFC857"/>
+    <text x="152" y="29" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="-0.5">lr</text>
   </svg>
   <span class="header-title">Terminplan → ICS Konverter</span>
   <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
@@ -748,7 +779,7 @@
           <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
             Keine Installation nötig. Ferien und Eckdaten im Browser eingeben – die Vorlage wird automatisch erstellt und steht zum Download bereit.
           </p>
-          <a class="btn btn-primary btn-sm" href="https://github.com/juwagn/gsh-terminplan/actions/workflows/generate-template.yml" target="_blank" rel="noopener">
+          <a class="btn btn-primary btn-sm" href="https://github.com/juwagn/gsh-terminplan/actions/workflows/generate-template.yml" target="_blank" rel="noopener noreferrer">
             Zum Generator
           </a>
         </div>
@@ -760,7 +791,7 @@
           <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
             Für wiederkehrende Generierung oder Offline-Nutzung. Ein Kommandozeilen-Skript mit interaktiver Eingabe.
           </p>
-          <a class="btn btn-ghost btn-sm" href="../docs/anleitung-vorlagen-generator.md" target="_blank">
+          <a class="btn btn-ghost btn-sm" href="../docs/anleitung-vorlagen-generator.md" target="_blank" rel="noopener noreferrer">
             Anleitung öffnen
           </a>
         </div>
@@ -2338,7 +2369,7 @@ function loadExample() {
 // ═══════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════
-function esc(s) { return s.replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
 function toast(msg, type = '') {
   const t = document.getElementById('toast');
