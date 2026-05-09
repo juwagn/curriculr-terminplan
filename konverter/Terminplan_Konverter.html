@@ -632,14 +632,15 @@
 <div class="header">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" width="150" height="26" class="header-logo" role="img" aria-label="Curricu:lr">
     <title>Curricu:lr</title>
-    <text x="0" y="29" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="-0.5">Curricu</text>
-    <circle cx="142" cy="12" r="4.5" fill="#FFC857"/>
-    <circle cx="142" cy="27" r="4.5" fill="#FFC857"/>
-    <text x="152" y="29" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="-0.5">lr</text>
+    <text x="51.99" y="30" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="28" fill="#FFFFFF" textLength="90.78" lengthAdjust="spacingAndGlyphs">Curricu</text>
+    <rect x="146.62" y="17.10" width="1.55" height="5.20" fill="#FFC857"/>
+    <circle cx="147.40" cy="15.05" r="2.95" fill="#FFC857"/>
+    <circle cx="147.40" cy="24.35" r="2.95" fill="#FFC857"/>
+    <text x="152.03" y="30" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="28" fill="#FFFFFF" textLength="15.98" lengthAdjust="spacingAndGlyphs">lr</text>
   </svg>
   <span class="header-title">Terminplan → ICS Konverter</span>
   <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
-  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.2</div>
+  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.3</div>
 </div>
 
 <div class="stepper" role="list" aria-label="Workflow-Schritte">
@@ -2364,6 +2365,13 @@ function loadExample() {
   isDirty = true;
   validateRows(); updateStats();
   toast('Beispieltermine geladen', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════════════
+function openChangelog() {
+  document.getElementById('modal-changelog').classList.add('open');
 }
 
 // ═══════════════════════════════════════════════════════════
