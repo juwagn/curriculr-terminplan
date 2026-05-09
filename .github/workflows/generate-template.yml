@@ -148,10 +148,18 @@ jobs:
           echo "=== Generierte Dateien ==="
           ls -la Terminplan_Schulwochen_Vorlage_*.xlsx || echo "KEINE DATEI GEFUNDEN"
 
+      - name: Artifact-Namen bereinigen
+        id: artifact_name
+        run: |
+          RAW="${{ github.event.inputs.schuljahr }}"
+          SAFE="${RAW//\//_}"
+          echo "safe=$SAFE" >> "$GITHUB_OUTPUT"
+          echo "Artifact-Name: $SAFE"
+
       - name: Als Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: Schulwochen-Vorlage-${{ github.event.inputs.schuljahr }}
+          name: Schulwochen-Vorlage-${{ steps.artifact_name.outputs.safe }}
           path: Terminplan_Schulwochen_Vorlage_*.xlsx
 
       - name: Datei zur Release-Seite hinzufuegen (falls Release existiert)
