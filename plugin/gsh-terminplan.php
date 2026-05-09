@@ -1717,9 +1717,15 @@ function gsh_tp_render_feedback_log_tab() {
  */
 function gsh_tp_enqueue_frontend_styles() {
     wp_enqueue_style(
+        'gsh-terminplan-tokens',
+        plugin_dir_url( __FILE__ ) . 'assets/css/design-tokens.css',
+        array(),
+        GSH_TP_VERSION
+    );
+    wp_enqueue_style(
         'gsh-terminplan',
         plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
-        array(),
+        array( 'gsh-terminplan-tokens' ),
         GSH_TP_VERSION
     );
 }
