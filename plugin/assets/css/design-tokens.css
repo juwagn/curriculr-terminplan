@@ -34,6 +34,15 @@
   --text-on-dark: #FFFFFF;
   --text-on-primary: #FFFFFF;
 
+  /* Text on colored backgrounds (WCAG AA contrast) */
+  --text-on-warning-bg: #92400E;
+  --text-on-success-bg: #065F46;
+  --text-on-error-bg:   #991B1B;
+  --text-on-warning-btn: #1C1917;
+
+  /* Additional backgrounds */
+  --bg-muted: #F9FAFB;
+
   /* Radius */
   --radius-card: 14px;
   --radius-btn: 9999px;

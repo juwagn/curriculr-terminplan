@@ -249,7 +249,7 @@
 /* Weekend / holiday rows */
 .gt-hol td,
 .gt tr.gt-hol td {
-    background: #f9fafb;
+    background: var(--bg-muted);
     color: var(--text-muted);
     font-style: italic;
 }
@@ -458,7 +458,7 @@
     border-left: 4px solid var(--accent-warning);
     padding: var(--space-sm) var(--space-lg);
     font-size: 0.85rem;
-    color: #92400E;
+    color: var(--text-on-warning-bg);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -479,19 +479,19 @@
 .gtp-notice-success {
     background: var(--accent-success-bg);
     border-color: var(--accent-success);
-    color: #065F46;
+    color: var(--text-on-success-bg);
 }
 
 .gtp-notice-error {
     background: var(--accent-error-bg);
     border-color: var(--accent-error);
-    color: #991B1B;
+    color: var(--text-on-error-bg);
 }
 
 .gtp-notice-warn {
     background: var(--accent-warning-bg);
     border-color: var(--accent-warning);
-    color: #92400E;
+    color: var(--text-on-warning-bg);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -518,7 +518,7 @@
 .gtp-sj-btn-on {
     background: var(--accent-warning);
     border-color: var(--accent-warning);
-    color: #1C1917;
+    color: var(--text-on-warning-btn);
     font-weight: 700;
 }
 
