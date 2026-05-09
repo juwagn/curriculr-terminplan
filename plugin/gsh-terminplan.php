@@ -4170,6 +4170,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-hd">';
     $o .= '<div class="gtp-hd-top">';
     $o .= '<div class="gtp-hd-left">';
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
     $o .= '<h2 class="gtp-t">Jahresterminplan</h2>';
     $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Deine Schule</span>';
     $o .= '</div>';
