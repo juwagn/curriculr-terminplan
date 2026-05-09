@@ -1770,7 +1770,7 @@ function mergeExcelCategories(katRows) {
 
 function matchCategory(val) {
   if (!val) return '';
-  const lower = val.toLowerCase();
+  const lower = val.trim().toLowerCase();
   // Exact label match
   for (const c of categories) {
     if (c.label.toLowerCase() === lower) return c.label;
@@ -1778,6 +1778,11 @@ function matchCategory(val) {
   // Keyword match (uses configured keywords)
   for (const entry of catKeywords) {
     if (lower.includes(entry.kw)) return categories[entry.idx].label;
+  }
+  // Prefix/substring fallback: "Konferenz" → "Konferenzen/DB"
+  for (const c of categories) {
+    const catLower = c.label.toLowerCase();
+    if (catLower.startsWith(lower) || lower.startsWith(catLower)) return c.label;
   }
   return '';
 }
