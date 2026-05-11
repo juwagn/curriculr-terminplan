@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terminplan → ICS Konverter v2.4</title>
+<title>Terminplan → ICS Konverter v2.5</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -640,7 +640,7 @@
   </svg>
   <span class="header-title">Terminplan → ICS Konverter</span>
   <span class="header-sub">Schulwochen-Vorlage oder klassisches Excel importieren · ICS für IServ exportieren</span>
-  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.4</div>
+  <div class="version-badge" onclick="openChangelog()" title="Changelog anzeigen">v2.5</div>
 </div>
 
 <div class="stepper" role="list" aria-label="Workflow-Schritte">
@@ -766,41 +766,87 @@
       <div class="card-header-left">
         <svg class="card-header-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
         <span class="card-step">2</span>
-        <h2>Schulwochen-Vorlage erhalten</h2>
+        <h2>Schulwochen-Vorlage erstellen</h2>
       </div>
     </div>
     <div class="card-body">
-      <p class="step-hint">Eine professionelle Excel-Vorlage mit automatischen Schulwochen-Berechnungen, Dropdown-Menüs und Formatierung.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
-        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <h3 style="font-size:.95rem;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Online generieren
-          </h3>
-          <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
-            Keine Installation nötig. Ferien und Eckdaten im Browser eingeben – die Vorlage wird automatisch erstellt und steht zum Download bereit.
-          </p>
-          <a class="btn btn-primary btn-sm" href="https://github.com/juwagn/gsh-terminplan/actions/workflows/generate-template.yml" target="_blank" rel="noopener noreferrer">
-            Zum Generator
-          </a>
+      <p class="step-hint">Ferien und Schuljahres-Eckdaten eingeben – fertige Excel-Vorlage wird direkt im Browser erstellt und heruntergeladen.</p>
+
+      <div style="margin-top:16px;">
+        <!-- Schuljahr + Zeilen/Woche -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div>
+            <label for="gen-schuljahr" style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Schuljahr</label>
+            <input id="gen-schuljahr" type="text" value="2026/27" placeholder="z.B. 2026/27"
+              style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;box-sizing:border-box;font-family:inherit;">
+          </div>
+          <div>
+            <label for="gen-rows" style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Zeilen pro Schulwoche</label>
+            <input id="gen-rows" type="number" value="15" min="5" max="30"
+              style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;box-sizing:border-box;font-family:inherit;">
+          </div>
         </div>
-        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:18px;">
-          <h3 style="font-size:.95rem;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            Lokal mit Python
-          </h3>
-          <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 14px 0;line-height:1.5;">
-            Für wiederkehrende Generierung oder Offline-Nutzung. Ein Kommandozeilen-Skript mit interaktiver Eingabe.
-          </p>
-          <a class="btn btn-ghost btn-sm" href="../docs/anleitung-vorlagen-generator.md" target="_blank" rel="noopener noreferrer">
-            Anleitung öffnen
-          </a>
+
+        <!-- Schuljahres-Eckdaten -->
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">Schuljahres-Eckdaten</div>
+        <div style="display:grid;gap:9px;margin-bottom:20px;">
+          <div style="display:grid;grid-template-columns:210px 1fr;align-items:center;gap:10px;">
+            <label for="gen-sw00" style="font-size:.88rem;font-weight:500;">Erster Schultag <span style="font-size:.75rem;color:var(--text-muted);">(SW 00)</span></label>
+            <input id="gen-sw00" type="date" value="2026-08-24"
+              style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:210px 1fr;align-items:center;gap:10px;">
+            <label for="gen-sw01" style="font-size:.88rem;font-weight:500;">Erster Unterrichtstag <span style="font-size:.75rem;color:var(--text-muted);">(SW 01)</span></label>
+            <input id="gen-sw01" type="date" value="2026-08-31"
+              style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:210px 1fr;align-items:center;gap:10px;">
+            <label for="gen-last" style="font-size:.88rem;font-weight:500;">Letzter Schultag</label>
+            <input id="gen-last" type="date" value="2027-07-16"
+              style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
         </div>
-      </div>
-      <div style="margin-top:14px;padding:12px 14px;background:#eef2ff;border-radius:8px;border-left:3px solid var(--primary);">
-        <p style="font-size:.8rem;color:var(--text-muted);margin:0;line-height:1.5;">
-          <strong>Hinweis:</strong> Der Browser kann keine Excel-Dateien mit Formeln erstellen. Daher erfolgt die Generierung über den Online-Generator (GitHub Actions) oder ein lokales Python-Skript – beide Varianten bewahren alle Formeln, Dropdowns und Formatierungen der Vorlage.
-        </p>
+
+        <!-- Ferien -->
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">Ferien</div>
+        <div style="display:grid;gap:8px;margin-bottom:22px;">
+          <div style="display:grid;grid-template-columns:150px 1fr 14px 1fr;align-items:center;gap:8px;">
+            <label style="font-size:.88rem;font-weight:500;">Herbstferien</label>
+            <input id="gen-herbst-von" type="date" value="2026-10-19" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+            <span style="text-align:center;color:var(--text-muted);font-size:.9rem;">–</span>
+            <input id="gen-herbst-bis" type="date" value="2026-10-30" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr 14px 1fr;align-items:center;gap:8px;">
+            <label style="font-size:.88rem;font-weight:500;">Weihnachtsferien</label>
+            <input id="gen-weihnacht-von" type="date" value="2026-12-23" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+            <span style="text-align:center;color:var(--text-muted);font-size:.9rem;">–</span>
+            <input id="gen-weihnacht-bis" type="date" value="2027-01-07" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr 14px 1fr;align-items:center;gap:8px;">
+            <label style="font-size:.88rem;font-weight:500;">Osterferien</label>
+            <input id="gen-ostern-von" type="date" value="2027-03-22" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+            <span style="text-align:center;color:var(--text-muted);font-size:.9rem;">–</span>
+            <input id="gen-ostern-bis" type="date" value="2027-04-04" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr 14px 1fr;align-items:center;gap:8px;">
+            <label style="font-size:.88rem;font-weight:500;">Pfingstferien <span style="font-size:.75rem;color:var(--text-muted);">(optional)</span></label>
+            <input id="gen-pfingst-von" type="date" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+            <span style="text-align:center;color:var(--text-muted);font-size:.9rem;">–</span>
+            <input id="gen-pfingst-bis" type="date" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+          <div style="display:grid;grid-template-columns:150px 1fr 14px 1fr;align-items:center;gap:8px;">
+            <label style="font-size:.88rem;font-weight:500;">Sommerferien</label>
+            <input id="gen-sommer-von" type="date" value="2027-07-19" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+            <span style="text-align:center;color:var(--text-muted);font-size:.9rem;">–</span>
+            <input id="gen-sommer-bis" type="date" value="2027-08-31" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateSchulwochenVorlage()" style="display:inline-flex;align-items:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Vorlage herunterladen
+        </button>
+        <p style="font-size:.78rem;color:var(--text-muted);margin:10px 0 0 0;">SW 00–41 werden automatisch berechnet. Ferien-Wochen werden übersprungen. <strong>Tipp:</strong> In den Spalten E–K Termine eintragen, Spalten A–D nicht ändern.</p>
       </div>
     </div>
   </div>
@@ -995,6 +1041,12 @@
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-changelog').classList.remove('open')">✕ Schließen</button>
     </div>
     <div class="modal-body changelog">
+      <h4>Version 2.5 <span style="font-size:.75rem;color:#888;font-weight:400">– 2026-05-11</span></h4>
+      <ul>
+        <li><span class="tag tag-new">NEU</span> Schulwochen-Vorlage direkt im Browser erstellen – kein GitHub Actions, kein Python mehr nötig.</li>
+        <li><span class="tag tag-improve">BESSER</span> Schritt 2 zeigt jetzt ein Formular mit Datumsfeldern für Ferien und Schuljahres-Eckdaten.</li>
+        <li><span class="tag tag-improve">BESSER</span> Generierte Vorlage enthält 15 leere Zeilen pro Schulwoche (einstellbar 5–30), 4 Sheets und Anleitung mit erlaubten Werten.</li>
+      </ul>
       <h4>Version 2.4 <span style="font-size:.75rem;color:#888;font-weight:400">– 2026-05-09</span></h4>
       <ul>
         <li><span class="tag tag-new">NEU</span> Kategorien-Sheet aus Excel wird beim Import automatisch gelesen und gemergt</li>
@@ -2395,6 +2447,138 @@ function downloadXlsx(wb, filename) {
     console.error(err);
     toast('Fehler beim Download: ' + err.message, 'error');
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// IN-BROWSER SCHULWOCHEN-VORLAGE GENERATOR
+// ═══════════════════════════════════════════════════════════
+function isoToDE(iso, withYear) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return withYear ? `${d}.${m}.${y}` : `${d}.${m}.`;
+}
+
+function swLabel(n) {
+  return 'SW ' + String(n).padStart(2, '0');
+}
+
+function generateSchulwochenVorlage() {
+  if (typeof XLSX === 'undefined') { toast('SheetJS nicht geladen', 'error'); return; }
+
+  const schuljahr  = (document.getElementById('gen-schuljahr').value  || '').trim() || '2026/27';
+  const sw00       = document.getElementById('gen-sw00').value;
+  const sw01       = document.getElementById('gen-sw01').value;
+  const lastDay    = document.getElementById('gen-last').value;
+  const rowsPerSW  = Math.max(5, Math.min(30, parseInt(document.getElementById('gen-rows').value) || 15));
+
+  if (!sw00 || !sw01) {
+    toast('Pflichtfelder fehlen: Erster Schultag und Erster Unterrichtstag', 'error');
+    return;
+  }
+
+  const ferienConfig = [
+    { name: 'Herbstferien',     von: document.getElementById('gen-herbst-von').value,    bis: document.getElementById('gen-herbst-bis').value    },
+    { name: 'Weihnachtsferien', von: document.getElementById('gen-weihnacht-von').value, bis: document.getElementById('gen-weihnacht-bis').value  },
+    { name: 'Osterferien',      von: document.getElementById('gen-ostern-von').value,    bis: document.getElementById('gen-ostern-bis').value     },
+    { name: 'Pfingstferien',    von: document.getElementById('gen-pfingst-von').value,   bis: document.getElementById('gen-pfingst-bis').value    },
+    { name: 'Sommerferien',     von: document.getElementById('gen-sommer-von').value,    bis: document.getElementById('gen-sommer-bis').value     },
+  ];
+
+  // Ferien-Rows-Array passend fuer computeSchoolMondays / readSchoolConfig:
+  // Index 2-6 = Ferien, Index 9 = Erster Schultag, Index 10 = Erster Unterrichtstag
+  const ferienRows = [
+    [], [],
+    ...ferienConfig.map(f => [f.name, f.von || null, f.bis || null]),
+    [], [],
+    ['Erster Schultag (SW 00)', sw00],
+    ['Erster Unterrichtstag (SW 01)', sw01],
+    ['Letzter Schultag', lastDay],
+  ];
+
+  const mondays = computeSchoolMondays(ferienRows, 42);
+  if (mondays.length === 0) {
+    toast('Schulwochen konnten nicht berechnet werden. Bitte Eckdaten prüfen.', 'error');
+    return;
+  }
+
+  // ── Terminplan-Sheet ──────────────────────────────────────
+  const tpHeaders = ['SW-Key','Montag-ISO','SW','Schulwoche','Wochentag','Uhrzeit','Endzeit',
+                     'Titel / Veranstaltung','Kategorie','Ganztaegig','Anmerkung'];
+  const tpData = [tpHeaders];
+
+  for (let sw = 0; sw < mondays.length; sw++) {
+    const monday    = mondays[sw];
+    const key       = swLabel(sw);
+    const friday    = addDaysISO(monday, 4);
+    const schulwoche = isoToDE(monday, false) + ' – ' + isoToDE(friday, true);
+    for (let r = 0; r < rowsPerSW; r++) {
+      tpData.push([key, monday, key, schulwoche, '', '', '', '', '', '', '']);
+    }
+  }
+
+  const wsTP = XLSX.utils.aoa_to_sheet(tpData);
+  wsTP['!cols'] = [{wch:10},{wch:14},{wch:10},{wch:24},{wch:14},{wch:10},{wch:10},{wch:45},{wch:20},{wch:12},{wch:35}];
+  wsTP['!autofilter'] = { ref: 'A1:K1' };
+  wsTP['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+  // ── Ferien-Sheet ──────────────────────────────────────────
+  // Struktur muss mit readSchoolConfig uebereinstimmen (Index 9/10 = Eckdaten, 2-6 = Ferien)
+  const ferienData = [
+    [],
+    ['Bezeichnung', 'Von (Datum)', 'Bis (Datum)', 'Hinweis'],
+    ...ferienConfig.map(f => [f.name, f.von || null, f.bis || null, (f.von && f.bis) ? 'Pflichtfeld' : 'Optional leer lassen']),
+    [],
+    ['Schuljahres-Eckdaten'],
+    ['Erster Schultag (SW 00)',       sw00,    '', 'SW 00: Vorbereitungstage, Konferenzen, Schulstart vor Unterricht'],
+    ['Erster Unterrichtstag (SW 01)', sw01,    '', 'SW 01: erster regulaerer Unterrichtstag'],
+    ['Letzter Schultag',              lastDay, '', 'Kontrollwert'],
+  ];
+  const wsFerien = XLSX.utils.aoa_to_sheet(ferienData);
+  wsFerien['!cols'] = [{wch:28},{wch:14},{wch:14},{wch:50}];
+
+  // ── Kategorien-Sheet ──────────────────────────────────────
+  const katData = [
+    ['Kategorien-Referenz'],
+    ['Kategorie','Farbe','Automatisch erkannte Stichwoerter'],
+    ...categories.map(c => [c.label, c.bg || '', c.keywords || '']),
+  ];
+  const wsKat = XLSX.utils.aoa_to_sheet(katData);
+  wsKat['!cols'] = [{wch:22},{wch:10},{wch:55}];
+
+  // ── Anleitung-Sheet ───────────────────────────────────────
+  const katLabels = categories.map(c => c.label).join(' | ');
+  const anlData = [
+    [],
+    ['', `GSH Schuljahreskalender ${schuljahr} — Anleitung`],
+    [],
+    ['', 'Schritte'],
+    ['', '1. Termine eintragen', "In Spalten E–K eintragen. Spalten A–D nicht ändern (enthalten berechnete Daten)."],
+    ['', '2. Konverter öffnen',  'Diese Excel-Datei in den Konverter ziehen → ICS-Datei erzeugen.'],
+    ['', '3. IServ',             'ICS-Datei in IServ → Kalender importieren.'],
+    [],
+    ['', 'Erlaubte Werte'],
+    ['', 'E  Wochentag',         'Mo | Di | Mi | Do | Fr | Ganze Woche'],
+    ['', 'F/G Uhrzeit',          'Format: 08:30  (leer lassen = ganztägig)'],
+    ['', 'H  Titel',             'Pflichtfeld. Zeilen ohne Titel werden übersprungen.'],
+    ['', 'I  Kategorie',         katLabels],
+    ['', 'J  Ganztägig',         'Ja | Nein'],
+    ['', 'K  Anmerkung',         'Optional.'],
+    [],
+    ['', 'Hinweis', 'Ferien bitte NICHT als Terminplan-Zeilen eintragen – sie werden automatisch aus dem Ferien-Sheet importiert und so doppelte Einträge vermieden.'],
+  ];
+  const wsAnl = XLSX.utils.aoa_to_sheet(anlData);
+  wsAnl['!cols'] = [{wch:4},{wch:22},{wch:65}];
+
+  // ── Workbook zusammenbauen & herunterladen ─────────────────
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsTP,     'Terminplan');
+  XLSX.utils.book_append_sheet(wb, wsFerien, 'Ferien');
+  XLSX.utils.book_append_sheet(wb, wsKat,    'Kategorien');
+  XLSX.utils.book_append_sheet(wb, wsAnl,    'Anleitung');
+
+  const safeName = schuljahr.replace(/\//g, '-');
+  downloadXlsx(wb, `Terminplan_Schulwochen_${safeName}.xlsx`);
+  toast(`Vorlage für ${schuljahr} heruntergeladen – jetzt Termine in Excel eintragen.`, 'success');
 }
 
 // Schulwochen-Vorlage wird ueber GitHub Actions generiert
