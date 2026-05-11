@@ -895,6 +895,57 @@ footer {
 .footer-legal a:hover { color: #fff; }
 .footer-legal span { color: rgba(255,255,255,.3); }
 
+/* ── FÜR ANDERE SCHULEN ──────────────────────────────────── */
+.fuer-schulen {
+  background: var(--teal-700);
+  padding: var(--gap) 0;
+}
+.fuer-schulen .eyebrow { color: var(--teal-300); }
+.fuer-schulen .eyebrow::before { background: var(--teal-400); }
+.fuer-schulen h2.section-title { color: #fff; }
+.fuer-schulen .section-sub { color: rgba(255,255,255,.75); max-width: 520px; }
+
+.fuer-schulen-actions {
+  display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 36px;
+}
+.btn-amber {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--amber-500);
+  color: #fff;
+  font-size: .9rem; font-weight: 700;
+  padding: 13px 26px;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  transition: opacity .15s, transform .1s;
+  box-shadow: 0 2px 12px rgba(245,158,11,.4);
+  cursor: pointer;
+}
+.btn-amber:hover { opacity: .9; transform: translateY(-1px); }
+
+.btn-outline-white {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent;
+  color: rgba(255,255,255,.9);
+  font-size: .9rem; font-weight: 600;
+  padding: 12px 24px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid rgba(255,255,255,.35);
+  text-decoration: none;
+  transition: border-color .15s, background .15s;
+  cursor: pointer;
+}
+.btn-outline-white:hover {
+  border-color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.08);
+}
+.fuer-schulen-note {
+  margin-top: 16px;
+  font-size: .78rem;
+  color: rgba(255,255,255,.45);
+}
+
 /* ── ANIMATIONS ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .reveal {
@@ -1577,6 +1628,26 @@ footer {
       </div>
 
     </div>
+  </div>
+</section>
+
+<!-- ── FÜR ANDERE SCHULEN ────────────────────────────────── -->
+<section class="fuer-schulen" aria-labelledby="schulen-title">
+  <div class="container">
+    <span class="eyebrow">Für andere Schulen im Bezirk</span>
+    <h2 class="section-title" id="schulen-title">Kostenlos. Open Source.<br>Auf eigene Verantwortung.</h2>
+    <p class="section-sub">Das Plugin und der Konverter stehen anderen Schulen im Schulbezirk kostenlos zur Verfügung. Es ist ein privates Hobbyprojekt — ohne Garantien, ohne Support-Pflicht, ohne kommerzielle Absichten.</p>
+    <div class="fuer-schulen-actions">
+      <a href="download.html" class="btn-amber">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Plugin herunterladen
+      </a>
+      <a href="anleitung.html" class="btn-outline-white">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Installationsanleitung
+      </a>
+    </div>
+    <p class="fuer-schulen-note">GPL v2 or later · Privatprojekt von Julian Wagner · Keine Haftung</p>
   </div>
 </section>
 
