@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impressum & Datenschutz – Terminplan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS ───────────────────────────────────────── */
+:root {
+  --teal-700: #0f766e; --teal-600: #0d9488; --teal-500: #14b8a6;
+  --teal-400: #2dd4bf; --teal-300: #5eead4; --teal-200: #99f6e4;
+  --teal-100: #ccfbf1; --teal-50: #f0fdfa;
+  --amber-500: #f59e0b; --amber-400: #fbbf24;
+  --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
+  --slate-600: #475569; --slate-500: #64748b; --slate-400: #94a3b8;
+  --slate-300: #cbd5e1; --slate-200: #e2e8f0; --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --ink: var(--slate-900); --ink-2: var(--slate-700); --ink-3: var(--slate-500);
+  --line: var(--slate-200); --bg: var(--slate-50); --surface: #ffffff;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
+  --shadow-md: 0 4px 16px rgba(15,118,110,.08), 0 1px 4px rgba(15,118,110,.05);
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --max-w: 1100px; --gap: 96px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; }
+@media (max-width: 640px) { .container { padding: 0 18px; } }
+
+/* ── NAVIGATION ──────────────────────────────────────────── */
+.nav { position: sticky; top: 0; z-index: 100; background: var(--teal-700); box-shadow: 0 2px 16px rgba(15,118,110,.3); }
+.nav-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.nav-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.nav-logo-mark { width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,.25); }
+.nav-logo-mark svg { width: 18px; height: 18px; }
+.nav-logo-text { font-weight: 700; font-size: .95rem; color: #fff; letter-spacing: -.01em; }
+.nav-logo-text span { color: rgba(255,255,255,.6); font-weight: 500; }
+.nav-links { display: flex; gap: 28px; list-style: none; }
+.nav-links a { font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.75); text-decoration: none; transition: color .15s; }
+.nav-links a:hover, .nav-links a[aria-current="page"] { color: #fff; }
+.nav-cta { background: var(--amber-500); color: #fff; font-size: .82rem; font-weight: 700; padding: 9px 20px; border-radius: var(--r-sm); text-decoration: none; transition: opacity .15s, transform .1s; display: flex; align-items: center; gap: 7px; box-shadow: 0 2px 8px rgba(245,158,11,.35); }
+.nav-cta:hover { opacity: .9; transform: translateY(-1px); }
+@media (max-width: 640px) { .nav-links { display: none; } .nav-inner { padding: 0 18px; } }
+
+/* ── HERO STRIP ──────────────────────────────────────────── */
+.page-hero { background: linear-gradient(160deg, var(--teal-700) 0%, #065f57 100%); padding: 48px 0 44px; }
+.breadcrumb { font-size: .78rem; color: rgba(255,255,255,.55); margin-bottom: 12px; }
+.breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
+.breadcrumb a:hover { color: rgba(255,255,255,.85); }
+.breadcrumb span { margin: 0 6px; }
+.page-hero h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.04em; color: #fff; line-height: 1.1; }
+
+/* ── CONTENT ─────────────────────────────────────────────── */
+.legal-content { max-width: 720px; padding: 64px 0 96px; }
+.legal-content h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; color: var(--ink); margin: 48px 0 14px; padding-top: 48px; border-top: 1px solid var(--line); }
+.legal-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.legal-content h3 { font-size: 1rem; font-weight: 700; color: var(--ink-2); margin: 24px 0 8px; }
+.legal-content p { font-size: .95rem; color: var(--ink-2); line-height: 1.75; margin-bottom: 14px; }
+.legal-content address { font-style: normal; font-size: .95rem; color: var(--ink-2); line-height: 1.9; }
+.legal-content a { color: var(--teal-600); text-decoration: none; }
+.legal-content a:hover { text-decoration: underline; }
+.legal-content ul { margin: 0 0 14px 20px; }
+.legal-content ul li { font-size: .95rem; color: var(--ink-2); line-height: 1.75; margin-bottom: 4px; }
+.disclaimer-box { background: #fffbeb; border: 2px solid #fbbf24; border-radius: var(--r-md); padding: 20px 24px; margin: 24px 0; }
+.disclaimer-box p { color: #78350f; margin: 0; font-size: .9rem; }
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer { background: var(--teal-700); }
+.footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 40px 32px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+.footer-logo { font-weight: 800; font-size: 1.1rem; color: #fff; letter-spacing: -.02em; margin-bottom: 6px; }
+.footer-sub { font-size: .8rem; color: rgba(255,255,255,.5); line-height: 1.6; }
+.footer-legal { display: flex; gap: 16px; flex-wrap: wrap; font-size: .78rem; margin-top: 12px; }
+.footer-legal a { color: var(--teal-300); text-decoration: none; transition: color .15s; }
+.footer-legal a:hover { color: #fff; }
+.footer-legal span { color: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+
+<!-- ── NAVIGATION ─────────────────────────────────────────── -->
+<nav class="nav" role="banner">
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html" aria-label="Terminplan Startseite">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="nav-logo-text">Terminplan <span>/ Deine Schule</span></div>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html#download">Downloads</a></li>
+      <li><a href="anleitung.html">Anleitung</a></li>
+      <li><a href="download.html">Plugin</a></li>
+      <li><a href="impressum.html" aria-current="page">Impressum</a></li>
+    </ul>
+    <a class="nav-cta" href="download.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Herunterladen
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO STRIP ────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Startseite</a><span aria-hidden="true">›</span> Impressum</div>
+    <h1>Impressum &amp; Datenschutz</h1>
+  </div>
+</div>
+
+<!-- ── CONTENT ───────────────────────────────────────────── -->
+<main>
+  <div class="container">
+    <div class="legal-content">
+
+      <h2>Impressum</h2>
+      <h3>Angaben gemäß § 5 TMG</h3>
+      <address>
+        Julian Wagner<br>
+        c/o Gesamtschule Horst<br>
+        Devenstraße 15<br>
+        45899 Gelsenkirchen<br><br>
+        E-Mail: <a href="mailto:julian.wagner@ges-horst.de">julian.wagner@ges-horst.de</a>
+      </address>
+      <p style="margin-top:14px; font-size:.85rem; color: var(--ink-3);">
+        Hinweis: Diese Website ist ein privates, nicht-kommerzielles Hobbyprojekt.
+        Die Schuladresse wird ausschließlich als Kontaktanschrift genutzt.
+        Das Projekt steht in keiner offiziellen Verbindung zur Gesamtschule Horst oder ihrem Schulträger.
+      </p>
+
+      <h2>Haftungsausschluss</h2>
+      <h3>Haftung für Inhalte (§ 7 Abs. 1 TMG)</h3>
+      <p>Die Inhalte dieser Website wurden nach bestem Wissen erstellt. Eine Gewähr für Aktualität, Richtigkeit oder Vollständigkeit wird nicht übernommen. Als privater Diensteanbieter bin ich gemäß § 7 Abs. 1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG bin ich jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.</p>
+      <h3>Haftung für Links</h3>
+      <p>Diese Website enthält Links zu externen Websites Dritter. Auf deren Inhalte habe ich keinen Einfluss. Für die Inhalte verlinkter Seiten ist stets der jeweilige Anbieter verantwortlich. Zum Zeitpunkt der Verlinkung wurden die Seiten auf mögliche Rechtsverstöße geprüft. Eine dauerhafte inhaltliche Kontrolle ist ohne konkreten Anhaltspunkt nicht zumutbar.</p>
+
+      <h2>Software-Haftungsausschluss</h2>
+      <div class="disclaimer-box">
+        <p><strong>Wichtig:</strong> Das auf dieser Website angebotene WordPress-Plugin ist ein privates Hobbyprojekt und wurde ohne professionelle Qualitätssicherung entwickelt. Sicherheitslücken können nicht ausgeschlossen werden.</p>
+      </div>
+      <p>Das Plugin wird <strong>ohne jede Gewährleistung</strong> bereitgestellt — weder ausdrücklich noch stillschweigend, einschließlich, aber nicht beschränkt auf die stillschweigende Gewährleistung der Marktgängigkeit oder Eignung für einen bestimmten Zweck.</p>
+      <p>Der Entwickler übernimmt keine Haftung für:</p>
+      <ul>
+        <li>Datenverlust oder Datenschutzverletzungen durch den Einsatz des Plugins</li>
+        <li>Sicherheitsvorfälle oder unbefugte Zugriffe auf WordPress-Instanzen</li>
+        <li>Schäden durch fehlerhafte Funktion, Inkompatibilitäten oder Fehlkonfiguration</li>
+        <li>Folgeschäden jeglicher Art</li>
+      </ul>
+      <p>Die Nutzung erfolgt <strong>ausschließlich auf eigenes Risiko</strong>. Vor dem produktiven Einsatz ist eine eigene technische und rechtliche Prüfung durch die nutzende Institution erforderlich — insbesondere hinsichtlich der DSGVO-Konformität beim Verarbeiten personenbezogener Daten.</p>
+
+      <h2>Urheberrecht</h2>
+      <p>Das WordPress-Plugin steht unter der <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener">GPL v2 or later</a>. Website-Inhalte (Texte, Gestaltung) © Julian Wagner. Eine Weiterverwendung der Website-Inhalte ist nur mit ausdrücklicher Genehmigung gestattet, ausgenommen die per GPL lizenzierten Code-Bestandteile.</p>
+
+      <h2>Datenschutz</h2>
+      <h3>Verantwortlicher</h3>
+      <p>Julian Wagner, c/o Gesamtschule Horst, Devenstraße 15, 45899 Gelsenkirchen<br>
+      E-Mail: <a href="mailto:julian.wagner@ges-horst.de">julian.wagner@ges-horst.de</a></p>
+      <h3>Hosting: GitHub Pages</h3>
+      <p>Diese Website wird über GitHub Pages gehostet (GitHub Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA). Beim Abruf der Website erhebt GitHub ggf. Server-Logfiles, die IP-Adresse, Zeitstempel und aufgerufene URLs enthalten. Ich habe auf diese Datenverarbeitung keinen Einfluss. Weitere Informationen: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Datenschutzerklärung</a>.</p>
+      <h3>Keine eigene Datenerhebung</h3>
+      <p>Diese Website verwendet keine Cookies, kein Tracking, keine Analyse-Tools und keine Kontaktformulare. Es werden keine personenbezogenen Daten durch den Betreiber dieser Website erhoben oder gespeichert.</p>
+
+    </div>
+  </div>
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo">Terminplan</div>
+      <div class="footer-sub">
+        Digitaler Schulkalender · Open Source Schul-Projekt<br>
+        Entwickelt von Julian Wagner · Stand Mai 2026
+      </div>
+      <div class="footer-legal">
+        <a href="impressum.html" aria-current="page">Impressum &amp; Datenschutz</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/juwagn/gsh-terminplan" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
