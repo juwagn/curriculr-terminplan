@@ -111,7 +111,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
 /* faq */
 .faq-section { padding: 0 0 96px; }
 .faq-section h2 { font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.03em; margin-bottom: 32px; }
-.faq-list { display: flex; flex-direction: column; gap: 2px; }
+.faq-list { display: flex; flex-direction: column; }
 details.faq-item { border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--surface); overflow: hidden; }
 details.faq-item + details.faq-item { margin-top: 8px; }
 details.faq-item[open] { border-color: var(--teal-300); }
@@ -137,7 +137,7 @@ footer { background: var(--teal-700); }
 </head>
 <body>
 
-<nav class="nav" role="banner">
+<nav class="nav" aria-label="Hauptnavigation">
   <div class="nav-inner">
     <a class="nav-logo" href="index.html" aria-label="Terminplan Startseite">
       <div class="nav-logo-mark">
@@ -194,7 +194,7 @@ footer { background: var(--teal-700); }
       <h2 id="steps-title">Schritt für Schritt</h2>
       <p class="lead">Folge den Schritten der Reihe nach. Der erste Einsatz dauert ca. 30 Minuten.</p>
 
-      <ol class="step-list" role="list">
+      <ol class="step-list">
 
         <li class="step-item">
           <div class="step-left" aria-hidden="true"><div class="step-num">1</div><div class="step-line"></div></div>
@@ -358,7 +358,7 @@ footer { background: var(--teal-700); }
             Was passiert bei WordPress-Updates?
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
           </summary>
-          <div class="faq-body">Das Plugin wird nicht automatisch mit WordPress aktualisiert (kein WordPress.org-Verzeichnis). Nach einem WordPress-Major-Update empfiehlt sich ein Test in einer Staging-Umgebung. Bei Kompatibilitätsproblemen bitte ein <a href="https://github.com/juwagn/gsh-terminplan/issues" target="_blank" rel="noopener">GitHub Issue</a> öffnen.</div>
+          <div class="faq-body">Das Plugin wird nicht automatisch mit WordPress aktualisiert (kein WordPress.org-Verzeichnis). Nach einem WordPress-Major-Update empfiehlt sich ein Test in einer Staging-Umgebung. Bei Kompatibilitätsproblemen bitte ein <a href="https://github.com/juwagn/gsh-terminplan/issues" target="_blank" rel="noopener noreferrer">GitHub Issue</a> öffnen.</div>
         </details>
 
         <details class="faq-item">
@@ -366,7 +366,7 @@ footer { background: var(--teal-700); }
             Wo melde ich Fehler oder Verbesserungsvorschläge?
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
           </summary>
-          <div class="faq-body">Über <a href="https://github.com/juwagn/gsh-terminplan/issues" target="_blank" rel="noopener">GitHub Issues</a>. Kein Support garantiert — das ist ein Hobbyprojekt. Fehlermeldungen mit WordPress-Version, PHP-Version und konkreter Fehlerbeschreibung werden bevorzugt bearbeitet.</div>
+          <div class="faq-body">Über <a href="https://github.com/juwagn/gsh-terminplan/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>. Kein Support garantiert — das ist ein Hobbyprojekt. Fehlermeldungen mit WordPress-Version, PHP-Version und konkreter Fehlerbeschreibung werden bevorzugt bearbeitet.</div>
         </details>
 
       </div>
@@ -383,7 +383,7 @@ footer { background: var(--teal-700); }
       <div class="footer-legal">
         <a href="impressum.html">Impressum &amp; Datenschutz</a>
         <span aria-hidden="true">·</span>
-        <a href="https://github.com/juwagn/gsh-terminplan" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/juwagn/gsh-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </div>
   </div>
