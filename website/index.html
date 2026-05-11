@@ -882,6 +882,18 @@ footer {
   box-shadow: 0 0 7px var(--teal-400);
   flex-shrink: 0;
 }
+.footer-legal {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: .78rem;
+  margin-top: 12px;
+}
+.footer-legal a {
+  color: var(--teal-300);
+  text-decoration: none;
+  transition: color .15s;
+}
+.footer-legal a:hover { color: #fff; }
+.footer-legal span { color: rgba(255,255,255,.3); }
 
 /* ── ANIMATIONS ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
@@ -919,12 +931,12 @@ footer {
     </a>
     <ul class="nav-links" role="list">
       <li><a href="#download">Downloads</a></li>
-      <li><a href="#anleitung">Anleitung</a></li>
+      <li><a href="anleitung.html">Anleitung</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#kategorien">Kategorien</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
-    <a class="nav-cta" href="#download">
+    <a class="nav-cta" href="download.html">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Herunterladen
     </a>
@@ -1575,13 +1587,18 @@ footer {
       <div class="footer-logo">Terminplan</div>
       <div class="footer-sub">
         Digitaler Schulkalender · Open Source Schul-Projekt<br>
-        Entwickelt von Julian · Stand März 2026
+        Entwickelt von Julian · Stand Mai 2026
       </div>
     </div>
     <div class="footer-versions" aria-label="Versionen">
-      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> ICS Konverter v2.0</div>
+      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> ICS Konverter v2.5</div>
       <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> WordPress Plugin v3.17.0</div>
       <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> Schulwochen-Vorlage 2025/26</div>
+    </div>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum &amp; Datenschutz</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/juwagn/gsh-terminplan" target="_blank" rel="noopener">GitHub</a>
     </div>
   </div>
 </footer>
