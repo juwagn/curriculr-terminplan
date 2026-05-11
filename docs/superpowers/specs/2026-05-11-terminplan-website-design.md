@@ -189,14 +189,18 @@ document.getElementById('disclaimer-cb').addEventListener('change', function() {
 ```
 Angaben gemäß § 5 TMG:
 
-[VORNAME NACHNAME]
-[STRAßE NR]
-[PLZ ORT]
+Julian Wagner
+c/o Gesamtschule Horst
+Devenstraße 15
+45899 Gelsenkirchen
 
-E-Mail: [EMAIL]
+E-Mail: julian.wagner@ges-horst.de
 ```
 
 Hinweis: Diese Seite ist ein privates, nicht-kommerzielles Projekt.
+Der Entwickler ist Privatperson; die Schuladresse wird ausschließlich
+als Kontaktanschrift genutzt. Das Projekt steht in keiner offiziellen
+Verbindung zur Gesamtschule Horst oder ihrem Träger.
 
 #### Haftungsausschluss
 
@@ -231,7 +235,7 @@ erforderlich.
 
 #### Urheberrecht
 
-Plugin steht unter GPL v2 or later. Website-Inhalte (Texte, Gestaltung) © [VORNAME NACHNAME]. Weiterverwendung nur mit Genehmigung, ausgenommen die per GPL lizenzierten Code-Bestandteile.
+Plugin steht unter GPL v2 or later. Website-Inhalte (Texte, Gestaltung) © Julian Wagner. Weiterverwendung nur mit Genehmigung, ausgenommen die per GPL lizenzierten Code-Bestandteile.
 
 #### Datenschutz
 
