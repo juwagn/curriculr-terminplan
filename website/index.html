@@ -155,6 +155,7 @@ h2.section-title {
   letter-spacing: -.01em;
 }
 .nav-logo-text span { color: rgba(255,255,255,.6); font-weight: 500; }
+.nav-logo-colon { color: #FFC857; font-weight: 800; }
 
 .nav-links {
   display: flex; gap: 28px; list-style: none;
@@ -966,11 +967,14 @@ footer {
 <!-- ── NAVIGATION ─────────────────────────────────────────── -->
 <nav class="nav" aria-label="Hauptnavigation">
   <div class="nav-inner">
-    <a class="nav-logo" href="index.html" aria-label="Terminplan Startseite">
-      <div class="nav-logo-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="white" stroke-width="2"/><path d="M8 2v4M16 2v4M3 10h18" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="15" r="1.5" fill="white"/><circle cx="12" cy="15" r="1.5" fill="white"/><circle cx="16" cy="15" r="1.5" fill="white"/></svg>
+    <a class="nav-logo" href="index.html" aria-label="Curricu:lr Terminplan Startseite">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
+          <circle cx="8" cy="12" r="3.5" fill="#FFC857"/>
+          <circle cx="16" cy="12" r="3.5" fill="#FFC857"/>
+        </svg>
       </div>
-      <div class="nav-logo-text">Terminplan <span>/ Deine Schule</span></div>
+      <div class="nav-logo-text">Curricu<span class="nav-logo-colon">:</span>lr <span>/ Terminplan</span></div>
     </a>
     <ul class="nav-links" role="list">
       <li><a href="#download">Downloads</a></li>
