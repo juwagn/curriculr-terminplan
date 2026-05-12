@@ -4954,9 +4954,9 @@ function gsh_tp_css() {
    ══════════════════════════════════════════════════════════════ */
 :root{
   /* Primär / Akzent */
-  --gtp-accent:       #2563eb;
-  --gtp-accent-dark:  #1d4ed8;
-  --gtp-accent-light: #eff6ff;
+  --gtp-accent:       #00467D;
+  --gtp-accent-dark:  #00345C;
+  --gtp-accent-light: #E6F4FF;
   /* Oberflächen & Text */
   --gtp-text:         #1e293b;
   --gtp-text-muted:   #64748b;
@@ -4965,8 +4965,8 @@ function gsh_tp_css() {
   --gtp-surface:      #f8fafc;
   --gtp-border:       #e2e8f0;
   /* Heute-Akzent */
-  --gtp-today-bg:     #eff6ff;
-  --gtp-today-bd:     #2563eb;
+  --gtp-today-bg:     #E6F4FF;
+  --gtp-today-bd:     #00467D;
   /* Übergänge */
   --gtp-tr:           all 0.3s ease;
   --gtp-tr-fast:      all 0.15s ease;
@@ -5267,7 +5267,7 @@ function gsh_tp_css() {
   transform:translateY(10px);
 }
 #gtp-heute-btn.gtp-heute-vis{opacity:1;pointer-events:auto;transform:translateY(0)}
-#gtp-heute-btn:hover{background:var(--gtp-accent-dark);box-shadow:0 6px 24px rgba(37,99,235,.45);transform:translateY(-2px)}
+#gtp-heute-btn:hover{background:var(--gtp-accent-dark);box-shadow:0 6px 24px rgba(0,52,92,.35);transform:translateY(-2px)}
 
 /* ── Suchfeld ── */
 .gtp-search{
