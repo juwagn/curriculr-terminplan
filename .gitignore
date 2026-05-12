@@ -23,8 +23,9 @@ tasks/
 *.xlsx
 *.docx
 
-# Ausnahme: Plugin-ZIP für GitHub Pages
+# Ausnahme: Downloads für GitHub Pages
 !website/downloads/*.zip
+!website/downloads/*.xlsx
 
 vorlagen/
 
