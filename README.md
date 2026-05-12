@@ -2,7 +2,9 @@
 
 WordPress-Plugin zur interaktiven Anzeige des Schulkalenders aus IServ-iCal-Feeds.
 
-**Aktuelle Version: 3.17.0**
+**Aktuelle Version: 4.0.0**
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X61ZEMZ7)
 
 ---
 
@@ -103,6 +105,13 @@ Beim Release müssen vier Stellen synchron gehalten werden:
 ---
 
 ## Changelog (Auszug)
+
+### 4.0.0
+- [DESIGN] Curricu:lr-Designsystem: navy Primärfarbe, Inter-Font, neue Logo-Marke
+- [DESIGN] Website komplett auf Curricu:lr-Tokens migriert (alle 4 Seiten)
+- [UX] Dark Mode und Theme-Switcher vollständig überarbeitet
+- [BUGFIX] Changelog-Anzeige im Frontend repariert (DESIGN/INFRA-Tags ergänzt)
+- [BUGFIX] Alle verbleibenden blauen Akzentfarben durch Navy ersetzt
 
 ### 3.17.0
 - [FEATURE] Frontend UI-Überarbeitung: zweizeiliger Header, Suche in voller Breite
