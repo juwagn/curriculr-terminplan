@@ -2595,9 +2595,11 @@ function gsh_tp_settings_page() {
                 <?php
                 $cl_tag_colors = array(
                     'FEATURE'  => '#16a34a',
-                    'UX'       => '#2563eb',
+                    'UX'       => '#00467D',
                     'BUGFIX'   => '#dc2626',
                     'SECURITY' => '#d97706',
+                    'SEC'      => '#d97706',
+                    'DESIGN'   => '#7C3AED',
                     'INFRA'    => '#6b7280',
                 );
                 foreach ( gsh_tp_changelog() as $block ) :
