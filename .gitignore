@@ -10,6 +10,9 @@ _old/
 # Claude Code – interne Dateien
 .claude/
 CLAUDE.md
+.agents/
+.superpowers/
+claude/
 
 # Lokale Tools & Aufgaben-Notizen
 tools/
