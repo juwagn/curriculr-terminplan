@@ -1,4 +1,4 @@
-# Schul-Terminplan Dashboard
+# Curricu:lr Terminplan
 
 WordPress-Plugin zur interaktiven Anzeige des Schulkalenders aus IServ-iCal-Feeds.
 
