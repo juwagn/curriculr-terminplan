@@ -5136,7 +5136,7 @@ function gsh_tp_css() {
 .gtp-past:hover{opacity:.85}
 .gtp-past .ge{filter:grayscale(50%)}
 .gtp-past:hover .ge{filter:none}
-.gt tbody tr:hover td{background:rgba(37,99,235,.02)}
+.gt tbody tr:hover td{background:rgba(0,70,125,.02)}
 .gt tbody td{
   border-right:1px solid var(--gtp-border);
   border-bottom:1px solid var(--gtp-border);
@@ -5201,8 +5201,8 @@ function gsh_tp_css() {
   animation:gtpTodayPulse 2s ease-in-out infinite;
 }
 @keyframes gtpTodayPulse{
-  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,.45)}
-  50%{transform:scale(1.5);box-shadow:0 0 0 6px rgba(37,99,235,0)}
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,70,125,.45)}
+  50%{transform:scale(1.5);box-shadow:0 0 0 6px rgba(0,70,125,0)}
 }
 .gt-hol{background:#f8f9fb!important}
 
@@ -5232,7 +5232,7 @@ function gsh_tp_css() {
 }
 .gtp-btn:hover{background:#0f172a;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.2)}
 .gtp-btn-pdf{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none}
-.gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(37,99,235,.15)}
+.gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15)}
 .gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
 .gtp-pdf-hint{
@@ -5260,7 +5260,7 @@ function gsh_tp_css() {
   border-radius:50px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:.88rem;font-weight:700;letter-spacing:.01em;
-  box-shadow:0 4px 20px rgba(37,99,235,.35);
+  box-shadow:0 4px 20px rgba(0,70,125,.35);
   cursor:pointer;
   opacity:0;pointer-events:none;
   transition:opacity .3s ease,transform .3s ease,box-shadow .3s ease;
@@ -5287,7 +5287,7 @@ function gsh_tp_css() {
 }
 .gtp-search-input:focus{
   border-color:var(--gtp-accent);background:var(--gtp-bg);
-  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  box-shadow:0 0 0 3px rgba(0,70,125,.12);
 }
 .gtp-search-results{
   display:flex;flex-wrap:wrap;gap:4px;align-items:center;
