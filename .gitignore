@@ -23,6 +23,9 @@ tasks/
 *.xlsx
 *.docx
 
+# Ausnahme: Plugin-ZIP für GitHub Pages
+!website/downloads/*.zip
+
 vorlagen/
 
 # Python-Cache
