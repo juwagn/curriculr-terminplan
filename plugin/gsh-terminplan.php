@@ -1537,7 +1537,7 @@ function gsh_tp_ajax_feedback() {
         . '<table style="border-collapse:collapse;width:100%">'
         . $name_line
         . '<tr><td style="padding:4px 0;color:#64748b;font-weight:600;width:120px">Typ:</td><td style="padding:4px 0">' . esc_html( $type_label ) . '</td></tr>'
-        . '<tr><td style="padding:12px 0 4px;color:#64748b;font-weight:600;vertical-align:top">Nachricht:</td><td style="padding:12px 0 4px"><div style="background:#f8fafc;border-left:3px solid #2563eb;padding:12px 16px;border-radius:0 8px 8px 0;white-space:pre-wrap">' . esc_html( $message ) . '</div></td></tr>'
+        . '<tr><td style="padding:12px 0 4px;color:#64748b;font-weight:600;vertical-align:top">Nachricht:</td><td style="padding:12px 0 4px"><div style="background:#f8fafc;border-left:3px solid #00467D;padding:12px 16px;border-radius:0 8px 8px 0;white-space:pre-wrap">' . esc_html( $message ) . '</div></td></tr>'
         . '</table>'
         . '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
         . '<p style="font-size:.78rem;color:#94a3b8;margin:0">Plugin v' . GSH_TP_VERSION . ' &bull; ' . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr &bull; ' . esc_url( home_url() ) . '</p>'
@@ -5608,8 +5608,8 @@ function gsh_tp_css() {
   font-family:inherit;
 }
 .gtp-version-btn:hover{
-  background:var(--gtp-accent,#2563eb);color:#fff;
-  border-color:var(--gtp-accent,#2563eb);
+  background:var(--gtp-accent,#00467D);color:#fff;
+  border-color:var(--gtp-accent,#00467D);
 }
 .gtp-changelog-card{
   max-width:560px;
@@ -5629,7 +5629,7 @@ function gsh_tp_css() {
   margin-right:5px;vertical-align:middle;
 }
 .gtp-cl-tag--feature {background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
-.gtp-cl-tag--ux      {background:#dbeafe;color:#2563eb;border:1px solid #bfdbfe}
+.gtp-cl-tag--ux      {background:#dce8f5;color:#00467D;border:1px solid #b3cfe6}
 .gtp-cl-tag--bugfix  {background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
 .gtp-cl-tag--security{background:#fef3c7;color:#d97706;border:1px solid #fde68a}
 /* ── Dynamische Kategorie-CSS (konfigurierbare Kategorien überschreiben Standard) ── */
@@ -6148,7 +6148,7 @@ function gtpPrint(mode,pdfTitle){
     ".gc-standard{border-left-color:#94a3b8}",
     /* Heute: sehr dezent */
     ".gt-today{background:#f0f7ff!important}",
-    ".gt-today .gdl{color:#2563eb}",
+    ".gt-today .gdl{color:#00467D}",
     /* Ferientag: minimales Grau */
     ".gt-hol{background:#f9f9f9!important}",
     /* Frist-Notizen */
