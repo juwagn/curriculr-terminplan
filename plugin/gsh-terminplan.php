@@ -4380,7 +4380,7 @@ function gsh_tp_shortcode( $atts ) {
 
     // ── Changelog-Modal (Frontend) ───────────────────────────────────────────
     // Zeigt nur FEATURE/UX/BUGFIX/SECURITY, maximal die letzten 3 Versionen
-    $cl_frontend_tags = array( 'FEATURE', 'UX', 'BUGFIX', 'SECURITY' );
+    $cl_frontend_tags = array( 'FEATURE', 'UX', 'BUGFIX', 'SECURITY', 'DESIGN', 'INFRA' );
     $cl_all           = gsh_tp_changelog();
     $cl_frontend      = array();
     foreach ( $cl_all as $version_block ) {
