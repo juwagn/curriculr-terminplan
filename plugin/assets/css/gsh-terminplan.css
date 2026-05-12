@@ -9,56 +9,14 @@
 /* ── Google Fonts ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* ── Reset (scoped) ── */
-.gtp-wrap *, .gtp-wrap *::before, .gtp-wrap *::after {
-    box-sizing: border-box;
-}
-
-/* ── Root Wrapper ── */
-.gtp-wrap {
-    font-family: var(--font-body);
-    font-size: var(--font-size-base);
-    line-height: var(--line-height-base);
-    color: var(--text-main);
-    background: var(--bg-body);
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: var(--space-lg) var(--space-md);
-}
-
 /* ═══════════════════════════════════════════════════════════════
    HEADER
    ═══════════════════════════════════════════════════════════════ */
-
-.gtp-header {
-    background: var(--primary-900);
-    color: var(--text-on-dark);
-    border-radius: var(--radius-card) var(--radius-card) 0 0;
-    padding: var(--space-md) var(--space-lg);
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-}
 
 .gtp-header-logo {
     height: 28px;
     width: auto;
     flex-shrink: 0;
-}
-
-.gtp-header-title {
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text-on-dark);
-    margin: 0;
-}
-
-.gtp-header-sub {
-    font-size: 0.78rem;
-    opacity: 0.65;
-    margin: 0;
 }
 
 .gtp-header-actions {
@@ -197,16 +155,6 @@
 /* ═══════════════════════════════════════════════════════════════
    EVENT TABLE
    ═══════════════════════════════════════════════════════════════ */
-
-.gtp-table-wrap {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: var(--glass-border);
-    border-radius: 0 0 var(--radius-card) var(--radius-card);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-}
 
 .gt {
     width: 100%;
@@ -648,20 +596,6 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-    .gtp-wrap {
-        padding: var(--space-md) var(--space-sm);
-    }
-
-    .gtp-header {
-        padding: var(--space-md);
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-        gap: var(--space-sm);
-    }
-
-    .gtp-header-logo {
-        height: 22px;
-    }
-
     .gtp-tabs {
         padding: var(--space-sm);
         gap: var(--space-xs);
@@ -784,9 +718,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
-    .gtp-wrap *,
-    .gtp-wrap *::before,
-    .gtp-wrap *::after {
+    #gtp *,
+    #gtp *::before,
+    #gtp *::after {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
     }
