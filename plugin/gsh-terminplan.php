@@ -1799,6 +1799,10 @@ function gsh_tp_register_settings() {
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
     ) );
+    register_setting( 'gsh_tp_options', 'gsh_tp_draft_kiosk_token', array(
+        'sanitize_callback' => 'sanitize_text_field',
+        'default'           => '',
+    ) );
     register_setting( 'gsh_tp_options', 'gsh_tp_iserv_domain', array(
         'sanitize_callback' => 'esc_url_raw',
         'default'           => '',
@@ -7185,6 +7189,7 @@ function gsh_tp_uninstall() {
         'gsh_tp_kategorie_mapping',
         'gsh_tp_categories',       // konfigurierbare Kategorien (seit 3.4.0)
         'gsh_tp_kiosk_token',
+        'gsh_tp_draft_kiosk_token',
         'gsh_tp_iserv_domain',
         'gsh_tp_last_sync',
         GSH_TP_CACHE_KEY,          // permanente Daten-Option (seit 3.3.0)
