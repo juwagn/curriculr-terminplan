@@ -4116,8 +4116,8 @@ function gsh_tp_shortcode( $atts ) {
     $profile_id = $sj_param ?: sanitize_key( $atts['schuljahr'] );
 
     if ( 'entwurf' === $atts['schuljahr'] ) {
-        // Entwurf-Modus: nur für Admins sichtbar
-        if ( ! current_user_can( 'manage_options' ) ) {
+        // Entwurf-Modus: nur für Admins oder validierten Draft-Kiosk-Zugang sichtbar
+        if ( ! current_user_can( 'manage_options' ) && ! gsh_tp_draft_kiosk_context() ) {
             return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
                  . 'border-radius:8px;color:#475569;text-align:center">'
                  . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
@@ -4147,8 +4147,8 @@ function gsh_tp_shortcode( $atts ) {
              . 'Kein Schuljahr-Profil gefunden. Bitte die Plugin-Einstellungen pr&uuml;fen.</div>';
     }
 
-    // Entwurf-Modus: Entwürfe ohne schuljahr="entwurf" nur für Admins
-    if ( ! empty( $profile['is_draft'] ) && ! current_user_can( 'manage_options' ) ) {
+    // Entwurf-Modus: Entwürfe ohne schuljahr="entwurf" nur für Admins oder Draft-Kiosk
+    if ( ! empty( $profile['is_draft'] ) && ! current_user_can( 'manage_options' ) && ! gsh_tp_draft_kiosk_context() ) {
         return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
              . 'border-radius:8px;color:#475569;text-align:center">'
              . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
