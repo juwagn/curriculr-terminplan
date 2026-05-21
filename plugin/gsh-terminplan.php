@@ -1395,6 +1395,62 @@ function gsh_tp_check_kiosk_access( $token ) {
 }
 
 /**
+ * Liefert und setzt den Draft-Kiosk-Anfrage-Kontext.
+ *
+ * Einzelne Funktion mit statischer Variable — verhindert das Zustandsteilungs-
+ * Problem zwischen zwei separaten Funktionen. Nach erfolgreichem Token-Check
+ * auf true setzen, damit gsh_tp_shortcode() den Admin-Check überspringt.
+ *
+ * @since 4.1.0
+ * @param bool $set true = Kontext aktivieren, false (Standard) = nur abfragen.
+ * @return bool     Ob der Draft-Kiosk-Kontext aktiv ist.
+ */
+function gsh_tp_draft_kiosk_context( bool $set = false ): bool {
+    static $active = false;
+    if ( $set ) {
+        $active = true;
+    }
+    return $active;
+}
+
+/**
+ * Prüft den Entwurf-Kiosk-Zugriff per Token mit IP-basiertem Rate-Limiting.
+ *
+ * Vergleicht den übergebenen Token timing-sicher (hash_equals) mit dem gespeicherten
+ * Entwurf-Token. Verhindert Brute-Force: Nach 10 Fehlversuchen von derselben IP
+ * innerhalb einer Stunde wird der Zugriff blockiert.
+ *
+ * Aufruf aus dem Page-Template page-terminplan-entwurf.php:
+ *   $token = sanitize_text_field( $_GET['token'] ?? '' );
+ *   if ( ! gsh_tp_check_draft_kiosk_access( $token ) ) { status_header( 403 ); exit; }
+ *
+ * @since 4.1.0
+ * @param  string $token Der vom Nutzer übergebene Token (?token= URL-Parameter).
+ * @return bool          true bei gültigem Token, false bei falschem Token oder Rate-Limit.
+ */
+function gsh_tp_check_draft_kiosk_access( string $token ): bool {
+    $saved = get_option( 'gsh_tp_draft_kiosk_token', '' );
+    if ( empty( $saved ) ) {
+        return false;
+    }
+
+    $ip       = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+    $rate_key = 'gsh_tp_draft_rl_' . md5( $ip );
+    $attempts = (int) get_transient( $rate_key );
+    if ( $attempts >= 10 ) {
+        return false;
+    }
+
+    if ( ! hash_equals( $saved, $token ) ) {
+        set_transient( $rate_key, $attempts + 1, HOUR_IN_SECONDS );
+        return false;
+    }
+
+    gsh_tp_draft_kiosk_context( true );
+    return true;
+}
+
+/**
  * Speichert einen Sync-Versuch im Sync-Log eines Profils.
  *
  * Hält die letzten 50 Einträge pro Profil in einer Datenbank-Option vor.
