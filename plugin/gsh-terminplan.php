@@ -3296,6 +3296,79 @@ function gsh_tp_render_kategorien_tab() {
  */
 function gsh_tp_render_system_tab() {
     ?>
+    <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
+    <div style="background:#eaf2f8;border-left:4px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:4px;">
+        <strong>Was ist die Entwurf-Vorschau?</strong><br>
+        Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
+        Teilt einfach den generierten Link.
+    </div>
+    <table class="form-table">
+        <tr>
+            <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
+            <td>
+                <input type="text" id="gsh_tp_draft_kiosk_token" name="gsh_tp_draft_kiosk_token"
+                       value="<?php echo esc_attr( get_option( 'gsh_tp_draft_kiosk_token', '' ) ); ?>"
+                       class="regular-text" autocomplete="off"
+                       placeholder="mind. 20 Zeichen" />
+                <button type="button" class="button" style="margin-left:6px"
+                        onclick="if(!confirm('Token wird ersetzt. Alte Entwurf-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_draft_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
+                    <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
+                </button>
+                <p class="description">Geheimer Token f&uuml;r den Zugang zur Entwurf-Vorschau. Mind. 20 Zeichen empfohlen.</p>
+                <?php
+                $draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
+                if ( empty( $draft_token ) ) {
+                    echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
+                       . 'bitte einen Token generieren um die Vorschau zu aktivieren.</p>';
+                } elseif ( strlen( $draft_token ) < 20 ) {
+                    echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
+                       . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
+                }
+                ?>
+            </td>
+        </tr>
+        <tr>
+            <th>Vorschau-URL</th>
+            <td>
+                <?php
+                $draft_token  = get_option( 'gsh_tp_draft_kiosk_token', '' );
+                $draft_pages  = get_pages( array(
+                    'meta_key'   => '_wp_page_template',
+                    'meta_value' => 'page-terminplan-entwurf.php',
+                ) );
+                $has_draft_profile = false;
+                foreach ( gsh_tp_get_profiles() as $p ) {
+                    if ( ! empty( $p['is_draft'] ) ) {
+                        $has_draft_profile = true;
+                        break;
+                    }
+                }
+                $missing = array();
+                if ( empty( $draft_token ) ) {
+                    $missing[] = 'Entwurf-Token';
+                }
+                if ( ! $has_draft_profile ) {
+                    $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;';
+                }
+                if ( empty( $draft_pages ) ) {
+                    $missing[] = 'Seite mit Vorlage <code>page-terminplan-entwurf.php</code>';
+                }
+                if ( empty( $missing ) ) {
+                    $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
+                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">'
+                       . esc_html( $draft_url ) . '</code>';
+                    echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
+                       . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
+                } else {
+                    echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
+                       . implode( ', ', $missing ) . '.</p>';
+                }
+                ?>
+            </td>
+        </tr>
+    </table>
+    <hr style="margin:24px 0" />
+
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
     <div style="background:#eaf2f8;border-left:4px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:4px;">
         <strong>Was ist der Kiosk-Modus?</strong><br>
