@@ -4306,7 +4306,7 @@ function gsh_tp_shortcode( $atts ) {
     $feedback_nonce = wp_create_nonce( 'gsh_tp_feedback_nonce' );
     $ajax_url       = admin_url( 'admin-ajax.php' );
 
-    $o .= '<div class="gtp" id="gtp" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
+    $o .= '<div class="gtp" id="gtp" data-view="quartal" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
 
     // Entwurfs-Banner
     if ( ! empty( $profile['is_draft'] ) ) {
@@ -4381,6 +4381,14 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>';
 
+    // View-Toggle: Quartalsansicht ↔ Jahresansicht
+    $o .= '<button type="button" class="gtp-view-toggle" id="gtp-view-toggle"'
+        . ' data-label-quartal="Quartalsansicht"'
+        . ' data-label-year="Jahresansicht"'
+        . ' onclick="gtpViewToggle(this)">'
+        . gsh_tp_icon( 'calendar', '1em', 'gtp-view-toggle-icon' )
+        . '<span class="gtp-view-toggle-label">Jahresansicht</span></button>';
+
     // Filter-Buttons (dynamisch aus Kategorie-Einstellungen – v3.15.0: --btn-color)
     $o .= '<div class="gtp-filt-wrap">';
     $o .= '<div class="gtp-filt-header">';
@@ -4405,6 +4413,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '</div>'; // .gtp-filt-wrap
 
     // Quartalspanels
+    $o .= '<div class="gtp-quarters-wrap">';
     for ( $q = 1; $q <= 4; $q++ ) {
         $vis = $q === $aq ? 'block' : 'none';
         $qd  = $grenzen[ $q - 1 ] ?? null;
@@ -4417,6 +4426,10 @@ function gsh_tp_shortcode( $atts ) {
         $o .= gsh_tp_mobile( $date_index, $qd, $sjs );  // Agenda-Ansicht  (< 768px)
         $o .= '</div>';
     }
+    $o .= '</div>'; // .gtp-quarters-wrap
+
+    // Jahresansicht
+    $o .= gsh_tp_yearview( $date_index, $grenzen, $profile_id );
 
     // Footer – Aktionen links, Meta rechts
     $o .= '<div class="gtp-ft">';
