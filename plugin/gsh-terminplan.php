@@ -5155,7 +5155,7 @@ function gsh_tp_yearview( $index, $quartale, $pid ) {
 
         $row_cls = $is_today_row ? ' class="gtp-yr-today"' : '';
         $o .= '<tr' . $row_cls . '>';
-        $o .= '<td class="gtp-yr-dn" scope="row">' . $day . '</td>';
+        $o .= '<th class="gtp-yr-dn" scope="row">' . (int) $day . '</th>';
 
         foreach ( $months as $m ) {
             if ( ! checkdate( $m['n'], $day, $m['year'] ) ) {
