@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.0.0
+ * Version:     4.1.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 4.1.0:
+ * - [FEATURE] Entwurf-Kiosk: Token-gesicherte Vorschau-Seite für Entwurfs-Terminpläne (Schulleitungsteam)
+ * - [SECURITY] gsh_tp_check_draft_kiosk_access(): timing-sicherer Vergleich + Rate-Limiting (10/h/IP)
+ * - [UX] Admin: Entwurf-Vorschau-Sektion im Kiosk & System Tab mit Token-Generator und URL-Anzeige
  *
  * Changelog 4.0.0:
  * - [DESIGN] Curricu:lr Branding — Design-Token-System (design-tokens.css), IServ-Farbpalette (#00345C/#00467D), Glassmorphism-Cards
@@ -475,7 +480,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.0.0' );
+define( 'GSH_TP_VERSION',       '4.1.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -713,6 +718,14 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.1.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE',  'text' => 'Entwurf-Kiosk: Token-gesicherte Vorschau-Seite für Entwurfs-Terminpläne (Schulleitungsteam ohne WP-Login)' ),
+                array( 'tag' => 'SECURITY', 'text' => 'gsh_tp_check_draft_kiosk_access(): Timing-sicherer Token-Vergleich (hash_equals) + IP-Rate-Limiting (10/h)' ),
+                array( 'tag' => 'UX',       'text' => 'Admin Kiosk & System Tab: Entwurf-Vorschau-Sektion mit Token-Generator und automatischer URL-Anzeige' ),
+            ),
+        ),
         array(
             'version' => '4.0.0',
             'entries' => array(
