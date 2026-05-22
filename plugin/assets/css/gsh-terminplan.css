@@ -759,3 +759,116 @@
         color-scheme: dark;
     }
 }
+
+/* ═══════════════════════════════════════════════
+   JAHRESANSICHT
+   ═══════════════════════════════════════════════ */
+
+/* View-Toggle: Sichtbarkeit der beiden Ansichten */
+#gtp[data-view="quartal"] .gtp-year-wrap    { display: none; }
+#gtp[data-view="year"]    .gtp-quarters-wrap { display: none; }
+#gtp[data-view="year"]    .gtp-tabs          { display: none; }
+
+/* Toggle-Button */
+.gtp-view-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .35em;
+    padding: .35em .8em;
+    border: 1.5px solid var(--gtp-border, #cbd5e1);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--gtp-text, #334155);
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    margin-top: .5rem;
+    margin-bottom: .5rem;
+}
+.gtp-view-toggle:hover,
+.gtp-view-toggle-on {
+    background: var(--gtp-accent-bg, #eff6ff);
+    border-color: var(--gtp-accent, #3b82f6);
+    color: var(--gtp-accent, #3b82f6);
+}
+
+/* Jahresraster-Tabelle */
+.gtp-year-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: .75rem;
+}
+.gtp-yr {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .72rem;
+    table-layout: fixed;
+}
+.gtp-yr-dh {
+    width: 1.6rem;
+}
+.gtp-yr th,
+.gtp-yr td {
+    border: 1px solid var(--gtp-border, #e2e8f0);
+    padding: 2px 3px;
+    vertical-align: top;
+    min-width: 58px;
+}
+.gtp-yr-mh {
+    background: var(--gtp-head-bg, #f1f5f9);
+    font-weight: 700;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--gtp-text-muted, #64748b);
+    letter-spacing: .03em;
+}
+.gtp-yr-dn {
+    text-align: right;
+    color: var(--gtp-text-muted, #94a3b8);
+    font-variant-numeric: tabular-nums;
+    font-size: .7rem;
+    background: var(--gtp-head-bg, #f8fafc);
+    white-space: nowrap;
+}
+
+/* Ungültige Zellen (z. B. 31. Feb) */
+.gtp-yr-invalid {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,.04) 3px,
+        rgba(0,0,0,.04) 6px
+    );
+    pointer-events: none;
+}
+
+/* Heutige Zeile */
+.gtp-yr-today {
+    background: var(--gtp-today-row-bg, #fef9c3);
+}
+.gtp-yr-today .gtp-yr-dn {
+    background: var(--gtp-today-dn-bg, #fef08a);
+    font-weight: 700;
+    color: var(--gtp-text, #334155);
+}
+
+/* Event-Chips im Jahresraster */
+.gtp-yr-cell {
+    min-height: 1.1rem;
+}
+.gtp-yr-ev {
+    display: block;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    cursor: pointer;
+    font-size: .67rem;
+    line-height: 1.4;
+    /* Farbe kommt von gc-{slug} Klasse (gsh_tp_category_css) */
+}
