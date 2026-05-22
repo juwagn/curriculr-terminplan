@@ -6034,6 +6034,20 @@ function gtpFilterToggle(){
   if(btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
+/* Schaltet zwischen Quartals- und Jahresansicht um */
+function gtpViewToggle(btn){
+  var wrap  = document.getElementById("gtp");
+  var toYear = wrap ? wrap.dataset.view !== "year" : false;
+  if(wrap) wrap.dataset.view = toYear ? "year" : "quartal";
+  var label = btn.querySelector(".gtp-view-toggle-label");
+  if(label){
+    label.textContent = toYear
+      ? btn.dataset.labelQuartal
+      : btn.dataset.labelYear;
+  }
+  btn.classList.toggle("gtp-view-toggle-on", toYear);
+}
+
 /* ════════════════════════════════════════════════════════
    SICHTBARKEITS-HELPER (Kategorie-Filter + Textsuche kombiniert)
    ════════════════════════════════════════════════════════
@@ -6106,6 +6120,12 @@ function gtpApply(){
 
   /* Lange Termine + Frist-Notizen: nur Kategorie-Filter */
   document.querySelectorAll(".gn-long[data-c], .gn[data-c]").forEach(function(el){
+    var c = el.getAttribute("data-c");
+    el.style.display = !gtpSel[c] ? "" : "none";
+  });
+
+  /* Jahresraster-Events: Kategorie-Filter */
+  document.querySelectorAll(".gtp-yr-ev[data-c]").forEach(function(el){
     var c = el.getAttribute("data-c");
     el.style.display = !gtpSel[c] ? "" : "none";
   });
