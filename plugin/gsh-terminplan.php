@@ -5079,6 +5079,116 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
     return $h;
 }
 
+/**
+ * Rendert das Jahresraster (Sep–Jul, 10 Monate × 31 Tage).
+ * Nutzt den bestehenden Date-Index; kein eigener iCal-Fetch.
+ *
+ * @param array  $index    Date-Index aus gsh_tp_build_date_index().
+ * @param array  $quartale Array mit 4 Quartalsgrenzen [['start'=>'Y-m-d','end'=>'Y-m-d'], …].
+ * @param string $pid      Profil-ID (für zukünftige Erweiterungen, derzeit unused).
+ * @return string HTML-String des Jahresrasters.
+ */
+function gsh_tp_yearview( $index, $quartale, $pid ) {
+    if ( empty( $quartale ) || empty( $index ) ) {
+        return '';
+    }
+
+    // Schuljahr: Sep des Q1-Startjahres bis Jul des Folgejahres
+    $start_year = (int) substr( $quartale[0]['start'], 0, 4 );
+    $months = array(
+        array( 'n' => 9,  'year' => $start_year,     'label' => 'Sep' ),
+        array( 'n' => 10, 'year' => $start_year,     'label' => 'Okt' ),
+        array( 'n' => 11, 'year' => $start_year,     'label' => 'Nov' ),
+        array( 'n' => 12, 'year' => $start_year,     'label' => 'Dez' ),
+        array( 'n' => 1,  'year' => $start_year + 1, 'label' => 'Jan' ),
+        array( 'n' => 2,  'year' => $start_year + 1, 'label' => 'Feb' ),
+        array( 'n' => 3,  'year' => $start_year + 1, 'label' => 'Mär' ),
+        array( 'n' => 4,  'year' => $start_year + 1, 'label' => 'Apr' ),
+        array( 'n' => 5,  'year' => $start_year + 1, 'label' => 'Mai' ),
+        array( 'n' => 6,  'year' => $start_year + 1, 'label' => 'Jun' ),
+        array( 'n' => 7,  'year' => $start_year + 1, 'label' => 'Jul' ),
+    );
+
+    $today_str = gmdate( 'Y-m-d' );
+
+    // Kategorie-Map für gsh_tp_primary_slug (gecacht per static)
+    static $cat_map_yr = null;
+    if ( null === $cat_map_yr ) {
+        $cat_map_yr = array_column( gsh_tp_get_categories(), null, 'id' );
+    }
+
+    $o  = '<div class="gtp-year-wrap" role="region" aria-label="Jahresterminplan">';
+    $o .= '<table class="gtp-yr">';
+
+    // Kopfzeile: Monatsnamen
+    $o .= '<thead><tr><th class="gtp-yr-dh" scope="col" aria-label="Tag"></th>';
+    foreach ( $months as $m ) {
+        $o .= '<th class="gtp-yr-mh" scope="col">' . esc_html( $m['label'] ) . '</th>';
+    }
+    $o .= '</tr></thead>';
+
+    // Zeilen: Tage 1–31
+    $o .= '<tbody>';
+    for ( $day = 1; $day <= 31; $day++ ) {
+        // Prüfen ob mind. ein Monat diesen Tag hat (sonst Zeile überspringen)
+        $row_has_valid = false;
+        foreach ( $months as $m ) {
+            if ( checkdate( $m['n'], $day, $m['year'] ) ) {
+                $row_has_valid = true;
+                break;
+            }
+        }
+
+        // Heutige Zeile bestimmen
+        $is_today_row = false;
+        if ( $row_has_valid ) {
+            foreach ( $months as $m ) {
+                if ( checkdate( $m['n'], $day, $m['year'] ) ) {
+                    $d = sprintf( '%04d-%02d-%02d', $m['year'], $m['n'], $day );
+                    if ( $d === $today_str ) {
+                        $is_today_row = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        $row_cls = $is_today_row ? ' class="gtp-yr-today"' : '';
+        $o .= '<tr' . $row_cls . '>';
+        $o .= '<td class="gtp-yr-dn" scope="row">' . $day . '</td>';
+
+        foreach ( $months as $m ) {
+            if ( ! checkdate( $m['n'], $day, $m['year'] ) ) {
+                $o .= '<td class="gtp-yr-cell gtp-yr-invalid" aria-hidden="true"></td>';
+                continue;
+            }
+
+            $date_str = sprintf( '%04d-%02d-%02d', $m['year'], $m['n'], $day );
+            $events   = gsh_tp_day_events( $index, $date_str );
+            $o       .= '<td class="gtp-yr-cell">';
+
+            foreach ( $events as $ev ) {
+                $cat_ids = (array) ( isset( $ev['categories'] ) ? $ev['categories'] : array() );
+                $slug    = gsh_tp_primary_slug( $cat_ids, $cat_map_yr );
+                $short   = esc_html( mb_substr( wp_strip_all_tags( $ev['summary'] ), 0, 18 ) );
+
+                $o .= '<span class="gtp-yr-ev gc-' . esc_attr( $slug ) . '"'
+                    . ' data-c="' . esc_attr( $slug ) . '"'
+                    . gsh_tp_event_data_attrs( $ev )
+                    . ' onclick="gtpPopupOpen(this)">'
+                    . $short . '</span>';
+            }
+
+            $o .= '</td>';
+        }
+
+        $o .= '</tr>';
+    }
+    $o .= '</tbody></table></div>';
+
+    return $o;
+}
+
 /* ================================================================
    7. CSS
    ================================================================ */
