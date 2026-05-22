@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.1.0
+ * Version:     4.2.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 4.2.0:
+ * - [FEATURE] Jahresansicht: klassisches Monats-Tage-Raster (Sep–Jul) als neue Ansicht
+ * - [UX] Toggle-Button zum Wechseln zwischen Quartals- und Jahresansicht
+ * - [FEATURE] Kategorie-Filter und Ereignis-Popup funktionieren in Jahresansicht
  *
  * Changelog 4.1.0:
  * - [FEATURE] Entwurf-Kiosk: Token-gesicherte Vorschau-Seite für Entwurfs-Terminpläne (Schulleitungsteam)
@@ -480,7 +485,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.1.0' );
+define( 'GSH_TP_VERSION',       '4.2.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -718,6 +723,14 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.2.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE',  'text' => 'Jahresansicht: klassisches Monats-Tage-Raster (Sep–Jul) als neue Ansicht' ),
+                array( 'tag' => 'UX',       'text' => 'Toggle-Button zum Wechseln zwischen Quartals- und Jahresansicht' ),
+                array( 'tag' => 'FEATURE',  'text' => 'Kategorie-Filter und Ereignis-Popup funktionieren in Jahresansicht' ),
+            ),
+        ),
         array(
             'version'  => '4.1.0',
             'entries'  => array(
