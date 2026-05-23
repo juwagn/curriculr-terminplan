@@ -2,7 +2,7 @@
 
 **Digitaler Schulkalender für WordPress — aus IServ direkt auf die Schulwebsite.**
 
-Version **4.1.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
+Version **4.3.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X61ZEMZ7)
 
@@ -26,10 +26,11 @@ Das Projekt besteht aus vier Teilen:
 ## Features
 
 - **Quartalansicht** — Tabellenansicht auf Desktop, Agenda-Karten auf Mobile
-- **Kategorie-Filter** — farbige Badges, ein Klick filtert alle Termine
+- **Jahresansicht** — Kalenderraster Sep–Jul, ein Blick auf das gesamte Schuljahr
+- **Kategorie-Filter** — farbige Badges, horizontal scrollbar, immer sichtbar
 - **Volltextsuche** — Echtzeit-Filterung über alle Termintitel und -beschreibungen
 - **Dark Mode** — manuell oder automatisch per System-Einstellung
-- **PDF-Export** — einzelnes Quartal oder gesamtes Schuljahr
+- **PDF-Export** — einzelnes Quartal oder gesamtes Schuljahr, mit Lade-Feedback
 - **Feedback-Funktion** — Termine direkt per E-Mail kommentieren, Log im Admin
 - **Kiosk-Modus** — Einbettung in IServ ohne WordPress-Login, per Token-URL
 - **Entwurf-Kiosk** — Vorschau-Link für das Schulleitungsteam, bevor der Plan freigegeben wird
@@ -311,9 +312,9 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 
 | # | Datei / Stelle | Beispiel |
 |---|---|---|
-| 1 | Plugin-Header: `Version:` | `Version: 4.1.0` |
-| 2 | PHP-Konstante | `define('GSH_TP_VERSION', '4.1.0')` |
-| 3 | `gsh_tp_changelog()` — neuer Eintrag oben | `'version' => '4.1.0'` |
+| 1 | Plugin-Header: `Version:` | `Version: 4.3.0` |
+| 2 | PHP-Konstante | `define('GSH_TP_VERSION', '4.3.0')` |
+| 3 | `gsh_tp_changelog()` — neuer Eintrag oben | `'version' => '4.3.0'` |
 | 4 | Plugin-Header-Kommentar `Changelog X.Y.Z:` | neuer Block oben |
 
 **Bump-Regel:** Bugfix → Patch, neues Feature → Minor, Breaking Change → Major.
@@ -334,6 +335,22 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 ---
 
 ## Changelog
+
+### 4.3.0
+- [UX] Header: einzeilig, Suche inline, keine redundante Überschrift
+- [UX] Jahresansicht-Toggle in sticky Tab-Leiste integriert — Rückkehr zur Quartalansicht immer sichtbar
+- [UX] Filter-Bar: horizontal scrollbar (kein Wrap), immer sichtbarer Toggle-Button
+- [UX] Tab-Design: Unterstrich-Indikator statt Navy-Pill-Hintergrund
+- [UX] Hilfe-Button: Pill mit „Hilfe"-Label statt reines Icon
+- [UX] PDF-Buttons: Lade-Feedback mit `disabled`-State und reduzierter Deckkraft für 3,5 s
+- [FIX] `border-left`-Antipattern: alle 8+ Instanzen durch Full-Border ersetzt
+- [FIX] Schriftgrößen auf Event-Cards und Agenda-Karten erhöht (≥ 0,8 rem)
+- [FIX] Kategorie-Fallback-Farbe von `#6c757d` auf `#94a3b8` (höherer Kontrast auf Pastel-Hintergrund)
+- [FIX] Admin-Notices: `border-left` → `border` mit `border-radius`
+
+### 4.2.0
+- [FEATURE] Jahresansicht: Sep–Jul-Kalenderraster (`gsh_tp_yearview()`, `gtpViewToggle()`)
+- [UX] `gtpApply()` erweitert: Jahresansicht wird bei Quartalswechsel korrekt ausgeblendet
 
 ### 4.1.0
 - [FEATURE] Entwurf-Kiosk: Token-gesicherte Vorschau-Seite für das Schulleitungsteam

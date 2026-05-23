@@ -3,10 +3,20 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.2.0
+ * Version:     4.3.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 4.3.0:
+ * - [DESIGN] Header einzeilig: Logo + Suche + Aktionen in einer Zeile
+ * - [DESIGN] Sticky Command Bar: Quartal-Tabs + Jahresansicht-Toggle in einer Leiste
+ * - [UX] Filter-Bar: horizontales Scroll auf Desktop statt Zeilenumbruch; Toggle überall sichtbar
+ * - [UX] Hilfe-Button mit Textlabel; PDF-Buttons mit Loading-Zustand
+ * - [FIX] Tab-Design: externes CSS Konflikt (Navy-Pill → Underline-Tab)
+ * - [FIX] border-left Antipattern: 8 Instanzen auf full-border umgestellt
+ * - [FIX] Schriftgröße Event-Cards .73rem → .8rem (WCAG AA)
+ * - [FIX] Kategorie-Fallback-Farbe → #94a3b8 (Slate-400)
  *
  * Changelog 4.2.0:
  * - [FEATURE] Jahresansicht: klassisches Monats-Tage-Raster (Sep–Jul) als neue Ansicht
@@ -485,7 +495,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.2.0' );
+define( 'GSH_TP_VERSION',       '4.3.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -723,6 +733,21 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.3.0',
+            'entries'  => array(
+                array( 'tag' => 'DESIGN', 'text' => 'Header einzeilig: Logo + Suche + Aktionen in einer Zeile statt zwei' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Sticky Command Bar: Quartal-Tabs und Jahresansicht-Toggle in einer gemeinsamen Leiste' ),
+                array( 'tag' => 'UX',     'text' => 'Jahresansicht-Toggle in der Sticky Bar — immer sichtbar, kein versteckter Button mehr' ),
+                array( 'tag' => 'UX',     'text' => 'Filter-Bar: horizontales Scroll auf Desktop statt Zeilenumbruch; Toggle überall sichtbar' ),
+                array( 'tag' => 'UX',     'text' => 'Hilfe-Button mit Textlabel "Hilfe" statt Icon-only' ),
+                array( 'tag' => 'UX',     'text' => 'PDF-Buttons zeigen Loading-Zustand während Druckdialog vorbereitet wird' ),
+                array( 'tag' => 'FIX',    'text' => 'Tab-Design: externes CSS Konflikt behoben — aktive Tabs zeigen Unterbalken statt dunklem Navy-Pill' ),
+                array( 'tag' => 'FIX',    'text' => 'border-left Antipattern: 8 Instanzen (Event-Cards, Admin-Notices, Filter-Notices) auf full-border umgestellt' ),
+                array( 'tag' => 'FIX',    'text' => 'Schriftgröße Event-Cards: .73rem → .8rem (WCAG 2.1 AA näher)' ),
+                array( 'tag' => 'FIX',    'text' => 'Kategorie-Fallback-Farbe #6c757d → #94a3b8 (Slate-400, passt zum Design-System)' ),
+            ),
+        ),
         array(
             'version'  => '4.2.0',
             'entries'  => array(
@@ -2078,7 +2103,7 @@ function gsh_tp_save_categories( array $categories ) {
         if ( '' === $slug || in_array( $slug, $slugs, true ) ) {
             $slug = $id; // Fallback auf id
         }
-        $color = preg_match( $hex, $cat['color'] ?? '' ) ? $cat['color'] : '#6c757d';
+        $color = preg_match( $hex, $cat['color'] ?? '' ) ? $cat['color'] : '#94a3b8';
 
         // Keywords: kommaseparierter String (aus Admin-Textarea) oder Array → bereinigtes Array
         $raw_kw = $cat['keywords'] ?? [];
@@ -2226,7 +2251,7 @@ function gsh_tp_contrast_color( string $hex_color ): string {
  */
 function gsh_tp_color_derive( string $color ): array {
     if ( ! preg_match( '/^#[0-9a-fA-F]{6}$/', $color ) ) {
-        $color = '#6c757d';
+        $color = '#94a3b8';
     }
     $r  = hexdec( substr( $color, 1, 2 ) );
     $g  = hexdec( substr( $color, 3, 2 ) );
@@ -2319,13 +2344,13 @@ function gsh_tp_category_css() {
     $rules = '';
     foreach ( $cats as $c ) {
         $s       = esc_attr( $c['slug'] );
-        $color   = $c['color'] ?? '#6c757d';
+        $color   = $c['color'] ?? '#94a3b8';
         $derived = gsh_tp_color_derive( $color );
         $bg      = esc_attr( $derived['bg'] );
         $bd      = esc_attr( $derived['border'] ); // = color
         $tx      = esc_attr( $derived['text'] );
         $vars   .= "--c-{$s}-bg:{$bg};--c-{$s}-bd:{$bd};--c-{$s}-tx:{$tx};";
-        $rules  .= ".gc-{$s}{background:var(--c-{$s}-bg);border-left-color:var(--c-{$s}-bd);color:var(--c-{$s}-tx)}";
+        $rules  .= ".gc-{$s}{background:var(--c-{$s}-bg);border-color:var(--c-{$s}-bd);color:var(--c-{$s}-tx)}";
         $rules  .= ".gtp-fb[data-c=\"{$s}\"]{--btn-color:{$bd};border-color:var(--c-{$s}-bd);background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
         $rules  .= ".gtp-popup-cat.gc-{$s}{background:var(--c-{$s}-bg);color:var(--c-{$s}-tx)}";
     }
@@ -2809,8 +2834,8 @@ function gsh_tp_render_profile_tab( $profile_id ) {
 
     // Entwurfs-Hinweis
     if ( ! empty( $profile['is_draft'] ) ) {
-        echo '<div style="background:#fef9c3;border-left:4px solid #eab308;padding:10px 16px;'
-           . 'margin-bottom:16px;border-radius:4px">'
+        echo '<div style="background:#fef9c3;border:1px solid #eab308;padding:10px 16px;'
+           . 'margin-bottom:16px;border-radius:6px">'
            . '<strong>Entwurf</strong> &ndash; dieser Terminplan ist noch nicht beschlossen '
            . 'und nur f&uuml;r Admins sichtbar.</div>';
     }
@@ -3061,7 +3086,7 @@ function gsh_tp_render_kategorien_tab() {
         </thead>
         <tbody id="gsh-cat-tbody">
         <?php foreach ( $existing_cats as $cat ) :
-            $derived = gsh_tp_color_derive( $cat['color'] ?? '#6c757d' );
+            $derived = gsh_tp_color_derive( $cat['color'] ?? '#94a3b8' );
         ?>
             <tr class="gsh-cat-row">
                 <td>
@@ -3081,7 +3106,7 @@ function gsh_tp_render_kategorien_tab() {
                 </td>
                 <td>
                     <input type="color" class="gsh-cat-color"
-                           value="<?php echo esc_attr( $cat['color'] ?? '#6c757d' ); ?>"
+                           value="<?php echo esc_attr( $cat['color'] ?? '#94a3b8' ); ?>"
                            style="width:56px;height:36px;padding:2px;cursor:pointer" />
                 </td>
                 <td>
@@ -3125,7 +3150,7 @@ function gsh_tp_render_kategorien_tab() {
 
         // Live-Vorschau nach Farbänderung aktualisieren
         function updatePreview(row) {
-            var color = (row.querySelector('.gsh-cat-color') || {}).value || '#6c757d';
+            var color = (row.querySelector('.gsh-cat-color') || {}).value || '#94a3b8';
             var label = (row.querySelector('.gsh-cat-label') || {}).value || 'Beispiel';
             var pre   = row.querySelector('.gsh-cat-preview');
             if (!pre) return;
@@ -3161,7 +3186,7 @@ function gsh_tp_render_kategorien_tab() {
                 var id    = (row.querySelector('.gsh-cat-id')    || {}).value || '';
                 var slug  = (row.querySelector('.gsh-cat-slug')  || {}).value || '';
                 var label = (row.querySelector('.gsh-cat-label') || {}).value || '';
-                var color = (row.querySelector('.gsh-cat-color') || {}).value || '#6c757d';
+                var color = (row.querySelector('.gsh-cat-color') || {}).value || '#94a3b8';
                 var kwRaw = (row.querySelector('.gsh-cat-keywords') || {}).value || '';
                 if (!label) return; // Leere Labels überspringen
                 // Slug aus Label generieren wenn noch keiner vorhanden
@@ -3187,7 +3212,7 @@ function gsh_tp_render_kategorien_tab() {
             function ea(s) {
                 return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             }
-            var color = cat.color || '#6c757d';
+            var color = cat.color || '#94a3b8';
             var kwStr = Array.isArray(cat.keywords) ? cat.keywords.join(', ') : '';
             var kwCnt = Array.isArray(cat.keywords) ? cat.keywords.length : 0;
             return '<td>'
@@ -3246,7 +3271,7 @@ function gsh_tp_render_kategorien_tab() {
         // Neue Kategorie hinzufügen
         if (addBtn) {
             addBtn.addEventListener('click', function () {
-                var newCat = { id: 'neu-' + Date.now(), label: '', color: '#6c757d', slug: '', keywords: [] };
+                var newCat = { id: 'neu-' + Date.now(), label: '', color: '#94a3b8', slug: '', keywords: [] };
                 var row = document.createElement('tr');
                 row.className = 'gsh-cat-row';
                 row.innerHTML = buildRowHtml(newCat);
@@ -3323,7 +3348,7 @@ function gsh_tp_render_kategorien_tab() {
 function gsh_tp_render_system_tab() {
     ?>
     <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
-    <div style="background:#eaf2f8;border-left:4px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:4px;">
+    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist die Entwurf-Vorschau?</strong><br>
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
@@ -3396,7 +3421,7 @@ function gsh_tp_render_system_tab() {
     <hr style="margin:24px 0" />
 
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
-    <div style="background:#eaf2f8;border-left:4px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:4px;">
+    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist der Kiosk-Modus?</strong><br>
         Eine Ansicht des Terminplans ohne WordPress-Men&uuml; und Passwort.
         Ideal zum Einbetten in IServ als Navigations-Eintrag.
@@ -4300,12 +4325,12 @@ function gsh_tp_shortcode( $atts ) {
 
     // Kategorien als JSON für dynamisches Druck-CSS und Legende (v3.15.0: neues Datenmodell)
     $cats_for_js = array_map( static function ( $c ) {
-        $derived = gsh_tp_color_derive( $c['color'] ?? '#6c757d' );
+        $derived = gsh_tp_color_derive( $c['color'] ?? '#94a3b8' );
         return array(
             'id'     => $c['id']    ?? $c['slug'],
             'slug'   => $c['slug'],
             'label'  => $c['label'],
-            'color'  => $c['color'] ?? '#6c757d',
+            'color'  => $c['color'] ?? '#94a3b8',
             'border' => $derived['border'],
             'bg'     => $derived['bg'],
             'text'   => $derived['text'],
@@ -4342,32 +4367,26 @@ function gsh_tp_shortcode( $atts ) {
         $o .= '</div>';
     }
 
-    // Header – zweizeilig: Zeile 1 Titel+Actions, Zeile 2 Suche volle Breite
+    // Header – einzeilig: Logo + Suche + Actions
     $o .= '<div class="gtp-hd">';
-    $o .= '<div class="gtp-hd-top">';
     $o .= '<div class="gtp-hd-left">';
-    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
-    $o .= '<h2 class="gtp-t">Jahresterminplan</h2>';
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-dark.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
     $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Deine Schule</span>';
     $o .= '</div>';
-    $o .= '<div class="gtp-hd-actions">';
-    $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
-    $o .= '<button type="button" id="gtp-tour-btn" onclick="gtpHelpOpen()"'
-        . ' aria-label="Hilfe öffnen" title="Hilfe &amp; Funktionsübersicht">'
-        . gsh_tp_icon( 'help-circle', '1.1em' ) . '</button>';
-    $o .= '</div>'; // .gtp-hd-actions
-    $o .= '</div>'; // .gtp-hd-top
-    // Zeile 2: Suche volle Breite
-    $o .= '<div class="gtp-hd-search">';
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
         . ' placeholder="Termin suchen…" autocomplete="off"'
         . ' oninput="gtpSearchInput(this.value)" />';
     $o .= '</div>';
-    $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
-    $o .= '</div>'; // .gtp-hd-search
+    $o .= '<div class="gtp-hd-actions">';
+    $o .= '<span class="gtp-meta">Aktualisiert: ' . esc_html( $sync_display ) . ' Uhr</span>';
+    $o .= '<button type="button" id="gtp-tour-btn" onclick="gtpHelpOpen()"'
+        . ' aria-label="Hilfe öffnen">'
+        . gsh_tp_icon( 'help-circle', '1em' ) . '<span>Hilfe</span></button>';
+    $o .= '</div>'; // .gtp-hd-actions
     $o .= '</div>'; // .gtp-hd
+    $o .= '<div class="gtp-search-results" id="gtp-search-results" style="display:none"></div>';
 
     // Änderungs-Banner (wird per JS befüllt und ggf. eingeblendet)
     $o .= '<div class="gtp-changes" id="gtpChanges" style="display:none">';
@@ -4382,9 +4401,10 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-changes-list" id="gtpChangesList" style="display:none"></div>';
     $o .= '</div>';
 
-    // Tabs – aktives Quartal erhält Aktuell-Dot
+    // Sticky Command Bar: Quartal-Tabs + Jahresansicht-Toggle
     $current_q = gsh_tp_current_q( $profile_id );
-    $o .= '<div class="gtp-tabs" role="tablist">';
+    $o .= '<div class="gtp-tabs">';
+    $o .= '<div class="gtp-tab-group" role="tablist">';
     for ( $i = 1; $i <= 4; $i++ ) {
         $on      = $i === $aq ? ' gtp-tab-on' : '';
         $now_dot = ( $i === $current_q ) ? '<span class="gtp-tab-now" aria-label="aktuelles Quartal"></span>' : '';
@@ -4392,15 +4412,15 @@ function gsh_tp_shortcode( $atts ) {
             . '" role="tab" aria-selected="' . ( $i === $aq ? 'true' : 'false' )
             . '" onclick="gtpTab(' . $i . ')">Quartal ' . $i . $now_dot . '</button>';
     }
-    $o .= '</div>';
-
-    // View-Toggle: Quartalsansicht ↔ Jahresansicht
+    $o .= '</div>'; // .gtp-tab-group
+    $o .= '<div class="gtp-tab-sep" aria-hidden="true"></div>';
     $o .= '<button type="button" class="gtp-view-toggle" id="gtp-view-toggle"'
         . ' data-label-quartal="Quartalsansicht"'
         . ' data-label-year="Jahresansicht"'
         . ' onclick="gtpViewToggle(this)">'
         . gsh_tp_icon( 'calendar', '1em', 'gtp-view-toggle-icon' )
         . '<span class="gtp-view-toggle-label">Jahresansicht</span></button>';
+    $o .= '</div>'; // .gtp-tabs
 
     // Filter-Buttons (dynamisch aus Kategorie-Einstellungen – v3.15.0: --btn-color)
     $o .= '<div class="gtp-filt-wrap">';
@@ -4413,7 +4433,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '</div>'; // .gtp-filt-header
     $o .= '<div class="gtp-filt gtp-filt-open" id="gtp-filt-body">';
     foreach ( gsh_tp_get_categories() as $cat ) {
-        $color      = $cat['color'] ?? '#6c757d';
+        $color      = $cat['color'] ?? '#94a3b8';
         $text_color = gsh_tp_contrast_color( $color );
         $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="'
             . esc_attr( $cat['slug'] ) . '" style="--btn-color:' . esc_attr( $color ) . ';--btn-text:' . esc_attr( $text_color ) . '"'
@@ -4447,8 +4467,8 @@ function gsh_tp_shortcode( $atts ) {
     // Footer – Aktionen links, Meta rechts
     $o .= '<div class="gtp-ft">';
     $o .= '<div class="gtp-ft-actions">';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf()">' . gsh_tp_icon( 'file-text' ) . ' Quartal PDF</button>';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll()">' . gsh_tp_icon( 'file-text' ) . ' Alle PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf(this)">' . gsh_tp_icon( 'file-text' ) . ' Quartal PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll(this)">' . gsh_tp_icon( 'file-text' ) . ' Alle PDF</button>';
     $o .= '<button type="button" class="gtp-btn gtp-btn-feedback" id="gtp-feedback-btn"'
         . ' onclick="gtpFeedbackOpen()" aria-label="Feedback geben">'
         . gsh_tp_icon( 'message-circle' ) . ' Feedback</button>';
@@ -5243,11 +5263,11 @@ function gsh_tp_css() {
   --gtp-accent-light: #E6F4FF;
   /* Oberflächen & Text */
   --gtp-text:         #1e293b;
-  --gtp-text-muted:   #64748b;
+  --gtp-text-muted:   #475569;
   --gtp-text-faint:   #94a3b8;
   --gtp-bg:           #ffffff;
   --gtp-surface:      #f8fafc;
-  --gtp-border:       #e2e8f0;
+  --gtp-border:       #cbd5e1;
   /* Heute-Akzent */
   --gtp-today-bg:     #E6F4FF;
   --gtp-today-bd:     #00467D;
@@ -5284,15 +5304,14 @@ function gsh_tp_css() {
 }
 
 /* ── Header ── */
-.gtp-hd{display:flex;flex-direction:column;gap:0;margin-bottom:1rem}
-.gtp-hd-top{
-  display:flex;justify-content:space-between;align-items:center;
-  padding-bottom:.875rem;border-bottom:2px solid var(--gtp-border);margin-bottom:.875rem;
+.gtp-hd{
+  display:flex;align-items:center;gap:1rem;
+  padding-bottom:.875rem;border-bottom:2px solid var(--gtp-border);margin-bottom:0;
 }
-.gtp-hd-left{display:flex;flex-direction:column;gap:.25rem}
-.gtp-hd-actions{display:flex;align-items:center;gap:.75rem}
-.gtp-hd-search{width:100%}
-.gtp-hd-search .gtp-search-wrap{width:100%}
+.gtp-hd-left{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.gtp-hd-actions{display:flex;align-items:center;gap:.75rem;flex-shrink:0;margin-left:auto}
+.gtp-hd .gtp-search-wrap{flex:1;max-width:360px;position:relative;display:flex;align-items:center}
+.gtp-search-icon{position:absolute;left:14px;pointer-events:none;display:flex;align-items:center;color:var(--gtp-text-muted);flex-shrink:0}
 .gtp-t{font-size:1.6rem;font-weight:800;color:var(--gtp-text);margin:0;letter-spacing:-.03em;line-height:1.15}
 .gtp-subtitle{font-size:.8rem;color:var(--gtp-text-muted);font-weight:400;letter-spacing:.01em}
 .gtp-meta{font-size:.72rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -5308,9 +5327,9 @@ function gsh_tp_css() {
 .gtp-sj-btn-on:hover{background:var(--gtp-accent-dark)}
 /* Hilfe-Button */
 #gtp-tour-btn{
-  width:36px;height:36px;border-radius:50%;
+  height:36px;border-radius:20px;padding:0 14px;gap:6px;
   border:1.5px solid var(--gtp-border);background:transparent;
-  color:var(--gtp-text-muted);cursor:pointer;
+  color:var(--gtp-text-muted);cursor:pointer;font-size:.75rem;font-weight:600;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;transition:var(--gtp-tr-fast);
 }
@@ -5323,7 +5342,7 @@ function gsh_tp_css() {
   font-weight:600;color:#92400e;
 }
 
-/* ── Tabs (sticky beim Scrollen) ── */
+/* ── Sticky Command Bar (Tabs + Jahresansicht-Toggle) ── */
 .gtp-tabs{
   display:flex;gap:0;
   position:sticky;top:0;z-index:20;
@@ -5332,8 +5351,13 @@ function gsh_tp_css() {
   margin:0 -2rem;padding:0 2rem;
   box-shadow:0 2px 8px rgba(0,0,0,.05);
 }
+.gtp-tab-group{display:flex}
+.gtp-tab-sep{
+  width:1px;height:20px;background:var(--gtp-border);
+  margin:0 .5rem;flex-shrink:0;align-self:center;
+}
 .gtp-tab{
-  padding:.6rem 1.5rem;
+  padding:.85rem 1.5rem;
   border:none;border-bottom:3px solid transparent;
   background:transparent;
   color:var(--gtp-text-muted);font-weight:600;font-size:.88rem;
@@ -5341,7 +5365,7 @@ function gsh_tp_css() {
   margin-bottom:-2px;letter-spacing:.01em;
 }
 .gtp-tab:hover{color:var(--gtp-accent);background:var(--gtp-accent-light)}
-.gtp-tab-on{color:var(--gtp-accent);border-bottom-color:var(--gtp-accent)}
+.gtp-tab-on{color:var(--gtp-accent);border-bottom-color:var(--gtp-accent);background:var(--gtp-accent-light)}
 /* Aktuell-Quartal-Dot */
 .gtp-tab-now{
   display:inline-block;width:6px;height:6px;border-radius:50%;
@@ -5353,26 +5377,31 @@ function gsh_tp_css() {
 
 /* ── Filter ── */
 .gtp-filt-wrap{
-  margin:1.25rem 0;padding:.875rem 1rem;
+  margin:.75rem 0;padding:.75rem 1rem;
   background:var(--gtp-surface);border-radius:12px;
   border:1px solid var(--gtp-border);
 }
 /* Filter-Header: Label + Toggle + Reset in einer Zeile */
 .gtp-filt-header{
-  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem;
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem;
 }
 .gtp-filt-lbl{
   font-size:.68rem;font-weight:700;color:var(--gtp-text-muted);
   text-transform:uppercase;letter-spacing:.1em;
 }
-/* Toggle-Button (nur Mobile sichtbar – per externem CSS gesteuert) */
+/* Toggle-Button immer sichtbar */
 .gtp-filt-toggle{
-  display:none;background:transparent;border:none;padding:2px;
+  display:flex;background:transparent;border:none;padding:2px;
   cursor:pointer;color:var(--gtp-text-muted);line-height:1;
 }
 .gtp-filt-chevron{transition:transform .2s ease}
 .gtp-filt-open .gtp-filt-chevron,.gtp-filt-toggle[aria-expanded="true"] .gtp-filt-chevron{transform:rotate(90deg)}
-.gtp-filt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* Desktop: eine Zeile, horizontal scrollbar – kein Wrapping */
+.gtp-filt{
+  display:flex;flex-wrap:nowrap;gap:6px;align-items:center;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+}
+.gtp-filt::-webkit-scrollbar{display:none}
 .gtp-filt-count{
   font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
   margin-left:.35em;letter-spacing:.02em;text-transform:none;
@@ -5437,8 +5466,8 @@ function gsh_tp_css() {
 /* ── Event-Cards (Tagesspalten) ── */
 .ge{
   padding:3px 7px;margin:2px 0;border-radius:6px;
-  font-size:.73rem;line-height:1.4;
-  border-left:3px solid transparent;
+  font-size:.8rem;line-height:1.4;
+  border:1px solid transparent;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   cursor:pointer;
   transition:var(--gtp-tr);
@@ -5449,13 +5478,13 @@ function gsh_tp_css() {
   box-shadow:0 3px 8px rgba(0,0,0,.12);
   filter:brightness(.94);
 }
-.gc-standard {background:var(--c-st-bg);border-left-color:var(--c-st-bd);color:var(--c-st-tx)}
+.gc-standard {background:var(--c-st-bg);border-color:var(--c-st-bd);color:var(--c-st-tx)}
 
 /* ── Lange Termine in der Hinweise-Spalte ── */
 .gn-long{
   padding:3px 6px;margin:2px 0;border-radius:5px;
-  font-size:.72rem;line-height:1.4;
-  border-left:3px solid transparent;
+  font-size:.8rem;line-height:1.4;
+  border:1px solid transparent;
   font-weight:500;transition:var(--gtp-tr);
 }
 .gn-range{
@@ -5467,7 +5496,7 @@ function gsh_tp_css() {
 .gn{
   padding:3px 6px;margin:2px 0;
   background:var(--c-fs-bg);border-radius:5px;
-  font-style:italic;font-size:.71rem;color:var(--c-fs-tx);
+  font-style:italic;font-size:.8rem;color:var(--c-fs-tx);
 }
 
 /* ── Heute – Akzent + Puls-Animation ── */
@@ -5517,6 +5546,7 @@ function gsh_tp_css() {
 .gtp-btn:hover{background:#0f172a;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.2)}
 .gtp-btn-pdf{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none}
 .gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15)}
+.gtp-pdf-loading{opacity:.55;pointer-events:none;cursor:default}
 .gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
 .gtp-pdf-hint{
@@ -5554,16 +5584,11 @@ function gsh_tp_css() {
 #gtp-heute-btn:hover{background:var(--gtp-accent-dark);box-shadow:0 6px 24px rgba(0,52,92,.35);transform:translateY(-2px)}
 
 /* ── Suchfeld ── */
-.gtp-search{
-  display:flex;flex-direction:column;gap:4px;
-  flex:1;max-width:300px;
-}
-/* Suchfeld im neuen zweizeiligen Header – volle Breite */
-.gtp-hd-search{
-  display:flex;flex-direction:column;gap:4px;
+.gtp-search-results{
+  padding:2px 4px;
 }
 .gtp-search-input{
-  padding:8px 16px;
+  padding:8px 16px 8px 42px;
   border:1.5px solid var(--gtp-border);border-radius:24px;
   font-size:.84rem;color:var(--gtp-text);background:var(--gtp-surface);
   outline:none;width:100%;box-sizing:border-box;
@@ -5606,15 +5631,15 @@ function gsh_tp_css() {
   .gtp-mob{display:block}
 
   .gtp{padding:.875rem 1rem;border-radius:12px}
-  .gtp-hd{gap:0}
-  .gtp-hd-top{padding-bottom:.75rem;margin-bottom:.75rem}
-  .gtp-t{font-size:1.3rem}
+  .gtp-hd{flex-wrap:wrap;gap:.5rem;padding-bottom:.75rem}
+  .gtp-hd-left{flex:1;min-width:0}
+  .gtp-hd .gtp-search-wrap{order:3;width:100%;max-width:100%;flex:0 0 100%}
+  .gtp-tab-sep{display:none}
+  .gtp-view-toggle{font-size:.76rem;padding:.25em .6em}
   .gtp-filt-wrap{padding:.625rem .875rem}
-  /* Filter-Toggle auf Mobile sichtbar */
-  .gtp-filt-toggle{display:flex}
-  /* Filter-Body auf Mobile eingeklappt bis Toggle */
+  /* Filter-Body auf Mobile: wrap + Collapse-Animation */
   .gtp-filt{max-height:0;overflow:hidden;transition:max-height .25s ease;flex-wrap:wrap}
-  .gtp-filt.gtp-filt-open{max-height:400px}
+  .gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
   .gtp-fb{white-space:nowrap;font-size:.72rem;padding:4px 10px}
   .gtp-tabs{margin:0 -1rem;padding:0 1rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
   .gtp-tabs::-webkit-scrollbar{display:none}
@@ -5712,7 +5737,7 @@ function gsh_tp_css() {
     padding:10px 8px 10px 12px;
     margin:0 -8px;
     border:none;
-    border-left:3px solid var(--gtp-today-bd);
+    box-shadow:inset 0 0 0 2px var(--gtp-today-bd);
   }
   .gtp-mob-day.gtp-mob-hol{opacity:.7}
   .gtp-mob-day.gtp-mob-past{opacity:.45}
@@ -5748,7 +5773,7 @@ function gsh_tp_css() {
   .gtp-mob .ge{
     font-size:.82rem;padding:6px 10px;
     white-space:normal;overflow:visible;text-overflow:clip;
-    border-radius:8px;border-left-width:4px;
+    border-radius:8px;
     box-shadow:0 1px 3px rgba(0,0,0,.06);
   }
 
@@ -5916,6 +5941,59 @@ function gsh_tp_css() {
 .gtp-cl-tag--security{background:#fef3c7;color:#d97706;border:1px solid #fde68a}
 /* ── Dynamische Kategorie-CSS (konfigurierbare Kategorien überschreiben Standard) ── */
 ' . $cat['rules'] . '
+
+/* ── Hilfe-Overlay ── */
+.gtp-help-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;
+  animation:gtpFadeIn .2s ease;
+}
+.gtp-help-overlay[hidden]{display:none!important}
+.gtp-help-panel{
+  background:var(--gtp-bg);border-radius:16px;
+  width:100%;max-width:520px;max-height:82vh;
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.1);
+}
+.gtp-help-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.25rem 1.5rem;
+  border-bottom:1px solid var(--gtp-border);flex-shrink:0;
+}
+.gtp-help-title{
+  font-size:1rem;font-weight:700;margin:0;
+  color:var(--gtp-text);display:flex;align-items:center;gap:.5rem;
+}
+.gtp-help-close{
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--gtp-border);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--gtp-text-muted);transition:var(--gtp-tr-fast);flex-shrink:0;
+}
+.gtp-help-close:hover{background:var(--gtp-surface);color:var(--gtp-text)}
+.gtp-help-body{
+  overflow-y:auto;padding:1.25rem 1.5rem;
+  display:flex;flex-direction:column;gap:.875rem;flex:1;
+}
+.gtp-help-section{display:flex;gap:.75rem;align-items:flex-start}
+.gtp-help-section-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--gtp-accent-light);color:var(--gtp-accent);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.gtp-help-section-body strong{
+  font-size:.88rem;font-weight:700;color:var(--gtp-text);
+  display:block;margin-bottom:.2rem;
+}
+.gtp-help-section-body p{font-size:.8rem;color:var(--gtp-text-muted);margin:0;line-height:1.5}
+.gtp-help-footer{
+  padding:.875rem 1.5rem;
+  border-top:1px solid var(--gtp-border);
+  background:var(--gtp-surface);border-radius:0 0 16px 16px;flex-shrink:0;
+}
+.gtp-help-version{font-size:.72rem;color:var(--gtp-text-faint)}
 </style>';
 }
 
@@ -7017,7 +7095,13 @@ function gtpPdfHint(){
  * Exportiert das aktive Quartal als PDF (über den Browser-Druckdialog).
  * Liest den Quartalstitel und setzt ihn als Dokumenttitel (= PDF-Dateinamen-Vorschlag).
  */
-function gtpPdf(){
+function gtpPdfBtnState(btn,loading){
+  if(!btn) return;
+  btn.classList.toggle("gtp-pdf-loading",loading);
+  btn.disabled=loading;
+}
+
+function gtpPdf(btn){
   var at=document.querySelector(".gtp-tab-on");
   var q=at ? parseInt(at.getAttribute("data-q")) : 1;
   var panel=document.getElementById("gtp-q"+q);
@@ -7025,16 +7109,20 @@ function gtpPdf(){
   var title=qtEl
     ? "Terminplan GSH 2025-26 - "+qtEl.textContent
     : "Terminplan GSH 2025-26";
+  gtpPdfBtnState(btn,true);
   gtpPdfHint();
   gtpPrint("single",title);
+  setTimeout(function(){gtpPdfBtnState(btn,false);},3500);
 }
 
 /**
  * Exportiert alle vier Quartale als PDF (über den Browser-Druckdialog).
  */
-function gtpPdfAll(){
+function gtpPdfAll(btn){
+  gtpPdfBtnState(btn,true);
   gtpPdfHint();
   gtpPrint("all","Terminplan GSH 2025-26 - Komplett");
+  setTimeout(function(){gtpPdfBtnState(btn,false);},3500);
 }
 
 /* ========== Event-Detail-Popup ========== */

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-23T05:15:42.291Z",
+  "title": "Design System: Curricu:lr Terminplan",
+  "extensions": {
+    "colorMeta": {
+      "primary-deep":  { "role": "primary",   "displayName": "Tintenschwarz-Blau",   "canonical": "#00345C", "tonalRamp": ["#001a2e","#00233d","#002d4d","#00345C","#003f6d","#00467D","#1a5f96","#4d88b5","#99c0d9","#cce0ec"] },
+      "primary":       { "role": "primary",   "displayName": "Digitales Dunkelblau", "canonical": "#00467D", "tonalRamp": ["#001a2e","#00233d","#002d4d","#00345C","#003f6d","#00467D","#1a5f96","#4d88b5","#99c0d9","#cce0ec"] },
+      "primary-mid":   { "role": "primary",   "displayName": "Mittelblau",           "canonical": "#0058A0", "tonalRamp": ["#002240","#002e55","#003a6a","#004580","#0058A0","#1a6cb0","#4d8ec4","#99bfdd","#ccdded","#e6eef8"] },
+      "primary-light": { "role": "primary",   "displayName": "Blautinte-Pastell",    "canonical": "#E6F4FF", "tonalRamp": ["#b3d9f7","#c6e3f9","#d4ebfa","#e0f1fc","#E6F4FF","#eef7ff","#f4faff","#f9fcff","#fdfeff","#ffffff"] },
+      "gold":          { "role": "secondary", "displayName": "Kronengold",           "canonical": "#FFC857", "tonalRamp": ["#8a6400","#b38300","#d9a000","#f0b800","#FFC857","#ffd47a","#ffe0a0","#ffecc5","#fff5e0","#fffaf0"] },
+      "gold-light":    { "role": "secondary", "displayName": "Goldstaub",            "canonical": "#FFF8E6", "tonalRamp": ["#f5e0a0","#f8e9b8","#faf0cc","#fcf4dd","#FFF8E6","#fffaed","#fffcf3","#fffef8","#ffffff","#ffffff"] },
+      "success":       { "role": "tertiary",  "displayName": "Smaragd",              "canonical": "#0E9F6E", "tonalRamp": ["#054030","#06573f","#086e50","#0b8560","#0E9F6E","#2eb384","#6dd0aa","#a8e4cc","#d0f1e4","#e8f8f1"] },
+      "error":         { "role": "tertiary",  "displayName": "Karminrot",            "canonical": "#E02424", "tonalRamp": ["#700000","#950000","#b80000","#cc1010","#E02424","#e84040","#f07070","#f5a0a0","#fad0d0","#fde8e8"] },
+      "bg-body":       { "role": "neutral",   "displayName": "Schiefergrau",         "canonical": "#F3F5F9", "tonalRamp": ["#b8c0cc","#c8d0da","#d5dce6","#e2e8f0","#F3F5F9","#f6f8fb","#f9fafc","#fbfcfd","#fdfefe","#ffffff"] },
+      "bg-surface":    { "role": "neutral",   "displayName": "Papierweiss",          "canonical": "#FFFFFF", "tonalRamp": ["#e0e0e0","#e8e8e8","#f0f0f0","#f5f5f5","#f9f9f9","#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF"] },
+      "text-primary":  { "role": "neutral",   "displayName": "Schiefer-Text",        "canonical": "#111827", "tonalRamp": ["#111827","#1e2a3a","#2d3d52","#3d506a","#4e6280","#6078a0","#8099c0","#a0b5d5","#c0d0e5","#e0e8f2"] },
+      "text-secondary":{ "role": "neutral",   "displayName": "Grau-Text",            "canonical": "#4B5563", "tonalRamp": ["#1f252e","#2d3340","#3c4252","#4B5563","#606b7a","#7a8494","#9aa0ac","#babfc7","#d8dce0","#eceef0"] },
+      "border":        { "role": "neutral",   "displayName": "Trennlinie",           "canonical": "#D1D5DB", "tonalRamp": ["#8a9099","#a0a8b0","#b2bac4","#C0C8D0","#D1D5DB","#dce0e6","#e5e8ed","#eef0f3","#f5f6f8","#fafbfc"] }
+    },
+    "typographyMeta": {
+      "body":  { "displayName": "Body",  "purpose": "Tabellenzellen, Event-Text, Beschreibungen. Max. 65ch in Textfeldern." },
+      "label": { "displayName": "Label", "purpose": "Tab-Beschriftungen, Filter-Pills, Button-Text. Minimum 0.82rem." },
+      "mono":  { "displayName": "Mono",  "purpose": "Sync-Zeitstempel, Versionsnummern, technische Metadaten." }
+    },
+    "shadows": [
+      { "name": "ambient-low",    "value": "0 1px 3px rgba(0,0,0,0.08)",          "purpose": "Card-Raster auf Tablet. Trennung vom Seitengrund." },
+      { "name": "structural-card","value": "0 18px 40px rgba(15,23,42,0.15)",     "purpose": "Modale, Event-Detail-Popup. Echter Ebenenabstand." },
+      { "name": "functional-btn", "value": "0 2px 8px rgba(0,70,125,0.25)",       "purpose": "Primary-Button Ruhezustand. Minimale Haptik." },
+      { "name": "focus-ring",     "value": "0 0 0 3px rgba(0,70,125,0.25)",       "purpose": "Focus-Visible Accessibility-Ring. Keine Dekoration." }
+    ],
+    "motion": [
+      { "name": "fast",   "value": "150ms ease-out", "purpose": "Hover-States, Filter-Pills, Tab-Wechsel." },
+      { "name": "normal", "value": "250ms ease-out", "purpose": "Modal-Einblend, Card-Hover." },
+      { "name": "slide",  "value": "cubic-bezier(0.4,0,0.2,1)", "purpose": "Slide-Up für Event-Popup Bottom-Sheet auf Mobile." }
+    ],
+    "breakpoints": [
+      { "name": "mobile",  "value": "767px",  "note": "Tabelle → Mobile-Agenda (iOS-Feed-Stil)" },
+      { "name": "tablet",  "value": "1024px", "note": "Tabelle → Card-Grid, Glass-Cards aktiv" },
+      { "name": "desktop", "value": "1200px", "note": "Vollständige Tabellenansicht" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primäre Aktion (PDF, Senden, Bestätigen). Navy-Fill, Pill-Form.",
+      "html": "<button class=\"ds-btn-primary\">PDF exportieren</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 8px 24px; border-radius: 9999px; background: #00467D; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,70,125,0.25); transition: background 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out; text-decoration: none; line-height: 1; } .ds-btn-primary:hover { background: #0058A0; box-shadow: 0 4px 12px rgba(0,70,125,0.35); transform: translateY(-1px); } .ds-btn-primary:active { transform: none; box-shadow: 0 2px 8px rgba(0,70,125,0.25); } .ds-btn-primary:focus-visible { outline: 2px solid #00467D; outline-offset: 2px; border-radius: 9999px; } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Sekundäre Aktion (Abbrechen, Schließen). Grauer Outline, Pill-Form.",
+      "html": "<button class=\"ds-btn-ghost\">Abbrechen</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 8px 24px; border-radius: 9999px; background: transparent; color: #4B5563; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; border: 1px solid #D1D5DB; cursor: pointer; transition: all 150ms ease-out; line-height: 1; } .ds-btn-ghost:hover { color: #111827; border-color: #9CA3AF; background: #F3F5F9; } .ds-btn-ghost:focus-visible { outline: 2px solid #00467D; outline-offset: 2px; }"
+    },
+    {
+      "name": "Quarter Tab (Active)",
+      "kind": "chip",
+      "refersTo": "tab-active",
+      "description": "Aktiver Quartal-Chip auf dem dunkelnavy Navigationsbalken.",
+      "html": "<div class=\"ds-tab-bar\"><button class=\"ds-tab ds-tab-active\">Quartal 4 <span class=\"ds-tab-dot\"></span></button><button class=\"ds-tab\">Quartal 1</button></div>",
+      "css": ".ds-tab-bar { display: flex; gap: 4px; background: #00345C; padding: 0 24px; border-bottom: 2px solid rgba(255,255,255,0.1); } .ds-tab { padding: 0.85rem 1.5rem; border: none; border-bottom: 3px solid transparent; background: transparent; color: rgba(255,255,255,0.75); font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 250ms ease-out; margin-bottom: -2px; letter-spacing: 0.01em; } .ds-tab:hover { color: #FFFFFF; background: rgba(255,255,255,0.12); } .ds-tab-active { color: #FFFFFF; border-bottom-color: #00467D; background: #E6F4FF20; font-weight: 700; } .ds-tab-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #FFC857; margin-left: 5px; vertical-align: middle; opacity: 0.85; } .ds-tab:focus-visible { outline: 2px solid #FFC857; outline-offset: -2px; }"
+    },
+    {
+      "name": "Filter Pill",
+      "kind": "chip",
+      "refersTo": "filter-pill-default",
+      "description": "Kategorie-Filter auf hellem Hintergrund. Ghost-Default, Navy-Active.",
+      "html": "<div class=\"ds-filter-bar\"><button class=\"ds-filter-pill ds-filter-pill-active\">Konferenzen</button><button class=\"ds-filter-pill\">Ferien</button><button class=\"ds-filter-pill ds-filter-pill-off\">Prüfungen</button></div>",
+      "css": ".ds-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0.875rem 1rem; background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 12px; } .ds-filter-pill { padding: 5px 14px; border: 1.5px solid #D1D5DB; border-radius: 9999px; background: #F3F5F9; color: #4B5563; font-family: 'Inter', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease-out; line-height: 1.5; } .ds-filter-pill:hover { border-color: #00467D; color: #00467D; background: #E6F4FF; } .ds-filter-pill-active { background: #00467D; border-color: #00467D; color: #FFFFFF; } .ds-filter-pill-off { opacity: 0.28; filter: grayscale(0.8); text-decoration: line-through; text-decoration-thickness: 1.5px; } .ds-filter-pill:focus-visible { outline: 2px solid #00467D; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "button-ghost",
+      "description": "Vollbreite Suche im zweizeiligen Header. Icon absolut positioniert.",
+      "html": "<div class=\"ds-search-wrap\"><svg class=\"ds-search-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"/></svg><input type=\"search\" class=\"ds-search-input\" placeholder=\"Termin suchen…\" /></div>",
+      "css": ".ds-search-wrap { position: relative; display: flex; align-items: center; width: 100%; } .ds-search-icon { position: absolute; left: 14px; pointer-events: none; color: #4B5563; flex-shrink: 0; } .ds-search-input { padding: 8px 16px 8px 42px; border: 1.5px solid #D1D5DB; border-radius: 24px; font-size: 0.84rem; color: #111827; background: #F3F5F9; outline: none; width: 100%; box-sizing: border-box; transition: border-color 150ms ease-out, box-shadow 150ms ease-out; font-family: 'Inter', system-ui, sans-serif; } .ds-search-input:focus { border-color: #00467D; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(0,70,125,0.12); }"
+    },
+    {
+      "name": "Category Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Inline-Pill in Kategoriefarbe. Immer Label + Farbe. Farbe via CSS-Variable.",
+      "html": "<span class=\"ds-badge\" style=\"--badge-bg:#E6F4FF;--badge-color:#00345C\">Konferenz</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; background: var(--badge-bg, #E6F4FF); color: var(--badge-color, #00345C); }"
+    },
+    {
+      "name": "Event Detail Modal",
+      "kind": "card",
+      "refersTo": "button-ghost",
+      "description": "Overlay-Card für Termin-Detailansicht. Position fixed, struktureller Schatten.",
+      "html": "<div class=\"ds-modal-overlay\"><div class=\"ds-modal-card\"><button class=\"ds-modal-close\" aria-label=\"Schließen\">×</button><span class=\"ds-badge\" style=\"--badge-bg:#E6F4FF;--badge-color:#00345C\">Konferenz</span><h3 class=\"ds-modal-title\">Gesamtkonferenz</h3><p class=\"ds-modal-meta\">Montag, 10. März 2026 • 14:00 Uhr</p></div></div>",
+      "css": ".ds-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; } .ds-modal-card { background: #FFFFFF; border-radius: 16px; padding: 1.6rem 1.75rem; max-width: 500px; width: calc(100% - 2rem); box-shadow: 0 16px 48px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1); position: relative; max-height: 88vh; overflow-y: auto; } .ds-modal-close { position: absolute; top: 0.75rem; right: 0.875rem; background: #F3F5F9; border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4B5563; transition: background 150ms ease-out; font-size: 1.1rem; } .ds-modal-close:hover { background: #D1D5DB; color: #111827; } .ds-modal-title { font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0.5rem 0 0.25rem; } .ds-modal-meta { font-size: 0.84rem; color: #4B5563; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Die Präzisions-Agenda",
+    "overview": "Curricu:lr Terminplan ist ein Werkzeug, kein Schaustück. Lehrer und Schulverwaltung arbeiten damit täglich: sie brauchen keine Überraschungen, keine Ornamente, keine erklärenden Texte über das Interface selbst. Das System informiert präzise und tritt dann in den Hintergrund.\n\nDas visuelle Fundament ist eine Zweizone: dunkel (Navy-Balken für Navigation und Tabs) über hell (weißer und lichtgrauer Inhalt). Die Palette ist restrained: Navy als einzige Akzentfarbe, Gold nur als Markensignatur.\n\nDieses Dokument deckt den Plugin-Frontend-Register (product). Die Curricu:lr-Homepage nutzt dieselben Brand-Token in einem Brand-Register mit eigenem Layout-Muster.",
+    "keyCharacteristics": [
+      "Zweizone: dunkle Navigation, heller Inhalt",
+      "Restrained color strategy: ein Navy-Akzent, Gold nur als Marken-Signatur",
+      "Pill-Radius für interaktive Elemente — weich ohne verspielt zu wirken",
+      "Strukturelle Elevation: Schatten nur wo echte Tiefe existiert",
+      "Inter als einzige Schriftfamilie — kompakt, lesbar, professionell",
+      "Dark-Mode-fähig via data-gtp-theme ohne separate Stylesheets"
+    ],
+    "rules": [
+      { "name": "Die Eine-Stimme-Regel",          "body": "Navy (#00467D) ist der einzige Interaktionsakzent. Orange, Lila, Türkis als Buttons oder Highlights sind im Plugin-Frontend verboten.", "section": "colors" },
+      { "name": "Die Gold-Sparsamkeits-Regel",    "body": "#FFC857 erscheint nur im Logo und als Heute-Marker. Kein anderes UI-Element nutzt Gold als Hintergrund oder Rahmen.", "section": "colors" },
+      { "name": "Die Flach-im-Ruhezustand-Regel", "body": "Tabellenzeilen, Filter-Pills, Tabs: kein Schatten. Schatten erscheinen nur bei Modal-Ebene oder als Hover-Feedback auf explizit interaktiven Surfaces.", "section": "elevation" },
+      { "name": "Die Kompakt-Zuerst-Regel",       "body": "Schriftgrade unter 0.82rem nur für dekorative Metadaten. Alle lesbaren Inhalte beginnen bei 0.875rem.", "section": "typography" }
+    ],
+    "dos": [
+      "Do Navy (#00467D) für alle primären interaktiven Elemente: Tabs, Filter, CTAs, Links.",
+      "Do Pill-Radius (9999px) für alle klickbaren Interaktionselemente.",
+      "Do Input-Radius (8px) für Eingabefelder: visuell von Action-Pills unterschieden.",
+      "Do Strukturelle Schatten: box-shadow nur bei echtem Ebenenabstand.",
+      "Do prefers-reduced-motion respektieren.",
+      "Do Kategorien immer mit Label + Farbe zeigen. Nie Farbe allein als Information.",
+      "Do WCAG 2.1 AA: alle Text-Hintergrund-Kombinationen auf mindestens 4.5:1 Kontrast prüfen."
+    ],
+    "donts": [
+      "Don't buntes Grundschuldesign: keine PlaySchool-Ästhetik.",
+      "Don't generisches WordPress-Theme: kein TwentyTwenty-Look, keine #0073aa WP-Admin-Buttons.",
+      "Don't SaaS-Creme: kein Dashboard in Weiß + abgerundetes Hellblau + Schatten-auf-allem.",
+      "Don't Terminal-Dark als Default: Hintergrund bleibt hell. Dark-Mode ist opt-in.",
+      "Don't Orange als primäre Interaktionsfarbe im Plugin-Frontend.",
+      "Don't border-left > 1px als farbigen Stripe.",
+      "Don't Gradient-Text (background-clip: text + linear-gradient).",
+      "Don't Glassmorphism als Default-Stil.",
+      "Don't Kategoriefarben als Hintergrund ganzer Tabellenzeilen."
+    ]
+  }
+}
