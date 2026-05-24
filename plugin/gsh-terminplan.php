@@ -3,14 +3,14 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.3.3
+ * Version:     4.3.4
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
- * Changelog 4.3.3:
- * - [FIX] Entwurf-Token in gsh_tp_options-Gruppe → selber Form-Submit wie IServ-Kiosk (options.php), kein Sonder-Handler
- * - [UX] Entwurf-Sektion rein informativ (URL + Anleitung); Token-Feld jetzt in IServ-Form integriert
+ * Changelog 4.3.4:
+ * - [FIX] Entwurf-Vorschau + IServ-Kiosk: je eigenes Formular mit direktem POST-Handler, kein options.php
+ * - [UX] Kiosk & System Tab: zwei klar getrennte Sektionen mit eigenem Speichern-Button
  * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" automatisch im WP-Seiten-Editor
  *
  * Changelog 4.3.0:
@@ -500,7 +500,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.3.3' );
+define( 'GSH_TP_VERSION',       '4.3.4' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -740,10 +740,10 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
-            'version'  => '4.3.3',
+            'version'  => '4.3.4',
             'entries'  => array(
-                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token in gsh_tp_options — selber Form-Submit wie IServ-Kiosk (options.php), kein Sonder-Handler mehr' ),
-                array( 'tag' => 'UX',      'text' => 'Entwurf-Sektion rein informativ (URL + Anleitung); Token-Feld in IServ-Kiosk-Form integriert' ),
+                array( 'tag' => 'FIX',     'text' => 'Entwurf-Vorschau und IServ-Kiosk: je eigenes Formular mit direktem POST-Handler — kein options.php mehr' ),
+                array( 'tag' => 'UX',      'text' => 'Kiosk & System Tab: zwei klar getrennte Sektionen mit eigenem Speichern-Button' ),
                 array( 'tag' => 'FEATURE', 'text' => 'theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" automatisch im WP-Seiten-Editor' ),
             ),
         ),
@@ -1521,7 +1521,7 @@ function gsh_tp_check_draft_kiosk_access( string $token ): bool {
  * Ersetzt das Theme-Template wenn eine Seite mit dem Meta-Wert
  * page-terminplan-entwurf.php aufgerufen wird. Kein Theme-Copy nötig.
  *
- * @since 4.3.3
+ * @since 4.3.4
  * @param  string $template Aktuell gewähltes Template.
  * @return string           Plugin-Template-Pfad oder unverändertes $template.
  */
@@ -1541,7 +1541,7 @@ function gsh_tp_draft_template_include( string $template ): string {
  * Ermöglicht die Auswahl von „Terminplan Entwurf-Vorschau" im Seiten-Editor
  * ohne das Template in den Theme-Ordner kopieren zu müssen.
  *
- * @since 4.3.3
+ * @since 4.3.4
  * @param  array $templates Bestehende Template-Liste.
  * @return array            Erweiterte Template-Liste.
  */
@@ -1952,24 +1952,9 @@ function gsh_tp_register_settings() {
         'sanitize_callback' => 'sanitize_textarea_field',
         'default'           => gsh_tp_default_mapping(),
     ) );
-    // gsh_tp_categories wird nicht über die WP Settings API gespeichert,
-    // sondern direkt via AJAX (gsh_tp_ajax_save_categories). – v3.15.0
-    register_setting( 'gsh_tp_options', 'gsh_tp_draft_kiosk_token', array(
-        'sanitize_callback' => 'sanitize_text_field',
-        'default'           => '',
-    ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_kiosk_token', array(
-        'sanitize_callback' => 'sanitize_text_field',
-        'default'           => '',
-    ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_iserv_domain', array(
-        'sanitize_callback' => 'esc_url_raw',
-        'default'           => '',
-    ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_feedback_email', array(
-        'sanitize_callback' => 'sanitize_email',
-        'default'           => get_bloginfo( 'admin_email' ),
-    ) );
+    // gsh_tp_categories, gsh_tp_draft_kiosk_token, gsh_tp_kiosk_token,
+    // gsh_tp_iserv_domain, gsh_tp_feedback_email werden nicht über die WP
+    // Settings API gespeichert — direkter POST-Handler in gsh_tp_settings_page().
 }
 
 /**
@@ -2607,6 +2592,28 @@ function gsh_tp_settings_page() {
             gsh_tp_save_profiles( $profiles );
             $profiles = gsh_tp_get_profiles();
             echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil als aktiv gesetzt.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // ── POST: Entwurf-Token speichern ──
+    if ( isset( $_POST['gsh_tp_save_draft'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sd_n'] ?? '' ) ), 'gsh_tp_save_draft' ) ) {
+            update_option( 'gsh_tp_draft_kiosk_token', sanitize_text_field( wp_unslash( $_POST['gsh_tp_draft_kiosk_token'] ?? '' ) ) );
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Entwurf-Token gespeichert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
+    // ── POST: Kiosk-Einstellungen speichern ──
+    if ( isset( $_POST['gsh_tp_save_kiosk'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sk_n'] ?? '' ) ), 'gsh_tp_save_kiosk' ) ) {
+            update_option( 'gsh_tp_kiosk_token',    sanitize_text_field( wp_unslash( $_POST['gsh_tp_kiosk_token'] ?? '' ) ) );
+            update_option( 'gsh_tp_iserv_domain',   esc_url_raw( wp_unslash( $_POST['gsh_tp_iserv_domain'] ?? '' ) ) );
+            update_option( 'gsh_tp_feedback_email', sanitize_email( wp_unslash( $_POST['gsh_tp_feedback_email'] ?? '' ) ) );
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kiosk-Einstellungen gespeichert.</p></div>';
         } else {
             echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
         }
@@ -3405,62 +3412,72 @@ function gsh_tp_render_system_tab() {
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
     </div>
-    <table class="form-table" style="margin-bottom:0">
-        <tr>
-            <th>Vorschau-URL</th>
-            <td>
-                <?php
-                $draft_token  = get_option( 'gsh_tp_draft_kiosk_token', '' );
-                $draft_pages  = get_pages( array(
-                    'meta_key'   => '_wp_page_template',
-                    'meta_value' => 'page-terminplan-entwurf.php',
-                ) );
-                $has_draft_profile = false;
-                foreach ( gsh_tp_get_profiles() as $p ) {
-                    if ( ! empty( $p['is_draft'] ) ) {
-                        $has_draft_profile = true;
-                        break;
+
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_draft', 'gsh_tp_sd_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_draft" value="1" />
+        <table class="form-table">
+            <tr>
+                <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
+                <td>
+                    <input type="text" id="gsh_tp_draft_kiosk_token" name="gsh_tp_draft_kiosk_token"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_draft_kiosk_token', '' ) ); ?>"
+                           class="regular-text" autocomplete="off" placeholder="mind. 20 Zeichen" />
+                    <button type="button" class="button" style="margin-left:6px"
+                            onclick="if(!confirm('Token wird ersetzt. Alte Entwurf-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_draft_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
+                        <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
+                    </button>
+                    <p class="description">Geheimer Token f&uuml;r den Zugang zur Entwurf-Vorschau. Mind. 20 Zeichen empfohlen.</p>
+                    <?php
+                    $cur_draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
+                    if ( empty( $cur_draft_token ) ) {
+                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Entwurf-Vorschau nicht aktiv.</p>';
+                    } elseif ( strlen( $cur_draft_token ) < 20 ) {
+                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
                     }
-                }
-                $missing = array();
-                if ( empty( $draft_token ) ) {
-                    $missing[] = 'Entwurf-Token (unten eintragen)';
-                }
-                if ( ! $has_draft_profile ) {
-                    $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;';
-                }
-                if ( empty( $draft_pages ) ) {
-                    $missing[] = 'Vorschau-Seite (Anleitung unten)';
-                }
-                if ( empty( $missing ) ) {
-                    $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
-                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">'
-                       . esc_html( $draft_url ) . '</code>';
-                    echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
-                       . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
-                } else {
-                    echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
-                       . implode( ', ', $missing ) . '.</p>';
-                }
-                ?>
-            </td>
-        </tr>
-        <tr>
-            <th>Einrichtung Vorschau-Seite</th>
-            <td>
-                <ol style="margin:.25rem 0 0;padding-left:1.25rem;line-height:1.9">
-                    <li>WordPress-Admin &rarr; <strong>Seiten &rarr; Erstellen</strong></li>
-                    <li>Titel vergeben (z.&nbsp;B. <em>Entwurf-Vorschau</em>)</li>
-                    <li>Rechts unter <strong>Seitenvorlage</strong> &rarr; <strong>Terminplan Entwurf-Vorschau</strong> w&auml;hlen</li>
-                    <li>Seite ver&ouml;ffentlichen &ndash; URL erscheint oben automatisch</li>
-                </ol>
-                <p class="description" style="margin-top:.4rem">
-                    <?php echo gsh_tp_icon( 'info' ); ?>
-                    Seitenvorlage ist im Plugin integriert &ndash; kein Theme-Copy n&ouml;tig.
-                </p>
-            </td>
-        </tr>
-    </table>
+                    ?>
+                </td>
+            </tr>
+            <tr>
+                <th>Vorschau-URL</th>
+                <td>
+                    <?php
+                    $draft_token  = get_option( 'gsh_tp_draft_kiosk_token', '' );
+                    $draft_pages  = get_pages( array( 'meta_key' => '_wp_page_template', 'meta_value' => 'page-terminplan-entwurf.php' ) );
+                    $has_draft_profile = false;
+                    foreach ( gsh_tp_get_profiles() as $p ) {
+                        if ( ! empty( $p['is_draft'] ) ) { $has_draft_profile = true; break; }
+                    }
+                    $missing = array();
+                    if ( empty( $draft_token ) )       { $missing[] = 'Entwurf-Token'; }
+                    if ( ! $has_draft_profile )        { $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;'; }
+                    if ( empty( $draft_pages ) )       { $missing[] = 'Vorschau-Seite (Anleitung unten)'; }
+                    if ( empty( $missing ) ) {
+                        $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
+                        echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $draft_url ) . '</code>';
+                        echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">' . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
+                    } else {
+                        echo '<p style="color:#888;margin:0 0 6px">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
+                    }
+                    ?>
+                </td>
+            </tr>
+            <tr>
+                <th>Vorschau-Seite einrichten</th>
+                <td>
+                    <ol style="margin:.25rem 0 0;padding-left:1.25rem;line-height:1.9">
+                        <li>WordPress-Admin &rarr; <strong>Seiten &rarr; Erstellen</strong></li>
+                        <li>Titel vergeben (z.&nbsp;B. <em>Entwurf-Vorschau</em>)</li>
+                        <li>Rechts unter <strong>Seitenvorlage</strong> &rarr; <strong>Terminplan Entwurf-Vorschau</strong> w&auml;hlen</li>
+                        <li>Seite ver&ouml;ffentlichen &ndash; URL erscheint oben automatisch</li>
+                    </ol>
+                    <p class="description" style="margin-top:.4rem"><?php echo gsh_tp_icon( 'info' ); ?> Seitenvorlage ist im Plugin integriert &ndash; kein Theme-Copy n&ouml;tig.</p>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button( 'Entwurf-Einstellungen speichern' ); ?>
+    </form>
+
     <hr style="margin:24px 0" />
 
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
@@ -3470,65 +3487,25 @@ function gsh_tp_render_system_tab() {
         Ideal zum Einbetten in IServ als Navigations-Eintrag.
     </div>
 
-    <form method="post" action="options.php">
-        <?php settings_fields( 'gsh_tp_options' ); ?>
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_kiosk', 'gsh_tp_sk_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_kiosk" value="1" />
         <?php
         $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
         if ( $fail_count >= 3 ) : ?>
         <div class="notice notice-warning inline" style="margin-bottom:16px">
             <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
-            Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a> um den E-Mail-Versand zu konfigurieren.
+            Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a>.
             <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>">Feedback-Log ansehen</a></p>
         </div>
         <?php endif; ?>
         <table class="form-table">
-
-            <tr>
-                <th><label for="gsh_tp_feedback_email">Feedback-Empfänger</label></th>
-                <td>
-                    <input type="email" id="gsh_tp_feedback_email" name="gsh_tp_feedback_email"
-                           value="<?php echo esc_attr( get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) ) ); ?>"
-                           class="regular-text"
-                           placeholder="deine@schule.de" />
-                    <p class="description">
-                        An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
-                        Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).
-                    </p>
-                </td>
-            </tr>
-
-            <tr>
-                <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
-                <td>
-                    <input type="text" id="gsh_tp_draft_kiosk_token" name="gsh_tp_draft_kiosk_token"
-                           value="<?php echo esc_attr( get_option( 'gsh_tp_draft_kiosk_token', '' ) ); ?>"
-                           class="regular-text" autocomplete="off"
-                           placeholder="mind. 20 Zeichen" />
-                    <button type="button" class="button" style="margin-left:6px"
-                            onclick="if(!confirm('Token wird ersetzt. Alte Entwurf-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_draft_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
-                        <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
-                    </button>
-                    <p class="description">Geheimer Token f&uuml;r den Zugang zur Entwurf-Vorschau. Mind. 20 Zeichen empfohlen.</p>
-                    <?php
-                    $cur_draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
-                    if ( empty( $cur_draft_token ) ) {
-                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
-                           . 'Entwurf-Vorschau ist nicht aktiviert.</p>';
-                    } elseif ( strlen( $cur_draft_token ) < 20 ) {
-                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
-                           . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
-                    }
-                    ?>
-                </td>
-            </tr>
-
             <tr>
                 <th><label for="gsh_tp_kiosk_token">Kiosk-Token</label></th>
                 <td>
                     <input type="text" id="gsh_tp_kiosk_token" name="gsh_tp_kiosk_token"
                            value="<?php echo esc_attr( get_option( 'gsh_tp_kiosk_token', '' ) ); ?>"
-                           class="regular-text" autocomplete="off"
-                           placeholder="mind. 20 Zeichen" />
+                           class="regular-text" autocomplete="off" placeholder="mind. 20 Zeichen" />
                     <button type="button" class="button" style="margin-left:6px"
                             onclick="if(!confirm('Token wird ersetzt. Alte Kiosk-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
                         <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
@@ -3537,16 +3514,13 @@ function gsh_tp_render_system_tab() {
                     <?php
                     $cur_token = get_option( 'gsh_tp_kiosk_token', '' );
                     if ( empty( $cur_token ) ) {
-                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
-                           . 'die Kiosk-Seite ist ohne Authentifizierung erreichbar!</p>';
+                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Kiosk-Seite ist ohne Authentifizierung erreichbar!</p>';
                     } elseif ( strlen( $cur_token ) < 20 ) {
-                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
-                           . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
+                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
                     }
                     ?>
                 </td>
             </tr>
-
             <tr>
                 <th><label for="gsh_tp_iserv_domain">IServ-Domain</label></th>
                 <td>
@@ -3555,44 +3529,40 @@ function gsh_tp_render_system_tab() {
                            class="regular-text" placeholder="https://example-school.de" />
                     <p class="description">Die vollst&auml;ndige URL eures IServ-Servers (mit https://). Wird ben&ouml;tigt damit nur euer IServ die Seite einbetten darf.</p>
                     <?php if ( empty( get_option( 'gsh_tp_iserv_domain', '' ) ) ) : ?>
-                        <p style="color:#e67e22;margin-top:6px"><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> IServ-Domain fehlt</strong> &ndash;
-                        ohne diese Einstellung kann jede Website die Kiosk-Seite einbetten.</p>
+                        <p style="color:#e67e22;margin-top:6px"><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> IServ-Domain fehlt</strong> &ndash; ohne diese Einstellung kann jede Website die Kiosk-Seite einbetten.</p>
                     <?php endif; ?>
                 </td>
             </tr>
-
+            <tr>
+                <th><label for="gsh_tp_feedback_email">Feedback-Empf&auml;nger</label></th>
+                <td>
+                    <input type="email" id="gsh_tp_feedback_email" name="gsh_tp_feedback_email"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_feedback_email', get_bloginfo( 'admin_email' ) ) ); ?>"
+                           class="regular-text" placeholder="deine@schule.de" />
+                    <p class="description">An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
+                    Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).</p>
+                </td>
+            </tr>
             <tr>
                 <th>Kiosk-URL</th>
                 <td>
                     <?php
                     $kiosk_token = get_option( 'gsh_tp_kiosk_token', '' );
-                    $kiosk_pages = get_pages( array(
-                        'meta_key'   => '_wp_page_template',
-                        'meta_value' => 'page-terminplan-kiosk.php',
-                    ) );
+                    $kiosk_pages = get_pages( array( 'meta_key' => '_wp_page_template', 'meta_value' => 'page-terminplan-kiosk.php' ) );
                     $missing = array();
-                    if ( empty( $kiosk_token ) ) {
-                        $missing[] = 'Kiosk-Token';
-                    }
-                    if ( empty( $kiosk_pages ) ) {
-                        $missing[] = 'Seite mit Vorlage <code>page-terminplan-kiosk.php</code>';
-                    }
+                    if ( empty( $kiosk_token ) ) { $missing[] = 'Kiosk-Token'; }
+                    if ( empty( $kiosk_pages ) ) { $missing[] = 'Seite mit Vorlage <code>page-terminplan-kiosk.php</code>'; }
                     if ( empty( $missing ) ) {
                         $kiosk_url = trailingslashit( get_permalink( $kiosk_pages[0]->ID ) ) . '?token=' . urlencode( $kiosk_token );
-                        echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">'
-                           . esc_html( $kiosk_url ) . '</code>';
-                        echo '<a href="' . esc_url( $kiosk_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
-                           . gsh_tp_icon( 'link' ) . ' Kiosk-Seite testen</a>';
+                        echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $kiosk_url ) . '</code>';
+                        echo '<a href="' . esc_url( $kiosk_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">' . gsh_tp_icon( 'link' ) . ' Kiosk-Seite testen</a>';
                     } else {
-                        echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
-                           . implode( ', ', $missing ) . '.</p>';
+                        echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
                     }
                     ?>
                 </td>
             </tr>
-
         </table>
-
         <?php submit_button( 'Kiosk-Einstellungen speichern' ); ?>
     </form>
 
