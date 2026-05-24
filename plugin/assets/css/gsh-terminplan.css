@@ -872,9 +872,8 @@
     .gtp-yr-heatmap        { display: block; }
 }
 
-/* Desktop/Tablet: Tabelle aktiv, Heatmap aus (Default) */
+/* Desktop/Tablet: Modifier-Klasse aktiviert Heatmap-Toggle */
 @media (min-width: 769px) {
-    .gtp-yr-heatmap                               { display: none; }
     .gtp-year-wrap--heatmap .gtp-yr               { display: none; }
     .gtp-year-wrap--heatmap .gtp-yr-heatmap       { display: block; }
 }
@@ -883,7 +882,7 @@
 #gtp:not([data-view="year"]) #gtp-heatmap-toggle { display: none; }
 
 /* Layout */
-.gtp-yr-heatmap { padding: .5rem 0; }
+.gtp-yr-heatmap { display: none; padding: .5rem 0; }
 
 .gtp-yr-hm-month { margin-bottom: .6rem; }
 

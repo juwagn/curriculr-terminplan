@@ -7,7 +7,10 @@
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.4.0 – Mobile Heatmap-Streifen-Jahresansicht
+ * Changelog 4.4.0:
+ * - [FEATURE] Mobile Jahresansicht: Heatmap-Streifen mit Inline-Expand
+ * - [UX] Desktop/Tablet: optionaler Heatmap-Toggle-Button
+ * - [UX] Kategorie-Filter filtert Heatmap-Kacheln (Opacity)
  *
  * Changelog 4.3.4:
  * - [FIX] Entwurf-Vorschau + IServ-Kiosk: je eigenes Formular mit direktem POST-Handler, kein options.php
@@ -6279,6 +6282,17 @@ function gtpViewToggle(btn){
       : btn.dataset.labelYear;
   }
   btn.classList.toggle("gtp-view-toggle-on", toYear);
+  /* Heatmap-Zustand zurücksetzen wenn Jahresansicht verlassen */
+  if(!toYear){
+    var yearWrap=document.querySelector(".gtp-year-wrap");
+    if(yearWrap)yearWrap.classList.remove("gtp-year-wrap--heatmap");
+    var hmBtn=document.getElementById("gtp-heatmap-toggle");
+    if(hmBtn){
+      hmBtn.classList.remove("gtp-view-toggle-on");
+      var hmLabel=hmBtn.querySelector(".gtp-view-toggle-label");
+      if(hmLabel)hmLabel.textContent="Heatmap";
+    }
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -6353,6 +6367,7 @@ function gtpHeatmapToggle(btn){
   var isHeatmap=yearWrap.classList.toggle("gtp-year-wrap--heatmap");
   var label=btn.querySelector(".gtp-view-toggle-label");
   if(label)label.textContent=isHeatmap?"Tabelle":"Heatmap";
+  btn.classList.toggle("gtp-view-toggle-on",isHeatmap);
 }
 
 document.addEventListener("click",function(e){
