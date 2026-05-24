@@ -3,17 +3,16 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.3.1
+ * Version:     4.3.2
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
- * Changelog 4.3.1:
- * - [FIX] Entwurf-Vorschau: fehlender <form>-Wrapper → Token wird jetzt gespeichert
- * - [FIX] Entwurf-Token in eigene Option-Gruppe gsh_tp_draft_options → IServ-Kiosk-Daten bleiben beim Speichern erhalten
- * - [FEATURE] template_include-Filter → Plugin-Template page-terminplan-entwurf.php ohne Theme-Copy nutzbar
- * - [FEATURE] Button „Vorschau-Seite automatisch erstellen" im Admin (gsh_tp_handle_create_draft_page)
- * - [UX] plus-Icon in SVG-Icon-System registriert
+ * Changelog 4.3.2:
+ * - [FIX] Entwurf-Token-Formular: direkter POST-Handler statt options.php (kein Redirect auf „Alle Einstellungen" mehr)
+ * - [FIX] Auto-Erstellen-Button entfernt; stattdessen Schritt-für-Schritt-Anleitung im Admin
+ * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" erscheint im WP-Seiten-Editor automatisch
+ * - [FIX] gsh_tp_draft_options-Gruppe und admin_post-Handler entfernt (unnötige Komplexität)
  *
  * Changelog 4.3.0:
  * - [DESIGN] Header einzeilig: Logo + Suche + Aktionen in einer Zeile
@@ -502,7 +501,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.3.1' );
+define( 'GSH_TP_VERSION',       '4.3.2' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -742,12 +741,11 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
-            'version'  => '4.3.1',
+            'version'  => '4.3.2',
             'entries'  => array(
-                array( 'tag' => 'FIX',     'text' => 'Entwurf-Vorschau: fehlender Form-Wrapper — Token wird jetzt korrekt gespeichert' ),
-                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token in eigene Option-Gruppe gsh_tp_draft_options — IServ-Kiosk-Daten bleiben beim Speichern erhalten' ),
-                array( 'tag' => 'FEATURE', 'text' => 'template_include-Filter: Plugin-Template page-terminplan-entwurf.php ohne Theme-Copy nutzbar' ),
-                array( 'tag' => 'FEATURE', 'text' => 'Button „Vorschau-Seite automatisch erstellen" im Admin (gsh_tp_handle_create_draft_page)' ),
+                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token-Formular: direkter POST-Handler statt options.php — kein Redirect auf „Alle Einstellungen" mehr' ),
+                array( 'tag' => 'FIX',     'text' => 'Auto-Erstellen-Button entfernt; Schritt-für-Schritt-Anleitung im Admin stattdessen' ),
+                array( 'tag' => 'FEATURE', 'text' => 'theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" erscheint im WP-Seiten-Editor automatisch' ),
             ),
         ),
         array(
@@ -1524,7 +1522,7 @@ function gsh_tp_check_draft_kiosk_access( string $token ): bool {
  * Ersetzt das Theme-Template wenn eine Seite mit dem Meta-Wert
  * page-terminplan-entwurf.php aufgerufen wird. Kein Theme-Copy nötig.
  *
- * @since 4.3.1
+ * @since 4.3.2
  * @param  string $template Aktuell gewähltes Template.
  * @return string           Plugin-Template-Pfad oder unverändertes $template.
  */
@@ -1539,44 +1537,18 @@ function gsh_tp_draft_template_include( string $template ): string {
 }
 
 /**
- * Erstellt automatisch eine WordPress-Seite für die Entwurf-Vorschau.
+ * Registriert das Entwurf-Template im WP-Seitenvorlage-Dropdown.
  *
- * Wird über den Admin-Post-Hook admin_post_gsh_tp_create_draft_page ausgelöst.
- * Prüft Nonce und Capability, verhindert Duplikate, setzt das Seiten-Template.
+ * Ermöglicht die Auswahl von „Terminplan Entwurf-Vorschau" im Seiten-Editor
+ * ohne das Template in den Theme-Ordner kopieren zu müssen.
  *
- * @since 4.3.1
+ * @since 4.3.2
+ * @param  array $templates Bestehende Template-Liste.
+ * @return array            Erweiterte Template-Liste.
  */
-function gsh_tp_handle_create_draft_page(): void {
-    check_admin_referer( 'gsh_tp_create_draft_page' );
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Keine Berechtigung.' );
-    }
-
-    // Duplikat-Schutz
-    $existing = get_pages( array(
-        'meta_key'   => '_wp_page_template',
-        'meta_value' => 'page-terminplan-entwurf.php',
-    ) );
-    if ( ! empty( $existing ) ) {
-        wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system&gsh_notice=draft_page_exists' ) );
-        exit;
-    }
-
-    $page_id = wp_insert_post( array(
-        'post_title'   => 'Terminplan Entwurf-Vorschau',
-        'post_status'  => 'publish',
-        'post_type'    => 'page',
-        'post_content' => '',
-    ), true );
-
-    if ( is_wp_error( $page_id ) ) {
-        wp_die( esc_html( $page_id->get_error_message() ) );
-    }
-
-    update_post_meta( $page_id, '_wp_page_template', 'page-terminplan-entwurf.php' );
-
-    wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system&gsh_notice=draft_page_created' ) );
-    exit;
+function gsh_tp_register_draft_template( array $templates ): array {
+    $templates['page-terminplan-entwurf.php'] = 'Terminplan Entwurf-Vorschau';
+    return $templates;
 }
 
 /**
@@ -1952,10 +1924,9 @@ add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
 add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Kategorien-AJAX (nur eingeloggte Admins)
 add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
-// Entwurf-Vorschau: Plugin-Template servieren (kein Theme-Copy nötig)
-add_filter( 'template_include', 'gsh_tp_draft_template_include' );
-// Entwurf-Seite automatisch anlegen (Admin-Button)
-add_action( 'admin_post_gsh_tp_create_draft_page', 'gsh_tp_handle_create_draft_page' );
+// Entwurf-Vorschau: Plugin-Template servieren + in WP-Seitenvorlage-Dropdown registrieren
+add_filter( 'template_include',    'gsh_tp_draft_template_include' );
+add_filter( 'theme_page_templates', 'gsh_tp_register_draft_template' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );
@@ -1985,10 +1956,6 @@ function gsh_tp_register_settings() {
     // gsh_tp_categories wird nicht über die WP Settings API gespeichert,
     // sondern direkt via AJAX (gsh_tp_ajax_save_categories). – v3.15.0
     register_setting( 'gsh_tp_options', 'gsh_tp_kiosk_token', array(
-        'sanitize_callback' => 'sanitize_text_field',
-        'default'           => '',
-    ) );
-    register_setting( 'gsh_tp_draft_options', 'gsh_tp_draft_kiosk_token', array(
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
     ) );
@@ -2551,12 +2518,15 @@ function gsh_tp_settings_page() {
         wp_die( 'Zugriff verweigert.' );
     }
 
-    // ── GET: Redirect-Notices (z.B. nach Seite-Erstellen) ──
-    $gsh_notice = isset( $_GET['gsh_notice'] ) ? sanitize_key( $_GET['gsh_notice'] ) : '';
-    if ( 'draft_page_created' === $gsh_notice ) {
-        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Vorschau-Seite wurde erfolgreich angelegt.</p></div>';
-    } elseif ( 'draft_page_exists' === $gsh_notice ) {
-        echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' ) . ' Vorschau-Seite existiert bereits.</p></div>';
+    // ── POST: Entwurf-Token speichern ──
+    if ( isset( $_POST['gsh_tp_save_draft_token'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dt_n'] ?? '' ) ), 'gsh_tp_save_draft_token' ) ) {
+            $token = sanitize_text_field( wp_unslash( $_POST['gsh_tp_draft_kiosk_token'] ?? '' ) );
+            update_option( 'gsh_tp_draft_kiosk_token', $token );
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Entwurf-Token gespeichert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
     }
 
     $profiles = gsh_tp_get_profiles();
@@ -3443,8 +3413,9 @@ function gsh_tp_render_system_tab() {
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
     </div>
-    <form method="post" action="options.php">
-        <?php settings_fields( 'gsh_tp_draft_options' ); ?>
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_draft_token', 'gsh_tp_dt_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_draft_token" value="1" />
     <table class="form-table">
         <tr>
             <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
@@ -3493,9 +3464,8 @@ function gsh_tp_render_system_tab() {
                 if ( ! $has_draft_profile ) {
                     $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;';
                 }
-                $no_page = empty( $draft_pages );
-                if ( $no_page ) {
-                    $missing[] = 'Vorschau-Seite';
+                if ( empty( $draft_pages ) ) {
+                    $missing[] = 'Vorschau-Seite (siehe Einrichtung unten)';
                 }
                 if ( empty( $missing ) ) {
                     $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
@@ -3504,21 +3474,29 @@ function gsh_tp_render_system_tab() {
                     echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
                        . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
                 } else {
-                    echo '<p style="color:#888;margin:0 0 8px">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
+                    echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
                        . implode( ', ', $missing ) . '.</p>';
-                    if ( $no_page ) {
-                        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
-                        echo '<input type="hidden" name="action" value="gsh_tp_create_draft_page">';
-                        wp_nonce_field( 'gsh_tp_create_draft_page' );
-                        echo '<button type="submit" class="button button-primary">' . gsh_tp_icon( 'plus' ) . ' Vorschau-Seite automatisch erstellen</button>';
-                        echo '</form>';
-                    }
                 }
                 ?>
             </td>
         </tr>
+        <tr>
+            <th>Einrichtung Vorschau-Seite</th>
+            <td>
+                <ol style="margin:.5rem 0 0;padding-left:1.25rem;line-height:1.9">
+                    <li>WordPress-Admin &rarr; <strong>Seiten &rarr; Erstellen</strong></li>
+                    <li>Titel vergeben (z.&nbsp;B. <em>Entwurf-Vorschau</em>)</li>
+                    <li>Im Block-Editor rechts unter <strong>Seitenvorlage</strong> &rarr; <strong>Terminplan Entwurf-Vorschau</strong> w&auml;hlen</li>
+                    <li>Seite ver&ouml;ffentlichen &ndash; die URL erscheint dann automatisch oben</li>
+                </ol>
+                <p class="description" style="margin-top:.5rem">
+                    <?php echo gsh_tp_icon( 'info' ); ?>
+                    Die Seitenvorlage ist direkt im Plugin integriert &ndash; kein manuelles Kopieren in den Theme-Ordner n&ouml;tig.
+                </p>
+            </td>
+        </tr>
     </table>
-        <?php submit_button( 'Entwurf-Vorschau speichern' ); ?>
+        <?php submit_button( 'Entwurf-Token speichern' ); ?>
     </form>
     <hr style="margin:24px 0" />
 
