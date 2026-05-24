@@ -4458,6 +4458,10 @@ function gsh_tp_shortcode( $atts ) {
         . ' onclick="gtpViewToggle(this)">'
         . gsh_tp_icon( 'calendar', '1em', 'gtp-view-toggle-icon' )
         . '<span class="gtp-view-toggle-label">Jahresansicht</span></button>';
+    $o .= '<button type="button" class="gtp-view-toggle" id="gtp-heatmap-toggle"'
+        . ' onclick="gtpHeatmapToggle(this)">'
+        . gsh_tp_icon( 'calendar', '1em', 'gtp-view-toggle-icon' )
+        . '<span class="gtp-view-toggle-label">Heatmap</span></button>';
     $o .= '</div>'; // .gtp-tabs
 
     // Filter-Buttons (dynamisch aus Kategorie-Einstellungen – v3.15.0: --btn-color)
