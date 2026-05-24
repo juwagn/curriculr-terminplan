@@ -3,10 +3,17 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.3.0
+ * Version:     4.3.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ *
+ * Changelog 4.3.1:
+ * - [FIX] Entwurf-Vorschau: fehlender <form>-Wrapper → Token wird jetzt gespeichert
+ * - [FIX] Entwurf-Token in eigene Option-Gruppe gsh_tp_draft_options → IServ-Kiosk-Daten bleiben beim Speichern erhalten
+ * - [FEATURE] template_include-Filter → Plugin-Template page-terminplan-entwurf.php ohne Theme-Copy nutzbar
+ * - [FEATURE] Button „Vorschau-Seite automatisch erstellen" im Admin (gsh_tp_handle_create_draft_page)
+ * - [UX] plus-Icon in SVG-Icon-System registriert
  *
  * Changelog 4.3.0:
  * - [DESIGN] Header einzeilig: Logo + Suche + Aktionen in einer Zeile
@@ -495,7 +502,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.3.0' );
+define( 'GSH_TP_VERSION',       '4.3.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -700,6 +707,7 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
         'monitor'        => '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
         'message-circle' => '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
         'settings'       => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+        'plus'           => '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     );
 
     if ( ! isset( $paths[ $name ] ) ) {
@@ -733,6 +741,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.3.1',
+            'entries'  => array(
+                array( 'tag' => 'FIX',     'text' => 'Entwurf-Vorschau: fehlender Form-Wrapper — Token wird jetzt korrekt gespeichert' ),
+                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token in eigene Option-Gruppe gsh_tp_draft_options — IServ-Kiosk-Daten bleiben beim Speichern erhalten' ),
+                array( 'tag' => 'FEATURE', 'text' => 'template_include-Filter: Plugin-Template page-terminplan-entwurf.php ohne Theme-Copy nutzbar' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Button „Vorschau-Seite automatisch erstellen" im Admin (gsh_tp_handle_create_draft_page)' ),
+            ),
+        ),
         array(
             'version'  => '4.3.0',
             'entries'  => array(
@@ -1502,6 +1519,67 @@ function gsh_tp_check_draft_kiosk_access( string $token ): bool {
 }
 
 /**
+ * Leitet WordPress-Anfragen an das Plugin-eigene Entwurf-Template um.
+ *
+ * Ersetzt das Theme-Template wenn eine Seite mit dem Meta-Wert
+ * page-terminplan-entwurf.php aufgerufen wird. Kein Theme-Copy nötig.
+ *
+ * @since 4.3.1
+ * @param  string $template Aktuell gewähltes Template.
+ * @return string           Plugin-Template-Pfad oder unverändertes $template.
+ */
+function gsh_tp_draft_template_include( string $template ): string {
+    if ( is_page() && 'page-terminplan-entwurf.php' === get_post_meta( get_the_ID(), '_wp_page_template', true ) ) {
+        $plugin_tpl = plugin_dir_path( __FILE__ ) . 'page-terminplan-entwurf.php';
+        if ( file_exists( $plugin_tpl ) ) {
+            return $plugin_tpl;
+        }
+    }
+    return $template;
+}
+
+/**
+ * Erstellt automatisch eine WordPress-Seite für die Entwurf-Vorschau.
+ *
+ * Wird über den Admin-Post-Hook admin_post_gsh_tp_create_draft_page ausgelöst.
+ * Prüft Nonce und Capability, verhindert Duplikate, setzt das Seiten-Template.
+ *
+ * @since 4.3.1
+ */
+function gsh_tp_handle_create_draft_page(): void {
+    check_admin_referer( 'gsh_tp_create_draft_page' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Keine Berechtigung.' );
+    }
+
+    // Duplikat-Schutz
+    $existing = get_pages( array(
+        'meta_key'   => '_wp_page_template',
+        'meta_value' => 'page-terminplan-entwurf.php',
+    ) );
+    if ( ! empty( $existing ) ) {
+        wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system&gsh_notice=draft_page_exists' ) );
+        exit;
+    }
+
+    $page_id = wp_insert_post( array(
+        'post_title'   => 'Terminplan Entwurf-Vorschau',
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+        'post_content' => '',
+    ), true );
+
+    if ( is_wp_error( $page_id ) ) {
+        wp_die( esc_html( $page_id->get_error_message() ) );
+    }
+
+    update_post_meta( $page_id, '_wp_page_template', 'page-terminplan-entwurf.php' );
+
+    wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system&gsh_notice=draft_page_created' ) );
+    exit;
+}
+
+/**
  * Speichert einen Sync-Versuch im Sync-Log eines Profils.
  *
  * Hält die letzten 50 Einträge pro Profil in einer Datenbank-Option vor.
@@ -1874,6 +1952,10 @@ add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
 add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Kategorien-AJAX (nur eingeloggte Admins)
 add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
+// Entwurf-Vorschau: Plugin-Template servieren (kein Theme-Copy nötig)
+add_filter( 'template_include', 'gsh_tp_draft_template_include' );
+// Entwurf-Seite automatisch anlegen (Admin-Button)
+add_action( 'admin_post_gsh_tp_create_draft_page', 'gsh_tp_handle_create_draft_page' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );
@@ -1906,7 +1988,7 @@ function gsh_tp_register_settings() {
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
     ) );
-    register_setting( 'gsh_tp_options', 'gsh_tp_draft_kiosk_token', array(
+    register_setting( 'gsh_tp_draft_options', 'gsh_tp_draft_kiosk_token', array(
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
     ) );
@@ -2467,6 +2549,14 @@ function gsh_tp_opt( $key, $default = '', $profile_id = '' ) {
 function gsh_tp_settings_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_die( 'Zugriff verweigert.' );
+    }
+
+    // ── GET: Redirect-Notices (z.B. nach Seite-Erstellen) ──
+    $gsh_notice = isset( $_GET['gsh_notice'] ) ? sanitize_key( $_GET['gsh_notice'] ) : '';
+    if ( 'draft_page_created' === $gsh_notice ) {
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Vorschau-Seite wurde erfolgreich angelegt.</p></div>';
+    } elseif ( 'draft_page_exists' === $gsh_notice ) {
+        echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' ) . ' Vorschau-Seite existiert bereits.</p></div>';
     }
 
     $profiles = gsh_tp_get_profiles();
@@ -3353,6 +3443,8 @@ function gsh_tp_render_system_tab() {
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
     </div>
+    <form method="post" action="options.php">
+        <?php settings_fields( 'gsh_tp_draft_options' ); ?>
     <table class="form-table">
         <tr>
             <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
@@ -3401,8 +3493,9 @@ function gsh_tp_render_system_tab() {
                 if ( ! $has_draft_profile ) {
                     $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;';
                 }
-                if ( empty( $draft_pages ) ) {
-                    $missing[] = 'Seite mit Vorlage <code>page-terminplan-entwurf.php</code>';
+                $no_page = empty( $draft_pages );
+                if ( $no_page ) {
+                    $missing[] = 'Vorschau-Seite';
                 }
                 if ( empty( $missing ) ) {
                     $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
@@ -3411,13 +3504,22 @@ function gsh_tp_render_system_tab() {
                     echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">'
                        . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
                 } else {
-                    echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
+                    echo '<p style="color:#888;margin:0 0 8px">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: '
                        . implode( ', ', $missing ) . '.</p>';
+                    if ( $no_page ) {
+                        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
+                        echo '<input type="hidden" name="action" value="gsh_tp_create_draft_page">';
+                        wp_nonce_field( 'gsh_tp_create_draft_page' );
+                        echo '<button type="submit" class="button button-primary">' . gsh_tp_icon( 'plus' ) . ' Vorschau-Seite automatisch erstellen</button>';
+                        echo '</form>';
+                    }
                 }
                 ?>
             </td>
         </tr>
     </table>
+        <?php submit_button( 'Entwurf-Vorschau speichern' ); ?>
+    </form>
     <hr style="margin:24px 0" />
 
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
@@ -4530,7 +4632,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-feedback-actions">';
     $o .= '<button type="button" class="gtp-btn" id="gtp-feedback-submit"'
         . ' onclick="gtpFeedbackSubmit()" disabled>Absenden</button>';
-    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpFeedbackClose()">Abbrechen</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-sec" onclick="gtpFeedbackClose()">Abbrechen</button>';
     $o .= '</div>';
     $o .= '</div>'; // .gtp-feedback-card
     $o .= '</div>'; // #gtp-feedback-overlay
@@ -5546,6 +5648,8 @@ function gsh_tp_css() {
 .gtp-btn:hover{background:#0f172a;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.2)}
 .gtp-btn-pdf{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none}
 .gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15)}
+.gtp-btn-sec{background:var(--gtp-surface);border:1.5px solid var(--gtp-border);color:var(--gtp-text-muted);box-shadow:none}
+.gtp-btn-sec:hover{background:var(--gtp-bg);border-color:var(--gtp-text-muted);color:var(--gtp-text);transform:translateY(-1px);box-shadow:none}
 .gtp-pdf-loading{opacity:.55;pointer-events:none;cursor:default}
 .gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
@@ -5885,6 +5989,48 @@ function gsh_tp_css() {
   line-height:1.65;
 }
 .gtp-popup-desc:empty{display:none}
+/* ── Feedback-Modal ───────────────────────────────────────── */
+.gtp-feedback-intro{font-size:.875rem;color:var(--gtp-text-muted);margin:0 0 1.1rem;line-height:1.55}
+.gtp-feedback-types{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.1rem}
+.gtp-feedback-type{
+  font-size:.75rem;font-weight:600;font-family:inherit;
+  padding:.35rem .85rem;border-radius:20px;cursor:pointer;
+  border:1.5px solid var(--gtp-border);
+  background:var(--gtp-surface);color:var(--gtp-text-muted);
+  transition:border-color .15s,background .15s,color .15s;
+  white-space:nowrap;line-height:1.4;
+}
+.gtp-feedback-type:hover{border-color:var(--gtp-accent);color:var(--gtp-accent)}
+.gtp-feedback-type-active{
+  border-color:var(--gtp-accent);
+  background:var(--gtp-accent-light,#e6f4ff);
+  color:var(--gtp-accent);
+}
+.gtp-feedback-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.875rem}
+.gtp-feedback-label{
+  display:block;font-size:.72rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--gtp-text-muted);
+}
+.gtp-feedback-textarea{
+  display:block;width:100%;
+  font-family:inherit;font-size:.875rem;color:var(--gtp-text);
+  background:var(--gtp-bg);
+  border:1.5px solid var(--gtp-border);border-radius:8px;
+  padding:.55rem .875rem;
+  transition:border-color .15s;
+  resize:vertical;line-height:1.5;
+}
+.gtp-feedback-textarea:focus{outline:none;border-color:var(--gtp-accent)}
+.gtp-feedback-counter{font-size:.72rem;color:var(--gtp-text-faint);text-align:right}
+.gtp-feedback-actions{display:flex;gap:.625rem;margin-top:1.1rem}
+.gtp-feedback-actions .gtp-btn{flex:1;justify-content:center;text-align:center}
+.gtp-feedback-status{
+  padding:.6rem .875rem;border-radius:8px;font-size:.84rem;line-height:1.5;
+  margin-top:.75rem;
+}
+.gtp-feedback-status-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.gtp-feedback-status-err{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
 /* Bottom Sheet auf Mobile */
 @media(max-width:767px){
   .gtp-popup-overlay{align-items:flex-end;background:rgba(0,0,0,.3)}
