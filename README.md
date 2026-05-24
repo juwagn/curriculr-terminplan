@@ -2,7 +2,7 @@
 
 **Digitaler Schulkalender für WordPress — aus IServ direkt auf die Schulwebsite.**
 
-Version **4.3.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
+Version **4.3.4** · PHP 8.0+ · WordPress 6.0+ · GPL v2
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X61ZEMZ7)
 
@@ -335,6 +335,24 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 ---
 
 ## Changelog
+
+### 4.3.4
+- [FIX] Entwurf-Vorschau + IServ-Kiosk: je eigenes Formular mit direktem POST-Handler — kein `options.php` mehr
+- [UX] Kiosk & System Tab: zwei klar getrennte Sektionen mit eigenem Speichern-Button
+- [FEATURE] `theme_page_templates`-Filter: Vorlage „Terminplan Entwurf-Vorschau" erscheint automatisch im WP-Seiten-Editor
+- [CHORE] PDF-Strings: GSH → Curriculr (Logo-Mark, Footer, Dateinamen)
+
+### 4.3.3
+- [FIX] Entwurf-Token in `gsh_tp_options`-Gruppe — gleicher Form-Submit wie IServ-Kiosk
+
+### 4.3.2
+- [FIX] Entwurf-Token-Formular: direkter POST-Handler statt `options.php` — kein Redirect auf „Alle Einstellungen" mehr
+
+### 4.3.1
+- [FIX] Entwurf-Vorschau: fehlender `<form>`-Wrapper — Token wird jetzt gespeichert
+- [FIX] Entwurf-Token in eigene Option-Gruppe — IServ-Kiosk-Daten bleiben beim Speichern erhalten
+- [FEATURE] `template_include`-Filter: Plugin-Template ohne Theme-Copy nutzbar
+- [FEATURE] Button „Vorschau-Seite automatisch erstellen" im Admin
 
 ### 4.3.0
 - [UX] Header: einzeilig, Suche inline, keine redundante Überschrift
