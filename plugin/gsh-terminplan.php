@@ -6438,6 +6438,8 @@ function gtpApply(){
   /* Reset-Button zeigen / verstecken */
   var resetBtn = document.getElementById("gtp-reset");
   if(resetBtn) resetBtn.style.display = hiddenCount > 0 ? "" : "none";
+  /* Heatmap-Kacheln dimmen wenn alle Kategorien gefiltert */
+  gtpHmApplyFilter();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -6641,6 +6643,7 @@ window.addEventListener("resize",gtpUpdateHeuteBtn,{passive:true});
 /* DOM-Ready: Änderungs-Banner auswerten */
 document.addEventListener("DOMContentLoaded",function(){
   gtpChangesInit();
+  gtpHmPaintTiles();
   /* Filter-Zustand aus localStorage wiederherstellen */
   try{
     var saved = localStorage.getItem("gtp_filters");
