@@ -3,10 +3,11 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.3.4
+ * Version:     4.4.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.4.0 – Mobile Heatmap-Streifen-Jahresansicht
  *
  * Changelog 4.3.4:
  * - [FIX] Entwurf-Vorschau + IServ-Kiosk: je eigenes Formular mit direktem POST-Handler, kein options.php
@@ -500,7 +501,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.3.4' );
+define( 'GSH_TP_VERSION',       '4.4.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -739,6 +740,14 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.4.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Mobile Jahresansicht: Heatmap-Streifen mit Inline-Expand für gestapelte Tage' ),
+                array( 'tag' => 'FEATURE', 'text' => 'Desktop/Tablet: optionaler Heatmap-Toggle-Button im Command Bar' ),
+                array( 'tag' => 'UX',      'text' => 'Kategorie-Filter filtert Heatmap-Kacheln via Opacity-Effekt' ),
+            ),
+        ),
         array(
             'version'  => '4.3.4',
             'entries'  => array(
