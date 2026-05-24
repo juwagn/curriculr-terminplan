@@ -6665,7 +6665,7 @@ function gtpPrint(mode,pdfTitle){
   /* ── Kopfzeile: Logo links | Titel rechts ── */
   var HDR='<div class="hdr">'
     +'<div class="hdr-logo">'
-    +'<span class="hdr-logo-mark">GSH</span>'
+    +'<span class="hdr-logo-mark">Curriculr</span>'
     +'<span class="hdr-logo-sep"></span>'
     +'<span class="hdr-logo-name">Gesamtschule<br>Horst</span>'
     +'</div>'
@@ -6676,7 +6676,7 @@ function gtpPrint(mode,pdfTitle){
     +'</div>';
 
   /* ── Footer: fixed → erscheint auf jeder PDF-Seite ── */
-  var FTR='<div class="pdf-ft">Stand: '+today+'\u2003|\u2003Erstellt \u00fcber das GSH-Dashboard</div>';
+  var FTR='<div class="pdf-ft">Stand: '+today+'\u2003|\u2003Erstellt \u00fcber das Curriculr-Dashboard</div>';
 
   var body=FTR; /* Footer zuerst (fixed, daher immer gerendert) */
   for(var i=0;i<ids.length;i++){
@@ -7189,8 +7189,8 @@ function gtpPdf(btn){
   var panel=document.getElementById("gtp-q"+q);
   var qtEl=panel ? panel.querySelector(".gtp-qt") : null;
   var title=qtEl
-    ? "Terminplan GSH 2025-26 - "+qtEl.textContent
-    : "Terminplan GSH 2025-26";
+    ? "Terminplan Curriculr 2025-26 - "+qtEl.textContent
+    : "Terminplan Curriculr 2025-26";
   gtpPdfBtnState(btn,true);
   gtpPdfHint();
   gtpPrint("single",title);
@@ -7203,7 +7203,7 @@ function gtpPdf(btn){
 function gtpPdfAll(btn){
   gtpPdfBtnState(btn,true);
   gtpPdfHint();
-  gtpPrint("all","Terminplan GSH 2025-26 - Komplett");
+  gtpPrint("all","Terminplan Curriculr 2025-26 - Komplett");
   setTimeout(function(){gtpPdfBtnState(btn,false);},3500);
 }
 
