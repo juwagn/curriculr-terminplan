@@ -3,16 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.3.2
+ * Version:     4.3.3
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
  *
- * Changelog 4.3.2:
- * - [FIX] Entwurf-Token-Formular: direkter POST-Handler statt options.php (kein Redirect auf „Alle Einstellungen" mehr)
- * - [FIX] Auto-Erstellen-Button entfernt; stattdessen Schritt-für-Schritt-Anleitung im Admin
- * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" erscheint im WP-Seiten-Editor automatisch
- * - [FIX] gsh_tp_draft_options-Gruppe und admin_post-Handler entfernt (unnötige Komplexität)
+ * Changelog 4.3.3:
+ * - [FIX] Entwurf-Token in gsh_tp_options-Gruppe → selber Form-Submit wie IServ-Kiosk (options.php), kein Sonder-Handler
+ * - [UX] Entwurf-Sektion rein informativ (URL + Anleitung); Token-Feld jetzt in IServ-Form integriert
+ * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" automatisch im WP-Seiten-Editor
  *
  * Changelog 4.3.0:
  * - [DESIGN] Header einzeilig: Logo + Suche + Aktionen in einer Zeile
@@ -501,7 +500,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.3.2' );
+define( 'GSH_TP_VERSION',       '4.3.3' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -741,11 +740,11 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
-            'version'  => '4.3.2',
+            'version'  => '4.3.3',
             'entries'  => array(
-                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token-Formular: direkter POST-Handler statt options.php — kein Redirect auf „Alle Einstellungen" mehr' ),
-                array( 'tag' => 'FIX',     'text' => 'Auto-Erstellen-Button entfernt; Schritt-für-Schritt-Anleitung im Admin stattdessen' ),
-                array( 'tag' => 'FEATURE', 'text' => 'theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" erscheint im WP-Seiten-Editor automatisch' ),
+                array( 'tag' => 'FIX',     'text' => 'Entwurf-Token in gsh_tp_options — selber Form-Submit wie IServ-Kiosk (options.php), kein Sonder-Handler mehr' ),
+                array( 'tag' => 'UX',      'text' => 'Entwurf-Sektion rein informativ (URL + Anleitung); Token-Feld in IServ-Kiosk-Form integriert' ),
+                array( 'tag' => 'FEATURE', 'text' => 'theme_page_templates-Filter: Vorlage „Terminplan Entwurf-Vorschau" automatisch im WP-Seiten-Editor' ),
             ),
         ),
         array(
@@ -1522,7 +1521,7 @@ function gsh_tp_check_draft_kiosk_access( string $token ): bool {
  * Ersetzt das Theme-Template wenn eine Seite mit dem Meta-Wert
  * page-terminplan-entwurf.php aufgerufen wird. Kein Theme-Copy nötig.
  *
- * @since 4.3.2
+ * @since 4.3.3
  * @param  string $template Aktuell gewähltes Template.
  * @return string           Plugin-Template-Pfad oder unverändertes $template.
  */
@@ -1542,7 +1541,7 @@ function gsh_tp_draft_template_include( string $template ): string {
  * Ermöglicht die Auswahl von „Terminplan Entwurf-Vorschau" im Seiten-Editor
  * ohne das Template in den Theme-Ordner kopieren zu müssen.
  *
- * @since 4.3.2
+ * @since 4.3.3
  * @param  array $templates Bestehende Template-Liste.
  * @return array            Erweiterte Template-Liste.
  */
@@ -1955,6 +1954,10 @@ function gsh_tp_register_settings() {
     ) );
     // gsh_tp_categories wird nicht über die WP Settings API gespeichert,
     // sondern direkt via AJAX (gsh_tp_ajax_save_categories). – v3.15.0
+    register_setting( 'gsh_tp_options', 'gsh_tp_draft_kiosk_token', array(
+        'sanitize_callback' => 'sanitize_text_field',
+        'default'           => '',
+    ) );
     register_setting( 'gsh_tp_options', 'gsh_tp_kiosk_token', array(
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '',
@@ -2516,17 +2519,6 @@ function gsh_tp_opt( $key, $default = '', $profile_id = '' ) {
 function gsh_tp_settings_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_die( 'Zugriff verweigert.' );
-    }
-
-    // ── POST: Entwurf-Token speichern ──
-    if ( isset( $_POST['gsh_tp_save_draft_token'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dt_n'] ?? '' ) ), 'gsh_tp_save_draft_token' ) ) {
-            $token = sanitize_text_field( wp_unslash( $_POST['gsh_tp_draft_kiosk_token'] ?? '' ) );
-            update_option( 'gsh_tp_draft_kiosk_token', $token );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Entwurf-Token gespeichert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
     }
 
     $profiles = gsh_tp_get_profiles();
@@ -3413,34 +3405,7 @@ function gsh_tp_render_system_tab() {
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
     </div>
-    <form method="post" action="">
-        <?php wp_nonce_field( 'gsh_tp_save_draft_token', 'gsh_tp_dt_n' ); ?>
-        <input type="hidden" name="gsh_tp_save_draft_token" value="1" />
-    <table class="form-table">
-        <tr>
-            <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
-            <td>
-                <input type="text" id="gsh_tp_draft_kiosk_token" name="gsh_tp_draft_kiosk_token"
-                       value="<?php echo esc_attr( get_option( 'gsh_tp_draft_kiosk_token', '' ) ); ?>"
-                       class="regular-text" autocomplete="off"
-                       placeholder="mind. 20 Zeichen" />
-                <button type="button" class="button" style="margin-left:6px"
-                        onclick="if(!confirm('Token wird ersetzt. Alte Entwurf-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_draft_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
-                    <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
-                </button>
-                <p class="description">Geheimer Token f&uuml;r den Zugang zur Entwurf-Vorschau. Mind. 20 Zeichen empfohlen.</p>
-                <?php
-                $draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
-                if ( empty( $draft_token ) ) {
-                    echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
-                       . 'bitte einen Token generieren um die Vorschau zu aktivieren.</p>';
-                } elseif ( strlen( $draft_token ) < 20 ) {
-                    echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
-                       . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
-                }
-                ?>
-            </td>
-        </tr>
+    <table class="form-table" style="margin-bottom:0">
         <tr>
             <th>Vorschau-URL</th>
             <td>
@@ -3459,13 +3424,13 @@ function gsh_tp_render_system_tab() {
                 }
                 $missing = array();
                 if ( empty( $draft_token ) ) {
-                    $missing[] = 'Entwurf-Token';
+                    $missing[] = 'Entwurf-Token (unten eintragen)';
                 }
                 if ( ! $has_draft_profile ) {
                     $missing[] = 'Profil mit Status &bdquo;Entwurf&ldquo;';
                 }
                 if ( empty( $draft_pages ) ) {
-                    $missing[] = 'Vorschau-Seite (siehe Einrichtung unten)';
+                    $missing[] = 'Vorschau-Seite (Anleitung unten)';
                 }
                 if ( empty( $missing ) ) {
                     $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
@@ -3483,21 +3448,19 @@ function gsh_tp_render_system_tab() {
         <tr>
             <th>Einrichtung Vorschau-Seite</th>
             <td>
-                <ol style="margin:.5rem 0 0;padding-left:1.25rem;line-height:1.9">
+                <ol style="margin:.25rem 0 0;padding-left:1.25rem;line-height:1.9">
                     <li>WordPress-Admin &rarr; <strong>Seiten &rarr; Erstellen</strong></li>
                     <li>Titel vergeben (z.&nbsp;B. <em>Entwurf-Vorschau</em>)</li>
-                    <li>Im Block-Editor rechts unter <strong>Seitenvorlage</strong> &rarr; <strong>Terminplan Entwurf-Vorschau</strong> w&auml;hlen</li>
-                    <li>Seite ver&ouml;ffentlichen &ndash; die URL erscheint dann automatisch oben</li>
+                    <li>Rechts unter <strong>Seitenvorlage</strong> &rarr; <strong>Terminplan Entwurf-Vorschau</strong> w&auml;hlen</li>
+                    <li>Seite ver&ouml;ffentlichen &ndash; URL erscheint oben automatisch</li>
                 </ol>
-                <p class="description" style="margin-top:.5rem">
+                <p class="description" style="margin-top:.4rem">
                     <?php echo gsh_tp_icon( 'info' ); ?>
-                    Die Seitenvorlage ist direkt im Plugin integriert &ndash; kein manuelles Kopieren in den Theme-Ordner n&ouml;tig.
+                    Seitenvorlage ist im Plugin integriert &ndash; kein Theme-Copy n&ouml;tig.
                 </p>
             </td>
         </tr>
     </table>
-        <?php submit_button( 'Entwurf-Token speichern' ); ?>
-    </form>
     <hr style="margin:24px 0" />
 
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
@@ -3531,6 +3494,31 @@ function gsh_tp_render_system_tab() {
                         An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
                         Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).
                     </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label for="gsh_tp_draft_kiosk_token">Entwurf-Token</label></th>
+                <td>
+                    <input type="text" id="gsh_tp_draft_kiosk_token" name="gsh_tp_draft_kiosk_token"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_draft_kiosk_token', '' ) ); ?>"
+                           class="regular-text" autocomplete="off"
+                           placeholder="mind. 20 Zeichen" />
+                    <button type="button" class="button" style="margin-left:6px"
+                            onclick="if(!confirm('Token wird ersetzt. Alte Entwurf-Links funktionieren nicht mehr.'))return;document.getElementById('gsh_tp_draft_kiosk_token').value=Array.from(crypto.getRandomValues(new Uint8Array(24)),function(b){return b.toString(36);}).join('').slice(0,32);">
+                        <?php echo gsh_tp_icon( 'dice' ); ?> Zuf&auml;lligen Token erzeugen
+                    </button>
+                    <p class="description">Geheimer Token f&uuml;r den Zugang zur Entwurf-Vorschau. Mind. 20 Zeichen empfohlen.</p>
+                    <?php
+                    $cur_draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
+                    if ( empty( $cur_draft_token ) ) {
+                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; '
+                           . 'Entwurf-Vorschau ist nicht aktiviert.</p>';
+                    } elseif ( strlen( $cur_draft_token ) < 20 ) {
+                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; '
+                           . 'aus Sicherheitsgr&uuml;nden mind. 20 Zeichen verwenden.</p>';
+                    }
+                    ?>
                 </td>
             </tr>
 
