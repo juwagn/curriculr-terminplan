@@ -5268,8 +5268,55 @@ function gsh_tp_yearview( $index, $quartale, $pid ) {
 
         $o .= '</tr>';
     }
-    $o .= '</tbody></table></div>';
+    $o .= '</tbody></table>';
 
+    /* Heatmap-Block (Mobile Jahresansicht v4.4.0) */
+    $o .= '<div class="gtp-yr-heatmap" role="presentation" aria-hidden="true">';
+    foreach ( $months as $m ) {
+        $o .= '<div class="gtp-yr-hm-month">';
+        $o .= '<div class="gtp-yr-hm-label">' . esc_html( strtoupper( $m['label'] ) ) . '</div>';
+        $o .= '<div class="gtp-yr-hm-grid">';
+        for ( $day = 1; $day <= 31; $day++ ) {
+            if ( ! checkdate( $m['n'], $day, $m['year'] ) ) {
+                $o .= '<div class="gtp-yr-hm-sq" data-valid="0" aria-hidden="true"></div>';
+                continue;
+            }
+            $date_str = sprintf( '%04d-%02d-%02d', $m['year'], $m['n'], $day );
+            $evs      = gsh_tp_day_events( $index, $date_str );
+            $slugs    = array();
+            foreach ( $evs as $ev ) {
+                $cids = (array) ( $ev['categories'] ?? array() );
+                foreach ( $cids as $cid ) {
+                    if ( isset( $cat_map_yr[ $cid ] ) ) {
+                        $slugs[ $cat_map_yr[ $cid ]['slug'] ] = true;
+                    }
+                }
+            }
+            $today_cls = ( $date_str === $today_str ) ? ' gtp-yr-hm-sq--today' : '';
+            $cats_attr = ! empty( $slugs )
+                ? ' data-cats="' . esc_attr( implode( ' ', array_keys( $slugs ) ) ) . '"'
+                : '';
+            $o .= '<div class="gtp-yr-hm-sq' . $today_cls . '"'
+                . ' data-valid="1"'
+                . ' data-date="' . esc_attr( $date_str ) . '"'
+                . $cats_attr . '></div>';
+        }
+        $o .= '</div>'; /* .gtp-yr-hm-grid */
+        $o .= '<div class="gtp-yr-hm-expand" hidden></div>';
+        $o .= '</div>'; /* .gtp-yr-hm-month */
+    }
+    $o .= '<div class="gtp-yr-hm-legend">';
+    foreach ( gsh_tp_get_categories() as $cat ) {
+        $color = $cat['color'] ?? '#94a3b8';
+        $o    .= '<span class="gtp-yr-hm-legend-item">'
+            . '<span class="gtp-yr-hm-legend-dot" style="background:' . esc_attr( $color ) . '"></span>'
+            . esc_html( $cat['label'] )
+            . '</span>';
+    }
+    $o .= '</div>'; /* .gtp-yr-hm-legend */
+    $o .= '</div>'; /* .gtp-yr-heatmap */
+
+    $o .= '</div>'; /* .gtp-year-wrap */
     return $o;
 }
 
