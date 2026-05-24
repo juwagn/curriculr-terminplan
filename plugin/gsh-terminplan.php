@@ -6273,6 +6273,87 @@ function gtpViewToggle(btn){
 }
 
 /* ════════════════════════════════════════════════════════
+   HEATMAP (Mobile Jahresansicht – v4.4.0)
+   ════════════════════════════════════════════════════════ */
+
+function gtpHmColor(slug){
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue("--c-"+slug+"-bd").trim()||"#94a3b8";
+}
+
+function gtpHmPaintTiles(){
+  document.querySelectorAll(".gtp-yr-hm-sq[data-cats]").forEach(function(sq){
+    var cats=sq.dataset.cats.trim().split(/\s+/);
+    if(cats.length===1){
+      sq.style.background=gtpHmColor(cats[0]);
+    }else{
+      var pct=100/cats.length;
+      var stops=cats.map(function(c,i){
+        return gtpHmColor(c)+" "+(i*pct)+"% "+((i+1)*pct)+"%";
+      }).join(",");
+      sq.style.background="linear-gradient(135deg,"+stops+")";
+    }
+  });
+}
+
+function gtpHmApplyFilter(){
+  document.querySelectorAll(".gtp-yr-hm-sq[data-cats]").forEach(function(sq){
+    var cats=sq.dataset.cats.trim().split(/\s+/);
+    var anyVisible=cats.some(function(c){return !gtpSel[c];});
+    sq.classList.toggle("gtp-yr-hm-sq--filtered",!anyVisible);
+  });
+}
+
+function gtpHmExpand(sq){
+  var date=sq.dataset.date;
+  if(!date)return;
+  var month=sq.closest(".gtp-yr-hm-month");
+  var expand=month?month.querySelector(".gtp-yr-hm-expand"):null;
+  if(!expand)return;
+  var isActive=sq.classList.contains("gtp-yr-hm-sq--active");
+  month.querySelectorAll(".gtp-yr-hm-sq--active").forEach(function(s){
+    s.classList.remove("gtp-yr-hm-sq--active");
+  });
+  expand.hidden=true;
+  expand.innerHTML="";
+  if(isActive)return;
+  var evArr=[];
+  document.querySelectorAll(".gtp-yr-ev").forEach(function(ev){
+    if((ev.getAttribute("data-date")||"").slice(0,10)===date)evArr.push(ev);
+  });
+  if(!evArr.length)return;
+  var d=new Date(date+"T00:00:00");
+  var wdays=["So","Mo","Di","Mi","Do","Fr","Sa"];
+  var mons=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+  var label=wdays[d.getDay()]+", "+d.getDate()+". "+mons[d.getMonth()]+" "+d.getFullYear();
+  var html="<div class=\"gtp-yr-hm-expand-date\">"+label+"</div>";
+  evArr.forEach(function(ev){
+    var c=ev.getAttribute("data-c")||"";
+    if(gtpSel[c])return;
+    var summary=ev.getAttribute("data-summary")||ev.textContent.trim();
+    html+="<div class=\"gtp-yr-hm-expand-ev gc-"+c+"\">"+summary+"</div>";
+  });
+  expand.innerHTML=html;
+  expand.hidden=false;
+  sq.classList.add("gtp-yr-hm-sq--active");
+}
+
+function gtpHeatmapToggle(btn){
+  var yearWrap=document.querySelector(".gtp-year-wrap");
+  if(!yearWrap)return;
+  var isHeatmap=yearWrap.classList.toggle("gtp-year-wrap--heatmap");
+  var label=btn.querySelector(".gtp-view-toggle-label");
+  if(label)label.textContent=isHeatmap?"Tabelle":"Heatmap";
+}
+
+document.addEventListener("click",function(e){
+  var sq=e.target.closest(".gtp-yr-hm-sq");
+  if(sq&&sq.dataset.valid!=="0"&&sq.dataset.cats){
+    gtpHmExpand(sq);
+  }
+});
+
+/* ════════════════════════════════════════════════════════
    SICHTBARKEITS-HELPER (Kategorie-Filter + Textsuche kombiniert)
    ════════════════════════════════════════════════════════
    Entscheidet für ein einzelnes .ge-Element, ob es angezeigt
