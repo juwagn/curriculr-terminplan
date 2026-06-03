@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.4.0
+ * Version:     4.5.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.5.0:
+ * - [FEATURE] Curriculr Data Layer: REST-Speicherung des Planner-Dokuments + Token-ICS-Feed (Feed-Reuse)
+ *
  * Changelog 4.4.0:
  * - [FEATURE] Mobile Jahresansicht: Heatmap-Streifen mit Inline-Expand
  * - [UX] Desktop/Tablet: optionaler Heatmap-Toggle-Button
@@ -504,12 +507,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.4.0' );
+define( 'GSH_TP_VERSION',       '4.5.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
 define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup)
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
+
+// Curriculr Data Layer (REST-Speicherung des Planner-Dokuments + Token-ICS-Feed).
+require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
 
 /**
  * Standard-Kategorien des Schul-Terminplans.
@@ -743,6 +749,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.5.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr Data Layer: REST-Speicherung des Planner-Dokuments + Token-ICS-Feed (Feed-Reuse), Renderer unverändert' ),
+            ),
+        ),
         array(
             'version'  => '4.4.0',
             'entries'  => array(
