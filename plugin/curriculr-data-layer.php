@@ -156,3 +156,78 @@ function gsh_tp_curriculr_validate_envelope( $body ) {
     }
     return array( 'valid' => empty( $errors ), 'errors' => $errors );
 }
+
+/* ---------- WP: Tabelle + Repository ---------- */
+
+function gsh_tp_curriculr_table() {
+    global $wpdb;
+    return $wpdb->prefix . 'curriculr_docs';
+}
+
+function gsh_tp_curriculr_install() {
+    global $wpdb;
+    $table   = gsh_tp_curriculr_table();
+    $charset = $wpdb->get_charset_collate();
+    $sql     = "CREATE TABLE $table (
+        schoolyear varchar(64) NOT NULL,
+        json longtext NOT NULL,
+        version int unsigned NOT NULL DEFAULT 0,
+        updated_at datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
+        updated_by bigint unsigned NOT NULL DEFAULT 0,
+        feed_token varchar(64) NOT NULL DEFAULT '',
+        PRIMARY KEY  (schoolyear)
+    ) $charset;";
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+    update_option( 'gsh_tp_curriculr_db_version', 1, false );
+}
+
+function gsh_tp_curriculr_repo_get( $sj ) {
+    global $wpdb;
+    $table = gsh_tp_curriculr_table();
+    $sj    = sanitize_key( $sj );
+    $row   = $wpdb->get_row(
+        $wpdb->prepare( "SELECT * FROM $table WHERE schoolyear = %s", $sj ),
+        ARRAY_A
+    );
+    return $row ? $row : null;
+}
+
+function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version ) {
+    global $wpdb;
+    $table    = gsh_tp_curriculr_table();
+    $sj       = sanitize_key( $sj );
+    $existing = gsh_tp_curriculr_repo_get( $sj );
+    $current  = $existing ? (int) $existing['version'] : 0;
+
+    if ( gsh_tp_curriculr_version_decision( $current, $base_version ) === 'conflict' ) {
+        return array( 'status' => 'conflict', 'current' => $existing );
+    }
+
+    $new_version = $current + 1;
+    $token       = ( $existing && ! empty( $existing['feed_token'] ) )
+        ? $existing['feed_token']
+        : wp_generate_password( 32, false, false );
+
+    $data = array(
+        'schoolyear' => $sj,
+        'json'       => wp_json_encode( $doc ),
+        'version'    => $new_version,
+        'updated_at' => current_time( 'mysql' ),
+        'updated_by' => get_current_user_id(),
+        'feed_token' => $token,
+    );
+
+    if ( $existing ) {
+        $wpdb->update( $table, $data, array( 'schoolyear' => $sj ) );
+    } else {
+        $wpdb->insert( $table, $data );
+    }
+
+    return array(
+        'status'     => 'ok',
+        'version'    => $new_version,
+        'feed_token' => $token,
+        'updated_at' => $data['updated_at'],
+    );
+}
