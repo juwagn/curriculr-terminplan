@@ -130,3 +130,11 @@ function gsh_tp_curriculr_build_ics( $doc ) {
     $folded   = array_map( 'gsh_tp_curriculr_ics_fold', $lines );
     return implode( "\r\n", $folded ) . "\r\n";
 }
+
+/* ---------- Pure: Versions-Entscheidung (Konflikt-Schutz, Spec §5) ---------- */
+
+function gsh_tp_curriculr_version_decision( $current, $base ) {
+    // $current = gespeicherte Server-Version (0 = noch keine Zeile).
+    // $base    = baseVersion des Clients. Nur exakte Übereinstimmung darf schreiben.
+    return ( (int) $base === (int) $current ) ? 'ok' : 'conflict';
+}
