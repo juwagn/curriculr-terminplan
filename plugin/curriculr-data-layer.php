@@ -37,14 +37,30 @@ function gsh_tp_curriculr_ics_fmt_datetime( $iso, $time ) {
 }
 
 function gsh_tp_curriculr_ics_fold( $line ) {
-    // Zeilenfaltung nach RFC 5545 (Oktett-basiert; Folge-Zeilen mit Space-Prefix).
+    // Zeilenfaltung nach RFC 5545: max 75 Oktette/Zeile, Folgezeilen mit Space-Präfix.
+    // UTF-8-Mehrbyte-Zeichen werden nie zerschnitten.
     if ( strlen( $line ) <= 75 ) {
         return $line;
     }
-    $out = array();
-    $len = strlen( $line );
-    for ( $i = 0; $i < $len; $i += 73 ) {
-        $out[] = ( $i === 0 ? '' : ' ' ) . substr( $line, $i, 73 );
+    $out   = array();
+    $len   = strlen( $line );
+    $i     = 0;
+    $first = true;
+    while ( $i < $len ) {
+        $max  = $first ? 75 : 74; // Folgezeilen tragen 1 Space-Präfix.
+        $take = min( $max, $len - $i );
+        // Nicht mitten in einer UTF-8-Sequenz schneiden: zurück, solange das
+        // nächste Byte ein Continuation-Byte (10xxxxxx) ist.
+        while ( $take > 0 && isset( $line[ $i + $take ] ) && ( ord( $line[ $i + $take ] ) & 0xC0 ) === 0x80 ) {
+            $take--;
+        }
+        if ( $take <= 0 ) {
+            $take = $max; // Sicherheitsnetz (sollte nie eintreten).
+        }
+        $chunk = substr( $line, $i, $take );
+        $out[] = $first ? $chunk : ' ' . $chunk;
+        $i    += $take;
+        $first = false;
     }
     return implode( "\r\n", $out );
 }
@@ -56,7 +72,7 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     $lines[] = 'SUMMARY:' . gsh_tp_curriculr_ics_escape( $e['title'] );
 
     if ( ! empty( $e['allDay'] ) ) {
-        $end_exclusive = date( 'Ymd', strtotime( $e['end'] . ' +1 day' ) );
+        $end_exclusive = ( new DateTime( $e['end'] ) )->modify( '+1 day' )->format( 'Ymd' );
         $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $e['start'] );
         $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
     } else {
