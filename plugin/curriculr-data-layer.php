@@ -231,3 +231,128 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version ) {
         'updated_at' => $data['updated_at'],
     );
 }
+
+/* ---------- WP: REST-Routen, Auth, CORS ---------- */
+
+function gsh_tp_curriculr_feed_url( $sj, $token ) {
+    return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '.ics' );
+}
+
+function gsh_tp_curriculr_perm() {
+    // Application Passwords authentifizieren den Request als WP-User;
+    // danach greift current_user_can wie bei einer normalen Session.
+    return current_user_can( 'manage_options' );
+}
+
+function gsh_tp_curriculr_allowed_origin() {
+    return get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+}
+
+function gsh_tp_curriculr_send_cors() {
+    header( 'Access-Control-Allow-Origin: ' . gsh_tp_curriculr_allowed_origin() );
+    header( 'Access-Control-Allow-Methods: GET, PUT, OPTIONS' );
+    header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
+    header( 'Vary: Origin' );
+}
+
+function gsh_tp_curriculr_cors_filter( $served, $result, $request, $server ) {
+    if ( strpos( $request->get_route(), '/curriculr/v1' ) === 0 ) {
+        gsh_tp_curriculr_send_cors();
+        if ( $request->get_method() === 'OPTIONS' ) {
+            status_header( 200 );
+            return true; // Preflight kurzschließen.
+        }
+    }
+    return $served;
+}
+
+function gsh_tp_curriculr_register_rest() {
+    register_rest_route(
+        'curriculr/v1',
+        '/doc/(?P<sj>[a-z0-9_\-]+)',
+        array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => 'gsh_tp_curriculr_rest_get',
+                'permission_callback' => 'gsh_tp_curriculr_perm',
+            ),
+            array(
+                'methods'             => 'PUT',
+                'callback'            => 'gsh_tp_curriculr_rest_put',
+                'permission_callback' => 'gsh_tp_curriculr_perm',
+            ),
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/health',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_health',
+            'permission_callback' => 'gsh_tp_curriculr_perm',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/feed/(?P<sj>[a-z0-9_\-]+)/(?P<token>[A-Za-z0-9]+)\.ics',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_feed',
+            'permission_callback' => '__return_true',
+        )
+    );
+}
+
+function gsh_tp_curriculr_rest_health() {
+    return new WP_REST_Response( array( 'ok' => true, 'plugin' => GSH_TP_VERSION ), 200 );
+}
+
+function gsh_tp_curriculr_rest_get( $req ) {
+    $row = gsh_tp_curriculr_repo_get( $req['sj'] );
+    if ( ! $row ) {
+        return new WP_REST_Response( array( 'exists' => false ), 404 );
+    }
+    return new WP_REST_Response(
+        array(
+            'exists'    => true,
+            'doc'       => json_decode( $row['json'], true ),
+            'version'   => (int) $row['version'],
+            'updatedAt' => $row['updated_at'],
+            'feedUrl'   => gsh_tp_curriculr_feed_url( $req['sj'], $row['feed_token'] ),
+        ),
+        200
+    );
+}
+
+function gsh_tp_curriculr_rest_put( $req ) {
+    $body = $req->get_json_params();
+    $v    = gsh_tp_curriculr_validate_envelope( $body );
+    if ( ! $v['valid'] ) {
+        return new WP_REST_Response( array( 'error' => 'invalid', 'details' => $v['errors'] ), 400 );
+    }
+
+    $res = gsh_tp_curriculr_repo_put( $req['sj'], $body['doc'], (int) $body['baseVersion'] );
+
+    if ( $res['status'] === 'conflict' ) {
+        return new WP_REST_Response(
+            array(
+                'error'         => 'conflict',
+                'serverVersion' => (int) $res['current']['version'],
+                'doc'           => json_decode( $res['current']['json'], true ),
+            ),
+            409
+        );
+    }
+
+    gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
+
+    return new WP_REST_Response(
+        array(
+            'status'    => 'ok',
+            'version'   => $res['version'],
+            'updatedAt' => $res['updated_at'],
+            'feedUrl'   => gsh_tp_curriculr_feed_url( $req['sj'], $res['feed_token'] ),
+        ),
+        200
+    );
+}
