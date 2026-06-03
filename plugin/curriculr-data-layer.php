@@ -356,3 +356,79 @@ function gsh_tp_curriculr_rest_put( $req ) {
         200
     );
 }
+
+/* ---------- WP: Öffentlicher Token-Feed (IServ + WP-Anzeige) ---------- */
+
+function gsh_tp_curriculr_rest_feed( $req ) {
+    $row = gsh_tp_curriculr_repo_get( $req['sj'] );
+    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+        return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
+    }
+    $doc = json_decode( $row['json'], true );
+    $ics = gsh_tp_curriculr_build_ics( $doc );
+
+    if ( ! headers_sent() ) {
+        header( 'Content-Type: text/calendar; charset=utf-8' );
+        header( 'Content-Disposition: inline; filename="' . sanitize_key( $req['sj'] ) . '.ics"' );
+        header( 'Cache-Control: max-age=300' );
+    }
+    echo $ics; // phpcs:ignore -- rohe ICS-Ausgabe, bewusst kein wp_die.
+    exit;
+}
+
+/* ---------- WP: Feed-Reuse-Verdrahtung (Spec §3/§7) ---------- */
+
+function gsh_tp_curriculr_profile_for( $sj ) {
+    // Schuljahr -> Profil-ID. Map-Option erlaubt explizite Zuordnung;
+    // Fallback = aktives Profil.
+    $map = get_option( 'gsh_tp_curriculr_profile_map', array() );
+    $sj  = sanitize_key( $sj );
+    if ( is_array( $map ) && isset( $map[ $sj ] ) ) {
+        return $map[ $sj ];
+    }
+    return function_exists( 'gsh_tp_active_profile_id' ) ? gsh_tp_active_profile_id() : '';
+}
+
+function gsh_tp_curriculr_after_put( $sj, $token ) {
+    $pid = gsh_tp_curriculr_profile_for( $sj );
+    if ( ! $pid ) {
+        return;
+    }
+    $feed_url = gsh_tp_curriculr_feed_url( $sj, $token );
+    $profiles = gsh_tp_get_profiles();
+    $changed  = false;
+    foreach ( $profiles as &$p ) {
+        if ( isset( $p['id'] ) && $p['id'] === $pid && ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) ) {
+            $p['ical_url'] = $feed_url;
+            $changed       = true;
+        }
+    }
+    unset( $p );
+    if ( $changed ) {
+        update_option( 'gsh_tp_profiles', $profiles, true );
+    }
+    // Bestehenden Refresh anstoßen → Anzeige-Cache sofort aktuell.
+    if ( function_exists( 'gsh_tp_do_refresh' ) ) {
+        gsh_tp_do_refresh( $pid );
+    }
+}
+
+/* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
+
+if ( function_exists( 'add_action' ) ) {
+    add_action( 'rest_api_init', 'gsh_tp_curriculr_register_rest' );
+    add_filter( 'rest_pre_serve_request', 'gsh_tp_curriculr_cors_filter', 10, 4 );
+
+    // Tabelle bei Aktivierung anlegen ...
+    register_activation_hook( dirname( __FILE__ ) . '/gsh-terminplan.php', 'gsh_tp_curriculr_install' );
+
+    // ... und defensiv, falls das Plugin per Update statt Reaktivierung kam.
+    add_action(
+        'admin_init',
+        function () {
+            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 1 ) {
+                gsh_tp_curriculr_install();
+            }
+        }
+    );
+}
