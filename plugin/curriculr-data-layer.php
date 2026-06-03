@@ -138,3 +138,21 @@ function gsh_tp_curriculr_version_decision( $current, $base ) {
     // $base    = baseVersion des Clients. Nur exakte Übereinstimmung darf schreiben.
     return ( (int) $base === (int) $current ) ? 'ok' : 'conflict';
 }
+
+/* ---------- Pure: Envelope-Validierung des PUT-Bodys (Spec §6) ---------- */
+
+function gsh_tp_curriculr_validate_envelope( $body ) {
+    if ( ! is_array( $body ) ) {
+        return array( 'valid' => false, 'errors' => array( 'body_not_object' ) );
+    }
+    $errors = array();
+    if ( ! isset( $body['doc'] ) || ! is_array( $body['doc'] ) ) {
+        $errors[] = 'doc_missing';
+    } elseif ( ! isset( $body['doc']['events'] ) || ! is_array( $body['doc']['events'] ) ) {
+        $errors[] = 'doc_events_missing';
+    }
+    if ( ! array_key_exists( 'baseVersion', $body ) || ! is_int( $body['baseVersion'] ) ) {
+        $errors[] = 'baseVersion_missing';
+    }
+    return array( 'valid' => empty( $errors ), 'errors' => $errors );
+}
