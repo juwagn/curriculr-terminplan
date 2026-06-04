@@ -4474,8 +4474,8 @@ function gsh_tp_shortcode( $atts ) {
 
     $o .= '<div class="gtp" id="gtp" data-view="quartal" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
 
-    // Entwurfs-Banner
-    if ( ! empty( $profile['is_draft'] ) ) {
+    // Entwurfs-Banner — nicht im Kiosk-Template (dort steht bereits ein Banner).
+    if ( ! empty( $profile['is_draft'] ) && ! gsh_tp_draft_kiosk_context() ) {
         $o .= '<div class="gtp-draft-banner">'
             . gsh_tp_icon( 'lock' ) . ' ENTWURF &ndash; Dieser Terminplan ist noch nicht beschlossen.</div>';
     }
