@@ -180,6 +180,7 @@ function gsh_tp_curriculr_install() {
         schoolyear varchar(64) NOT NULL,
         json longtext NOT NULL,
         version int unsigned NOT NULL DEFAULT 0,
+        stage varchar(16) NOT NULL DEFAULT 'entwurf',
         updated_at datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
         updated_by bigint unsigned NOT NULL DEFAULT 0,
         feed_token varchar(64) NOT NULL DEFAULT '',
@@ -187,7 +188,7 @@ function gsh_tp_curriculr_install() {
     ) $charset;";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $sql );
-    update_option( 'gsh_tp_curriculr_db_version', 1, false );
+    update_option( 'gsh_tp_curriculr_db_version', 2, false );
 }
 
 function gsh_tp_curriculr_repo_get( $sj ) {
@@ -201,7 +202,7 @@ function gsh_tp_curriculr_repo_get( $sj ) {
     return $row ? $row : null;
 }
 
-function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version ) {
+function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf' ) {
     global $wpdb;
     $table    = gsh_tp_curriculr_table();
     $sj       = sanitize_key( $sj );
@@ -221,6 +222,7 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version ) {
         'schoolyear' => $sj,
         'json'       => wp_json_encode( $doc ),
         'version'    => $new_version,
+        'stage'      => gsh_tp_curriculr_normalize_stage( $stage ),
         'updated_at' => current_time( 'mysql' ),
         'updated_by' => get_current_user_id(),
         'feed_token' => $token,
@@ -235,6 +237,7 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version ) {
     return array(
         'status'     => 'ok',
         'version'    => $new_version,
+        'stage'      => $data['stage'],
         'feed_token' => $token,
         'updated_at' => $data['updated_at'],
     );
@@ -434,7 +437,7 @@ if ( function_exists( 'add_action' ) ) {
     add_action(
         'admin_init',
         function () {
-            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 1 ) {
+            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 2 ) {
                 gsh_tp_curriculr_install();
             }
         }
