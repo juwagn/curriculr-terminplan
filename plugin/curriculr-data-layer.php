@@ -328,6 +328,7 @@ function gsh_tp_curriculr_rest_get( $req ) {
             'exists'    => true,
             'doc'       => json_decode( $row['json'], true ),
             'version'   => (int) $row['version'],
+            'stage'     => isset( $row['stage'] ) ? $row['stage'] : 'entwurf',
             'updatedAt' => $row['updated_at'],
             'feedUrl'   => gsh_tp_curriculr_feed_url( $req['sj'], $row['feed_token'] ),
         ),
@@ -342,7 +343,8 @@ function gsh_tp_curriculr_rest_put( $req ) {
         return new WP_REST_Response( array( 'error' => 'invalid', 'details' => $v['errors'] ), 400 );
     }
 
-    $res = gsh_tp_curriculr_repo_put( $req['sj'], $body['doc'], (int) $body['baseVersion'] );
+    $stage = gsh_tp_curriculr_normalize_stage( isset( $body['stage'] ) ? $body['stage'] : 'entwurf' );
+    $res   = gsh_tp_curriculr_repo_put( $req['sj'], $body['doc'], (int) $body['baseVersion'], $stage );
 
     if ( $res['status'] === 'conflict' ) {
         return new WP_REST_Response(
@@ -355,12 +357,16 @@ function gsh_tp_curriculr_rest_put( $req ) {
         );
     }
 
-    gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
+    // Sicherheit: Feed-Reuse-Refresh nur, wenn der Plan öffentlich ist.
+    if ( $res['stage'] === 'oeffentlich' ) {
+        gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
+    }
 
     return new WP_REST_Response(
         array(
             'status'    => 'ok',
             'version'   => $res['version'],
+            'stage'     => $res['stage'],
             'updatedAt' => $res['updated_at'],
             'feedUrl'   => gsh_tp_curriculr_feed_url( $req['sj'], $res['feed_token'] ),
         ),
@@ -390,14 +396,11 @@ function gsh_tp_curriculr_rest_feed( $req ) {
 /* ---------- WP: Feed-Reuse-Verdrahtung (Spec §3/§7) ---------- */
 
 function gsh_tp_curriculr_profile_for( $sj ) {
-    // Schuljahr -> Profil-ID. Map-Option erlaubt explizite Zuordnung;
-    // Fallback = aktives Profil.
+    // Nur EXPLIZITE Zuordnung. Kein Rückfall auf das aktive Profil
+    // (Nicht-Disruption: das Live-Profil darf nie versehentlich umgebogen werden).
     $map = get_option( 'gsh_tp_curriculr_profile_map', array() );
     $sj  = sanitize_key( $sj );
-    if ( is_array( $map ) && isset( $map[ $sj ] ) ) {
-        return $map[ $sj ];
-    }
-    return function_exists( 'gsh_tp_active_profile_id' ) ? gsh_tp_active_profile_id() : '';
+    return ( is_array( $map ) && isset( $map[ $sj ] ) ) ? $map[ $sj ] : '';
 }
 
 function gsh_tp_curriculr_after_put( $sj, $token ) {
