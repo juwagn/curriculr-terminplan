@@ -157,6 +157,14 @@ function gsh_tp_curriculr_validate_envelope( $body ) {
     return array( 'valid' => empty( $errors ), 'errors' => $errors );
 }
 
+/* ---------- Pure: Stufen-Normalisierung (entwurf|genehmigt|oeffentlich) ---------- */
+
+function gsh_tp_curriculr_normalize_stage( $stage ) {
+    $s     = strtolower( (string) $stage );
+    $valid = array( 'entwurf', 'genehmigt', 'oeffentlich' );
+    return in_array( $s, $valid, true ) ? $s : 'entwurf';
+}
+
 /* ---------- WP: Tabelle + Repository ---------- */
 
 function gsh_tp_curriculr_table() {
