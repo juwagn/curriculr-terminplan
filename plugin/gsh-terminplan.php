@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.6.0
+ * Version:     4.7.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.7.0:
+ * - [FEATURE] Curriculr Planner-Sync: Einstellung „Erlaubte Planner-Adresse" (CORS-Origin) im System-Tab
+ *
  * Changelog 4.6.0:
  * - [FEATURE] Curriculr: Publikations-Stufe (Entwurf/Genehmigt/Öffentlich); Feed-Reuse nur für explizit zugeordnetes Profil und nur öffentlich
  *
@@ -510,7 +513,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.6.0' );
+define( 'GSH_TP_VERSION',       '4.7.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -752,6 +755,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.7.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr Planner-Sync: Einstellung „Erlaubte Planner-Adresse" (CORS-Origin) im System-Tab' ),
+            ),
+        ),
         array(
             'version'  => '4.6.0',
             'entries'  => array(
@@ -2652,6 +2661,16 @@ function gsh_tp_settings_page() {
         }
     }
 
+    // ── POST: Curriculr-Planner-Sync speichern ──
+    if ( isset( $_POST['gsh_tp_save_curriculr'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cur_n'] ?? '' ) ), 'gsh_tp_save_curriculr' ) ) {
+            update_option( 'gsh_tp_curriculr_origin', esc_url_raw( wp_unslash( $_POST['gsh_tp_curriculr_origin'] ?? '' ) ) );
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Curriculr-Sync-Einstellungen gespeichert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
     // ── POST: Profil löschen ──
     if ( isset( $_POST['gsh_tp_delete_profile'] ) ) {
         if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
@@ -3439,6 +3458,44 @@ function gsh_tp_render_kategorien_tab() {
  */
 function gsh_tp_render_system_tab() {
     ?>
+    <h2>Curriculr Planner-Sync</h2>
+    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+        <strong>Was ist das?</strong><br>
+        Erlaubt dem Curriculr-Planner, Terminpl&auml;ne direkt an dieses WordPress zu senden (REST-Schnittstelle <code>curriculr/v1</code>).
+        Trage die Adresse ein, von der aus der Planner ge&ouml;ffnet wird &ndash; nur diese Adresse darf senden (CORS-Schutz).
+    </div>
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_curriculr', 'gsh_tp_cur_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_curriculr" value="1" />
+        <table class="form-table">
+            <tr>
+                <th><label for="gsh_tp_curriculr_origin">Erlaubte Planner-Adresse</label></th>
+                <td>
+                    <input type="url" id="gsh_tp_curriculr_origin" name="gsh_tp_curriculr_origin"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' ) ); ?>"
+                           class="regular-text" placeholder="https://juwagn.github.io" />
+                    <p class="description">
+                        Online-Planner: <code>https://juwagn.github.io</code> (Standard).<br>
+                        Zum lokalen Testen: <code>http://localhost:5173</code> &ndash; nur Schema + Host + Port, ohne Pfad, ohne Schr&auml;gstrich am Ende.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th>REST-Schnittstelle</th>
+                <td>
+                    <?php
+                    $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
+                    echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
+                    ?>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button( 'Curriculr-Sync speichern' ); ?>
+    </form>
+
+    <hr style="margin:24px 0" />
+
     <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
     <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist die Entwurf-Vorschau?</strong><br>
