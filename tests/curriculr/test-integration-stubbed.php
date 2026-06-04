@@ -94,10 +94,28 @@ $GLOBALS['refreshed'] = array();
 $good = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 2 ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_true( $good->status === 200 && $good->data['version'] === 3, 'rest_put accepted -> 200 version 3' );
 gsh_assert_true( strpos( $good->data['feedUrl'], '/feed/sj_2026_27/' ) !== false && substr( $good->data['feedUrl'], -4 ) === '.ics', 'rest_put returns .ics feedUrl' );
-gsh_assert_eq( $GLOBALS['refreshed'], array( 'p1' ), 'after_put triggered gsh_tp_do_refresh for active profile' );
 
 /* ---------- Feed-Token: rest_feed 404 bei falschem Token ---------- */
 $nf = gsh_tp_curriculr_rest_feed( new Gsh_Fake_Req( array(), array( 'sj' => 'sj_2026_27', 'token' => 'WRONGTOKEN' ) ) );
 gsh_assert_true( $nf instanceof WP_REST_Response && $nf->status === 404, 'rest_feed wrong token -> 404' );
+
+/* ---------- Stage + Nicht-Disruption ---------- */
+// Standard-Stufe ist entwurf; ein entwurf-PUT darf NICHT refreshen (kein Mapping).
+$GLOBALS['refreshed'] = array();
+$draft = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 3 ), array( 'sj' => 'sj_2026_27' ) ) );
+gsh_assert_eq( $draft->data['stage'], 'entwurf', 'PUT without stage defaults to entwurf' );
+gsh_assert_eq( $GLOBALS['refreshed'], array(), 'entwurf PUT does not trigger refresh' );
+
+// Ohne explizites Profil-Mapping refresht auch ein oeffentlich-PUT nicht (Live-Schutz).
+$GLOBALS['refreshed'] = array();
+$pub = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 4, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
+gsh_assert_eq( $pub->data['stage'], 'oeffentlich', 'stage carried through to oeffentlich' );
+gsh_assert_eq( $GLOBALS['refreshed'], array(), 'oeffentlich PUT without profile mapping is a safe no-op' );
+
+// Mit explizitem Mapping refresht ein oeffentlich-PUT das gemappte Profil.
+$GLOBALS['options']['gsh_tp_curriculr_profile_map'] = array( 'sj_2026_27' => 'p1' );
+$GLOBALS['refreshed'] = array();
+$pub2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 5, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
+gsh_assert_eq( $GLOBALS['refreshed'], array( 'p1' ), 'mapped oeffentlich PUT refreshes the mapped profile' );
 
 gsh_test_done();
