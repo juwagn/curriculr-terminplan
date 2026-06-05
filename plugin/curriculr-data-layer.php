@@ -21,9 +21,10 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'GSH_TP_CURRICULR_TEST' ) ) {
 
 function gsh_tp_curriculr_ics_escape( $s ) {
     $s = str_replace( '\\', '\\\\', (string) $s );
-    $s = str_replace( ',', '\\,', $s );
-    $s = str_replace( ';', '\\;', $s );
-    $s = str_replace( "\n", '\\n', $s );
+    $s = str_replace( ',',  '\\,',  $s );
+    $s = str_replace( ';',  '\\;',  $s );
+    $s = str_replace( "\r", '',     $s ); // CR entfernen — verhindert CRLF-Injection in ICS-Properties.
+    $s = str_replace( "\n", '\\n',  $s );
     return $s;
 }
 
@@ -67,7 +68,7 @@ function gsh_tp_curriculr_ics_fold( $line ) {
 
 function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     $lines   = array( 'BEGIN:VEVENT' );
-    $lines[] = 'UID:' . $e['id'] . '@curriculr-planner';
+    $lines[] = 'UID:' . gsh_tp_curriculr_ics_escape( $e['id'] ) . '@curriculr-planner';
     $lines[] = 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' );
     $lines[] = 'SUMMARY:' . gsh_tp_curriculr_ics_escape( $e['title'] );
 
@@ -260,7 +261,7 @@ function gsh_tp_curriculr_allowed_origin() {
 }
 
 function gsh_tp_curriculr_send_cors() {
-    header( 'Access-Control-Allow-Origin: ' . gsh_tp_curriculr_allowed_origin() );
+    header( 'Access-Control-Allow-Origin: ' . esc_url_raw( gsh_tp_curriculr_allowed_origin() ) );
     header( 'Access-Control-Allow-Methods: GET, PUT, OPTIONS' );
     header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
     header( 'Vary: Origin' );
