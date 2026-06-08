@@ -3,10 +3,22 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.4.0
+ * Version:     4.8.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.8.0:
+ * - [FEATURE] Curriculr Profil-Zuordnung: Schuljahr-Schlüssel ↔ WP-Profil im System-Tab konfigurierbar
+ *
+ * Changelog 4.7.0:
+ * - [FEATURE] Curriculr Planner-Sync: Einstellung „Erlaubte Planner-Adresse" (CORS-Origin) im System-Tab
+ *
+ * Changelog 4.6.0:
+ * - [FEATURE] Curriculr: Publikations-Stufe (Entwurf/Genehmigt/Öffentlich); Feed-Reuse nur für explizit zugeordnetes Profil und nur öffentlich
+ *
+ * Changelog 4.5.0:
+ * - [FEATURE] Curriculr Data Layer: REST-Speicherung des Planner-Dokuments + Token-ICS-Feed (Feed-Reuse)
+ *
  * Changelog 4.4.0:
  * - [FEATURE] Mobile Jahresansicht: Heatmap-Streifen mit Inline-Expand
  * - [UX] Desktop/Tablet: optionaler Heatmap-Toggle-Button
@@ -504,12 +516,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.4.0' );
+define( 'GSH_TP_VERSION',       '4.8.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
 define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup)
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
+
+// Curriculr Data Layer (REST-Speicherung des Planner-Dokuments + Token-ICS-Feed).
+require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
 
 /**
  * Standard-Kategorien des Schul-Terminplans.
@@ -743,6 +758,30 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.8.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr Profil-Zuordnung: Schuljahr-Schlüssel ↔ WP-Profil im System-Tab konfigurierbar' ),
+            ),
+        ),
+        array(
+            'version'  => '4.7.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr Planner-Sync: Einstellung „Erlaubte Planner-Adresse" (CORS-Origin) im System-Tab' ),
+            ),
+        ),
+        array(
+            'version'  => '4.6.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr: Publikations-Stufe (Entwurf/Genehmigt/Öffentlich); Feed-Reuse nur für explizit zugeordnetes Profil und nur öffentlich' ),
+            ),
+        ),
+        array(
+            'version'  => '4.5.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'Curriculr Data Layer: REST-Speicherung des Planner-Dokuments + Token-ICS-Feed (Feed-Reuse), Renderer unverändert' ),
+            ),
+        ),
         array(
             'version'  => '4.4.0',
             'entries'  => array(
@@ -2631,6 +2670,23 @@ function gsh_tp_settings_page() {
         }
     }
 
+    // ── POST: Curriculr-Planner-Sync speichern ──
+    if ( isset( $_POST['gsh_tp_save_curriculr'] ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cur_n'] ?? '' ) ), 'gsh_tp_save_curriculr' ) ) {
+            update_option( 'gsh_tp_curriculr_origin', esc_url_raw( wp_unslash( $_POST['gsh_tp_curriculr_origin'] ?? '' ) ) );
+            $sj_key     = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_sj_key']     ?? '' ) );
+            $profile_id = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_profile_id'] ?? '' ) );
+            if ( $sj_key && $profile_id ) {
+                update_option( 'gsh_tp_curriculr_profile_map', array( $sj_key => $profile_id ), false );
+            } elseif ( ! $sj_key && ! $profile_id ) {
+                update_option( 'gsh_tp_curriculr_profile_map', array(), false );
+            }
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Curriculr-Sync-Einstellungen gespeichert.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+        }
+    }
+
     // ── POST: Profil löschen ──
     if ( isset( $_POST['gsh_tp_delete_profile'] ) ) {
         if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
@@ -3418,6 +3474,71 @@ function gsh_tp_render_kategorien_tab() {
  */
 function gsh_tp_render_system_tab() {
     ?>
+    <h2>Curriculr Planner-Sync</h2>
+    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+        <strong>Was ist das?</strong><br>
+        Erlaubt dem Curriculr-Planner, Terminpl&auml;ne direkt an dieses WordPress zu senden (REST-Schnittstelle <code>curriculr/v1</code>).
+        Trage die Adresse ein, von der aus der Planner ge&ouml;ffnet wird &ndash; nur diese Adresse darf senden (CORS-Schutz).
+    </div>
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_curriculr', 'gsh_tp_cur_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_curriculr" value="1" />
+        <table class="form-table">
+            <tr>
+                <th><label for="gsh_tp_curriculr_origin">Erlaubte Planner-Adresse</label></th>
+                <td>
+                    <input type="url" id="gsh_tp_curriculr_origin" name="gsh_tp_curriculr_origin"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' ) ); ?>"
+                           class="regular-text" placeholder="https://juwagn.github.io" />
+                    <p class="description">
+                        Online-Planner: <code>https://juwagn.github.io</code> (Standard).<br>
+                        Zum lokalen Testen: <code>http://localhost:5173</code> &ndash; nur Schema + Host + Port, ohne Pfad, ohne Schr&auml;gstrich am Ende.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th>REST-Schnittstelle</th>
+                <td>
+                    <?php
+                    $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
+                    echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
+                    ?>
+                </td>
+            </tr>
+            <?php
+            $cur_map     = get_option( 'gsh_tp_curriculr_profile_map', array() );
+            $cur_sj_key  = array_key_first( $cur_map ) ?? '';
+            $cur_prof_id = $cur_map ? reset( $cur_map ) : '';
+            ?>
+            <tr>
+                <th><label for="gsh_tp_curriculr_sj_key">Profil-Zuordnung</label></th>
+                <td>
+                    <input type="text" id="gsh_tp_curriculr_sj_key" name="gsh_tp_curriculr_sj_key"
+                           value="<?php echo esc_attr( $cur_sj_key ); ?>"
+                           class="regular-text" placeholder="sj_2026_27" />
+                    &rarr;
+                    <select name="gsh_tp_curriculr_profile_id">
+                        <option value="">— kein Profil —</option>
+                        <?php foreach ( gsh_tp_get_profiles() as $p ) : ?>
+                            <option value="<?php echo esc_attr( $p['id'] ); ?>"
+                                <?php selected( $cur_prof_id, $p['id'] ); ?>>
+                                <?php echo esc_html( $p['id'] . ( ! empty( $p['is_active'] ) ? ' (aktiv)' : '' ) ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="description">
+                        Schuljahr-Schl&uuml;ssel, den der Planner sendet (z.B. <code>sj_2026_27</code>), dem Profil zuordnen, das der Terminplan anzeigen soll.<br>
+                        Nur wenn diese Zuordnung gesetzt ist, aktualisiert sich die Anzeige automatisch bei &bdquo;&Ouml;ffentlich schalten&ldquo;.
+                    </p>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button( 'Curriculr-Sync speichern' ); ?>
+    </form>
+
+    <hr style="margin:24px 0" />
+
     <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
     <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist die Entwurf-Vorschau?</strong><br>
@@ -4396,8 +4517,8 @@ function gsh_tp_shortcode( $atts ) {
 
     $o .= '<div class="gtp" id="gtp" data-view="quartal" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
 
-    // Entwurfs-Banner
-    if ( ! empty( $profile['is_draft'] ) ) {
+    // Entwurfs-Banner — nicht im Kiosk-Template (dort steht bereits ein Banner).
+    if ( ! empty( $profile['is_draft'] ) && ! gsh_tp_draft_kiosk_context() ) {
         $o .= '<div class="gtp-draft-banner">'
             . gsh_tp_icon( 'lock' ) . ' ENTWURF &ndash; Dieser Terminplan ist noch nicht beschlossen.</div>';
     }

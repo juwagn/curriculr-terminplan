@@ -7,11 +7,10 @@
  * mit IP-basiertem Rate-Limiting).
  *
  * Einrichtung:
- *   1. Diese Datei in den aktiven Theme-Ordner kopieren.
- *   2. Im WordPress-Backend eine neue Seite anlegen.
- *   3. Als Seitenvorlage „Terminplan Entwurf-Vorschau" wählen.
- *   4. Im Plugin-Admin (Kiosk & System) einen Entwurf-Token generieren.
- *   5. Die angezeigte URL an das Schulleitungsteam weitergeben.
+ *   1. Im WordPress-Backend eine neue Seite anlegen.
+ *   2. Als Seitenvorlage „Terminplan Entwurf-Vorschau" wählen.
+ *   3. Im Plugin-Admin (System-Tab) einen Entwurf-Token generieren.
+ *   4. Die angezeigte URL an das Schulleitungsteam weitergeben.
  *
  * @since 4.1.0
  */
@@ -30,8 +29,22 @@ if ( ! function_exists( 'gsh_tp_check_draft_kiosk_access' ) || ! gsh_tp_check_dr
 }
 
 nocache_headers();
-get_header();
+
+// Kiosk-Kontext setzen BEVOR do_shortcode läuft, damit der Shortcode keinen
+// zweiten Entwurfs-Banner rendert (gsh_tp_draft_kiosk_context() prüft dieses Flag).
+if ( function_exists( 'gsh_tp_draft_kiosk_context' ) ) {
+	gsh_tp_draft_kiosk_context( true );
+}
 ?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+<meta charset="<?php bloginfo( 'charset' ); ?>" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><?php echo esc_html( get_bloginfo( 'name' ) ); ?> &ndash; Terminplan Entwurf</title>
+<?php wp_head(); ?>
+</head>
+<body class="gtp-entwurf-kiosk">
 
 <main style="max-width:1200px;margin:0 auto;padding:1rem">
 	<div class="gtp-draft-banner" style="margin-bottom:1.5rem;border-radius:6px;padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.5rem">
@@ -43,5 +56,6 @@ get_header();
 	<?php echo do_shortcode( '[gsh_terminplan schuljahr="entwurf"]' ); ?>
 </main>
 
-<?php
-get_footer();
+<?php wp_footer(); ?>
+</body>
+</html>

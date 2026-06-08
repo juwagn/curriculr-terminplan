@@ -1,0 +1,33 @@
+{
+  "meta": { "name": "Terminplan 2026/27" },
+  "categories": [
+    { "id": "konferenz", "label": "Konferenz" },
+    { "id": "elternabend", "label": "Elternabend" }
+  ],
+  "events": [
+    {
+      "id": "ev1",
+      "title": "Gesamtkonferenz",
+      "allDay": true,
+      "start": "2026-09-10",
+      "end": "2026-09-10",
+      "location": "Aula",
+      "notes": "Tagesordnung folgt",
+      "groups": ["Kollegium"],
+      "categoryId": "konferenz"
+    },
+    {
+      "id": "ev2",
+      "title": "Elternsprechtag",
+      "allDay": false,
+      "start": "2026-11-12",
+      "end": "2026-11-12",
+      "startTime": "16:00",
+      "endTime": "19:00",
+      "location": "",
+      "notes": "",
+      "groups": [],
+      "categoryId": "elternabend"
+    }
+  ]
+}
