@@ -17,13 +17,27 @@ require __DIR__ . '/assert.php';
 
 /* ---------- minimale WordPress-Stubs ---------- */
 class Gsh_Fake_Wpdb {
-    public $prefix = 'wp_';
-    public $rows   = array();
+    public $prefix    = 'wp_';
+    public $rows      = array();
+    public $revs      = array();
+    public $next_id   = 1;
+    public $insert_id = 0;
     public function get_charset_collate() { return ''; }
-    public function prepare( $q, $a = null ) { return $a; }            // bindet die schoolyear
+    public function prepare( $q, $a = null ) { return $a; }
     public function get_row( $key, $out = null ) { return $this->rows[ $key ] ?? null; }
-    public function insert( $t, $data ) { $this->rows[ $data['schoolyear'] ] = $data; }
+    public function get_results( $q, $out = null ) { return array_values( $this->revs ); }
+    public function insert( $t, $data ) {
+        if ( strpos( (string) $t, 'revisions' ) !== false ) {
+            $data['id']      = $this->next_id;
+            $this->insert_id = $this->next_id;
+            $this->revs[ $this->next_id ] = $data;
+            $this->next_id++;
+        } else {
+            $this->rows[ $data['schoolyear'] ] = $data;
+        }
+    }
     public function update( $t, $data, $where ) { $this->rows[ $where['schoolyear'] ] = array_merge( $this->rows[ $where['schoolyear'] ] ?? array(), $data ); }
+    public function query( $sql ) { return true; }
 }
 $GLOBALS['wpdb']      = new Gsh_Fake_Wpdb();
 $GLOBALS['options']   = array();
@@ -43,6 +57,9 @@ function gsh_tp_do_refresh( $pid ) { $GLOBALS['refreshed'][] = $pid; }
 function add_action() {}
 function add_filter() {}
 function register_activation_hook() {}
+function register_deactivation_hook() {}
+function wp_next_scheduled() { return false; }
+function wp_schedule_event() {}
 class WP_REST_Response { public $data; public $status; public function __construct( $d, $s = 200 ) { $this->data = $d; $this->status = $s; } }
 
 require __DIR__ . '/../../plugin/curriculr-data-layer.php';

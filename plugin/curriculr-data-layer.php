@@ -173,11 +173,17 @@ function gsh_tp_curriculr_table() {
     return $wpdb->prefix . 'curriculr_docs';
 }
 
+function gsh_tp_curriculr_revisions_table() {
+    global $wpdb;
+    return $wpdb->prefix . 'curriculr_doc_revisions';
+}
+
 function gsh_tp_curriculr_install() {
     global $wpdb;
-    $table   = gsh_tp_curriculr_table();
     $charset = $wpdb->get_charset_collate();
-    $sql     = "CREATE TABLE $table (
+
+    $docs_table = gsh_tp_curriculr_table();
+    $docs_sql   = "CREATE TABLE $docs_table (
         schoolyear varchar(64) NOT NULL,
         json longtext NOT NULL,
         version int unsigned NOT NULL DEFAULT 0,
@@ -187,9 +193,22 @@ function gsh_tp_curriculr_install() {
         feed_token varchar(64) NOT NULL DEFAULT '',
         PRIMARY KEY  (schoolyear)
     ) $charset;";
+
+    $rev_table = gsh_tp_curriculr_revisions_table();
+    $rev_sql   = "CREATE TABLE $rev_table (
+        id bigint unsigned NOT NULL AUTO_INCREMENT,
+        schoolyear varchar(64) NOT NULL,
+        version int unsigned NOT NULL DEFAULT 0,
+        json longtext NOT NULL,
+        created_at datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
+        PRIMARY KEY  (id),
+        KEY sj_version (schoolyear, version)
+    ) $charset;";
+
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    dbDelta( $sql );
-    update_option( 'gsh_tp_curriculr_db_version', 2, false );
+    dbDelta( $docs_sql );
+    dbDelta( $rev_sql );
+    update_option( 'gsh_tp_curriculr_db_version', 3, false );
 }
 
 function gsh_tp_curriculr_repo_get( $sj ) {
@@ -235,12 +254,54 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         $wpdb->insert( $table, $data );
     }
 
+    // Revision-Snapshot + Retention-Prune.
+    $json_str = wp_json_encode( $doc );
+    gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str );
+    gsh_tp_curriculr_prune_revisions( $sj );
+
     return array(
         'status'     => 'ok',
         'version'    => $new_version,
         'stage'      => $data['stage'],
         'feed_token' => $token,
         'updated_at' => $data['updated_at'],
+    );
+}
+
+function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str ) {
+    global $wpdb;
+    $table = gsh_tp_curriculr_revisions_table();
+    $wpdb->insert(
+        $table,
+        array(
+            'schoolyear' => sanitize_key( $sj ),
+            'version'    => (int) $version,
+            'json'       => $json_str,
+            'created_at' => current_time( 'mysql' ),
+        )
+    );
+    return (int) $wpdb->insert_id;
+}
+
+function gsh_tp_curriculr_prune_revisions( $sj ) {
+    global $wpdb;
+    $table = gsh_tp_curriculr_revisions_table();
+    $sj    = sanitize_key( $sj );
+    $wpdb->query(
+        $wpdb->prepare(
+            "DELETE FROM $table
+             WHERE schoolyear = %s
+               AND id NOT IN (
+                 SELECT id FROM (
+                   SELECT id FROM $table
+                   WHERE schoolyear = %s
+                   ORDER BY id DESC
+                   LIMIT 50
+                 ) AS keep
+               )",
+            $sj,
+            $sj
+        )
     );
 }
 
@@ -311,6 +372,29 @@ function gsh_tp_curriculr_register_rest() {
             'methods'             => 'GET',
             'callback'            => 'gsh_tp_curriculr_rest_feed',
             'permission_callback' => '__return_true',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/doc/(?P<sj>[a-z0-9_\-]+)/revisions',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_revisions_list',
+            'permission_callback' => 'gsh_tp_curriculr_perm',
+            'args'                => array( 'sj' => array( 'required' => true ) ),
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/doc/(?P<sj>[a-z0-9_\-]+)/revisions/(?P<id>\d+)',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_revisions_get',
+            'permission_callback' => 'gsh_tp_curriculr_perm',
+            'args'                => array(
+                'sj' => array( 'required' => true ),
+                'id' => array( 'required' => true ),
+            ),
         )
     );
 }
@@ -394,6 +478,51 @@ function gsh_tp_curriculr_rest_feed( $req ) {
     exit;
 }
 
+function gsh_tp_curriculr_rest_revisions_list( $req ) {
+    global $wpdb;
+    $table = gsh_tp_curriculr_revisions_table();
+    $sj    = sanitize_key( $req['sj'] );
+    $rows  = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT id, schoolyear, version, created_at FROM $table WHERE schoolyear = %s ORDER BY id DESC LIMIT 100",
+            $sj
+        ),
+        ARRAY_A
+    );
+    if ( $rows === null ) {
+        return new WP_REST_Response( array( 'error' => 'db_error' ), 500 );
+    }
+    return new WP_REST_Response( $rows ? array_values( $rows ) : array(), 200 );
+}
+
+function gsh_tp_curriculr_rest_revisions_get( $req ) {
+    global $wpdb;
+    $table = gsh_tp_curriculr_revisions_table();
+    $sj    = sanitize_key( $req['sj'] );
+    $id    = (int) $req['id'];
+    $row   = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM $table WHERE id = %d AND schoolyear = %s",
+            $id,
+            $sj
+        ),
+        ARRAY_A
+    );
+    if ( ! $row ) {
+        return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
+    }
+    return new WP_REST_Response(
+        array(
+            'id'         => (int) $row['id'],
+            'schoolyear' => $row['schoolyear'],
+            'version'    => (int) $row['version'],
+            'json'       => json_decode( $row['json'], true ),
+            'created_at' => $row['created_at'],
+        ),
+        200
+    );
+}
+
 /* ---------- WP: Feed-Reuse-Verdrahtung (Spec §3/§7) ---------- */
 
 function gsh_tp_curriculr_profile_for( $sj ) {
@@ -428,6 +557,43 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
     }
 }
 
+function gsh_tp_curriculr_backup_cron() {
+    global $wpdb;
+    $table = gsh_tp_curriculr_table();
+    $rows  = $wpdb->get_results( "SELECT schoolyear, json, feed_token FROM $table", ARRAY_A );
+    if ( ! $rows ) {
+        return;
+    }
+
+    $upload_dir = wp_upload_dir();
+    $backup_dir = $upload_dir['basedir'] . '/curriculr-backups';
+    wp_mkdir_p( $backup_dir );
+
+    if ( ! function_exists( 'WP_Filesystem' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+    }
+    WP_Filesystem();
+    global $wp_filesystem;
+
+    $stamp = gmdate( 'Y-m-d' );
+    foreach ( $rows as $row ) {
+        $sj  = sanitize_key( $row['schoolyear'] );
+        $doc = json_decode( $row['json'], true );
+        $wp_filesystem->put_contents(
+            "$backup_dir/{$sj}-{$stamp}.json",
+            $row['json'],
+            FS_CHMOD_FILE
+        );
+        if ( is_array( $doc ) ) {
+            $wp_filesystem->put_contents(
+                "$backup_dir/{$sj}-{$stamp}.ics",
+                gsh_tp_curriculr_build_ics( $doc ),
+                FS_CHMOD_FILE
+            );
+        }
+    }
+}
+
 /* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
 
 if ( function_exists( 'add_action' ) ) {
@@ -441,8 +607,28 @@ if ( function_exists( 'add_action' ) ) {
     add_action(
         'admin_init',
         function () {
-            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 2 ) {
+            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 3 ) {
                 gsh_tp_curriculr_install();
+            }
+        }
+    );
+
+    add_action( 'gsh_tp_curriculr_daily_backup', 'gsh_tp_curriculr_backup_cron' );
+    add_action(
+        'wp_loaded',
+        function () {
+            if ( ! wp_next_scheduled( 'gsh_tp_curriculr_daily_backup' ) ) {
+                wp_schedule_event( strtotime( 'tomorrow 02:00:00' ), 'daily', 'gsh_tp_curriculr_daily_backup' );
+            }
+        }
+    );
+
+    register_deactivation_hook(
+        dirname( __FILE__ ) . '/gsh-terminplan.php',
+        function () {
+            $timestamp = wp_next_scheduled( 'gsh_tp_curriculr_daily_backup' );
+            if ( $timestamp ) {
+                wp_unschedule_event( $timestamp, 'gsh_tp_curriculr_daily_backup' );
             }
         }
     );
