@@ -323,7 +323,7 @@ function gsh_tp_curriculr_allowed_origin() {
 
 function gsh_tp_curriculr_send_cors() {
     header( 'Access-Control-Allow-Origin: ' . esc_url_raw( gsh_tp_curriculr_allowed_origin() ) );
-    header( 'Access-Control-Allow-Methods: GET, PUT, OPTIONS' );
+    header( 'Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS' );
     header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
     header( 'Vary: Origin' );
 }
