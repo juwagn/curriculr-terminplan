@@ -214,3 +214,139 @@ function gsh_tp_curriculr_oidc_userinfo( $config, $access_token ) {
     $body = json_decode( wp_remote_retrieve_body( $resp ), true );
     return is_array( $body ) ? $body : new WP_Error( 'bad_userinfo', 'invalid userinfo response' );
 }
+
+/* ---------- WP: REST-Routen (unauth — der Nutzer hat noch kein App-Token) ---------- */
+
+function gsh_tp_curriculr_register_auth_routes() {
+    register_rest_route(
+        'curriculr/v1',
+        '/auth/login',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_auth_login',
+            'permission_callback' => '__return_true',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/auth/callback',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_auth_callback',
+            'permission_callback' => '__return_true',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/auth/token',
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'gsh_tp_curriculr_rest_auth_token',
+            'permission_callback' => '__return_true',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/auth/logout',
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'gsh_tp_curriculr_rest_auth_logout',
+            'permission_callback' => '__return_true',
+        )
+    );
+}
+
+/* ---------- WP: Redirect-Helfer (Token NIE in der URL — Spec §5) ---------- */
+
+function gsh_tp_curriculr_spa_redirect_url( $spa_url, $fragment ) {
+    return rtrim( $spa_url, '/' ) . '/' . $fragment;
+}
+
+function gsh_tp_curriculr_auth_fail( $config, $reason ) {
+    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $config['spa_url'], '#auth_error=' . rawurlencode( $reason ) ) );
+    exit;
+}
+
+/* ---------- WP: /auth/login — 302 → IServ ---------- */
+
+function gsh_tp_curriculr_rest_auth_login( $req ) {
+    $config = gsh_tp_curriculr_auth_config();
+    if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
+        return new WP_REST_Response( array( 'error' => 'sso_not_configured' ), 503 );
+    }
+    $state = wp_generate_password( 40, false, false );
+    $nonce = wp_generate_password( 40, false, false );
+    // state→nonce, 10 Min gültig, Single-Use (im Callback gelöscht).
+    set_transient( 'gsh_tp_cur_oauth_' . $state, array( 'nonce' => $nonce ), 600 );
+    wp_redirect( gsh_tp_curriculr_build_authorize_url( $config, $state, $nonce ) );
+    exit;
+}
+
+/* ---------- WP: /auth/callback — state+nonce, code→token, userinfo, Gruppen, App-Token ---------- */
+
+function gsh_tp_curriculr_rest_auth_callback( $req ) {
+    $config = gsh_tp_curriculr_auth_config();
+    if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
+        return new WP_REST_Response( array( 'error' => 'sso_not_configured' ), 503 );
+    }
+    $state = isset( $req['state'] ) ? (string) $req['state'] : '';
+    $code  = isset( $req['code'] ) ? (string) $req['code'] : '';
+    $key   = 'gsh_tp_cur_oauth_' . $state;
+    $saved = $state ? get_transient( $key ) : false;
+    if ( ! $saved || $code === '' ) {
+        gsh_tp_curriculr_auth_fail( $config, 'state' );
+    }
+    delete_transient( $key ); // Single-Use gegen Replay.
+
+    $tokens = gsh_tp_curriculr_oidc_exchange_code( $config, $code );
+    if ( is_wp_error( $tokens ) || empty( $tokens['access_token'] ) ) {
+        gsh_tp_curriculr_auth_fail( $config, 'token' );
+    }
+
+    // Nonce-Bindung: id_token.nonce muss zur gespeicherten Nonce passen.
+    if ( ! empty( $tokens['id_token'] ) ) {
+        $idp = gsh_tp_curriculr_jwt_payload( $tokens['id_token'] );
+        if ( ! $idp || ! isset( $idp['nonce'] ) || ! hash_equals( (string) $saved['nonce'], (string) $idp['nonce'] ) ) {
+            gsh_tp_curriculr_auth_fail( $config, 'nonce' );
+        }
+    }
+
+    $info = gsh_tp_curriculr_oidc_userinfo( $config, $tokens['access_token'] );
+    if ( is_wp_error( $info ) || empty( $info['sub'] ) ) {
+        gsh_tp_curriculr_auth_fail( $config, 'userinfo' );
+    }
+
+    $groups = gsh_tp_curriculr_extract_groups( isset( $info['groups'] ) ? $info['groups'] : array() );
+    if ( ! gsh_tp_curriculr_group_check( $groups, $config['allowed_groups'] ) ) {
+        gsh_tp_curriculr_auth_fail( $config, 'forbidden' );
+    }
+
+    $name = '';
+    foreach ( array( 'name', 'preferred_username', 'nickname' ) as $k ) {
+        if ( ! empty( $info[ $k ] ) ) {
+            $name = (string) $info[ $k ];
+            break;
+        }
+    }
+    if ( $name === '' ) {
+        $name = (string) $info['sub'];
+    }
+
+    $claims    = gsh_tp_curriculr_make_app_token_claims(
+        $info['sub'],
+        $name,
+        $groups,
+        time(),
+        $config['token_ttl'],
+        rest_url( 'curriculr/v1' ),
+        $config['spa_url']
+    );
+    $app_token = gsh_tp_curriculr_jwt_sign( $claims, $config['app_token_key'] );
+
+    // Einmal-Handoff: 60 s, Single-Use. Nur DIESES Geheimnis steht im Fragment,
+    // nie das App-Token (kein Referer/History-Leak).
+    $handoff = wp_generate_password( 48, false, false );
+    set_transient( 'gsh_tp_cur_handoff_' . $handoff, $app_token, 60 );
+    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $config['spa_url'], '#auth=' . rawurlencode( $handoff ) ) );
+    exit;
+}
