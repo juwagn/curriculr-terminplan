@@ -99,6 +99,20 @@ function gsh_tp_curriculr_json_encode( $d ) {
     return function_exists( 'wp_json_encode' ) ? wp_json_encode( $d ) : json_encode( $d );
 }
 
+/* ---------- Pure: Authorize-URL (OIDC Schritt 2, Spec §4) ---------- */
+
+function gsh_tp_curriculr_build_authorize_url( $config, $state, $nonce ) {
+    $params = array(
+        'response_type' => 'code',
+        'client_id'     => $config['client_id'],
+        'redirect_uri'  => $config['redirect_uri'],
+        'scope'         => 'openid profile iserv:groups',
+        'state'         => $state,
+        'nonce'         => $nonce,
+    );
+    return $config['iserv_base'] . '/iserv/auth/auth?' . http_build_query( $params );
+}
+
 /* ---------- Pure: App-Token-Claims (minimal, Datenminimierung Spec §5/§8) ---------- */
 
 function gsh_tp_curriculr_make_app_token_claims( $sub, $name, $groups, $now, $ttl, $iss, $aud ) {

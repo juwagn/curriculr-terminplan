@@ -87,4 +87,14 @@ gsh_assert_eq( $claims['exp'], 2800, 'claims exp = now + ttl' );
 gsh_assert_eq( $claims['iss'], 'https://wp.test/wp-json/curriculr/v1', 'claims carry iss' );
 gsh_assert_eq( $claims['aud'], 'https://juwagn.github.io/curriculr-planner/', 'claims carry aud' );
 
+/* ---------- Authorize-URL ---------- */
+$au = gsh_tp_curriculr_build_authorize_url( $cfg, 'STATE123', 'NONCE456' );
+gsh_assert_contains( $au, 'https://schule.iserv.de/iserv/auth/auth?', 'authorize url hits IServ /iserv/auth/auth' );
+gsh_assert_contains( $au, 'response_type=code', 'authorize url asks for code' );
+gsh_assert_contains( $au, 'client_id=client-abc', 'authorize url carries client_id' );
+gsh_assert_contains( $au, 'scope=openid+profile+iserv%3Agroups', 'authorize url requests openid profile iserv:groups' );
+gsh_assert_contains( $au, 'state=STATE123', 'authorize url carries state' );
+gsh_assert_contains( $au, 'nonce=NONCE456', 'authorize url carries nonce' );
+gsh_assert_contains( $au, 'redirect_uri=https%3A%2F%2Fwp.test%2Fwp-json%2Fcurriculr%2Fv1%2Fauth%2Fcallback', 'authorize url carries exact redirect_uri' );
+
 gsh_test_done();
