@@ -350,3 +350,34 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
     wp_redirect( gsh_tp_curriculr_spa_redirect_url( $config['spa_url'], '#auth=' . rawurlencode( $handoff ) ) );
     exit;
 }
+
+/* ---------- WP: /auth/token — Einmal-Handoff → App-Token (Fetch, CORS) ---------- */
+
+function gsh_tp_curriculr_rest_auth_token( $req ) {
+    $body     = $req->get_json_params();
+    $exchange = ( is_array( $body ) && isset( $body['exchange'] ) ) ? (string) $body['exchange'] : '';
+    if ( $exchange === '' ) {
+        return new WP_REST_Response( array( 'error' => 'missing_exchange' ), 400 );
+    }
+    $key       = 'gsh_tp_cur_handoff_' . $exchange;
+    $app_token = get_transient( $key );
+    if ( ! $app_token ) {
+        return new WP_REST_Response( array( 'error' => 'invalid_or_expired' ), 401 );
+    }
+    delete_transient( $key ); // Single-Use.
+    return new WP_REST_Response( array( 'token' => $app_token ), 200 );
+}
+
+/* ---------- WP: /auth/logout — App-Token lebt nur im SPA-RAM (stateless) ---------- */
+
+function gsh_tp_curriculr_rest_auth_logout( $req ) {
+    // Serverseitig nichts zu invalidieren: kurzlebiges Token, kein Server-State.
+    // Optional später: IServ end_session_endpoint. M1 = ok-Bestätigung.
+    return new WP_REST_Response( array( 'status' => 'ok' ), 200 );
+}
+
+/* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
+
+if ( function_exists( 'add_action' ) ) {
+    add_action( 'rest_api_init', 'gsh_tp_curriculr_register_auth_routes' );
+}

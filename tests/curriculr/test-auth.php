@@ -136,4 +136,30 @@ gsh_assert_eq( $ui['sub'], 'u1', 'userinfo returns parsed body' );
 $GLOBALS['remote_queue'] = array( array( 'body' => 'not json' ) );
 gsh_assert_true( is_wp_error( gsh_tp_curriculr_oidc_userinfo( $cfg, 'AT' ) ), 'userinfo non-json -> wp_error' );
 
+/* ---------- /auth/token: Einmal-Handoff gegen App-Token tauschen ---------- */
+class Gsh_Fake_Auth_Req {
+    public $body;
+    public function __construct( $body ) { $this->body = $body; }
+    public function get_json_params() { return $this->body; }
+}
+
+$GLOBALS['transients']['gsh_tp_cur_handoff_HX'] = 'THE.APP.TOKEN';
+$ok = gsh_tp_curriculr_rest_auth_token( new Gsh_Fake_Auth_Req( array( 'exchange' => 'HX' ) ) );
+gsh_assert_eq( $ok->status, 200, 'auth/token valid handoff -> 200' );
+gsh_assert_eq( $ok->data['token'], 'THE.APP.TOKEN', 'auth/token returns the app-token' );
+
+// Single-Use: zweiter Tausch desselben Handoffs schlägt fehl.
+$again = gsh_tp_curriculr_rest_auth_token( new Gsh_Fake_Auth_Req( array( 'exchange' => 'HX' ) ) );
+gsh_assert_eq( $again->status, 401, 'auth/token reused handoff -> 401' );
+
+$missing = gsh_tp_curriculr_rest_auth_token( new Gsh_Fake_Auth_Req( array() ) );
+gsh_assert_eq( $missing->status, 400, 'auth/token missing exchange -> 400' );
+
+$unknown = gsh_tp_curriculr_rest_auth_token( new Gsh_Fake_Auth_Req( array( 'exchange' => 'NOPE' ) ) );
+gsh_assert_eq( $unknown->status, 401, 'auth/token unknown handoff -> 401' );
+
+/* ---------- /auth/logout: stateless-Bestätigung ---------- */
+$lo = gsh_tp_curriculr_rest_auth_logout( new Gsh_Fake_Auth_Req( array() ) );
+gsh_assert_eq( $lo->status, 200, 'auth/logout -> 200 ok' );
+
 gsh_test_done();
