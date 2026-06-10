@@ -161,3 +161,18 @@ function gsh_tp_curriculr_group_check( $user_groups, $whitelist ) {
     }
     return false;
 }
+
+/* ---------- Pure: JWT-Payload lesen (id_token-Nonce; KEINE Sig-Prüfung) ---------- */
+// Hinweis: Volle RS256/JWKS-Signaturprüfung des IServ-id_token ist Härtung für
+// später (Spec §8). In M1 kommt das Token serverseitig über TLS direkt von
+// IServ; die Nonce bindet es an unsere Session, Identität/Gruppen kommen aus
+// dem userinfo-Endpunkt (ebenfalls TLS, direkt).
+
+function gsh_tp_curriculr_jwt_payload( $jwt ) {
+    $parts = explode( '.', (string) $jwt );
+    if ( count( $parts ) < 2 ) {
+        return null;
+    }
+    $payload = json_decode( gsh_tp_curriculr_b64url_decode( $parts[1] ), true );
+    return is_array( $payload ) ? $payload : null;
+}

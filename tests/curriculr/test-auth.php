@@ -109,4 +109,12 @@ gsh_assert_eq( gsh_tp_curriculr_group_check( array( 'Lehrer' ), array( 'Schullei
 gsh_assert_eq( gsh_tp_curriculr_group_check( array( 'Schulleitung' ), array() ), false, 'empty whitelist fails closed' );
 gsh_assert_eq( gsh_tp_curriculr_group_check( array(), array( 'Schulleitung' ) ), false, 'no user groups rejected' );
 
+/* ---------- id_token-Payload (nur Lesen; Nonce-Bindung Spec §4 Schritt 5) ---------- */
+$fake_id_token = gsh_tp_curriculr_b64url_encode( '{"alg":"RS256"}' )
+    . '.' . gsh_tp_curriculr_b64url_encode( '{"sub":"u1","nonce":"NONCE456"}' )
+    . '.sig';
+$payload = gsh_tp_curriculr_jwt_payload( $fake_id_token );
+gsh_assert_eq( $payload['nonce'], 'NONCE456', 'jwt_payload reads id_token nonce without verifying signature' );
+gsh_assert_eq( gsh_tp_curriculr_jwt_payload( 'garbage' ), null, 'jwt_payload of malformed token is null' );
+
 gsh_test_done();
