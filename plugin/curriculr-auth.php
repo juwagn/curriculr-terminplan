@@ -126,3 +126,38 @@ function gsh_tp_curriculr_make_app_token_claims( $sub, $name, $groups, $now, $tt
         'aud'    => (string) $aud,
     );
 }
+
+/* ---------- Pure: iserv:groups normalisieren + Whitelist (Spec §4 Filter #2) ---------- */
+
+function gsh_tp_curriculr_extract_groups( $claim ) {
+    $out = array();
+    if ( ! is_array( $claim ) ) {
+        return $out;
+    }
+    foreach ( $claim as $g ) {
+        if ( is_string( $g ) ) {
+            $out[] = $g;
+        } elseif ( is_array( $g ) ) {
+            // Bevorzugung: maschinenlesbarer Account-Schlüssel, dann sprechende Namen.
+            foreach ( array( 'act', 'id', 'name', 'displayName' ) as $k ) {
+                if ( isset( $g[ $k ] ) && is_string( $g[ $k ] ) && $g[ $k ] !== '' ) {
+                    $out[] = $g[ $k ];
+                    break;
+                }
+            }
+        }
+    }
+    return $out;
+}
+
+function gsh_tp_curriculr_group_check( $user_groups, $whitelist ) {
+    if ( empty( $whitelist ) ) {
+        return false; // Fail-closed: Fehlkonfiguration darf nie Zugang gewähren.
+    }
+    foreach ( (array) $user_groups as $g ) {
+        if ( in_array( $g, $whitelist, true ) ) {
+            return true;
+        }
+    }
+    return false;
+}

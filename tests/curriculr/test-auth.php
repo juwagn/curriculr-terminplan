@@ -97,4 +97,16 @@ gsh_assert_contains( $au, 'state=STATE123', 'authorize url carries state' );
 gsh_assert_contains( $au, 'nonce=NONCE456', 'authorize url carries nonce' );
 gsh_assert_contains( $au, 'redirect_uri=https%3A%2F%2Fwp.test%2Fwp-json%2Fcurriculr%2Fv1%2Fauth%2Fcallback', 'authorize url carries exact redirect_uri' );
 
+/* ---------- Gruppen-Extraktion (offener Punkt Spec §13: Claim-Form) ---------- */
+gsh_assert_eq( gsh_tp_curriculr_extract_groups( array( 'Schulleitung', 'Lehrer' ) ), array( 'Schulleitung', 'Lehrer' ), 'extract_groups handles string list' );
+gsh_assert_eq( gsh_tp_curriculr_extract_groups( array( array( 'act' => 'schulleitung', 'name' => 'Schulleitung' ) ) ), array( 'schulleitung' ), 'extract_groups prefers act on object form' );
+gsh_assert_eq( gsh_tp_curriculr_extract_groups( array( array( 'name' => 'Schulleitung' ) ) ), array( 'Schulleitung' ), 'extract_groups falls back to name' );
+gsh_assert_eq( gsh_tp_curriculr_extract_groups( 'nope' ), array(), 'extract_groups of non-array is empty' );
+
+/* ---------- Whitelist-Prüfung (Gruppenfilter #2, fail-closed) ---------- */
+gsh_assert_true( gsh_tp_curriculr_group_check( array( 'Schulleitung' ), array( 'Schulleitung', 'Verwaltung' ), ), 'member of whitelist passes' );
+gsh_assert_eq( gsh_tp_curriculr_group_check( array( 'Lehrer' ), array( 'Schulleitung' ) ), false, 'non-member rejected' );
+gsh_assert_eq( gsh_tp_curriculr_group_check( array( 'Schulleitung' ), array() ), false, 'empty whitelist fails closed' );
+gsh_assert_eq( gsh_tp_curriculr_group_check( array(), array( 'Schulleitung' ) ), false, 'no user groups rejected' );
+
 gsh_test_done();
