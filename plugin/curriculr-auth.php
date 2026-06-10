@@ -98,3 +98,17 @@ function gsh_tp_curriculr_jwt_verify( $jwt, $key, $now ) {
 function gsh_tp_curriculr_json_encode( $d ) {
     return function_exists( 'wp_json_encode' ) ? wp_json_encode( $d ) : json_encode( $d );
 }
+
+/* ---------- Pure: App-Token-Claims (minimal, Datenminimierung Spec §5/§8) ---------- */
+
+function gsh_tp_curriculr_make_app_token_claims( $sub, $name, $groups, $now, $ttl, $iss, $aud ) {
+    return array(
+        'sub'    => (string) $sub,
+        'name'   => (string) $name,
+        'groups' => array_values( $groups ),
+        'iat'    => (int) $now,
+        'exp'    => (int) $now + (int) $ttl,
+        'iss'    => (string) $iss,
+        'aud'    => (string) $aud,
+    );
+}

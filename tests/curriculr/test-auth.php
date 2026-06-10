@@ -77,4 +77,14 @@ gsh_assert_eq( $malformed['error'], 'malformed', 'non-jwt -> malformed' );
 $no_key = gsh_tp_curriculr_jwt_verify( $jwt, '', 1000 );
 gsh_assert_eq( $no_key['error'], 'no_key', 'jwt empty key -> no_key' );
 
+/* ---------- App-Token-Claims ---------- */
+$claims = gsh_tp_curriculr_make_app_token_claims( 'iserv-uuid-1', 'Frau Beispiel', array( 'Schulleitung' ), 1000, 1800, 'https://wp.test/wp-json/curriculr/v1', 'https://juwagn.github.io/curriculr-planner/' );
+gsh_assert_eq( $claims['sub'], 'iserv-uuid-1', 'claims carry sub' );
+gsh_assert_eq( $claims['name'], 'Frau Beispiel', 'claims carry display name' );
+gsh_assert_eq( $claims['groups'], array( 'Schulleitung' ), 'claims carry groups' );
+gsh_assert_eq( $claims['iat'], 1000, 'claims iat = now' );
+gsh_assert_eq( $claims['exp'], 2800, 'claims exp = now + ttl' );
+gsh_assert_eq( $claims['iss'], 'https://wp.test/wp-json/curriculr/v1', 'claims carry iss' );
+gsh_assert_eq( $claims['aud'], 'https://juwagn.github.io/curriculr-planner/', 'claims carry aud' );
+
 gsh_test_done();
