@@ -176,3 +176,41 @@ function gsh_tp_curriculr_jwt_payload( $jwt ) {
     $payload = json_decode( gsh_tp_curriculr_b64url_decode( $parts[1] ), true );
     return is_array( $payload ) ? $payload : null;
 }
+
+/* ---------- WP-HTTP: code→token (serverseitig, MIT Secret) + userinfo ---------- */
+
+function gsh_tp_curriculr_oidc_exchange_code( $config, $code ) {
+    $resp = wp_remote_post(
+        $config['iserv_base'] . '/iserv/auth/public/token',
+        array(
+            'timeout' => 15,
+            'body'    => array(
+                'grant_type'    => 'authorization_code',
+                'code'          => $code,
+                'redirect_uri'  => $config['redirect_uri'],
+                'client_id'     => $config['client_id'],
+                'client_secret' => $config['client_secret'],
+            ),
+        )
+    );
+    if ( is_wp_error( $resp ) ) {
+        return $resp;
+    }
+    $body = json_decode( wp_remote_retrieve_body( $resp ), true );
+    return is_array( $body ) ? $body : new WP_Error( 'bad_token_response', 'invalid token response' );
+}
+
+function gsh_tp_curriculr_oidc_userinfo( $config, $access_token ) {
+    $resp = wp_remote_get(
+        $config['iserv_base'] . '/iserv/auth/userinfo',
+        array(
+            'timeout' => 15,
+            'headers' => array( 'Authorization' => 'Bearer ' . $access_token ),
+        )
+    );
+    if ( is_wp_error( $resp ) ) {
+        return $resp;
+    }
+    $body = json_decode( wp_remote_retrieve_body( $resp ), true );
+    return is_array( $body ) ? $body : new WP_Error( 'bad_userinfo', 'invalid userinfo response' );
+}

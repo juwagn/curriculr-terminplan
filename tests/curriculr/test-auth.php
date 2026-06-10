@@ -117,4 +117,23 @@ $payload = gsh_tp_curriculr_jwt_payload( $fake_id_token );
 gsh_assert_eq( $payload['nonce'], 'NONCE456', 'jwt_payload reads id_token nonce without verifying signature' );
 gsh_assert_eq( gsh_tp_curriculr_jwt_payload( 'garbage' ), null, 'jwt_payload of malformed token is null' );
 
+/* ---------- OIDC-HTTP-Wrapper (mit gestubbten wp_remote_*) ---------- */
+$GLOBALS['remote_queue'] = array(
+    array( 'body' => json_encode( array( 'access_token' => 'AT', 'id_token' => 'IT' ) ) ),
+);
+$tok = gsh_tp_curriculr_oidc_exchange_code( $cfg, 'CODE' );
+gsh_assert_eq( $tok['access_token'], 'AT', 'exchange_code returns parsed token body' );
+
+$GLOBALS['remote_queue'] = array( new WP_Error( 'http', 'down' ) );
+gsh_assert_true( is_wp_error( gsh_tp_curriculr_oidc_exchange_code( $cfg, 'CODE' ) ), 'exchange_code propagates wp_error' );
+
+$GLOBALS['remote_queue'] = array(
+    array( 'body' => json_encode( array( 'sub' => 'u1', 'name' => 'Frau B', 'groups' => array( 'Schulleitung' ) ) ) ),
+);
+$ui = gsh_tp_curriculr_oidc_userinfo( $cfg, 'AT' );
+gsh_assert_eq( $ui['sub'], 'u1', 'userinfo returns parsed body' );
+
+$GLOBALS['remote_queue'] = array( array( 'body' => 'not json' ) );
+gsh_assert_true( is_wp_error( gsh_tp_curriculr_oidc_userinfo( $cfg, 'AT' ) ), 'userinfo non-json -> wp_error' );
+
 gsh_test_done();
