@@ -49,4 +49,32 @@ gsh_assert_eq( $cfg['token_ttl'], 1800, 'config defaults token_ttl to 1800' );
 gsh_assert_true( gsh_tp_curriculr_auth_is_configured( $cfg ), 'is_configured true when all secrets present' );
 gsh_assert_eq( gsh_tp_curriculr_auth_is_configured( array( 'iserv_base' => '', 'client_id' => '', 'client_secret' => '', 'app_token_key' => '' ) ), false, 'is_configured false when empty' );
 
+/* ---------- base64url + HS256 JWT ---------- */
+gsh_assert_eq( gsh_tp_curriculr_b64url_encode( 'A?B>C' ), 'QT9CPkM', 'b64url_encode strips padding + uses -_ alphabet' );
+gsh_assert_eq( gsh_tp_curriculr_b64url_decode( 'QT9CPkM' ), 'A?B>C', 'b64url_decode round-trips' );
+
+$key   = 'k0123456789abcdef0123456789abcdef';
+$jwt   = gsh_tp_curriculr_jwt_sign( array( 'sub' => 'u1', 'exp' => 9999999999 ), $key );
+gsh_assert_eq( substr_count( $jwt, '.' ), 2, 'jwt has three dot-separated parts' );
+
+$ok = gsh_tp_curriculr_jwt_verify( $jwt, $key, 1000 );
+gsh_assert_true( $ok['valid'], 'jwt verifies with correct key before exp' );
+gsh_assert_eq( $ok['claims']['sub'], 'u1', 'jwt verify returns claims' );
+
+$bad_key = gsh_tp_curriculr_jwt_verify( $jwt, 'wrong-key', 1000 );
+gsh_assert_eq( $bad_key['valid'], false, 'jwt rejects wrong key' );
+gsh_assert_eq( $bad_key['error'], 'bad_signature', 'jwt wrong key -> bad_signature' );
+
+$expired = gsh_tp_curriculr_jwt_verify( gsh_tp_curriculr_jwt_sign( array( 'exp' => 500 ), $key ), $key, 1000 );
+gsh_assert_eq( $expired['error'], 'expired', 'jwt past exp -> expired' );
+
+$tampered = gsh_tp_curriculr_jwt_verify( $jwt . 'x', $key, 1000 );
+gsh_assert_eq( $tampered['valid'], false, 'tampered signature rejected' );
+
+$malformed = gsh_tp_curriculr_jwt_verify( 'not-a-jwt', $key, 1000 );
+gsh_assert_eq( $malformed['error'], 'malformed', 'non-jwt -> malformed' );
+
+$no_key = gsh_tp_curriculr_jwt_verify( $jwt, '', 1000 );
+gsh_assert_eq( $no_key['error'], 'no_key', 'jwt empty key -> no_key' );
+
 gsh_test_done();
