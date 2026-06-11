@@ -311,10 +311,8 @@ function gsh_tp_curriculr_feed_url( $sj, $token ) {
     return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '.ics' );
 }
 
-function gsh_tp_curriculr_perm() {
-    // Application Passwords authentifizieren den Request als WP-User;
-    // danach greift current_user_can wie bei einer normalen Session.
-    return current_user_can( 'manage_options' );
+function gsh_tp_curriculr_perm( $req ) {
+    return gsh_tp_curriculr_guard_perm( $req );
 }
 
 function gsh_tp_curriculr_allowed_origin() {

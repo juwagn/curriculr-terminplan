@@ -3,10 +3,14 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.10.0
+ * Version:     4.11.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.11.0:
+ * - [SECURITY] M2 REST Guard: App-Token Bearer-Validierung auf allen geschützten curriculr/v1-Routen; 403 bei fehlendem/abgelaufenem/ungültigem Token
+ * - [FEATURE] Revisions-Attribution: author_sub und author_name in wp_curriculr_doc_revisions (DB-Version 4)
+ *
  * Changelog 4.10.0:
  * - [FEATURE] M1 IServ-SSO: Auth-Endpunkte (/auth/login, /auth/callback, /auth/token, /auth/logout), Confidential-Client code→token serverseitig, kurzlebiges HS256-App-Token, Einmal-Handoff (kein Token in URL), Gruppen-Whitelist (fail-closed)
  *
@@ -522,7 +526,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.10.0' );
+define( 'GSH_TP_VERSION',       '4.11.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -532,6 +536,7 @@ define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteue
 // Curriculr Data Layer (REST-Speicherung des Planner-Dokuments + Token-ICS-Feed).
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-auth.php';
+require_once plugin_dir_path( __FILE__ ) . 'curriculr-guard.php';
 
 /**
  * Standard-Kategorien des Schul-Terminplans.
