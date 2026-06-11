@@ -232,7 +232,17 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     $current  = $existing ? (int) $existing['version'] : 0;
 
     if ( gsh_tp_curriculr_version_decision( $current, $base_version ) === 'conflict' ) {
-        return array( 'status' => 'conflict', 'current' => $existing );
+        $rev_table = gsh_tp_curriculr_revisions_table();
+        $rev       = $wpdb->get_row( $wpdb->prepare(
+            "SELECT author_name, created_at FROM {$rev_table} WHERE schoolyear = %s AND version = %d LIMIT 1",
+            $sj, $current
+        ) );
+        return array(
+            'status'     => 'conflict',
+            'current'    => $existing,
+            'authorName' => $rev ? (string) $rev->author_name : '',
+            'savedAt'    => $rev ? (string) $rev->created_at  : '',
+        );
     }
 
     $new_version = $current + 1;
@@ -444,6 +454,8 @@ function gsh_tp_curriculr_rest_put( $req ) {
                 'error'         => 'conflict',
                 'serverVersion' => (int) $res['current']['version'],
                 'doc'           => json_decode( $res['current']['json'], true ),
+                'authorName'    => (string) ( $res['authorName'] ?? '' ),
+                'savedAt'       => (string) ( $res['savedAt']    ?? '' ),
             ),
             409
         );

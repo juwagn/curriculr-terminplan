@@ -23,8 +23,27 @@ class Gsh_Fake_Wpdb {
     public $next_id   = 1;
     public $insert_id = 0;
     public function get_charset_collate() { return ''; }
-    public function prepare( $q, $a = null ) { return $a; }
-    public function get_row( $key, $out = null ) { return $this->rows[ $key ] ?? null; }
+    public function prepare( $q, ...$args ) {
+        // Conflict lookup: prepare(sql, sj_string, version_int) -> __rev__:sj:ver
+        if ( count( $args ) === 2 && is_string( $args[0] ) && ( is_int( $args[1] ) || ctype_digit( (string) $args[1] ) ) ) {
+            return '__rev__:' . (string) $args[0] . ':' . (int) $args[1];
+        }
+        return isset( $args[0] ) ? $args[0] : $q;
+    }
+    public function get_row( $key, $out = null ) {
+        if ( is_string( $key ) && strncmp( $key, '__rev__:', 8 ) === 0 ) {
+            $parts = explode( ':', $key, 3 );
+            $sj    = $parts[1] ?? '';
+            $ver   = isset( $parts[2] ) ? (int) $parts[2] : -1;
+            foreach ( $this->revs as $rev ) {
+                if ( $rev['schoolyear'] === $sj && (int) $rev['version'] === $ver ) {
+                    return (object) $rev;
+                }
+            }
+            return null;
+        }
+        return $this->rows[ $key ] ?? null;
+    }
     public function get_results( $q, $out = null ) { return array_values( $this->revs ); }
     public function insert( $t, $data ) {
         if ( strpos( (string) $t, 'revisions' ) !== false ) {
@@ -54,6 +73,10 @@ function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function gsh_tp_get_profiles() { return $GLOBALS['profiles'] ?? array(); }
 function gsh_tp_active_profile_id() { return 'p1'; }
 function gsh_tp_do_refresh( $pid ) { $GLOBALS['refreshed'][] = $pid; }
+$GLOBALS['gsh_tp_curriculr_current_claims'] = null;
+function gsh_tp_curriculr_guard_current_claims() {
+    return $GLOBALS['gsh_tp_curriculr_current_claims'];
+}
 function add_action() {}
 function add_filter() {}
 function register_activation_hook() {}
@@ -134,5 +157,22 @@ $GLOBALS['options']['gsh_tp_curriculr_profile_map'] = array( 'sj_2026_27' => 'p1
 $GLOBALS['refreshed'] = array();
 $pub2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 5, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $GLOBALS['refreshed'], array( 'p1' ), 'mapped oeffentlich PUT refreshes the mapped profile' );
+
+/* ---------- 409 + Author-Attribution ---------- */
+$GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'u1', 'name' => 'Max Mustermann' );
+$pa1 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req(
+    array( 'doc' => $doc, 'baseVersion' => 0 ),
+    array( 'sj' => 'sj_author_test' )
+) );
+gsh_assert_eq( $pa1->status, 200, 'author test: first PUT ok' );
+
+$pa2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req(
+    array( 'doc' => $doc, 'baseVersion' => 0 ),
+    array( 'sj' => 'sj_author_test' )
+) );
+gsh_assert_eq( $pa2->status, 409, 'author test: stale PUT yields 409' );
+gsh_assert_eq( $pa2->data['authorName'], 'Max Mustermann', '409 includes authorName of last saver' );
+gsh_assert_true( strlen( $pa2->data['savedAt'] ) > 0, '409 includes non-empty savedAt' );
+$GLOBALS['gsh_tp_curriculr_current_claims'] = null;
 
 gsh_test_done();

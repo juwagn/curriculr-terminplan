@@ -22,9 +22,24 @@ class Gsh_Fake_Wpdb_Rev {
 
     public function get_charset_collate() { return ''; }
     public function prepare( $q, ...$args ) {
+        // Conflict lookup: prepare(sql, sj_string, version_int) -> __rev__:sj:ver
+        if ( count( $args ) === 2 && is_string( $args[0] ) && ( is_int( $args[1] ) || ctype_digit( (string) $args[1] ) ) ) {
+            return '__rev__:' . (string) $args[0] . ':' . (int) $args[1];
+        }
         return isset( $args[0] ) ? $args[0] : $q;
     }
     public function get_row( $key, $out = null ) {
+        if ( is_string( $key ) && strncmp( $key, '__rev__:', 8 ) === 0 ) {
+            $parts = explode( ':', $key, 3 );
+            $sj    = $parts[1] ?? '';
+            $ver   = isset( $parts[2] ) ? (int) $parts[2] : -1;
+            foreach ( $this->revs as $rev ) {
+                if ( $rev['schoolyear'] === $sj && (int) $rev['version'] === $ver ) {
+                    return (object) $rev;
+                }
+            }
+            return null;
+        }
         if ( is_int( $key ) || ctype_digit( (string) $key ) ) {
             return $this->revs[ (int) $key ] ?? null;
         }

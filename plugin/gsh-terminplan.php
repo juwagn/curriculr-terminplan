@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.11.1
+ * Version:     4.12.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.12.0:
+ * - [M5]    409-Konflikt-Response enthält authorName + savedAt aus Revisions-Tabelle
+ *
  * Changelog 4.11.0:
  * - [SECURITY] M2 REST Guard: App-Token Bearer-Validierung auf allen geschützten curriculr/v1-Routen; 403 bei fehlendem/abgelaufenem/ungültigem Token
  * - [FEATURE] Revisions-Attribution: author_sub und author_name in wp_curriculr_doc_revisions (DB-Version 4)
@@ -526,7 +529,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.11.0' );
+define( 'GSH_TP_VERSION',       '4.12.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
