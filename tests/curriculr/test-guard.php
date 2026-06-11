@@ -92,5 +92,7 @@ gsh_assert_eq( $c['sub'], 'iserv-sub-001', 'current_claims has correct sub after
 $req_empty = new Gsh_Fake_Guard_Req( array() );
 $res_err   = gsh_tp_curriculr_guard_perm( $req_empty );
 gsh_assert_true( $res_err instanceof WP_Error, 'guard_perm returns WP_Error on missing auth' );
+$stale = gsh_tp_curriculr_guard_current_claims();
+gsh_assert_true( $stale === null, 'current_claims null after failed guard_perm' );
 
 gsh_test_done();

@@ -42,6 +42,7 @@ function gsh_tp_curriculr_guard_perm( $req ) {
     $auth   = (string) $req->get_header( 'authorization' );
     $result = gsh_tp_curriculr_guard_validate_bearer( $auth, $config['app_token_key'], time() );
     if ( ! $result['valid'] ) {
+        unset( $GLOBALS['gsh_tp_curriculr_current_claims'] );
         return new WP_Error( 'forbidden', 'App-Token invalid', array( 'status' => 403 ) );
     }
     $GLOBALS['gsh_tp_curriculr_current_claims'] = $result['claims'];
