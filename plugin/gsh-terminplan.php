@@ -3564,9 +3564,9 @@ function gsh_tp_render_system_tab() {
     ?>
     <h2><?php echo esc_html__( 'IServ-SSO (Mehrbenutzer-Anmeldung)', 'gsh-terminplan' ); ?></h2>
     <p>
-        <?php echo $cur_ready
+        <?php echo wp_kses_post( $cur_ready
             ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
-            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.'; ?>
+            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
     </p>
     <table class="widefat" style="max-width:640px">
         <thead><tr><th>Konstante (in wp-config.php)</th><th>Status</th></tr></thead>
@@ -3574,9 +3574,9 @@ function gsh_tp_render_system_tab() {
         <?php foreach ( $cur_defs as $const => $set ) : ?>
             <tr>
                 <td><code><?php echo esc_html( $const ); ?></code></td>
-                <td><?php echo $set
+                <td><?php echo wp_kses_post( $set
                     ? gsh_tp_icon( 'check' ) . ' gesetzt'
-                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt'; ?></td>
+                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt' ); ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>

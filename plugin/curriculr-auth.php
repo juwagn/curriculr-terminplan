@@ -304,11 +304,13 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
     }
 
     // Nonce-Bindung: id_token.nonce muss zur gespeicherten Nonce passen.
-    if ( ! empty( $tokens['id_token'] ) ) {
-        $idp = gsh_tp_curriculr_jwt_payload( $tokens['id_token'] );
-        if ( ! $idp || ! isset( $idp['nonce'] ) || ! hash_equals( (string) $saved['nonce'], (string) $idp['nonce'] ) ) {
-            gsh_tp_curriculr_auth_fail( $config, 'nonce' );
-        }
+    // Pflicht – kein id_token → Fehler (verhindert Bypass ohne PKCE).
+    if ( empty( $tokens['id_token'] ) ) {
+        gsh_tp_curriculr_auth_fail( $config, 'nonce' );
+    }
+    $idp = gsh_tp_curriculr_jwt_payload( $tokens['id_token'] );
+    if ( ! $idp || ! isset( $idp['nonce'] ) || ! hash_equals( (string) $saved['nonce'], (string) $idp['nonce'] ) ) {
+        gsh_tp_curriculr_auth_fail( $config, 'nonce' );
     }
 
     $info = gsh_tp_curriculr_oidc_userinfo( $config, $tokens['access_token'] );
