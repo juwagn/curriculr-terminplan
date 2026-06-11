@@ -318,7 +318,9 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
         gsh_tp_curriculr_auth_fail( $config, 'userinfo' );
     }
 
-    $groups = gsh_tp_curriculr_extract_groups( isset( $info['groups'] ) ? $info['groups'] : array() );
+    $raw_groups = isset( $info['iserv:groups'] ) ? $info['iserv:groups']
+                : ( isset( $idp['iserv:groups'] ) ? $idp['iserv:groups'] : array() );
+    $groups = gsh_tp_curriculr_extract_groups( $raw_groups );
     if ( ! gsh_tp_curriculr_group_check( $groups, $config['allowed_groups'] ) ) {
         gsh_tp_curriculr_auth_fail( $config, 'forbidden' );
     }
