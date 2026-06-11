@@ -64,6 +64,12 @@ class Gsh_Fake_Wpdb_Rev {
 }
 $GLOBALS['wpdb']      = new Gsh_Fake_Wpdb_Rev();
 $GLOBALS['options']   = array();
+
+/* ---------- Guard claims stub (simulates validated app-token) ---------- */
+$GLOBALS['gsh_tp_curriculr_current_claims'] = null;
+function gsh_tp_curriculr_guard_current_claims() {
+    return $GLOBALS['gsh_tp_curriculr_current_claims'];
+}
 $GLOBALS['refreshed'] = array();
 function get_option( $k, $d = false ) { return $GLOBALS['options'][ $k ] ?? $d; }
 function update_option( $k, $v, $a = null ) { $GLOBALS['options'][ $k ] = $v; return true; }
@@ -137,5 +143,30 @@ $before = count( $GLOBALS['wpdb']->revs );
 $conf   = gsh_tp_curriculr_repo_put( 'sj_2026_27', $doc, 0 );
 gsh_assert_eq( $conf['status'], 'conflict', 'veraltete baseVersion -> conflict' );
 gsh_assert_eq( count( $GLOBALS['wpdb']->revs ), $before, 'Konflikt erzeugt keine neue Revision' );
+
+/* ---------- 7. Author attribution: guard claims written to revision ---------- */
+$GLOBALS['wpdb'] = new Gsh_Fake_Wpdb_Rev();
+$GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'iserv-u99', 'name' => 'Bob' );
+$r_attr = gsh_tp_curriculr_repo_put( 'sj_attr', $doc, 0 );
+gsh_assert_eq( $r_attr['status'], 'ok', 'attribution PUT ok' );
+$rev_attr = reset( $GLOBALS['wpdb']->revs );
+gsh_assert_eq( $rev_attr['author_sub'], 'iserv-u99', 'revision trägt author_sub' );
+gsh_assert_eq( $rev_attr['author_name'], 'Bob', 'revision trägt author_name' );
+
+/* ---------- 8. Attribution empty when no guard ran ---------- */
+$GLOBALS['wpdb'] = new Gsh_Fake_Wpdb_Rev();
+$GLOBALS['gsh_tp_curriculr_current_claims'] = null;
+gsh_tp_curriculr_repo_put( 'sj_noauth', $doc, 0 );
+$rev_noauth = reset( $GLOBALS['wpdb']->revs );
+gsh_assert_eq( $rev_noauth['author_sub'], '', 'revision author_sub leer wenn kein Guard' );
+gsh_assert_eq( $rev_noauth['author_name'], '', 'revision author_name leer wenn kein Guard' );
+
+/* ---------- 9. Revisions list includes author fields ---------- */
+$GLOBALS['wpdb'] = new Gsh_Fake_Wpdb_Rev();
+$GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'iserv-u77', 'name' => 'Charlie' );
+gsh_tp_curriculr_repo_put( 'sj_list2', $doc, 0 );
+$list2 = gsh_tp_curriculr_rest_revisions_list( new Gsh_Fake_Req( array( 'sj' => 'sj_list2' ) ) );
+gsh_assert_true( isset( $list2->data[0]['author_sub'] ), 'revisions_list enthält author_sub' );
+gsh_assert_eq( $list2->data[0]['author_sub'], 'iserv-u77', 'revisions_list author_sub korrekt' );
 
 gsh_test_done();

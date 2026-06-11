@@ -257,8 +257,13 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     }
 
     // Revision-Snapshot + Retention-Prune.
-    $json_str = wp_json_encode( $doc );
-    gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str );
+    $json_str    = wp_json_encode( $doc );
+    $guard       = function_exists( 'gsh_tp_curriculr_guard_current_claims' )
+        ? gsh_tp_curriculr_guard_current_claims()
+        : null;
+    $author_sub  = $guard ? (string) ( $guard['sub'] ?? '' ) : '';
+    $author_name = $guard ? (string) ( $guard['name'] ?? '' ) : '';
+    gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name );
     gsh_tp_curriculr_prune_revisions( $sj );
 
     return array(
@@ -270,16 +275,18 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     );
 }
 
-function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str ) {
+function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str, $author_sub = '', $author_name = '' ) {
     global $wpdb;
     $table = gsh_tp_curriculr_revisions_table();
     $wpdb->insert(
         $table,
         array(
-            'schoolyear' => sanitize_key( $sj ),
-            'version'    => (int) $version,
-            'json'       => $json_str,
-            'created_at' => current_time( 'mysql' ),
+            'schoolyear'  => sanitize_key( $sj ),
+            'version'     => (int) $version,
+            'json'        => $json_str,
+            'created_at'  => current_time( 'mysql' ),
+            'author_sub'  => (string) $author_sub,
+            'author_name' => (string) $author_name,
         )
     );
     return (int) $wpdb->insert_id;
@@ -484,7 +491,7 @@ function gsh_tp_curriculr_rest_revisions_list( $req ) {
     $sj    = sanitize_key( $req['sj'] );
     $rows  = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT id, schoolyear, version, created_at FROM $table WHERE schoolyear = %s ORDER BY id DESC LIMIT 100",
+            "SELECT id, schoolyear, version, created_at, author_sub, author_name FROM $table WHERE schoolyear = %s ORDER BY id DESC LIMIT 100",
             $sj
         ),
         ARRAY_A
