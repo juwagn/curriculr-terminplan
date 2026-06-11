@@ -201,6 +201,8 @@ function gsh_tp_curriculr_install() {
         version int unsigned NOT NULL DEFAULT 0,
         json longtext NOT NULL,
         created_at datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
+        author_sub varchar(255) NOT NULL DEFAULT '',
+        author_name varchar(255) NOT NULL DEFAULT '',
         PRIMARY KEY  (id),
         KEY sj_version (schoolyear, version)
     ) $charset;";
@@ -208,7 +210,7 @@ function gsh_tp_curriculr_install() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $docs_sql );
     dbDelta( $rev_sql );
-    update_option( 'gsh_tp_curriculr_db_version', 3, false );
+    update_option( 'gsh_tp_curriculr_db_version', 4, false );
 }
 
 function gsh_tp_curriculr_repo_get( $sj ) {
@@ -605,7 +607,7 @@ if ( function_exists( 'add_action' ) ) {
     add_action(
         'admin_init',
         function () {
-            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 3 ) {
+            if ( (int) get_option( 'gsh_tp_curriculr_db_version', 0 ) < 4 ) {
                 gsh_tp_curriculr_install();
             }
         }
