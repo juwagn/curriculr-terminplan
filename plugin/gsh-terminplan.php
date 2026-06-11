@@ -534,9 +534,9 @@ define( 'GSH_TP_BACKUP_KEY', 'gsh_tp_ical_backup' );   // Option (Notfall-Backup
 define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteuerung)
 
 // Curriculr Data Layer (REST-Speicherung des Planner-Dokuments + Token-ICS-Feed).
-require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-auth.php';
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-guard.php';
+require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
 
 /**
  * Standard-Kategorien des Schul-Terminplans.

@@ -509,7 +509,7 @@ function gsh_tp_curriculr_rest_revisions_get( $req ) {
     $id    = (int) $req['id'];
     $row   = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT * FROM $table WHERE id = %d AND schoolyear = %s",
+            "SELECT id, schoolyear, version, json, created_at FROM $table WHERE id = %d AND schoolyear = %s",
             $id,
             $sj
         ),
