@@ -2,7 +2,7 @@
 
 **Digitaler Schulkalender für WordPress — aus IServ direkt auf die Schulwebsite.**
 
-Version **4.3.4** · PHP 8.0+ · WordPress 6.0+ · GPL v2
+Version **4.12.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X61ZEMZ7)
 
@@ -255,7 +255,10 @@ Kurzfassung — vollständige Anleitung in [`docs/schuljahreswechsel-anleitung.m
 
 ```
 plugin/
-  gsh-terminplan.php              # WordPress-Plugin (~7000 Zeilen, alles in einer Datei)
+  gsh-terminplan.php              # Plugin-Bootstrap: Admin-UI, iCal-Abruf, Shortcode, Kiosk
+  curriculr-data-layer.php        # REST API curriculr/v1: Dokumente, Stufen, Revisionen, ICS-Feed
+  curriculr-auth.php              # IServ-SSO: OIDC-Code-Flow, App-Token (JWT), Gruppen-Whitelist
+  curriculr-guard.php             # Bearer-Token-Validierung als WP permission_callback
   page-terminplan-entwurf.php     # Page-Template: Entwurf-Kiosk (ins Theme kopieren)
   assets/
     css/gsh-terminplan.css        # Gesamtes CSS (kein Inline-CSS im PHP)
@@ -312,14 +315,16 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 
 | # | Datei / Stelle | Beispiel |
 |---|---|---|
-| 1 | Plugin-Header: `Version:` | `Version: 4.3.0` |
-| 2 | PHP-Konstante | `define('GSH_TP_VERSION', '4.3.0')` |
-| 3 | `gsh_tp_changelog()` — neuer Eintrag oben | `'version' => '4.3.0'` |
+| 1 | Plugin-Header: `Version:` in `gsh-terminplan.php` | `Version: 4.12.0` |
+| 2 | PHP-Konstante in `gsh-terminplan.php` | `define('GSH_TP_VERSION', '4.12.0')` |
+| 3 | `gsh_tp_changelog()` — neuer Eintrag oben | `'version' => '4.12.0'` |
 | 4 | Plugin-Header-Kommentar `Changelog X.Y.Z:` | neuer Block oben |
 
 **Bump-Regel:** Bugfix → Patch, neues Feature → Minor, Breaking Change → Major.
 
 ### Architektur-Übersicht
+
+**`gsh-terminplan.php`** — Plugin-Bootstrap:
 
 | Sektion | Bereich | Schlüsselfunktionen |
 |---|---|---|
@@ -330,11 +335,53 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 | 5 | Shortcode | `gsh_tp_shortcode` |
 | 9 | Deinstallation | Profil-aware Cleanup |
 
-**Nicht anfassen:** iCal-Parser, Date-Index, Tabellen-Rendering, PDF-Export, Change-Notification-System.
+**`curriculr-data-layer.php`** — REST API `curriculr/v1`: Dokumente (`wp_curriculr_docs`), Stufen (Entwurf/Genehmigt/Öffentlich), Revisionen (`wp_curriculr_doc_revisions`), ICS-Feed-Generierung, CORS.
+
+**`curriculr-auth.php`** — IServ-OIDC-SSO: Authorize-URL, Code→Token-Austausch, Userinfo, App-Token-Signierung (HS256 JWT), Gruppen-Whitelist.
+
+**`curriculr-guard.php`** — Bearer-Token-Validierung als WP `permission_callback` auf allen `curriculr/v1`-Routen; füllt Autoren-Claims für Revisions-Attribution.
+
+**Nicht anfassen (gsh-terminplan.php):** iCal-Parser, Date-Index, Tabellen-Rendering, PDF-Export, Change-Notification-System.
 
 ---
 
 ## Changelog
+
+### 4.12.0
+- [FIX] 409-Konfliktantwort enthält jetzt `authorName` und `savedAt` (aus `wp_curriculr_doc_revisions`) — Planner zeigt „Gespeichert von X am TT.MM.JJJJ"
+
+### 4.11.1
+- [FIX] IServ-SSO: `iserv:groups`-Claim korrekt aus Token gelesen (statt `groups`)
+
+### 4.11.0
+- [FEATURE] `curriculr-guard.php`: Bearer App-Token-Validierung als WP `permission_callback` auf allen `curriculr/v1`-Routen
+- [FEATURE] DB v4: `author_sub`/`author_name` in Revisions-Tabelle; `repo_put` befüllt Autorenfelder aus Guard-Claims
+- [SECURITY] Guard fail-closed (leerer Key → 403); stale Claims global bei Fehler geleert; Lade-Reihenfolge auth→guard→data-layer erzwungen
+
+### 4.10.0
+- [FEATURE] `curriculr-auth.php`: IServ-OIDC-Code-Flow, App-Token (HS256-JWT, RAM im Browser), Gruppen-Whitelist
+- [FEATURE] REST-Routen: `POST /auth/login`, `GET /auth/callback`, `POST /auth/token`, `POST /auth/logout`
+- [FEATURE] Admin-Tab „System": SSO-Konfiguration, Status-Anzeige, Datenschutz-/Vibecoding-Hinweis
+- [SECURITY] Nonce Pflicht (fehlt → Hard-Fail); Single-Use State+Nonce+Handoff-Transients; Gruppen-Whitelist fail-closed; `hash_equals` HMAC-Vergleich; Secrets nur in `wp-config.php`
+- [SECURITY] Nonce-Bypass-Fix + `wp_kses_post` auf Admin-Echo (vor Merge)
+
+### 4.9.0
+- [FEATURE] `wp_curriculr_doc_revisions`-Tabelle: Snapshot bei jedem PUT, Prune auf 50 Revisionen
+- [FEATURE] REST-Routen: `GET /doc/{sj}/revisions` (Liste), `GET /doc/{sj}/revisions/{id}` (Einzelabruf)
+- [FEATURE] Nächtliches WP-Cron-Backup: JSON + ICS in `uploads/curriculr-backups/`
+
+### 4.8.0
+- [FEATURE] Profil-Zuordnung: Planner-`schoolyear.id` → WP-Profil-Key im System-Tab konfigurierbar
+- [FEATURE] REST-Endpunkt `PUT /doc/{sj}`: versioniertes Speichern mit 409-Konfliktschutz und Stage-Verwaltung
+- [FEATURE] REST-Endpunkt `GET /doc/{sj}`: aktuellen Stand mit Versionsnummer abrufen
+- [FEATURE] ICS-Feed-Endpunkt aus gespeichertem Dokument generieren (kein IServ-Pull nötig)
+
+### 4.4.0 – 4.7.x
+- [FEATURE] `curriculr/v1` REST-API: `wp_curriculr_docs`-Tabelle, Stage-Übergänge (Entwurf → Genehmigt → Öffentlich), CORS-Header für GitHub-Pages-Origin
+- [FEATURE] Feed-Reuse: WP-Frontend liest ICS-Feed aus gespeichertem Dokument (kein direkter IServ-Abruf mehr nötig)
+- [FIX] Verschiedene Stabilitäts- und Kompatibilitätsfixes für PHP 8.0+
+
+---
 
 ### 4.3.4
 - [FIX] Entwurf-Vorschau + IServ-Kiosk: je eigenes Formular mit direktem POST-Handler — kein `options.php` mehr
