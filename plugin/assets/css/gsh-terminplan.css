@@ -53,9 +53,9 @@
 }
 
 .gtp-tab[aria-selected="true"] {
-    color: var(--primary-500, #0058A0);
-    border-bottom-color: var(--primary-500, #0058A0);
-    background: var(--primary-100, #E6F4FF);
+    color: var(--primary-900, #00345C);
+    border-bottom-color: var(--accent-warning, #FFC857);
+    background: transparent;
     box-shadow: none;
     font-weight: 700;
 }
@@ -217,10 +217,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .gtp-card {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: var(--glass-border);
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: var(--space-lg);
@@ -228,8 +226,8 @@
 }
 
 .gtp-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .gtp-card-title {
