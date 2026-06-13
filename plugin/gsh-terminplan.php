@@ -1968,7 +1968,7 @@ function gsh_tp_render_feedback_log_tab() {
             </tbody>
         </table>
 
-        <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>" style="margin-top:16px">
+        <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system' ) ); ?>" style="margin-top:16px">
             <?php wp_nonce_field( 'gsh_tp_clear_feedback_log' ); ?>
             <input type="hidden" name="gsh_tp_clear_feedback_log" value="1">
             <?php submit_button( 'Log leeren', 'secondary', 'submit', false ); ?>
@@ -2972,7 +2972,7 @@ function gsh_tp_settings_page() {
 /**
  * Rendert den Profil-Chooser (Dropdown + "+ Neues Schuljahr"-Button).
  *
- * @since 4.11.0
+ * @since 4.15.0
  * @param  array  $profiles    Alle Schuljahr-Profile.
  * @param  string $sel_profile Aktuell gewählte Profil-ID.
  * @return void
@@ -3714,7 +3714,7 @@ function gsh_tp_render_kiosk_tab() {
         <div class="notice notice-warning inline" style="margin-bottom:16px">
             <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
             Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a>.
-            <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_feedback_log' ) ); ?>">Feedback-Log ansehen</a></p>
+            <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system' ) ); ?>">Feedback-Log ansehen</a></p>
         </div>
         <?php endif; ?>
         <table class="form-table">
