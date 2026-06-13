@@ -3,10 +3,14 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.13.0
+ * Version:     4.14.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.14.0:
+ * - [DESIGN] Display-Frontend auf flaches Planner-Papier-Design vereinheitlicht — Glas-Optik entfernt, solide Karten mit dezentem Schatten, Quartal-Tabs mit Gelb-Akzent-Unterstreichung, eckigere Buttons/Badges; Design-Tokens als Spiegel der Planner-Tokens
+ * - [INFRA]  ZIP-Build enthält jetzt assets/ — CSS deployt mit dem Plugin-ZIP
+ *
  * Changelog 4.13.0:
  * - [FIX]   Entwurf-Vorschau zeigte keine Termine: after_put synchronisiert jetzt quartal_grenzen + schuljahr_start des gemappten Profils aus dem gepushten Planner-Doc (Snap-to-Friday wie schoolweeks.ts)
  *
@@ -535,7 +539,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.13.0' );
+define( 'GSH_TP_VERSION',       '4.14.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -779,6 +783,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.14.0',
+            'entries'  => array(
+                array( 'tag' => 'DESIGN', 'text' => 'Display-Frontend auf flaches Planner-Papier-Design vereinheitlicht — Glas-Optik entfernt, solide Karten, Quartal-Tabs mit Gelb-Akzent-Unterstreichung, eckigere Buttons/Badges' ),
+                array( 'tag' => 'INFRA',  'text' => 'ZIP-Build enthält jetzt assets/ — CSS deployt mit dem Plugin-ZIP' ),
+            ),
+        ),
         array(
             'version'  => '4.13.0',
             'entries'  => array(
