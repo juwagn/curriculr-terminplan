@@ -4,13 +4,14 @@
  *
  * Exercises the glue that `php -l` alone cannot reach: repository put/get,
  * optimistic-concurrency conflict, the REST PUT paths (400/409/200), the
- * feed URL shape, the after_put → gsh_tp_do_refresh wiring, and the feed
+ * feed URL shape, the after_put → direct cache write, and the feed
  * token check — all without a real WordPress/DB. Dependency-free, runs with
- * plain `php`. Real-WP specifics (dbDelta, route registration, Application
- * Passwords, loopback refresh, CORS preflight) still require a live install.
+ * plain `php`. Real-WP specifics (dbDelta, route registration, loopback
+ * refresh, CORS preflight) still require a live install.
  */
 define( 'GSH_TP_CURRICULR_TEST', true );
 define( 'GSH_TP_VERSION', '4.5.0-test' );
+define( 'GSH_TP_CACHE_VERSION', 3 );
 define( 'ARRAY_A', 'ARRAY_A' );
 
 require __DIR__ . '/assert.php';
@@ -72,7 +73,9 @@ function current_user_can( $c ) { return true; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function gsh_tp_get_profiles() { return $GLOBALS['profiles'] ?? array(); }
 function gsh_tp_active_profile_id() { return 'p1'; }
-function gsh_tp_do_refresh( $pid ) { $GLOBALS['refreshed'][] = $pid; }
+function gsh_tp_ck( $prefix, $pid ) { return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION; }
+function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
+function set_transient( $k, $v, $ttl = 0 ) { $GLOBALS['options'][ $k ] = $v; }
 $GLOBALS['gsh_tp_curriculr_current_claims'] = null;
 function gsh_tp_curriculr_guard_current_claims() {
     return $GLOBALS['gsh_tp_curriculr_current_claims'];
@@ -140,23 +143,28 @@ $nf = gsh_tp_curriculr_rest_feed( new Gsh_Fake_Req( array(), array( 'sj' => 'sj_
 gsh_assert_true( $nf instanceof WP_REST_Response && $nf->status === 404, 'rest_feed wrong token -> 404' );
 
 /* ---------- Stage + Nicht-Disruption ---------- */
-// Standard-Stufe ist entwurf; ein entwurf-PUT darf NICHT refreshen (kein Mapping).
-$GLOBALS['refreshed'] = array();
+// Standard-Stufe ist entwurf; ohne Mapping ist after_put ein No-op.
 $draft = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 3 ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $draft->data['stage'], 'entwurf', 'PUT without stage defaults to entwurf' );
-gsh_assert_eq( $GLOBALS['refreshed'], array(), 'entwurf PUT does not trigger refresh' );
+gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'entwurf PUT without mapping does not write profile cache' );
 
-// Ohne explizites Profil-Mapping refresht auch ein oeffentlich-PUT nicht (Live-Schutz).
-$GLOBALS['refreshed'] = array();
+// Ohne explizites Profil-Mapping ist after_put auch für oeffentlich ein No-op (Live-Schutz).
 $pub = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 4, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $pub->data['stage'], 'oeffentlich', 'stage carried through to oeffentlich' );
-gsh_assert_eq( $GLOBALS['refreshed'], array(), 'oeffentlich PUT without profile mapping is a safe no-op' );
+gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'oeffentlich PUT without profile mapping is a safe no-op' );
 
-// Mit explizitem Mapping refresht ein oeffentlich-PUT das gemappte Profil.
+// Mit explizitem Mapping schreibt after_put das ICS direkt in den Profil-Cache (alle Stages).
 $GLOBALS['options']['gsh_tp_curriculr_profile_map'] = array( 'sj_2026_27' => 'p1' );
-$GLOBALS['refreshed'] = array();
+unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] );
 $pub2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 5, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
-gsh_assert_eq( $GLOBALS['refreshed'], array( 'p1' ), 'mapped oeffentlich PUT refreshes the mapped profile' );
+$ical_cache = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ?? '';
+gsh_assert_true( strpos( $ical_cache, 'BEGIN:VCALENDAR' ) !== false, 'mapped oeffentlich PUT writes ICS to profile cache directly' );
+
+// Entwurf-PUT mit Mapping schreibt ebenfalls in den Cache (Entwurf-Vorschau soll aktuelle Daten zeigen).
+unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] );
+$entwurf2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 6, 'stage' => 'entwurf' ), array( 'sj' => 'sj_2026_27' ) ) );
+$ical_entwurf = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ?? '';
+gsh_assert_true( strpos( $ical_entwurf, 'BEGIN:VCALENDAR' ) !== false, 'mapped entwurf PUT writes ICS to profile cache directly' );
 
 /* ---------- 409 + Author-Attribution ---------- */
 $GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'u1', 'name' => 'Max Mustermann' );

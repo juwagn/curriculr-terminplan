@@ -166,6 +166,67 @@ function gsh_tp_curriculr_normalize_stage( $stage ) {
     return in_array( $s, $valid, true ) ? $s : 'entwurf';
 }
 
+/* ---------- Pure: Quartalsgrenzen aus dem Planner-Doc ableiten ---------- */
+// Die Anzeige (gsh_tp_table) rendert nur Wochen innerhalb der Profil-Quartals-
+// fenster. Ohne Sync zeigen veraltete Grenzen (z. B. 2025/26-Defaults) einen
+// leeren Plan, obwohl der ICS-Cache korrekt ist. Semantik spiegelt
+// schoolweeks.ts getQuarterRange: Grenzen auf Freitag der ISO-Woche snappen.
+
+function gsh_tp_curriculr_is_iso_date( $d ) {
+    return is_string( $d ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $d ) === 1;
+}
+
+function gsh_tp_curriculr_snap_friday( $iso ) {
+    $d   = new DateTime( $iso );
+    $dow = (int) $d->format( 'N' );
+    if ( 5 !== $dow ) {
+        $d->modify( sprintf( '%+d days', 5 - $dow ) );
+    }
+    return $d->format( 'Y-m-d' );
+}
+
+function gsh_tp_curriculr_monday_of_week( $iso ) {
+    $d   = new DateTime( $iso );
+    $dow = (int) $d->format( 'N' );
+    if ( $dow > 1 ) {
+        $d->modify( '-' . ( $dow - 1 ) . ' days' );
+    }
+    return $d->format( 'Y-m-d' );
+}
+
+function gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) {
+    if ( ! is_array( $doc ) || ! isset( $doc['schoolyear'] ) || ! is_array( $doc['schoolyear'] ) ) {
+        return '';
+    }
+    $sy    = $doc['schoolyear'];
+    $first = isset( $sy['firstSchoolDay'] ) ? $sy['firstSchoolDay'] : '';
+    $last  = isset( $sy['lastSchoolDay'] ) ? $sy['lastSchoolDay'] : '';
+    $qb    = isset( $sy['quarterBoundaries'] ) ? $sy['quarterBoundaries'] : null;
+    if ( ! gsh_tp_curriculr_is_iso_date( $first ) || ! gsh_tp_curriculr_is_iso_date( $last ) ) {
+        return '';
+    }
+    if ( ! is_array( $qb ) || count( $qb ) !== 3 ) {
+        return '';
+    }
+    $ends = array();
+    foreach ( array_values( $qb ) as $b ) {
+        if ( ! gsh_tp_curriculr_is_iso_date( $b ) ) {
+            return '';
+        }
+        $ends[] = gsh_tp_curriculr_snap_friday( $b );
+    }
+    // Folgequartal beginnt am Montag NACH dem Grenz-Freitag: gsh_tp_table()
+    // richtet den Quartalsstart auf Montag aus — ein Samstag-Start würde die
+    // Grenzwoche in zwei Quartalen doppelt rendern.
+    $q2 = ( new DateTime( $ends[0] ) )->modify( '+3 days' )->format( 'Y-m-d' );
+    $q3 = ( new DateTime( $ends[1] ) )->modify( '+3 days' )->format( 'Y-m-d' );
+    $q4 = ( new DateTime( $ends[2] ) )->modify( '+3 days' )->format( 'Y-m-d' );
+    return $first . '|' . $ends[0] . "\n"
+         . $q2 . '|' . $ends[1] . "\n"
+         . $q3 . '|' . $ends[2] . "\n"
+         . $q4 . '|' . $last;
+}
+
 /* ---------- WP: Tabelle + Repository ---------- */
 
 function gsh_tp_curriculr_table() {
@@ -461,10 +522,8 @@ function gsh_tp_curriculr_rest_put( $req ) {
         );
     }
 
-    // Sicherheit: Feed-Reuse-Refresh nur, wenn der Plan öffentlich ist.
-    if ( $res['stage'] === 'oeffentlich' ) {
-        gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
-    }
+    // Feed-Reuse-Refresh für alle Stages — auch Entwurf-Vorschau (token-geschützt) soll aktuelle Daten zeigen.
+    gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
 
     return new WP_REST_Response(
         array(
@@ -558,21 +617,49 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
         return;
     }
     $feed_url = gsh_tp_curriculr_feed_url( $sj, $token );
+
+    $row = gsh_tp_curriculr_repo_get( $sj );
+    $doc = $row ? json_decode( $row['json'], true ) : null;
+
+    // Anzeigefenster aus dem Doc ableiten: ohne diese Synchronisierung rendert
+    // die Entwurf-Vorschau Wochen des falschen Schuljahres → leerer Plan.
+    $grenzen = is_array( $doc ) ? gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) : '';
+    $sj_start = '';
+    if ( '' !== $grenzen && gsh_tp_curriculr_is_iso_date( $doc['schoolyear']['firstSchoolDay'] ) ) {
+        // gsh_tp_schulwoche() erwartet den ersten Montag des Schuljahres.
+        $sj_start = gsh_tp_curriculr_monday_of_week( $doc['schoolyear']['firstSchoolDay'] );
+    }
+
     $profiles = gsh_tp_get_profiles();
     $changed  = false;
     foreach ( $profiles as &$p ) {
-        if ( isset( $p['id'] ) && $p['id'] === $pid && ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) ) {
+        if ( ! isset( $p['id'] ) || $p['id'] !== $pid ) {
+            continue;
+        }
+        if ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) {
             $p['ical_url'] = $feed_url;
             $changed       = true;
+        }
+        if ( '' !== $grenzen && ( ! isset( $p['quartal_grenzen'] ) || $p['quartal_grenzen'] !== $grenzen ) ) {
+            $p['quartal_grenzen'] = $grenzen;
+            $changed              = true;
+        }
+        if ( '' !== $sj_start && ( ! isset( $p['schuljahr_start'] ) || $p['schuljahr_start'] !== $sj_start ) ) {
+            $p['schuljahr_start'] = $sj_start;
+            $changed              = true;
         }
     }
     unset( $p );
     if ( $changed ) {
         update_option( 'gsh_tp_profiles', $profiles, true );
     }
-    // Bestehenden Refresh anstoßen → Anzeige-Cache sofort aktuell.
-    if ( function_exists( 'gsh_tp_do_refresh' ) ) {
-        gsh_tp_do_refresh( $pid );
+
+    // ICS direkt in den Cache schreiben — zuverlässiger als Loopback-HTTP (Shared Hosting).
+    // gsh_tp_ck() ist in gsh-terminplan.php definiert und zum Zeitpunkt dieses Aufrufs bereits geladen.
+    if ( $row && function_exists( 'gsh_tp_ck' ) && is_array( $doc ) ) {
+        $pid_key = sanitize_key( $pid );
+        update_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ), gsh_tp_curriculr_build_ics( $doc ), false );
+        delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid_key ) );
     }
 }
 
