@@ -3514,15 +3514,12 @@ function gsh_tp_render_kategorien_tab() {
 }
 
 /**
- * Rendert den System-Tab (Kiosk-Modus, Shortcode-Hilfe).
+ * Rendert den Sync-Tab (Curriculr Planner-Sync).
  *
- * Kiosk-Einstellungen (Token, IServ-Domain) werden über die WordPress
- * Settings API (options.php) gespeichert.
- *
- * @since 3.2.0 (Tab-Wrapper seit 3.5.0)
+ * @since 4.10.0
  * @return void
  */
-function gsh_tp_render_system_tab() {
+function gsh_tp_render_sync_tab() {
     ?>
     <h2>Curriculr Planner-Sync</h2>
     <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
@@ -3586,73 +3583,17 @@ function gsh_tp_render_system_tab() {
         </table>
         <?php submit_button( 'Curriculr-Sync speichern' ); ?>
     </form>
-
-    <hr style="margin:24px 0" />
-
     <?php
-    $cur_cfg = gsh_tp_curriculr_auth_config();
-    $cur_defs = array(
-        'CURRICULR_ISERV_BASE_URL'      => ! empty( $cur_cfg['iserv_base'] ),
-        'CURRICULR_ISERV_CLIENT_ID'     => ! empty( $cur_cfg['client_id'] ),
-        'CURRICULR_ISERV_CLIENT_SECRET' => ! empty( $cur_cfg['client_secret'] ),
-        'CURRICULR_APP_TOKEN_KEY'       => ! empty( $cur_cfg['app_token_key'] ),
-    );
-    $cur_ready = gsh_tp_curriculr_auth_is_configured( $cur_cfg );
+}
+
+/**
+ * Rendert den Kiosk-Tab (Entwurf-Vorschau + IServ-Einbettung Kiosk-Modus).
+ *
+ * @since 4.10.0
+ * @return void
+ */
+function gsh_tp_render_kiosk_tab() {
     ?>
-    <h2><?php echo esc_html__( 'IServ-SSO (Mehrbenutzer-Anmeldung)', 'gsh-terminplan' ); ?></h2>
-    <p>
-        <?php echo wp_kses_post( $cur_ready
-            ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
-            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
-    </p>
-    <table class="widefat" style="max-width:640px">
-        <thead><tr><th>Konstante (in wp-config.php)</th><th>Status</th></tr></thead>
-        <tbody>
-        <?php foreach ( $cur_defs as $const => $set ) : ?>
-            <tr>
-                <td><code><?php echo esc_html( $const ); ?></code></td>
-                <td><?php echo wp_kses_post( $set
-                    ? gsh_tp_icon( 'check' ) . ' gesetzt'
-                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt' ); ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <p>
-        <strong>Redirect-URI f&uuml;r die IServ-Client-Registrierung:</strong><br>
-        <code><?php echo esc_html( $cur_cfg['redirect_uri'] ); ?></code>
-    </p>
-    <p>
-        <strong>Erlaubte Gruppen (Whitelist):</strong>
-        <code><?php echo esc_html( $cur_cfg['allowed_groups'] ? implode( ', ', $cur_cfg['allowed_groups'] ) : '— keine — (Anmeldung gesperrt)' ); ?></code>
-    </p>
-
-    <h2><?php echo esc_html__( 'Datenschutz &amp; Transparenz', 'gsh-terminplan' ); ?></h2>
-    <p>
-        Verarbeitete Daten bei aktivierter IServ-Anmeldung: IServ-Kennung
-        (<code>sub</code>), Anzeigename und freigegebene Gruppen &mdash; sowie die
-        Plandaten des Schuljahres. Speicherung der Plandaten auf dem
-        WordPress-Server (Hoster w3w.de, DE/EU). IServ-Tokens werden nicht
-        dauerhaft gespeichert.
-    </p>
-    <p>
-        Hinweis: Die Planner-Oberfl&auml;che wird von GitHub Pages
-        (GitHub/Microsoft, USA) geladen; dabei wird die IP-Adresse in ein
-        Drittland &uuml;bertragen. Dort werden <em>keine</em> Plandaten verarbeitet
-        (nur statisches JavaScript/CSS). Zweck: gemeinsame Terminplanung.
-        Rechtsgrundlage und Ansprechpartner: siehe schulisches
-        Datenschutzkonzept.
-    </p>
-    <p style="padding:12px;border-left:4px solid var(--gsh-marine,#00345C);background:#f1f5f9">
-        <strong>Hinweis (&bdquo;Vibecoding&ldquo;):</strong> Diese Werkzeuge
-        (Planner und WordPress-Plugin) wurden im Wege des &bdquo;Vibecodings&ldquo;
-        &mdash; also KI-gest&uuml;tzter Softwareentwicklung &mdash; erstellt. Vor dem
-        produktiven Einsatz mit personenbezogenen Daten sind die &uuml;bliche
-        Sorgfalt, Tests und eine datenschutzrechtliche Bewertung anzuwenden.
-    </p>
-
-    <hr style="margin:24px 0" />
-
     <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
     <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist die Entwurf-Vorschau?</strong><br>
@@ -3812,6 +3753,76 @@ function gsh_tp_render_system_tab() {
         </table>
         <?php submit_button( 'Kiosk-Einstellungen speichern' ); ?>
     </form>
+    <?php
+}
+
+/**
+ * Rendert den System-Tab (IServ-SSO, Datenschutz, Shortcode-Hilfe, Logs).
+ *
+ * @since 3.2.0 (Tab-Wrapper seit 3.5.0)
+ * @return void
+ */
+function gsh_tp_render_system_tab() {
+    $cur_cfg = gsh_tp_curriculr_auth_config();
+    $cur_defs = array(
+        'CURRICULR_ISERV_BASE_URL'      => ! empty( $cur_cfg['iserv_base'] ),
+        'CURRICULR_ISERV_CLIENT_ID'     => ! empty( $cur_cfg['client_id'] ),
+        'CURRICULR_ISERV_CLIENT_SECRET' => ! empty( $cur_cfg['client_secret'] ),
+        'CURRICULR_APP_TOKEN_KEY'       => ! empty( $cur_cfg['app_token_key'] ),
+    );
+    $cur_ready = gsh_tp_curriculr_auth_is_configured( $cur_cfg );
+    ?>
+    <h2><?php echo esc_html__( 'IServ-SSO (Mehrbenutzer-Anmeldung)', 'gsh-terminplan' ); ?></h2>
+    <p>
+        <?php echo wp_kses_post( $cur_ready
+            ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
+            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
+    </p>
+    <table class="widefat" style="max-width:640px">
+        <thead><tr><th>Konstante (in wp-config.php)</th><th>Status</th></tr></thead>
+        <tbody>
+        <?php foreach ( $cur_defs as $const => $set ) : ?>
+            <tr>
+                <td><code><?php echo esc_html( $const ); ?></code></td>
+                <td><?php echo wp_kses_post( $set
+                    ? gsh_tp_icon( 'check' ) . ' gesetzt'
+                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt' ); ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <p>
+        <strong>Redirect-URI f&uuml;r die IServ-Client-Registrierung:</strong><br>
+        <code><?php echo esc_html( $cur_cfg['redirect_uri'] ); ?></code>
+    </p>
+    <p>
+        <strong>Erlaubte Gruppen (Whitelist):</strong>
+        <code><?php echo esc_html( $cur_cfg['allowed_groups'] ? implode( ', ', $cur_cfg['allowed_groups'] ) : '— keine — (Anmeldung gesperrt)' ); ?></code>
+    </p>
+
+    <h2><?php echo esc_html__( 'Datenschutz &amp; Transparenz', 'gsh-terminplan' ); ?></h2>
+    <p>
+        Verarbeitete Daten bei aktivierter IServ-Anmeldung: IServ-Kennung
+        (<code>sub</code>), Anzeigename und freigegebene Gruppen &mdash; sowie die
+        Plandaten des Schuljahres. Speicherung der Plandaten auf dem
+        WordPress-Server (Hoster w3w.de, DE/EU). IServ-Tokens werden nicht
+        dauerhaft gespeichert.
+    </p>
+    <p>
+        Hinweis: Die Planner-Oberfl&auml;che wird von GitHub Pages
+        (GitHub/Microsoft, USA) geladen; dabei wird die IP-Adresse in ein
+        Drittland &uuml;bertragen. Dort werden <em>keine</em> Plandaten verarbeitet
+        (nur statisches JavaScript/CSS). Zweck: gemeinsame Terminplanung.
+        Rechtsgrundlage und Ansprechpartner: siehe schulisches
+        Datenschutzkonzept.
+    </p>
+    <p style="padding:12px;border-left:4px solid var(--gsh-marine,#00345C);background:#f1f5f9">
+        <strong>Hinweis (&bdquo;Vibecoding&ldquo;):</strong> Diese Werkzeuge
+        (Planner und WordPress-Plugin) wurden im Wege des &bdquo;Vibecodings&ldquo;
+        &mdash; also KI-gest&uuml;tzter Softwareentwicklung &mdash; erstellt. Vor dem
+        produktiven Einsatz mit personenbezogenen Daten sind die &uuml;bliche
+        Sorgfalt, Tests und eine datenschutzrechtliche Bewertung anzuwenden.
+    </p>
 
     <hr />
     <h2>Shortcode-Verwendung</h2>
@@ -3824,8 +3835,13 @@ function gsh_tp_render_system_tab() {
     <?php
     // Import-Sektion entfernt in v3.12.0 – wird durch externes Tool ersetzt.
     // (Ehemals: Terminplan-Import Excel → ICS mit SheetJS)
-    ?>
-        <?php
+
+    echo '<hr style="margin:24px 0" />';
+    echo '<h2>Sync-Verlauf</h2>';
+    gsh_tp_render_sync_log_tab();
+    echo '<hr style="margin:24px 0" />';
+    echo '<h2>Feedback-Log</h2>';
+    gsh_tp_render_feedback_log_tab();
 }
 
 /**
