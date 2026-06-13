@@ -2833,26 +2833,26 @@ function gsh_tp_settings_page() {
         }
     }
 
-    // ── Tabs aufbauen ──
-    $tabs = array();
-    foreach ( $profiles as $p ) {
-        $suffix = '';
-        if ( ! empty( $p['is_draft'] ) ) {
-            $suffix = ' (Entwurf)';
-        } elseif ( ! empty( $p['is_active'] ) ) {
-            $suffix = ' (aktiv)';
-        }
-        $tabs[ $p['id'] ] = esc_html( $p['label'] ) . $suffix;
-    }
-    $tabs['_kategorien']   = 'Kategorien';
-    $tabs['_system']       = 'Kiosk &amp; System';
-    $tabs['_sync_log']     = 'Sync-Verlauf';
-    $tabs['_feedback_log'] = 'Feedback-Log';
+    // ── Tabs (fest, funktional) ──
+    $tabs = array(
+        '_profile'    => 'Schuljahr-Profil',
+        '_kategorien' => 'Kategorien',
+        '_sync'       => 'Curriculr-Sync',
+        '_kiosk'      => 'Kiosk',
+        '_system'     => 'System &amp; Logs',
+    );
 
-    // Tab aus URL-Parameter lesen – Whitelist-Check gegen $tabs
+    // Aktiver Tab (Whitelist gegen $tabs)
     $active_tab = sanitize_key( $_GET['tab'] ?? '' );
     if ( ! array_key_exists( $active_tab, $tabs ) ) {
-        $active_tab = array_key_first( $tabs );
+        $active_tab = '_profile';
+    }
+
+    // Gewähltes Profil für den Profil-Tab (Default: aktives Profil)
+    $sel_profile = sanitize_key( $_GET['profile'] ?? '' );
+    $profile_ids = array_column( $profiles, 'id' );
+    if ( ! in_array( $sel_profile, $profile_ids, true ) ) {
+        $sel_profile = gsh_tp_active_profile_id();
     }
     ?>
     <div class="wrap">
@@ -2949,31 +2949,61 @@ function gsh_tp_settings_page() {
                     <?php echo $label; ?>
                 </a>
             <?php endforeach; ?>
-            <?php if ( count( $profiles ) < 5 ) : ?>
-                <form method="post" style="display:inline">
-                    <?php wp_nonce_field( 'gsh_tp_new_profile', 'gsh_tp_np_n' ); ?>
-                    <button type="submit" name="gsh_tp_new_profile" value="1" class="nav-tab"
-                            style="cursor:pointer;color:#27ae60;border-style:dashed;background:transparent"
-                            onclick="return confirm('Neues Schuljahr-Profil anlegen?')">
-                        + Neues Schuljahr
-                    </button>
-                </form>
-            <?php endif; ?>
         </nav>
 
         <?php
         if ( '_kategorien' === $active_tab ) {
             gsh_tp_render_kategorien_tab();
+        } elseif ( '_sync' === $active_tab ) {
+            gsh_tp_render_sync_tab();
+        } elseif ( '_kiosk' === $active_tab ) {
+            gsh_tp_render_kiosk_tab();
         } elseif ( '_system' === $active_tab ) {
             gsh_tp_render_system_tab();
-        } elseif ( '_sync_log' === $active_tab ) {
-            gsh_tp_render_sync_log_tab();
-        } elseif ( '_feedback_log' === $active_tab ) {
-            gsh_tp_render_feedback_log_tab();
-        } else {
-            gsh_tp_render_profile_tab( $active_tab );
+        } else { // _profile
+            gsh_tp_render_profile_chooser( $profiles, $sel_profile );
+            gsh_tp_render_profile_tab( $sel_profile );
         }
         ?>
+    </div>
+    <?php
+}
+
+/**
+ * Rendert den Profil-Chooser (Dropdown + "+ Neues Schuljahr"-Button).
+ *
+ * @since 4.11.0
+ * @param  array  $profiles    Alle Schuljahr-Profile.
+ * @param  string $sel_profile Aktuell gewählte Profil-ID.
+ * @return void
+ */
+function gsh_tp_render_profile_chooser( $profiles, $sel_profile ) {
+    ?>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <form method="get" style="margin:0;display:flex;align-items:center;gap:6px">
+            <input type="hidden" name="page" value="gsh-terminplan" />
+            <input type="hidden" name="tab" value="_profile" />
+            <label for="gsh_tp_profile_sel" style="font-weight:600">Schuljahr:</label>
+            <select id="gsh_tp_profile_sel" name="profile" onchange="this.form.submit()">
+                <?php foreach ( $profiles as $p ) :
+                    $suffix = ! empty( $p['is_draft'] ) ? ' (Entwurf)' : ( ! empty( $p['is_active'] ) ? ' (aktiv)' : '' );
+                ?>
+                    <option value="<?php echo esc_attr( $p['id'] ); ?>" <?php selected( $sel_profile, $p['id'] ); ?>>
+                        <?php echo esc_html( $p['label'] . $suffix ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+        <?php if ( count( $profiles ) < 5 ) : ?>
+            <form method="post" style="margin:0;display:inline">
+                <?php wp_nonce_field( 'gsh_tp_new_profile', 'gsh_tp_np_n' ); ?>
+                <button type="submit" name="gsh_tp_new_profile" value="1" class="button"
+                        style="color:#27ae60;border-color:#27ae60"
+                        onclick="return confirm('Neues Schuljahr-Profil anlegen?')">
+                    + Neues Schuljahr
+                </button>
+            </form>
+        <?php endif; ?>
     </div>
     <?php
 }
