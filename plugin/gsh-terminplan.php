@@ -2589,6 +2589,310 @@ function gsh_tp_opt( $key, $default = '', $profile_id = '' ) {
     return $default;
 }
 
+/* ── Admin POST-Handler ── */
+
+/**
+ * POST-Handler: Neues Schuljahr-Profil anlegen.
+ *
+ * @param array $profiles Profil-Array (by reference).
+ * @return void
+ */
+function gsh_tp_handle_new_profile( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_np_n'] ?? '' ) ), 'gsh_tp_new_profile' ) ) {
+        if ( count( $profiles ) < 5 ) {
+            $year   = (int) date( 'Y' );
+            $new_id = 'sj_' . $year . '_' . ( $year + 1 );
+            $exist  = array_column( $profiles, 'id' );
+            if ( in_array( $new_id, $exist, true ) ) {
+                $new_id = $new_id . '_2';
+            }
+            $active = gsh_tp_get_profile( gsh_tp_active_profile_id() );
+            $profiles[] = array(
+                'id'              => sanitize_key( $new_id ),
+                'label'           => 'Schuljahr ' . $year . '/' . ( $year + 1 ),
+                'ical_url'        => $active['ical_url'] ?? '',
+                'cache_duration'  => $active['cache_duration'] ?? 3600,
+                'quartal_grenzen' => $active['quartal_grenzen'] ?? '',
+                'schuljahr_start' => $active['schuljahr_start'] ?? '',
+                'is_active'       => false,
+                'is_draft'        => true,
+                'created'         => current_time( 'Y-m-d' ),
+            );
+            gsh_tp_save_profiles( $profiles );
+            $profiles = gsh_tp_get_profiles();
+            echo '<div class="notice notice-success"><p>Neues Schuljahr-Profil <strong>'
+               . esc_html( 'Schuljahr ' . $year . '/' . ( $year + 1 ) )
+               . '</strong> als Entwurf angelegt.</p></div>';
+        }
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Profil speichern.
+ *
+ * @param array $profiles Profil-Array (by reference).
+ * @return void
+ */
+function gsh_tp_handle_save_profile( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sp_n'] ?? '' ) ), 'gsh_tp_profile_save' ) ) {
+        $save_id    = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+        $raw_data   = $_POST['gsh_tp_profile'][ $save_id ] ?? array();
+        $url_check  = gsh_tp_validate_ical_url( $raw_data['ical_url'] ?? '' );
+        $profiles   = array_map( function ( $p ) use ( $save_id, $raw_data, $url_check ) {
+            if ( $p['id'] !== $save_id ) {
+                return $p;
+            }
+            return array_merge( $p, array(
+                'label'           => sanitize_text_field( $raw_data['label'] ?? $p['label'] ),
+                'ical_url'        => $url_check['url'], // bereits bereinigt
+                'cache_duration'  => max( 300, min( 86400, absint( $raw_data['cache_duration'] ?? 3600 ) ) ),
+                'quartal_grenzen' => sanitize_textarea_field( $raw_data['quartal_grenzen'] ?? '' ),
+                'schuljahr_start' => sanitize_text_field( $raw_data['schuljahr_start'] ?? '' ),
+                'is_active'       => $p['is_active'], // Aktiv-Status nur via activate_profile ändern
+                'is_draft'        => ! empty( $raw_data['is_draft'] ),
+            ) );
+        }, $profiles );
+        gsh_tp_save_profiles( $profiles );
+        $profiles = gsh_tp_get_profiles();
+        if ( ! $url_check['valid'] && ! empty( $raw_data['ical_url'] ) ) {
+            echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' ) . ' Profil gespeichert, aber die iCal-URL ist ung&uuml;ltig: <strong>'
+               . esc_html( $url_check['error'] ) . '</strong>. Die URL wurde nicht &uuml;bernommen.</p></div>';
+        } else {
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil gespeichert.</p></div>';
+        }
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Profil aktivieren.
+ *
+ * @param array $profiles Profil-Array (by reference).
+ * @return void
+ */
+function gsh_tp_handle_activate_profile( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_ap_n'] ?? '' ) ), 'gsh_tp_activate_profile' ) ) {
+        $act_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+        $profiles = array_map( function ( $p ) use ( $act_id ) {
+            $p['is_active'] = ( $p['id'] === $act_id );
+            if ( $p['id'] === $act_id ) {
+                $p['is_draft'] = false;
+            }
+            return $p;
+        }, $profiles );
+        gsh_tp_save_profiles( $profiles );
+        $profiles = gsh_tp_get_profiles();
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil als aktiv gesetzt.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Entwurf-Token speichern.
+ *
+ * @param array $profiles Profil-Array (by reference, unused but kept for uniform signature).
+ * @return void
+ */
+function gsh_tp_handle_save_draft( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sd_n'] ?? '' ) ), 'gsh_tp_save_draft' ) ) {
+        update_option( 'gsh_tp_draft_kiosk_token', sanitize_text_field( wp_unslash( $_POST['gsh_tp_draft_kiosk_token'] ?? '' ) ) );
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Entwurf-Token gespeichert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Kiosk-Einstellungen speichern.
+ *
+ * @param array $profiles Profil-Array (by reference, unused but kept for uniform signature).
+ * @return void
+ */
+function gsh_tp_handle_save_kiosk( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sk_n'] ?? '' ) ), 'gsh_tp_save_kiosk' ) ) {
+        update_option( 'gsh_tp_kiosk_token',    sanitize_text_field( wp_unslash( $_POST['gsh_tp_kiosk_token'] ?? '' ) ) );
+        update_option( 'gsh_tp_iserv_domain',   esc_url_raw( wp_unslash( $_POST['gsh_tp_iserv_domain'] ?? '' ) ) );
+        update_option( 'gsh_tp_feedback_email', sanitize_email( wp_unslash( $_POST['gsh_tp_feedback_email'] ?? '' ) ) );
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kiosk-Einstellungen gespeichert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Curriculr-Planner-Sync-Einstellungen speichern.
+ *
+ * @param array $profiles Profil-Array (by reference, unused but kept for uniform signature).
+ * @return void
+ */
+function gsh_tp_handle_save_curriculr( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cur_n'] ?? '' ) ), 'gsh_tp_save_curriculr' ) ) {
+        update_option( 'gsh_tp_curriculr_origin', esc_url_raw( wp_unslash( $_POST['gsh_tp_curriculr_origin'] ?? '' ) ) );
+        $sj_key     = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_sj_key']     ?? '' ) );
+        $profile_id = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_profile_id'] ?? '' ) );
+        if ( $sj_key && $profile_id ) {
+            update_option( 'gsh_tp_curriculr_profile_map', array( $sj_key => $profile_id ), false );
+        } elseif ( ! $sj_key && ! $profile_id ) {
+            update_option( 'gsh_tp_curriculr_profile_map', array(), false );
+        }
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Curriculr-Sync-Einstellungen gespeichert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Profil löschen.
+ *
+ * @param array $profiles Profil-Array (by reference).
+ * @return void
+ */
+function gsh_tp_handle_delete_profile( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
+        $del_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
+        $del_prof = gsh_tp_get_profile( $del_id );
+        if ( count( $profiles ) <= 1 ) {
+            echo '<div class="notice notice-error"><p>Das letzte Profil kann nicht gel&ouml;scht werden.</p></div>';
+        } elseif ( ! $del_prof || ! empty( $del_prof['is_active'] ) ) {
+            echo '<div class="notice notice-error"><p>Das aktive Profil kann nicht gel&ouml;scht werden.</p></div>';
+        } else {
+            $pid = sanitize_key( $del_id );
+            // Versionierte Keys (aktuell und eventuelle Vorgänger)
+            delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid ) );
+            delete_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ) );
+            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
+            delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid ) );
+            // Unversionierte Keys (Backup, Sync-Zeitstempel, Snapshot, Guard)
+            delete_option( 'gsh_tp_backup_' . $pid );
+            delete_option( 'gsh_tp_sync_' . $pid );
+            delete_transient( 'gsh_tp_snap_' . $pid );
+            $profiles = array_values( array_filter( $profiles, function ( $p ) use ( $del_id ) {
+                return $p['id'] !== $del_id;
+            } ) );
+            gsh_tp_save_profiles( $profiles );
+            wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan' ) );
+            exit;
+        }
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Kalender synchronisieren.
+ *
+ * @param array $profiles Profil-Array (by reference, read-only).
+ * @return void
+ */
+function gsh_tp_handle_sync( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sn'] ?? '' ) ), 'gsh_tp_sync_manual' ) ) {
+        $sync_pid = sanitize_key( $_POST['gsh_tp_sync_pid'] ?? gsh_tp_active_profile_id() );
+        // Whitelist-Check: muss ein bekanntes Profil sein
+        $known = array_column( $profiles, 'id' );
+        if ( ! in_array( $sync_pid, $known, true ) ) {
+            $sync_pid = gsh_tp_active_profile_id();
+        }
+        $ok = gsh_tp_do_refresh( $sync_pid );
+        if ( $ok ) {
+            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kalender erfolgreich synchronisiert ('
+               . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr).</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>' . gsh_tp_icon( 'x' ) . ' Synchronisierung fehlgeschlagen &ndash; '
+               . 'bitte die iCal-URL pr&uuml;fen oder warten, bis der IServ-Server erreichbar ist.</p></div>';
+        }
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Cache leeren.
+ *
+ * @param array $profiles Profil-Array (by reference, read-only).
+ * @return void
+ */
+function gsh_tp_handle_clear_cache( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cn'] ?? '' ) ), 'gsh_tp_cc' ) ) {
+        $cc_pid = sanitize_key( $_POST['gsh_tp_cc_pid'] ?? '' );
+        $known  = array_column( $profiles, 'id' );
+        if ( $cc_pid && in_array( $cc_pid, $known, true ) ) {
+            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $cc_pid ) );
+        } else {
+            foreach ( $profiles as $p ) {
+                delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', sanitize_key( $p['id'] ) ) );
+            }
+        }
+        echo '<div class="notice notice-success"><p>Cache als veraltet markiert &ndash; '
+           . 'wird beim n&auml;chsten Seitenaufruf im Hintergrund aktualisiert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Feedback-Log leeren.
+ *
+ * @param array $profiles Profil-Array (by reference, unused but kept for uniform signature).
+ * @return void
+ */
+function gsh_tp_handle_clear_feedback_log( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'gsh_tp_clear_feedback_log' ) ) {
+        delete_option( 'gsh_tp_feedback_log' );
+        delete_option( 'gsh_tp_mail_fail_count' );
+        // Bugfix v3.13.1: gleiche Ursache – inline statt Redirect
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Feedback-Log geleert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * POST-Handler: Alte Sync-Logs löschen.
+ *
+ * @param array $profiles Profil-Array (by reference, unused but kept for uniform signature).
+ * @return void
+ */
+function gsh_tp_handle_clear_logs( &$profiles ) {
+    if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cl_n'] ?? '' ) ), 'gsh_tp_clear_logs' ) ) {
+        $removed = gsh_tp_clear_old_logs( 30 );
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' ' . (int) $removed
+           . ' veraltete Log-Eintr&auml;ge gel&ouml;scht.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
+    }
+}
+
+/**
+ * Dispatcher: leitet POST-Aktionen der Einstellungsseite an benannte Handler weiter.
+ *
+ * @param array $profiles Profil-Array (by reference).
+ * @return void
+ */
+function gsh_tp_settings_handle_post( &$profiles ) {
+    $map = array(
+        'gsh_tp_new_profile'        => 'gsh_tp_handle_new_profile',
+        'gsh_tp_save_profile'       => 'gsh_tp_handle_save_profile',
+        'gsh_tp_activate_profile'   => 'gsh_tp_handle_activate_profile',
+        'gsh_tp_save_draft'         => 'gsh_tp_handle_save_draft',
+        'gsh_tp_save_kiosk'         => 'gsh_tp_handle_save_kiosk',
+        'gsh_tp_save_curriculr'     => 'gsh_tp_handle_save_curriculr',
+        'gsh_tp_delete_profile'     => 'gsh_tp_handle_delete_profile',
+        'gsh_tp_sync'               => 'gsh_tp_handle_sync',
+        'gsh_tp_cc'                 => 'gsh_tp_handle_clear_cache',
+        'gsh_tp_clear_feedback_log' => 'gsh_tp_handle_clear_feedback_log',
+        'gsh_tp_clear_logs'         => 'gsh_tp_handle_clear_logs',
+    );
+    foreach ( $map as $key => $fn ) {
+        if ( isset( $_POST[ $key ] ) ) {
+            $fn( $profiles );
+        }
+    }
+}
+
 /* ── Admin-Seite ── */
 
 /**
@@ -2613,225 +2917,7 @@ function gsh_tp_settings_page() {
         $profiles = gsh_tp_get_profiles();
     }
 
-    // ── POST: Neues Schuljahr-Profil anlegen ──
-    if ( isset( $_POST['gsh_tp_new_profile'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_np_n'] ?? '' ) ), 'gsh_tp_new_profile' ) ) {
-            if ( count( $profiles ) < 5 ) {
-                $year   = (int) date( 'Y' );
-                $new_id = 'sj_' . $year . '_' . ( $year + 1 );
-                $exist  = array_column( $profiles, 'id' );
-                if ( in_array( $new_id, $exist, true ) ) {
-                    $new_id = $new_id . '_2';
-                }
-                $active = gsh_tp_get_profile( gsh_tp_active_profile_id() );
-                $profiles[] = array(
-                    'id'              => sanitize_key( $new_id ),
-                    'label'           => 'Schuljahr ' . $year . '/' . ( $year + 1 ),
-                    'ical_url'        => $active['ical_url'] ?? '',
-                    'cache_duration'  => $active['cache_duration'] ?? 3600,
-                    'quartal_grenzen' => $active['quartal_grenzen'] ?? '',
-                    'schuljahr_start' => $active['schuljahr_start'] ?? '',
-                    'is_active'       => false,
-                    'is_draft'        => true,
-                    'created'         => current_time( 'Y-m-d' ),
-                );
-                gsh_tp_save_profiles( $profiles );
-                $profiles = gsh_tp_get_profiles();
-                echo '<div class="notice notice-success"><p>Neues Schuljahr-Profil <strong>'
-                   . esc_html( 'Schuljahr ' . $year . '/' . ( $year + 1 ) )
-                   . '</strong> als Entwurf angelegt.</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Profil speichern ──
-    if ( isset( $_POST['gsh_tp_save_profile'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sp_n'] ?? '' ) ), 'gsh_tp_profile_save' ) ) {
-            $save_id    = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-            $raw_data   = $_POST['gsh_tp_profile'][ $save_id ] ?? array();
-            $url_check  = gsh_tp_validate_ical_url( $raw_data['ical_url'] ?? '' );
-            $profiles   = array_map( function ( $p ) use ( $save_id, $raw_data, $url_check ) {
-                if ( $p['id'] !== $save_id ) {
-                    return $p;
-                }
-                return array_merge( $p, array(
-                    'label'           => sanitize_text_field( $raw_data['label'] ?? $p['label'] ),
-                    'ical_url'        => $url_check['url'], // bereits bereinigt
-                    'cache_duration'  => max( 300, min( 86400, absint( $raw_data['cache_duration'] ?? 3600 ) ) ),
-                    'quartal_grenzen' => sanitize_textarea_field( $raw_data['quartal_grenzen'] ?? '' ),
-                    'schuljahr_start' => sanitize_text_field( $raw_data['schuljahr_start'] ?? '' ),
-                    'is_active'       => $p['is_active'], // Aktiv-Status nur via activate_profile ändern
-                    'is_draft'        => ! empty( $raw_data['is_draft'] ),
-                ) );
-            }, $profiles );
-            gsh_tp_save_profiles( $profiles );
-            $profiles = gsh_tp_get_profiles();
-            if ( ! $url_check['valid'] && ! empty( $raw_data['ical_url'] ) ) {
-                echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' ) . ' Profil gespeichert, aber die iCal-URL ist ung&uuml;ltig: <strong>'
-                   . esc_html( $url_check['error'] ) . '</strong>. Die URL wurde nicht &uuml;bernommen.</p></div>';
-            } else {
-                echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil gespeichert.</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Profil aktivieren ──
-    if ( isset( $_POST['gsh_tp_activate_profile'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_ap_n'] ?? '' ) ), 'gsh_tp_activate_profile' ) ) {
-            $act_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-            $profiles = array_map( function ( $p ) use ( $act_id ) {
-                $p['is_active'] = ( $p['id'] === $act_id );
-                if ( $p['id'] === $act_id ) {
-                    $p['is_draft'] = false;
-                }
-                return $p;
-            }, $profiles );
-            gsh_tp_save_profiles( $profiles );
-            $profiles = gsh_tp_get_profiles();
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Profil als aktiv gesetzt.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Entwurf-Token speichern ──
-    if ( isset( $_POST['gsh_tp_save_draft'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sd_n'] ?? '' ) ), 'gsh_tp_save_draft' ) ) {
-            update_option( 'gsh_tp_draft_kiosk_token', sanitize_text_field( wp_unslash( $_POST['gsh_tp_draft_kiosk_token'] ?? '' ) ) );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Entwurf-Token gespeichert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Kiosk-Einstellungen speichern ──
-    if ( isset( $_POST['gsh_tp_save_kiosk'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sk_n'] ?? '' ) ), 'gsh_tp_save_kiosk' ) ) {
-            update_option( 'gsh_tp_kiosk_token',    sanitize_text_field( wp_unslash( $_POST['gsh_tp_kiosk_token'] ?? '' ) ) );
-            update_option( 'gsh_tp_iserv_domain',   esc_url_raw( wp_unslash( $_POST['gsh_tp_iserv_domain'] ?? '' ) ) );
-            update_option( 'gsh_tp_feedback_email', sanitize_email( wp_unslash( $_POST['gsh_tp_feedback_email'] ?? '' ) ) );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kiosk-Einstellungen gespeichert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Curriculr-Planner-Sync speichern ──
-    if ( isset( $_POST['gsh_tp_save_curriculr'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cur_n'] ?? '' ) ), 'gsh_tp_save_curriculr' ) ) {
-            update_option( 'gsh_tp_curriculr_origin', esc_url_raw( wp_unslash( $_POST['gsh_tp_curriculr_origin'] ?? '' ) ) );
-            $sj_key     = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_sj_key']     ?? '' ) );
-            $profile_id = sanitize_key( wp_unslash( $_POST['gsh_tp_curriculr_profile_id'] ?? '' ) );
-            if ( $sj_key && $profile_id ) {
-                update_option( 'gsh_tp_curriculr_profile_map', array( $sj_key => $profile_id ), false );
-            } elseif ( ! $sj_key && ! $profile_id ) {
-                update_option( 'gsh_tp_curriculr_profile_map', array(), false );
-            }
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Curriculr-Sync-Einstellungen gespeichert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Profil löschen ──
-    if ( isset( $_POST['gsh_tp_delete_profile'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dp_n'] ?? '' ) ), 'gsh_tp_delete_profile' ) ) {
-            $del_id   = sanitize_key( $_POST['gsh_tp_profile_id'] ?? '' );
-            $del_prof = gsh_tp_get_profile( $del_id );
-            if ( count( $profiles ) <= 1 ) {
-                echo '<div class="notice notice-error"><p>Das letzte Profil kann nicht gel&ouml;scht werden.</p></div>';
-            } elseif ( ! $del_prof || ! empty( $del_prof['is_active'] ) ) {
-                echo '<div class="notice notice-error"><p>Das aktive Profil kann nicht gel&ouml;scht werden.</p></div>';
-            } else {
-                $pid = sanitize_key( $del_id );
-                // Versionierte Keys (aktuell und eventuelle Vorgänger)
-                delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid ) );
-                delete_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ) );
-                delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
-                delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid ) );
-                // Unversionierte Keys (Backup, Sync-Zeitstempel, Snapshot, Guard)
-                delete_option( 'gsh_tp_backup_' . $pid );
-                delete_option( 'gsh_tp_sync_' . $pid );
-                delete_transient( 'gsh_tp_snap_' . $pid );
-                $profiles = array_values( array_filter( $profiles, function ( $p ) use ( $del_id ) {
-                    return $p['id'] !== $del_id;
-                } ) );
-                gsh_tp_save_profiles( $profiles );
-                wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan' ) );
-                exit;
-            }
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Kalender synchronisieren ──
-    if ( isset( $_POST['gsh_tp_sync'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_sn'] ?? '' ) ), 'gsh_tp_sync_manual' ) ) {
-            $sync_pid = sanitize_key( $_POST['gsh_tp_sync_pid'] ?? gsh_tp_active_profile_id() );
-            // Whitelist-Check: muss ein bekanntes Profil sein
-            $known = array_column( $profiles, 'id' );
-            if ( ! in_array( $sync_pid, $known, true ) ) {
-                $sync_pid = gsh_tp_active_profile_id();
-            }
-            $ok = gsh_tp_do_refresh( $sync_pid );
-            if ( $ok ) {
-                echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kalender erfolgreich synchronisiert ('
-                   . esc_html( wp_date( 'd.m.Y, H:i' ) ) . ' Uhr).</p></div>';
-            } else {
-                echo '<div class="notice notice-error"><p>' . gsh_tp_icon( 'x' ) . ' Synchronisierung fehlgeschlagen &ndash; '
-                   . 'bitte die iCal-URL pr&uuml;fen oder warten, bis der IServ-Server erreichbar ist.</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Cache leeren ──
-    if ( isset( $_POST['gsh_tp_cc'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cn'] ?? '' ) ), 'gsh_tp_cc' ) ) {
-            $cc_pid = sanitize_key( $_POST['gsh_tp_cc_pid'] ?? '' );
-            $known  = array_column( $profiles, 'id' );
-            if ( $cc_pid && in_array( $cc_pid, $known, true ) ) {
-                delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $cc_pid ) );
-            } else {
-                foreach ( $profiles as $p ) {
-                    delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', sanitize_key( $p['id'] ) ) );
-                }
-            }
-            echo '<div class="notice notice-success"><p>Cache als veraltet markiert &ndash; '
-               . 'wird beim n&auml;chsten Seitenaufruf im Hintergrund aktualisiert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Feedback-Log leeren ──
-    if ( isset( $_POST['gsh_tp_clear_feedback_log'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'gsh_tp_clear_feedback_log' ) ) {
-            delete_option( 'gsh_tp_feedback_log' );
-            delete_option( 'gsh_tp_mail_fail_count' );
-            // Bugfix v3.13.1: gleiche Ursache – inline statt Redirect
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Feedback-Log geleert.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
-
-    // ── POST: Alte Sync-Logs löschen ──
-    if ( isset( $_POST['gsh_tp_clear_logs'] ) ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_cl_n'] ?? '' ) ), 'gsh_tp_clear_logs' ) ) {
-            $removed = gsh_tp_clear_old_logs( 30 );
-            echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' ' . (int) $removed
-               . ' veraltete Log-Eintr&auml;ge gel&ouml;scht.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
-        }
-    }
+    gsh_tp_settings_handle_post( $profiles );
 
     // ── Tabs (fest, funktional) ──
     $tabs = array(
