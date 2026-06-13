@@ -3962,7 +3962,6 @@ function gsh_tp_render_system_tab() {
     // (Ehemals: Terminplan-Import Excel → ICS mit SheetJS)
 
     echo '<hr style="margin:24px 0" />';
-    echo '<h2>Sync-Verlauf</h2>';
     gsh_tp_render_sync_log_tab();
     echo '<hr style="margin:24px 0" />';
     echo '<h2>Feedback-Log</h2>';
