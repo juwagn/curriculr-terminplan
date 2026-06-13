@@ -717,6 +717,7 @@
 #gtp[data-gtp-theme="dark"] {
     --primary-50:         #0d2035;
     --primary-100:        #172a44;
+    --primary-900:        #7EC8E3;
     --bg-body:            #0f172a;
     --bg-surface-solid:   #1e293b;
     --border-strong:      #334155;
@@ -731,6 +732,7 @@
     #gtp[data-gtp-theme="auto"] {
         --primary-50:         #0d2035;
         --primary-100:        #172a44;
+        --primary-900:        #7EC8E3;
         --bg-body:            #0f172a;
         --bg-surface-solid:   #1e293b;
         --border-strong:      #334155;
