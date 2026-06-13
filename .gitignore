@@ -9,7 +9,6 @@ _old/
 
 # Claude Code – interne Dateien
 .claude/
-CLAUDE.md
 .agents/
 .superpowers/
 claude/
