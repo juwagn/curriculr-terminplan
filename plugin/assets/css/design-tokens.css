@@ -44,6 +44,9 @@
   --text-on-dark: #FFFFFF;
   --text-on-primary: #FFFFFF;
 
+  /* Aktiver Tab/Akzent-Text (dark-aware Override in gsh-terminplan.css) */
+  --tab-active-fg: #00345C;
+
   /* Text on colored backgrounds (WCAG AA contrast) */
   --text-on-warning-bg: #92400E;
   --text-on-success-bg: #065F46;
