@@ -7226,6 +7226,29 @@ function gtpPrint(mode,pdfTitle){
     body+=LEG;
   }
 
+  /* Touch-Geräte (iPad/Handy): Hidden-iframe-Druck wird von iOS Safari
+     verstümmelt (ignoriert @page landscape). Stattdessen das fertige
+     A4-Querformat-Dokument in einem echten Tab öffnen – zoombar, und der
+     Nutzer wählt selbst „Als PDF sichern" / Teilen. */
+  var gtpTouch=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||window.innerWidth<=1024;
+  if(gtpTouch){
+    var fullDoc=[
+      '<!DOCTYPE html>','<html lang="de">','<head>',
+      '<meta charset="utf-8">',
+      '<meta name="viewport" content="width=1100">',
+      '<title>'+docTitle+'</title>',
+      '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
+    ].join('');
+    var win=window.open("","_blank");
+    if(win){
+      win.document.open();
+      win.document.write(fullDoc);
+      win.document.close();
+      return;
+    }
+    /* Popup blockiert → unten auf den iframe-Pfad zurückfallen */
+  }
+
   var frame=document.getElementById("gtp-print-frame");
   if(!frame){
     frame=document.createElement("iframe");
