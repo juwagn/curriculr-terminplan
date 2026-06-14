@@ -574,10 +574,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE — MOBILE (≤ 768px)
+   RESPONSIVE — MOBILE (≤ 767px)
    ═══════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .gtp-tabs {
         padding: var(--space-sm);
         gap: var(--space-xs);
@@ -825,7 +825,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* Mobile: Heatmap aktiv, Tabelle aus */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .gtp-year-wrap .gtp-yr { display: none; }
     .gtp-yr-heatmap        { display: block; }
 }

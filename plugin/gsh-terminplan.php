@@ -6097,7 +6097,7 @@ function gsh_tp_css() {
   z-index:1;position:relative;
 }
 
-.gtp-tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gtp-tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
 /* ── Mobile Agenda: auf Desktop versteckt ── */
 .gtp-mob{display:none}
 
