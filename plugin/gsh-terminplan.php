@@ -5311,7 +5311,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
     }
 
     $h .= '</tbody></table>';
-    return $h;
+    return '<div class="gtp-tbl-scroll">' . $h . '</div>';
 }
 
 /**
@@ -6097,6 +6097,7 @@ function gsh_tp_css() {
   z-index:1;position:relative;
 }
 
+.gtp-tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 /* ── Mobile Agenda: auf Desktop versteckt ── */
 .gtp-mob{display:none}
 
@@ -6262,7 +6263,7 @@ function gsh_tp_css() {
 /* Responsive für Tablets */
 @media(min-width:768px) and (max-width:1024px){
   .gtp{padding:1.25rem;border-radius:12px}
-  .gt{display:block;overflow-x:auto}
+  .gtp-tbl-scroll .gt{min-width:46rem}
   .gtp-tabs{margin:0 -1.25rem;padding:0 1.25rem;overflow-x:auto;flex-wrap:nowrap}
   .gtp-tab{white-space:nowrap;flex-shrink:0}
   .gtp-hd{flex-direction:column;align-items:flex-start}
