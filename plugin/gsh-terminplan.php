@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.15.0
+ * Version:     4.16.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.16.0:
+ * - [UX] iPad/Tablet zeigt die volle Tabelle (horizontal scrollbar) statt der Mobil-Kartenansicht
+ * - [UX] PDF-Export auf Handy/iPad öffnet eine eigene Druckseite (zoombar, native „Als PDF") statt unleserlichem iframe-Druck
  * Changelog 4.15.0:
  * - [UX] Admin-Einstellungen neu organisiert — Schuljahr-Profil per Dropdown statt Tab, funktionale Tabs (Schuljahr-Profil/Kategorien/Curriculr-Sync/Kiosk/System & Logs); POST-Handler in benannte Funktionen extrahiert
  *
@@ -542,7 +545,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.15.0' );
+define( 'GSH_TP_VERSION',       '4.16.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -786,6 +789,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.16.0',
+            'entries'  => array(
+                array( 'tag' => 'UX', 'text' => 'iPad/Tablet zeigt die volle Tabelle (horizontal scrollbar) statt der Mobil-Kartenansicht' ),
+                array( 'tag' => 'UX', 'text' => 'PDF-Export auf Handy/iPad öffnet eine eigene Druckseite (zoombar, native „Als PDF sichern") statt unleserlichem iframe-Druck' ),
+            ),
+        ),
         array(
             'version'  => '4.15.0',
             'entries'  => array(
@@ -5311,7 +5321,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
     }
 
     $h .= '</tbody></table>';
-    return $h;
+    return '<div class="gtp-tbl-scroll">' . $h . '</div>';
 }
 
 /**
@@ -6097,6 +6107,7 @@ function gsh_tp_css() {
   z-index:1;position:relative;
 }
 
+.gtp-tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
 /* ── Mobile Agenda: auf Desktop versteckt ── */
 .gtp-mob{display:none}
 
@@ -6262,7 +6273,7 @@ function gsh_tp_css() {
 /* Responsive für Tablets */
 @media(min-width:768px) and (max-width:1024px){
   .gtp{padding:1.25rem;border-radius:12px}
-  .gt{display:block;overflow-x:auto}
+  .gtp-tbl-scroll .gt{min-width:46rem}
   .gtp-tabs{margin:0 -1.25rem;padding:0 1.25rem;overflow-x:auto;flex-wrap:nowrap}
   .gtp-tab{white-space:nowrap;flex-shrink:0}
   .gtp-hd{flex-direction:column;align-items:flex-start}
@@ -7093,6 +7104,7 @@ function gtpPrint(mode,pdfTitle){
     ids=[at ? parseInt(at.getAttribute("data-q")) : 1];
   }
   var docTitle=pdfTitle||"Terminplan Druck";
+  var safeTitle=docTitle.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   var today=new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
 
   /* ══════════════════════════════════════════════════
@@ -7225,6 +7237,29 @@ function gtpPrint(mode,pdfTitle){
     body+=LEG;
   }
 
+  /* Touch-Geräte (iPad/Handy): Hidden-iframe-Druck wird von iOS Safari
+     verstümmelt (ignoriert @page landscape). Stattdessen das fertige
+     A4-Querformat-Dokument in einem echten Tab öffnen – zoombar, und der
+     Nutzer wählt selbst „Als PDF sichern" / Teilen. */
+  var gtpTouch=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||window.innerWidth<=1024;
+  if(gtpTouch){
+    var fullDoc=[
+      '<!DOCTYPE html>','<html lang="de">','<head>',
+      '<meta charset="utf-8">',
+      '<meta name="viewport" content="width=1100">',
+      '<title>'+safeTitle+'</title>',
+      '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
+    ].join('');
+    var win=window.open("","_blank");
+    if(win){
+      win.document.open();
+      win.document.write(fullDoc);
+      win.document.close();
+      return;
+    }
+    /* Popup blockiert → unten auf den iframe-Pfad zurückfallen */
+  }
+
   var frame=document.getElementById("gtp-print-frame");
   if(!frame){
     frame=document.createElement("iframe");
@@ -7237,7 +7272,7 @@ function gtpPrint(mode,pdfTitle){
   doc.open();
   doc.write([
     '<!DOCTYPE html>','<html lang="de">','<head>',
-    '<meta charset="utf-8">','<title>'+docTitle+'</title>',
+    '<meta charset="utf-8">','<title>'+safeTitle+'</title>',
     '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
   ].join(''));
   doc.close();

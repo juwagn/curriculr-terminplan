@@ -574,10 +574,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE — MOBILE (≤ 768px)
+   RESPONSIVE — MOBILE (≤ 767px)
    ═══════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .gtp-tabs {
         padding: var(--space-sm);
         gap: var(--space-xs);
@@ -642,48 +642,6 @@
     .gt-sw { display: none; } /* Schulwochen headers hidden on mobile */
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE — INTERMEDIATE (769px – 1200px)
-   Table collapses to stacked cards
-   ═══════════════════════════════════════════════════════════════ */
-
-@media (min-width: 769px) and (max-width: 1200px) {
-    .gt {
-        display: block;
-        width: 100%;
-    }
-
-    .gt thead { display: none; }
-    .gt tbody { display: block; }
-
-    .gt tr {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid var(--border-strong);
-        border-radius: var(--radius-card);
-        margin-bottom: var(--space-sm);
-        padding: var(--space-md);
-        background: var(--bg-surface-solid);
-        box-shadow: var(--shadow-sm);
-        transition: box-shadow var(--transition);
-    }
-
-    .gt tr:hover {
-        box-shadow: var(--shadow-card);
-        background: var(--primary-100);
-    }
-
-    .gt td {
-        border: none;
-        padding: 3px 0;
-    }
-
-    .gt-sw tr,
-    .gt tr.gt-sw {
-        background: var(--primary-100);
-        border-color: var(--primary-700);
-    }
-}
 
 /* ═══════════════════════════════════════════════════════════════
    ACCESSIBILITY
@@ -867,7 +825,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* Mobile: Heatmap aktiv, Tabelle aus */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .gtp-year-wrap .gtp-yr { display: none; }
     .gtp-yr-heatmap        { display: block; }
 }
