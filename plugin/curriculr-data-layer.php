@@ -582,7 +582,7 @@ function gsh_tp_curriculr_rest_revisions_list( $req ) {
     return new WP_REST_Response( $rows ? array_values( $rows ) : array(), 200 );
 }
 
-function gsh_tp_curriculr_rest_doc_list() {
+function gsh_tp_curriculr_rest_doc_list( $req = null ) {
     global $wpdb;
     $docs_table = gsh_tp_curriculr_table();
     $rev_table  = gsh_tp_curriculr_revisions_table();

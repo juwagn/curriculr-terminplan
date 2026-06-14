@@ -117,5 +117,37 @@ gsh_assert_eq( isset( $byKey['sj_2026_27']['json'] ), false, 'kein json im Listi
 
 gsh_assert_eq( $byKey['sj_2025_26']['authorName'], 'A. Klein', 'authorName zweiter Plan' );
 
+/* ---------- Issue 5: name-fallback wenn meta.name fehlt ---------- */
+
+$wpdb->docs['sj_2027_28'] = array(
+    'schoolyear' => 'sj_2027_28',
+    'json'       => json_encode( array( 'meta' => array() ) ),  // meta.name fehlt
+    'version'    => 1,
+    'stage'      => 'entwurf',
+    'updated_at' => '2027-01-01 00:00:00',
+);
+
+$res2  = gsh_tp_curriculr_rest_doc_list();
+$data2 = $res2->data;
+gsh_assert_eq( $res2->status, 200, 'status 200 (drei Einträge)' );
+gsh_assert_eq( count( $data2 ), 3, 'drei Pläne gelistet' );
+$byKey2 = array();
+foreach ( $data2 as $row ) { $byKey2[ $row['sj'] ] = $row; }
+gsh_assert_eq( $byKey2['sj_2027_28']['name'], 'sj_2027_28', 'name-fallback auf sj wenn meta.name fehlt' );
+
+/* ---------- Issue 6: DB-Fehler → 500 ---------- */
+
+class Gsh_Fake_Wpdb_Null {
+    public $prefix = 'wp_';
+    public function get_results( $query, $out = null ) { return null; }
+    public function prepare( $q, ...$args ) { return $q; }
+    public function get_row( $key, $out = null ) { return null; }
+}
+
+$wpdb = new Gsh_Fake_Wpdb_Null();
+$res3 = gsh_tp_curriculr_rest_doc_list();
+gsh_assert_eq( $res3->status, 500, 'DB-Fehler → 500' );
+gsh_assert_eq( $res3->data['error'], 'db_error', 'DB-Fehler-Body enthält error=db_error' );
+
 gsh_test_done();
 echo "test-doc-list: OK\n";
