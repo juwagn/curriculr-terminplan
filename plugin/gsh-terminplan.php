@@ -7094,6 +7094,7 @@ function gtpPrint(mode,pdfTitle){
     ids=[at ? parseInt(at.getAttribute("data-q")) : 1];
   }
   var docTitle=pdfTitle||"Terminplan Druck";
+  var safeTitle=docTitle.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   var today=new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
 
   /* ══════════════════════════════════════════════════
@@ -7236,7 +7237,7 @@ function gtpPrint(mode,pdfTitle){
       '<!DOCTYPE html>','<html lang="de">','<head>',
       '<meta charset="utf-8">',
       '<meta name="viewport" content="width=1100">',
-      '<title>'+docTitle+'</title>',
+      '<title>'+safeTitle+'</title>',
       '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
     ].join('');
     var win=window.open("","_blank");
@@ -7261,7 +7262,7 @@ function gtpPrint(mode,pdfTitle){
   doc.open();
   doc.write([
     '<!DOCTYPE html>','<html lang="de">','<head>',
-    '<meta charset="utf-8">','<title>'+docTitle+'</title>',
+    '<meta charset="utf-8">','<title>'+safeTitle+'</title>',
     '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
   ].join(''));
   doc.close();
