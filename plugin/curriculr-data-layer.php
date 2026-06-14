@@ -445,6 +445,15 @@ function gsh_tp_curriculr_register_rest() {
     );
     register_rest_route(
         'curriculr/v1',
+        '/docs',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_doc_list',
+            'permission_callback' => 'gsh_tp_curriculr_perm',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
         '/feed/(?P<sj>[a-z0-9_\-]+)/(?P<token>[A-Za-z0-9]+)\.ics',
         array(
             'methods'             => 'GET',
@@ -571,6 +580,45 @@ function gsh_tp_curriculr_rest_revisions_list( $req ) {
         return new WP_REST_Response( array( 'error' => 'db_error' ), 500 );
     }
     return new WP_REST_Response( $rows ? array_values( $rows ) : array(), 200 );
+}
+
+function gsh_tp_curriculr_rest_doc_list() {
+    global $wpdb;
+    $docs_table = gsh_tp_curriculr_table();
+    $rev_table  = gsh_tp_curriculr_revisions_table();
+
+    $rows = $wpdb->get_results(
+        "SELECT schoolyear, json, version, stage, updated_at FROM $docs_table ORDER BY updated_at DESC",
+        ARRAY_A
+    );
+    if ( $rows === null ) {
+        return new WP_REST_Response( array( 'error' => 'db_error' ), 500 );
+    }
+
+    $out = array();
+    foreach ( (array) $rows as $row ) {
+        $doc  = json_decode( $row['json'], true );
+        $name = ( is_array( $doc ) && isset( $doc['meta']['name'] ) && '' !== $doc['meta']['name'] )
+            ? (string) $doc['meta']['name']
+            : (string) $row['schoolyear'];
+
+        $rev = $wpdb->get_row( $wpdb->prepare(
+            "SELECT author_name FROM {$rev_table} WHERE schoolyear = %s AND version = %d LIMIT 1",
+            $row['schoolyear'],
+            (int) $row['version']
+        ) );
+
+        $out[] = array(
+            'sj'         => (string) $row['schoolyear'],
+            'name'       => $name,
+            'stage'      => isset( $row['stage'] ) ? (string) $row['stage'] : 'entwurf',
+            'version'    => (int) $row['version'],
+            'updatedAt'  => (string) $row['updated_at'],
+            'authorName' => $rev ? (string) $rev->author_name : '',
+        );
+    }
+
+    return new WP_REST_Response( $out, 200 );
 }
 
 function gsh_tp_curriculr_rest_revisions_get( $req ) {
