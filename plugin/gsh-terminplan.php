@@ -6648,6 +6648,7 @@ function gtpSwitchTab(q){
   if(p) p.style.display="block";
   var t=document.querySelector('.gtp-tab[data-q="'+q+'"]');
   if(t){t.classList.add("gtp-tab-on");t.setAttribute("aria-selected","true");}
+  setTimeout(gtpUpdateStickyOffsets,0);
 }
 
 /**
@@ -7066,12 +7067,27 @@ function gtpSearchJump(q){
    ════════════════════════════════════════════════════════ */
 
 /**
+ * Liefert den thead der aktuell sichtbaren Quartalstabelle.
+ * Fallback: erster .gt thead im DOM.
+ */
+function gtpActiveThead(){
+  var thead=null;
+  document.querySelectorAll(".gtp-qp").forEach(function(panel){
+    if(thead) return;
+    if(window.getComputedStyle(panel).display!=="none"){
+      thead=panel.querySelector(".gt thead");
+    }
+  });
+  return thead||document.querySelector(".gt thead");
+}
+
+/**
  * Setzt --gtp-thead-top und --gtp-scroll-margin anhand gemessener Höhen.
  * Läuft bei DOMContentLoaded, load und resize.
  */
 function gtpUpdateStickyOffsets(){
   var tabs=document.querySelector(".gtp-tabs");
-  var thead=document.querySelector(".gt thead");
+  var thead=gtpActiveThead();
   if(!tabs||!thead) return;
   var bar=document.getElementById("wpadminbar");
   var barH=bar?bar.offsetHeight:0;
@@ -7095,7 +7111,7 @@ function gtpStickyH(){
   if(bar) h+=bar.offsetHeight;
   var tabs=document.querySelector(".gtp-tabs");
   if(tabs) h+=tabs.offsetHeight;
-  var thead=document.querySelector(".gt thead");
+  var thead=gtpActiveThead();
   if(thead) h+=thead.offsetHeight;
   return h;
 }
