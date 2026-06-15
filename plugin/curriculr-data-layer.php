@@ -127,6 +127,34 @@ function gsh_tp_curriculr_build_ics( $doc ) {
             $lines = array_merge( $lines, gsh_tp_curriculr_build_event( $e, $cats_by_id ) );
         }
     }
+
+    // Schulferien und gesetzliche Feiertage aus dem Schuljahr als VEVENT-Einträge.
+    // Ohne diese Einträge fehlen Ferienzeiträume im ICS-Feed und werden in der
+    // WP-Anzeige nicht als graue Ferien-Zeilen dargestellt.
+    if ( ! empty( $doc['schoolyear']['holidays'] ) && is_array( $doc['schoolyear']['holidays'] ) ) {
+        foreach ( $doc['schoolyear']['holidays'] as $h ) {
+            if ( empty( $h['start'] ) || empty( $h['end'] ) || empty( $h['label'] ) ) {
+                continue;
+            }
+            if ( ! gsh_tp_curriculr_is_iso_date( $h['start'] ) || ! gsh_tp_curriculr_is_iso_date( $h['end'] ) ) {
+                continue;
+            }
+            $uid   = 'holiday-' . ( isset( $h['id'] ) ? $h['id'] : md5( $h['start'] . $h['label'] ) ) . '@curriculr-planner';
+            // Holiday.end ist inklusiv (wie PlanEvent.end) → DTEND exklusiv = +1 Tag
+            $dtend = ( new DateTime( $h['end'] ) )->modify( '+1 day' )->format( 'Ymd' );
+            $lines = array_merge( $lines, array(
+                'BEGIN:VEVENT',
+                'UID:' . gsh_tp_curriculr_ics_escape( $uid ),
+                'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ),
+                'SUMMARY:' . gsh_tp_curriculr_ics_escape( $h['label'] ),
+                'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $h['start'] ),
+                'DTEND;VALUE=DATE:' . $dtend,
+                'CATEGORIES:feiertage',
+                'END:VEVENT',
+            ) );
+        }
+    }
+
     $lines[]  = 'END:VCALENDAR';
     $folded   = array_map( 'gsh_tp_curriculr_ics_fold', $lines );
     return implode( "\r\n", $folded ) . "\r\n";
@@ -728,6 +756,16 @@ function gsh_tp_curriculr_backup_cron() {
     }
     WP_Filesystem();
     global $wp_filesystem;
+
+    // Öffentlichen HTTP-Zugriff auf Backup-Dateien sperren (predictable URLs).
+    $htaccess = $backup_dir . '/.htaccess';
+    if ( ! file_exists( $htaccess ) ) {
+        $wp_filesystem->put_contents(
+            $htaccess,
+            "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n  Order Allow,Deny\n  Deny from all\n</IfModule>\n",
+            FS_CHMOD_FILE
+        );
+    }
 
     $stamp = gmdate( 'Y-m-d' );
     foreach ( $rows as $row ) {

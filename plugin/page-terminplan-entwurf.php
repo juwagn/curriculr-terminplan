@@ -44,7 +44,7 @@ if ( function_exists( 'gsh_tp_draft_kiosk_context' ) ) {
 <title><?php echo esc_html( get_bloginfo( 'name' ) ); ?> &ndash; Terminplan Entwurf</title>
 <?php wp_head(); ?>
 </head>
-<body class="gtp-entwurf-kiosk">
+<body class="gtp-entwurf-kiosk <?php echo is_admin_bar_showing() ? 'admin-bar' : ''; ?>">
 
 <main style="max-width:1200px;margin:0 auto;padding:1rem">
 	<div class="gtp-draft-banner" style="margin-bottom:1.5rem;border-radius:6px;padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.5rem">

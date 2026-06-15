@@ -325,6 +325,12 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
         gsh_tp_curriculr_auth_fail( $config, 'forbidden' );
     }
 
+    // Only embed the allowed groups in the token (not every IServ group).
+    $allowed_set = array_flip( $config['allowed_groups'] );
+    $groups      = array_values( array_filter( $groups, function ( $g ) use ( $allowed_set ) {
+        return isset( $allowed_set[ $g ] );
+    } ) );
+
     $name = '';
     foreach ( array( 'name', 'preferred_username', 'nickname' ) as $k ) {
         if ( ! empty( $info[ $k ] ) ) {

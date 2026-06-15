@@ -3,10 +3,26 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.17.0
+ * Version:     4.19.3
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.19.3:
+ * - [FIX]     Kiosk/Tablet: Sticky-Thead fiel auf Tablets (768–1024 px) aus — min-width:46rem auf .gt + overflow-x:auto brach position:sticky in Chrome/Safari. min-width entfernt.
+ * - [FIX]     Sticky-Offsets dynamisch per JS berechnet (--gtp-thead-top, --gtp-scroll-margin); gtpStickyH() berücksichtigt jetzt Admin-Bar
+ * Changelog 4.19.2:
+ * - [FIX]     Sticky-Header überlagerte erste Terminzeile (SW 00) — gtpScrollToday/gtpTab/gtpSearchJump verwenden jetzt gtpStickyH() statt Viewport/3; scroll-margin-top auf tbody tr gesetzt
+ * Changelog 4.19.1:
+ * - [FIX]     SW-Nummerierung 1-basiert → 0-basiert (SW 00 = erste Schulwoche, entspricht Planner-Logik); gsh_tp_schulwoche() entfernt +1
+ * - [FIX]     SW 00 zeigte "–" statt "00" (Bedingung $sw > 0 → $sw >= 0); Anmerkungen-Index $sw-1 → $sw
+ * - [FIX]     Body-Klasse "admin-bar" fehlte in page-terminplan-entwurf.php → sticky Tabs/Thead hatten falschen top-Offset bei eingeloggten Admins
+ * Changelog 4.19.0:
+ * - [FIX]      Schulferien und Feiertage werden jetzt im ICS-Feed enthalten: gsh_tp_curriculr_build_ics() erzeugt VEVENT-Einträge aus schoolyear.holidays → graue Ferien-Zeilen und Anmerkungen-Spalte in WP-Anzeige
+ * - [SECURITY] Backup-Verzeichnis (curriculr-backups) wird bei erstem Backup-Lauf mit .htaccess gesperrt (Deny from all) — predictable URLs waren öffentlich erreichbar
+ * Changelog 4.18.0:
+ * - [FIX]     Anmerkungen-Spalte in Entwurf-Vorschau: gsh_tp_table() und gsh_tp_mobile() zeigen jetzt Planner-Anmerkungen (annotations) aus dem gespeicherten Curriculr-Doc
+ * - [UX]      Spaltenbezeichnung "Hinweise" → "Anmerkungen" in Tabelle und Agenda (Konsistenz mit Planner)
+ * - [SECURITY] App-Token enthält nur erlaubte IServ-Gruppen (CURRICULR_ALLOWED_GROUPS), nicht alle Gruppen des Nutzers
  * Changelog 4.17.0:
  * - [FEATURE] REST: GET /docs Plan-Liste für Planner-Startseite
  * Changelog 4.16.0:
@@ -547,7 +563,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.17.0' );
+define( 'GSH_TP_VERSION',       '4.19.3' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -791,6 +807,27 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.19.3',
+            'entries'  => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Kiosk/Tablet: Sticky-Thead fiel auf Tablets (768–1024 px) aus — min-width:46rem auf .gt erzeugte horizontalen Überlauf im overflow-x:auto-Container, was position:sticky in Chrome/Safari bricht. min-width entfernt.' ),
+                array( 'tag' => 'BUGFIX', 'text' => 'Sticky-Offsets (--gtp-thead-top, --gtp-scroll-margin) werden jetzt per JS aus tatsächlichen Elementhöhen berechnet statt hardcodierter 44px-Annahme. gtpStickyH() berücksichtigt jetzt auch die Admin-Bar.' ),
+            ),
+        ),
+        array(
+            'version'  => '4.19.2',
+            'entries'  => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Sticky-Header überlagerte erste Terminzeile (SW 00) beim Scrollen — Scroll-Funktionen berechnen jetzt korrekte Sticky-Höhe; scroll-margin-top auf tbody tr' ),
+            ),
+        ),
+        array(
+            'version'  => '4.19.1',
+            'entries'  => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'SW-Nummerierung 1-basiert → 0-basiert (SW 00 = erste Schulwoche, entspricht Planner-Logik)' ),
+                array( 'tag' => 'BUGFIX', 'text' => 'SW 00 zeigte "–" statt "00" — Bedingung $sw > 0 → $sw >= 0, Anmerkungen-Index $sw-1 → $sw' ),
+                array( 'tag' => 'BUGFIX', 'text' => 'Body-Klasse admin-bar fehlte in Entwurf-Vorschau — sticky Tabs/Thead hatten falschen top-Offset bei eingeloggten Admins' ),
+            ),
+        ),
         array(
             'version'  => '4.17.0',
             'entries'  => array(
@@ -4563,16 +4600,16 @@ function gsh_tp_diff( $old, $new ) {
  * Zählt die Kalenderwochen ab dem ersten Montag des Schuljahres. Dates vor
  * dem Schuljahresstart geben 0 zurück. Die Schulwochennummern entsprechen
  * nicht den ISO-Kalenderwochen, sondern einer fortlaufenden Zählung ab
- * Schuljahresbeginn (Schulwoche 01, 02, … usw.).
+ * Schuljahresbeginn (Schulwoche 00, 01, … usw., 0-basiert wie der Planner).
  *
  * @since 1.2.0
  * @param  string $date  Datum im Format Y-m-d.
  * @param  string $start Erster Montag des Schuljahres (Y-m-d).
- * @return int           Schulwochennummer (≥1) oder 0 wenn vor Schuljahresbeginn.
+ * @return int           Schulwochennummer (≥0) oder negativ wenn vor Schuljahresbeginn.
  */
 function gsh_tp_schulwoche( $date, $start ) {
     $days = (int) ( new DateTime( $start ) )->diff( new DateTime( $date ) )->format( '%r%a' );
-    return $days < 0 ? 0 : (int) floor( $days / 7 ) + 1;
+    return (int) floor( $days / 7 );
 }
 
 /**
@@ -4739,6 +4776,27 @@ function gsh_tp_shortcode( $atts ) {
     // Einmaliger Aufbau des Date-Index für O(1)-Lookup statt O(n) pro Tag
     $date_index = gsh_tp_build_date_index( $events );
 
+    // ── Annotationen aus dem Curriculr-Dokument laden ──
+    // Die Planner-Anmerkungenspalte (0-basierte schoolweek) auf PHP-Schulwochen (1-basiert) mappen.
+    $annotation_map = array();
+    $cur_sj_map = get_option( 'gsh_tp_curriculr_profile_map', array() );
+    if ( is_array( $cur_sj_map ) ) {
+        $sj_key = array_search( $profile_id, $cur_sj_map, true );
+        if ( false !== $sj_key ) {
+            $ann_row = gsh_tp_curriculr_repo_get( $sj_key );
+            if ( $ann_row && ! empty( $ann_row['json'] ) ) {
+                $ann_doc = json_decode( $ann_row['json'], true );
+                if ( is_array( $ann_doc ) && ! empty( $ann_doc['annotations'] ) ) {
+                    foreach ( $ann_doc['annotations'] as $ann ) {
+                        if ( isset( $ann['schoolweek'], $ann['text'] ) && trim( $ann['text'] ) !== '' ) {
+                            $annotation_map[ (int) $ann['schoolweek'] ] = $ann['text'];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     $aq      = ( $atts['quartal'] === 'auto' || $atts['quartal'] === 'alle' )
                ? gsh_tp_current_q( $profile_id )
                : max( 1, min( 4, absint( $atts['quartal'] ) ) );
@@ -4902,8 +4960,8 @@ function gsh_tp_shortcode( $atts ) {
         }
         $o .= '<div class="gtp-qp" id="gtp-q' . $q . '" style="display:' . $vis . '">';
         $o .= '<h3 class="gtp-qt">' . $qlbl[ $q ] . '</h3>';
-        $o .= gsh_tp_table( $date_index, $qd, $sjs );   // Desktop-Tabelle (≥ 768px)
-        $o .= gsh_tp_mobile( $date_index, $qd, $sjs );  // Agenda-Ansicht  (< 768px)
+        $o .= gsh_tp_table( $date_index, $qd, $sjs, $annotation_map );   // Desktop-Tabelle (≥ 768px)
+        $o .= gsh_tp_mobile( $date_index, $qd, $sjs, $annotation_map );  // Agenda-Ansicht  (< 768px)
         $o .= '</div>';
     }
     $o .= '</div>'; // .gtp-quarters-wrap
@@ -5193,10 +5251,11 @@ function gsh_tp_event_duration( $ev ) {
  * @since 1.2.0 (optimiert 2.5.0: Date-Index statt Event-Array)
  * @param  array  $index  Date-Index aus gsh_tp_build_date_index().
  * @param  array  $qd     Quartalsgrenzen: array('start'=>'Y-m-d','end'=>'Y-m-d').
- * @param  string $sjs    Erster Montag des Schuljahres (Y-m-d) für Schulwochenberechnung.
- * @return string         HTML-String der kompletten Quartalstabelle.
+ * @param  string $sjs            Erster Montag des Schuljahres (Y-m-d) für Schulwochenberechnung.
+ * @param  array  $annotation_map Optionale Map: 0-basierter Schulwochenindex → Anmerkungstext.
+ * @return string                 HTML-String der kompletten Quartalstabelle.
  */
-function gsh_tp_table( $index, $qd, $sjs ) {
+function gsh_tp_table( $index, $qd, $sjs, $annotation_map = array() ) {
     $qs  = new DateTime( $qd['start'] );
     $qe  = new DateTime( $qd['end'] );
     $td  = gmdate( 'Y-m-d' );
@@ -5210,7 +5269,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
     $h  = '<table class="gt"><thead><tr>';
     $h .= '<th class="gs">SW</th>';
     $h .= '<th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th>';
-    $h .= '<th class="gh">Hinweise</th>';
+    $h .= '<th class="gh">Anmerkungen</th>';
     $h .= '</tr></thead><tbody>';
 
     $c   = clone $qs;
@@ -5223,7 +5282,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
         $sw      = gsh_tp_schulwoche( $c->format( 'Y-m-d' ), $sjs );
         $friday  = ( clone $c )->modify( '+4 days' )->format( 'Y-m-d' );
         $h .= $friday < $td ? '<tr class="gtp-past">' : '<tr>';
-        $h .= '<td class="gs" data-label="' . esc_attr__( 'SW', 'gsh-terminplan' ) . '"><b>' . ( $sw > 0 ? sprintf( '%02d', $sw ) : '–' ) . '</b></td>';
+        $h .= '<td class="gs" data-label="' . esc_attr__( 'SW', 'gsh-terminplan' ) . '"><b>' . ( $sw >= 0 ? sprintf( '%02d', $sw ) : '–' ) . '</b></td>';
 
         // ── Vorarbeiten: Lange Termine dieser Woche für die Hinweise-Spalte sammeln ──
         // Ein Termin gilt als "lang", wenn er >= 5 Tage dauert (ganze Woche oder länger).
@@ -5291,7 +5350,8 @@ function gsh_tp_table( $index, $qd, $sjs ) {
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
                     . '" data-categories="' . $data_cats
-                    . '" onclick="gtpPopupOpen(this)"'
+                    . '" title="' . esc_attr( $ev['summary'] ) . '"'
+                    . ' onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
                     . esc_html( $ev['summary'] ) . '</div>';
             }
@@ -5300,7 +5360,7 @@ function gsh_tp_table( $index, $qd, $sjs ) {
         }
 
         // ── Hinweise-Spalte rendern ──
-        $h .= '<td class="gh gnc" data-label="' . esc_attr__( 'Hinweise', 'gsh-terminplan' ) . '">';
+        $h .= '<td class="gh gnc" data-label="' . esc_attr__( 'Anmerkungen', 'gsh-terminplan' ) . '">';
 
         // Lange Termine (mit Kategorie-Farbe und Datumsbereich) – v3.15.0: Array-Slugs
         foreach ( $hinweise_long as $ev ) {
@@ -5321,6 +5381,11 @@ function gsh_tp_table( $index, $qd, $sjs ) {
                 . '<span class="gn-range">' . $range . '</span>'
                 . esc_html( $ev['summary'] )
                 . '</div>';
+        }
+
+        // Planner-Anmerkung (0-basierter Index = SW-Nummer direkt)
+        if ( $sw >= 0 && isset( $annotation_map[ $sw ] ) ) {
+            $h .= '<div class="gn-annotation">' . esc_html( $annotation_map[ $sw ] ) . '</div>';
         }
 
         $h .= '</td>';
@@ -5397,7 +5462,7 @@ function gsh_tp_day_events( $index, $date ) {
  * @param  string $sjs    Erster Montag des Schuljahres (Y-m-d).
  * @return string         HTML-String der Agenda-Ansicht.
  */
-function gsh_tp_mobile( $index, $qd, $sjs ) {
+function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
     $qs = new DateTime( $qd['start'] );
     $qe = new DateTime( $qd['end'] );
     $td = gmdate( 'Y-m-d' ); // Heutiges Datum (UTC, wie überall im Plugin)
@@ -5481,13 +5546,18 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
 
         // Wochenkopf: sticky, klebt unter der Navigationsleiste
         $h .= '<div class="gtp-mob-wh">';
-        $h .= '<span>' . ( $sw > 0 ? 'Schulwoche&nbsp;' . sprintf( '%02d', $sw ) : '&ndash;' ) . '</span>';
+        $h .= '<span>' . ( $sw >= 0 ? 'Schulwoche&nbsp;' . sprintf( '%02d', $sw ) : '&ndash;' ) . '</span>';
         $h .= '<span class="gtp-mob-wh-sub">'
             . esc_html( $monday_dt->format( 'd.m.' ) )
             . ' &ndash; '
             . esc_html( $friday_dt->format( 'd.m.' ) )
             . '</span>';
         $h .= '</div>';
+
+        // Planner-Anmerkung unterhalb des Wochenkopfs
+        if ( $sw >= 0 && isset( $annotation_map[ $sw ] ) ) {
+            $h .= '<div class="gtp-mob-annotation">' . esc_html( $annotation_map[ $sw ] ) . '</div>';
+        }
 
         // ── Tage Montag–Freitag ──
         for ( $d = 0; $d < 5; $d++ ) {
@@ -5555,7 +5625,8 @@ function gsh_tp_mobile( $index, $qd, $sjs ) {
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
                     . '" data-categories="' . $data_cats
-                    . '" onclick="gtpPopupOpen(this)"'
+                    . '" title="' . esc_attr( $ev['summary'] ) . '"'
+                    . ' onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
                     . esc_html( $ev['summary'] ) . '</div>';
             }
@@ -5933,11 +6004,11 @@ function gsh_tp_css() {
   background:var(--gtp-text);color:#fff;padding:9px 6px;
   text-align:center;font-weight:600;font-size:.74rem;
   border-right:1px solid rgba(255,255,255,.1);letter-spacing:.04em;
-  position:sticky;top:44px;z-index:10;
+  position:sticky;top:var(--gtp-thead-top,44px);z-index:10;
 }
 .gt thead th:last-child{border-right:none}
-.admin-bar .gt thead th{top:76px}
-@media screen and (max-width:782px){.admin-bar .gt thead th{top:90px}}
+/* ── Schulwochenzeilen: Sticky-Header-Abstand beim Scrollen ── */
+.gt tbody tr{scroll-margin-top:var(--gtp-scroll-margin,92px)}
 /* ── Vergangene Wochen ── */
 .gtp-past{opacity:.4;transition:var(--gtp-tr)}
 .gtp-past:hover{opacity:.85}
@@ -6281,7 +6352,6 @@ function gsh_tp_css() {
 /* Responsive für Tablets */
 @media(min-width:768px) and (max-width:1024px){
   .gtp{padding:1.25rem;border-radius:12px}
-  .gtp-tbl-scroll .gt{min-width:46rem}
   .gtp-tabs{margin:0 -1.25rem;padding:0 1.25rem;overflow-x:auto;flex-wrap:nowrap}
   .gtp-tab{white-space:nowrap;flex-shrink:0}
   .gtp-hd{flex-direction:column;align-items:flex-start}
@@ -6592,6 +6662,14 @@ function gtpTab(q){
   if(p && p.querySelector(".gt-today")){
     /* Desktop: Sanft zur Heute-Zeile im neuen Quartal scrollen */
     setTimeout(gtpScrollToday,60);
+  } else if(p){
+    /* Erste Tabellenzeile klar unterhalb des Sticky-Headers positionieren */
+    setTimeout(function(){
+      var tbl=p.querySelector(".gt");
+      if(!tbl) return;
+      var top=tbl.getBoundingClientRect().top+window.pageYOffset;
+      window.scrollTo({top:Math.max(0,top-gtpStickyH()-8),behavior:"smooth"});
+    },60);
   }
   /* Heute-Button-Status nach dem Panel-Wechsel neu berechnen */
   setTimeout(gtpUpdateHeuteBtn,80);
@@ -6973,7 +7051,7 @@ function gtpSearchJump(q){
   setTimeout(function(){
     var row    = firstHit.closest("tr") || firstHit;
     var top    = row.getBoundingClientRect().top + window.pageYOffset;
-    var offset = Math.max(0, top - Math.floor(window.innerHeight / 3));
+    var offset = Math.max(0, top - gtpStickyH() - 8);
     window.scrollTo({top: offset, behavior: "smooth"});
     setTimeout(gtpUpdateHeuteBtn, 420);
   }, 60);
@@ -6988,7 +7066,42 @@ function gtpSearchJump(q){
    ════════════════════════════════════════════════════════ */
 
 /**
- * Scrollt die heutige Tabellenzeile (.gt-today) ins obere Drittel des Viewports.
+ * Setzt --gtp-thead-top und --gtp-scroll-margin anhand gemessener Höhen.
+ * Läuft bei DOMContentLoaded, load und resize.
+ */
+function gtpUpdateStickyOffsets(){
+  var tabs=document.querySelector(".gtp-tabs");
+  var thead=document.querySelector(".gt thead");
+  if(!tabs||!thead) return;
+  var bar=document.getElementById("wpadminbar");
+  var barH=bar?bar.offsetHeight:0;
+  var tabsH=tabs.offsetHeight;
+  var theadH=thead.offsetHeight;
+  var theadTop=barH+tabsH;
+  var root=document.documentElement;
+  root.style.setProperty("--gtp-thead-top",theadTop+"px");
+  root.style.setProperty("--gtp-scroll-margin",(theadTop+theadH+8)+"px");
+}
+document.addEventListener("DOMContentLoaded",gtpUpdateStickyOffsets);
+window.addEventListener("load",gtpUpdateStickyOffsets);
+window.addEventListener("resize",gtpUpdateStickyOffsets,{passive:true});
+
+/**
+ * Gibt die Gesamthöhe aller sticky-Elemente zurück (px): Admin-Bar + Tabs + Thead.
+ */
+function gtpStickyH(){
+  var h=0;
+  var bar=document.getElementById("wpadminbar");
+  if(bar) h+=bar.offsetHeight;
+  var tabs=document.querySelector(".gtp-tabs");
+  if(tabs) h+=tabs.offsetHeight;
+  var thead=document.querySelector(".gt thead");
+  if(thead) h+=thead.offsetHeight;
+  return h;
+}
+
+/**
+ * Scrollt die heutige Tabellenzeile (.gt-today) klar unterhalb des Sticky-Headers.
  * Falls sich .gt-today in einem versteckten Panel befindet, wird zuerst der
  * Tab gewechselt. Wartet kurz auf den Reflow nach dem Panel-Wechsel bevor
  * gescrollt wird. Aufgerufen beim Laden der Seite und durch den Heute-Button.
@@ -7008,7 +7121,7 @@ function gtpScrollToday(){
   setTimeout(function(){
     var row=today.closest("tr")||today;
     var top=row.getBoundingClientRect().top+window.pageYOffset;
-    var offset=Math.max(0,top-Math.floor(window.innerHeight/3));
+    var offset=Math.max(0,top-gtpStickyH()-8);
     window.scrollTo({top:offset,behavior:"smooth"});
     /* Button-Status nach dem Scroll-Ende aktualisieren */
     setTimeout(gtpUpdateHeuteBtn,420);
