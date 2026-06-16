@@ -27,16 +27,16 @@ No build system. No Composer. No npm. Edit files, `php -l`, test, ZIP + upload.
 ## Plugin ZIP Deployment
 
 ZIPs are built from `curriculr-terminplan/plugin/` and placed at the workspace root.  
-ZIP contents: 4 PHP files at root + `assets/css/` subdir.
+ZIP contents: 5 PHP files at root + `assets/css/` subdir.
 
 To build a new ZIP (PHP files at root + assets/ subdir):
 ```bash
 cd curriculr-terminplan/plugin
-VER=$(grep "define.*GSH_TP_VERSION" gsh-terminplan.php | grep -oP "'\K[^']+")
-zip ../../curriculr-terminplan-$VER.zip gsh-terminplan.php curriculr-data-layer.php curriculr-auth.php curriculr-guard.php
+VER=$(grep "define.*GSH_TP_VERSION" gsh-terminplan.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+zip ../../curriculr-terminplan-$VER.zip gsh-terminplan.php curriculr-data-layer.php curriculr-auth.php curriculr-guard.php page-terminplan-entwurf.php
 zip -r ../../curriculr-terminplan-$VER.zip assets/
 ```
-ZIP contents: 4 PHP files at root + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css`.
+ZIP contents: 5 PHP files at root (incl. `page-terminplan-entwurf.php` page template, loaded from the plugin dir) + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css`.
 
 ## Plugin File Architecture
 

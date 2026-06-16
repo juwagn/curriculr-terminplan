@@ -3,10 +3,12 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.19.3
+ * Version:     4.19.4
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.19.4:
+ * - [FIX]     Sticky-Thead überlappte erste Zeile (SW 00) trotz 4.19.2/4.19.3 weiterhin — eigentliche Ursache: overflow-x:auto auf .gtp-tbl-scroll machte den Wrapper zum vertikalen Scroll-Kontext, an dem position:sticky klebte (statt am Viewport). overflow:visible; .gt ist table-layout:fixed/100% und braucht keinen H-Scroll, <768px display:none
  * Changelog 4.19.3:
  * - [FIX]     Kiosk/Tablet: Sticky-Thead fiel auf Tablets (768–1024 px) aus — min-width:46rem auf .gt + overflow-x:auto brach position:sticky in Chrome/Safari. min-width entfernt.
  * - [FIX]     Sticky-Offsets dynamisch per JS berechnet (--gtp-thead-top, --gtp-scroll-margin); gtpStickyH() berücksichtigt jetzt Admin-Bar
@@ -563,7 +565,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.19.3' );
+define( 'GSH_TP_VERSION',       '4.19.4' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -807,6 +809,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.19.4',
+            'entries'  => array(
+                array( 'tag' => 'BUGFIX', 'text' => 'Sticky-Tabellenkopf überlappte erste Zeile (SW 00) trotz 4.19.2/4.19.3 weiterhin. Eigentliche Ursache: overflow-x:auto auf .gtp-tbl-scroll machte diesen Wrapper zum Scroll-Kontext, an dem .gt thead (position:sticky) vertikal klebte — statt am Viewport. Dadurch wanderte der Kopf mit und verdeckte die Chips der ersten Schulwoche. Fix: overflow:visible. Die Tabelle ist table-layout:fixed/width:100% (kein horizontaler Scroll nötig) und unter 768px ohnehin display:none. Die JS-Offsets aus 4.19.2/4.19.3 waren korrekt, konnten aber nicht greifen, solange sticky am falschen Container hing.' ),
+            ),
+        ),
         array(
             'version'  => '4.19.3',
             'entries'  => array(
@@ -6186,7 +6194,11 @@ function gsh_tp_css() {
   z-index:1;position:relative;
 }
 
-.gtp-tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
+/* v4.19.4: KEIN overflow-x:auto. Sonst wird dieser Wrapper zum Scroll-Kontext,
+   an dem .gt thead{position:sticky} VERTIKAL klebt (statt am Viewport) → der Kopf
+   wandert mit und überlappt SW 00. .gt ist table-layout:fixed/width:100% (kein
+   H-Scroll nötig) und <768px display:none. Darum overflow:visible. */
+.gtp-tbl-scroll{overflow:visible;width:100%}
 /* ── Mobile Agenda: auf Desktop versteckt ── */
 .gtp-mob{display:none}
 
