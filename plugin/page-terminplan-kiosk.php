@@ -31,13 +31,14 @@ if ( ! function_exists( 'gsh_tp_check_kiosk_access' ) || ! gsh_tp_check_kiosk_ac
 
 nocache_headers();
 
-// CSP: erlaubt IServ-Domain als Einbetter; fällt auf SAMEORIGIN zurück wenn Domain fehlt
+// CSP frame-ancestors: erlaubt IServ-Domain + 'self' als Einbetter.
+// X-Frame-Options SAMEORIGIN als Legacy-Fallback für Browser ohne CSP-Support.
+// Kein ALLOW-FROM — deprecated, kein Browser-Support mehr.
 $iserv_domain = get_option( 'gsh_tp_iserv_domain', '' );
 if ( $iserv_domain ) {
 	header( "Content-Security-Policy: frame-ancestors 'self' " . esc_url_raw( $iserv_domain ) );
-} else {
-	header( 'X-Frame-Options: SAMEORIGIN' );
 }
+header( 'X-Frame-Options: SAMEORIGIN' );
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
