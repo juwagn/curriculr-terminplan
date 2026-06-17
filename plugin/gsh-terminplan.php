@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.19.4
+ * Version:     4.20.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.20.0:
+ * - [FEATURE] IServ-Kiosk-Template page-terminplan-kiosk.php: token-gesicherte Kiosk-Seite, CSP frame-ancestors für IServ-Einbettung, kein Theme-Copy nötig
+ * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Kiosk" automatisch im WP-Seiten-Editor
  * Changelog 4.19.4:
  * - [FIX]     Sticky-Thead überlappte erste Zeile (SW 00) trotz 4.19.2/4.19.3 weiterhin — eigentliche Ursache: overflow-x:auto auf .gtp-tbl-scroll machte den Wrapper zum vertikalen Scroll-Kontext, an dem position:sticky klebte (statt am Viewport). overflow:visible; .gt ist table-layout:fixed/100% und braucht keinen H-Scroll, <768px display:none
  * Changelog 4.19.3:
@@ -565,7 +568,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.19.4' );
+define( 'GSH_TP_VERSION',       '4.20.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -809,6 +812,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.20.0',
+            'entries'  => array(
+                array( 'tag' => 'FEATURE', 'text' => 'IServ-Kiosk-Template page-terminplan-kiosk.php: token-gesicherte Kiosk-Seite ohne Theme-Copy, CSP frame-ancestors für IServ-iframe-Einbettung (gsh_tp_iserv_domain)' ),
+                array( 'tag' => 'FEATURE', 'text' => 'theme_page_templates-Filter: Vorlage „Terminplan Kiosk" automatisch im WP-Seiten-Editor ohne Theme-Datei' ),
+            ),
+        ),
         array(
             'version'  => '4.19.4',
             'entries'  => array(
@@ -1724,6 +1734,41 @@ function gsh_tp_register_draft_template( array $templates ): array {
 }
 
 /**
+ * Leitet WordPress-Anfragen an das Plugin-eigene Kiosk-Template um.
+ *
+ * Ersetzt das Theme-Template wenn eine Seite mit dem Meta-Wert
+ * page-terminplan-kiosk.php aufgerufen wird. Kein Theme-Copy nötig.
+ *
+ * @since 4.20.0
+ * @param  string $template Aktuell gewähltes Template.
+ * @return string           Plugin-Template-Pfad oder unverändertes $template.
+ */
+function gsh_tp_kiosk_template_include( string $template ): string {
+    if ( is_page() && 'page-terminplan-kiosk.php' === get_post_meta( get_the_ID(), '_wp_page_template', true ) ) {
+        $plugin_tpl = plugin_dir_path( __FILE__ ) . 'page-terminplan-kiosk.php';
+        if ( file_exists( $plugin_tpl ) ) {
+            return $plugin_tpl;
+        }
+    }
+    return $template;
+}
+
+/**
+ * Registriert das Kiosk-Template im WP-Seitenvorlage-Dropdown.
+ *
+ * Ermöglicht die Auswahl von „Terminplan Kiosk" im Seiten-Editor
+ * ohne das Template in den Theme-Ordner kopieren zu müssen.
+ *
+ * @since 4.20.0
+ * @param  array $templates Bestehende Template-Liste.
+ * @return array            Erweiterte Template-Liste.
+ */
+function gsh_tp_register_kiosk_template( array $templates ): array {
+    $templates['page-terminplan-kiosk.php'] = 'Terminplan Kiosk';
+    return $templates;
+}
+
+/**
  * Speichert einen Sync-Versuch im Sync-Log eines Profils.
  *
  * Hält die letzten 50 Einträge pro Profil in einer Datenbank-Option vor.
@@ -2099,6 +2144,9 @@ add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
 // Entwurf-Vorschau: Plugin-Template servieren + in WP-Seitenvorlage-Dropdown registrieren
 add_filter( 'template_include',    'gsh_tp_draft_template_include' );
 add_filter( 'theme_page_templates', 'gsh_tp_register_draft_template' );
+// IServ-Kiosk: Plugin-Template servieren + in WP-Seitenvorlage-Dropdown registrieren
+add_filter( 'template_include',    'gsh_tp_kiosk_template_include' );
+add_filter( 'theme_page_templates', 'gsh_tp_register_kiosk_template' );
 // Seiten-Cache leeren wenn relevante Optionen geändert werden
 add_action( 'update_option_gsh_tp_ical_url',          'gsh_tp_clear_page_cache' );
 add_action( 'update_option_gsh_tp_kategorie_mapping',  'gsh_tp_clear_page_cache' );

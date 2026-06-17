@@ -2,7 +2,7 @@
 
 **Digitaler Schulkalender für WordPress — aus IServ direkt auf die Schulwebsite.**
 
-Version **4.12.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
+Version **4.20.0** · PHP 8.0+ · WordPress 6.0+ · GPL v2
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X61ZEMZ7)
 
@@ -108,14 +108,16 @@ Der Kiosk-Modus zeigt den Terminplan ohne WordPress-Navigation — ideal für IS
 
 ### Einrichtung Kiosk
 
-1. **Page-Template in Theme kopieren:** `plugin/page-terminplan-kiosk.php` → aktiver Theme-Ordner  
-   _(z. B. `wp-content/themes/twentytwentyfour/`)_
-2. **Neue WordPress-Seite** anlegen → Vorlage **„Terminplan Kiosk"** wählen → veröffentlichen
-3. **Kiosk-Token generieren:** Admin → Kiosk & System → „Zufälligen Token erzeugen" → speichern
-4. IServ-Domain eintragen (verhindert Einbettung von fremden Seiten)
-5. Die angezeigte Kiosk-URL in IServ als Navigationslink oder iFrame hinterlegen
+Das Plugin registriert die Seitenvorlage automatisch — kein Kopieren in den Theme-Ordner nötig.
+
+1. **Neue WordPress-Seite** anlegen → Vorlage **„Terminplan Kiosk"** wählen → veröffentlichen
+2. **Kiosk-Token generieren:** Admin → Kiosk & System → „Zufälligen Token erzeugen" → speichern
+3. IServ-Domain eintragen (verhindert Einbettung von fremden Seiten)
+4. Die angezeigte Kiosk-URL in IServ als Navigationslink oder iFrame hinterlegen
 
 **Sicherheit:** Token-Vergleich ist timing-sicher (`hash_equals`). Rate-Limiting: max. 10 Fehlversuche pro IP pro Stunde.
+
+Detaillierte Schritt-für-Schritt-Anleitung: [`docs/anleitung-kiosk-einrichtung.md`](docs/anleitung-kiosk-einrichtung.md)
 
 ---
 
@@ -127,28 +129,23 @@ Ermöglicht es dem Schulleitungsteam, einen Entwurfs-Terminplan **vor der offizi
 
 ### Einrichtung Entwurf-Kiosk
 
-**Schritt 1: Template ins Theme kopieren**
+Das Plugin registriert die Seitenvorlage automatisch — kein Kopieren in den Theme-Ordner nötig.
 
-```
-plugin/page-terminplan-entwurf.php
-→ wp-content/themes/DEIN-THEME/page-terminplan-entwurf.php
-```
-
-**Schritt 2: WordPress-Seite anlegen**
+**Schritt 1: WordPress-Seite anlegen**
 
 WordPress-Backend → Seiten → Neu erstellen:
 - Titel: z. B. „Terminplan Entwurf"
 - Vorlage: **Terminplan Entwurf-Vorschau** auswählen
 - Seite veröffentlichen (die Seite ist trotzdem nur mit Token erreichbar)
 
-**Schritt 3: Entwurf-Token generieren**
+**Schritt 2: Entwurf-Token generieren**
 
 Admin → **Einstellungen → Schul-Terminplan → Kiosk & System**:
 - Abschnitt **Entwurf-Vorschau** → „Zufälligen Token erzeugen"
 - Einstellungen speichern
 - Die generierte URL wird automatisch angezeigt
 
-**Schritt 4: URL teilen**
+**Schritt 3: URL teilen**
 
 Die URL hat das Format:
 ```
