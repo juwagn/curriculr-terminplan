@@ -854,6 +854,61 @@ function gsh_tp_curriculr_apply_settings( $settings ) {
     }
 }
 
+function gsh_tp_curriculr_handle_export() {
+    check_admin_referer( 'gsh_tp_curriculr_export_nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Keine Berechtigung.', 403 );
+    }
+    $payload = wp_json_encode(
+        array(
+            'version'     => GSH_TP_VERSION,
+            'exported_at' => gmdate( 'c' ),
+            'settings'    => gsh_tp_curriculr_gather_settings(),
+        ),
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+    );
+    $date = gmdate( 'Y-m-d' );
+    header( 'Content-Type: application/json; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename="curriculr-settings-' . $date . '.json"' );
+    header( 'Content-Length: ' . strlen( $payload ) );
+    header( 'Cache-Control: no-cache, no-store' );
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    echo $payload;
+    exit;
+}
+
+function gsh_tp_curriculr_handle_import() {
+    check_admin_referer( 'gsh_tp_import_settings' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Keine Berechtigung.', 403 );
+    }
+    $page_url = admin_url( 'options-general.php?page=gsh-terminplan-backup' );
+
+    if ( empty( $_FILES['settings_file']['tmp_name'] ) ) {
+        wp_safe_redirect( add_query_arg( 'import_error', '1', $page_url ) );
+        exit;
+    }
+    if ( (int) ( $_FILES['settings_file']['size'] ?? 0 ) > 512 * 1024 ) {
+        wp_safe_redirect( add_query_arg( 'import_error', '2', $page_url ) );
+        exit;
+    }
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+    $raw  = file_get_contents( $_FILES['settings_file']['tmp_name'] );
+    $data = json_decode( $raw, true );
+    if ( JSON_ERROR_NONE !== json_last_error()
+        || ! is_array( $data )
+        || ! isset( $data['settings'] )
+        || ! is_array( $data['settings'] )
+        || ! isset( $data['version'] )
+    ) {
+        wp_safe_redirect( add_query_arg( 'import_error', '3', $page_url ) );
+        exit;
+    }
+    gsh_tp_curriculr_apply_settings( $data['settings'] );
+    wp_safe_redirect( add_query_arg( 'imported', '1', $page_url ) );
+    exit;
+}
+
 /* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
 
 if ( function_exists( 'add_action' ) ) {
@@ -874,6 +929,8 @@ if ( function_exists( 'add_action' ) ) {
     );
 
     add_action( 'gsh_tp_curriculr_daily_backup', 'gsh_tp_curriculr_backup_cron' );
+    add_action( 'admin_post_gsh_tp_curriculr_export', 'gsh_tp_curriculr_handle_export' );
+    add_action( 'admin_post_gsh_tp_import_settings',  'gsh_tp_curriculr_handle_import' );
     add_action(
         'wp_loaded',
         function () {
