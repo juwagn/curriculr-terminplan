@@ -3,10 +3,17 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.20.0
+ * Version:     4.21.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.21.0:
+ * - [NEU] Datensicherung-Seite: Einstellungen als JSON exportieren und importieren
+ * - [NEU] Warnhinweis beim Plugin-Löschen mit Link zur Datensicherung
+ * - [FIX] Uninstall-Hook löscht jetzt alle curriculr_origin / curriculr_profile_map / curriculr_db_version Optionen
+ * - [FIX] Uninstall-Hook bereinigt jetzt auch den gsh_tp_curriculr_daily_backup Cron-Job
+ * Changelog 4.20.1:
+ * - [SECURITY] Kiosk-Template: X-Frame-Options SAMEORIGIN immer senden (Legacy-Fallback für Browser ohne CSP-Support); zuvor nur CSP frame-ancestors gesendet wenn IServ-Domain gesetzt
  * Changelog 4.20.0:
  * - [FEATURE] IServ-Kiosk-Template page-terminplan-kiosk.php: token-gesicherte Kiosk-Seite, CSP frame-ancestors für IServ-Einbettung, kein Theme-Copy nötig
  * - [FEATURE] theme_page_templates-Filter: Vorlage „Terminplan Kiosk" automatisch im WP-Seiten-Editor
@@ -568,7 +575,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.20.0' );
+define( 'GSH_TP_VERSION',       '4.21.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -812,6 +819,21 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.21.0',
+            'entries'  => array(
+                array( 'tag' => 'NEU', 'text' => 'Datensicherung-Seite: Einstellungen als JSON exportieren und importieren' ),
+                array( 'tag' => 'NEU', 'text' => 'Warnhinweis beim Plugin-Löschen mit Link zur Datensicherung' ),
+                array( 'tag' => 'FIX', 'text' => 'Uninstall-Hook löscht jetzt alle curriculr_origin / curriculr_profile_map / curriculr_db_version Optionen' ),
+                array( 'tag' => 'FIX', 'text' => 'Uninstall-Hook bereinigt jetzt auch den gsh_tp_curriculr_daily_backup Cron-Job' ),
+            ),
+        ),
+        array(
+            'version'  => '4.20.1',
+            'entries'  => array(
+                array( 'tag' => 'SECURITY', 'text' => 'Kiosk-Template: X-Frame-Options: SAMEORIGIN immer senden — Legacy-Fallback für Browser ohne CSP frame-ancestors Support (war zuvor nur gesetzt wenn keine IServ-Domain konfiguriert)' ),
+            ),
+        ),
         array(
             'version'  => '4.20.0',
             'entries'  => array(
@@ -2022,7 +2044,68 @@ function gsh_tp_admin_menu() {
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
     );
+    add_options_page(
+        'Schul-Terminplan – Datensicherung',
+        'Datensicherung',
+        'manage_options',
+        'gsh-terminplan-backup',
+        'gsh_tp_backup_page'
+    );
     // Kein separater Menüpunkt für Feedback-Log mehr – ist jetzt Tab in der Hauptseite
+}
+
+/**
+ * Rendert die Datensicherungs-Seite (Export + Import) im WordPress-Backend.
+ *
+ * Erreichbar unter Einstellungen → Datensicherung.
+ *
+ * @since 3.14.0
+ * @return void
+ */
+function gsh_tp_backup_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    $imported   = ! empty( $_GET['imported'] );
+    $import_err = (int) ( $_GET['import_error'] ?? 0 );
+    $err_msgs   = array(
+        1 => 'Keine Datei ausgewählt.',
+        2 => 'Datei zu groß (max. 512 KB).',
+        3 => 'Ungültiges Dateiformat. Bitte eine Curriculr-Export-Datei wählen.',
+    );
+    ?>
+    <div class="wrap gsh-backup-wrap">
+        <h1>Schul-Terminplan – Datensicherung</h1>
+
+        <?php if ( $imported ) : ?>
+        <div class="notice notice-success is-dismissible"><p>Einstellungen erfolgreich importiert.</p></div>
+        <?php endif; ?>
+        <?php if ( $import_err && isset( $err_msgs[ $import_err ] ) ) : ?>
+        <div class="notice notice-error is-dismissible"><p><?php echo esc_html( $err_msgs[ $import_err ] ); ?></p></div>
+        <?php endif; ?>
+
+        <div class="gsh-backup-section">
+            <h2>Einstellungen exportieren</h2>
+            <p>Lädt alle Plugin-Einstellungen als JSON-Datei herunter. Curriculr-Planungsdokumente sind nicht enthalten — diese verbleiben in der Datenbank.</p>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <?php wp_nonce_field( 'gsh_tp_curriculr_export_nonce' ); ?>
+                <input type="hidden" name="action" value="gsh_tp_curriculr_export">
+                <button type="submit" class="button button-primary">Einstellungen exportieren</button>
+            </form>
+        </div>
+
+        <div class="gsh-backup-section">
+            <h2>Einstellungen importieren</h2>
+            <p>Stellt alle Plugin-Einstellungen aus einer Export-Datei wieder her. Vorhandene Einstellungen werden überschrieben.</p>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+                <?php wp_nonce_field( 'gsh_tp_import_settings' ); ?>
+                <input type="hidden" name="action" value="gsh_tp_import_settings">
+                <input type="file" name="settings_file" accept=".json" required class="gsh-backup-file-input">
+                <?php submit_button( 'Einstellungen importieren', 'secondary', 'submit', false ); ?>
+            </form>
+        </div>
+    </div>
+    <?php
 }
 
 /**
@@ -2119,6 +2202,56 @@ function gsh_tp_enqueue_frontend_styles() {
     );
 }
 add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
+
+/**
+ * Enqueues the delete-warning script on plugins.php and the backup-page CSS
+ * on both plugins.php and the backup settings page.
+ *
+ * @since 3.17.0
+ * @param string $hook Current admin page hook.
+ * @return void
+ */
+function gsh_tp_enqueue_admin_delete_warn( $hook ) {
+    // Enqueue backup-page CSS on both plugins.php and the backup page itself.
+    if ( in_array( $hook, array( 'plugins.php', 'settings_page_gsh-terminplan-backup' ), true ) ) {
+        wp_enqueue_style(
+            'gsh-terminplan',
+            plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
+            array(),
+            GSH_TP_VERSION
+        );
+    }
+    if ( 'plugins.php' !== $hook ) {
+        return;
+    }
+    wp_enqueue_script(
+        'gsh-curriculr-delete-warn',
+        plugin_dir_url( __FILE__ ) . 'assets/js/curriculr-delete-warn.js',
+        array(),
+        GSH_TP_VERSION,
+        true
+    );
+    wp_localize_script(
+        'gsh-curriculr-delete-warn',
+        'gshDeleteWarn',
+        array( 'backupUrl' => admin_url( 'options-general.php?page=gsh-terminplan-backup' ) )
+    );
+}
+add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_delete_warn' );
+
+/**
+ * Adds a "Einstellungen sichern" link to the plugin action links on plugins.php.
+ *
+ * @since 3.17.0
+ * @param string[] $links Existing action links.
+ * @return string[] Modified action links with backup link prepended.
+ */
+function gsh_tp_plugin_action_links( $links ) {
+    $backup_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=gsh-terminplan-backup' ) ) . '" class="gsh-plugin-backup-link">Einstellungen sichern ↗</a>';
+    array_unshift( $links, $backup_link );
+    return $links;
+}
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'gsh_tp_plugin_action_links' );
 
 // ENTFERNT v3.16.0: gsh_tp_enqueue_tour_assets() – Shepherd.js vollständig entfernt.
 // Das Hilfe-Overlay ist jetzt ein schlichtes natives HTML/CSS/JS-Overlay (kein CDN).
@@ -8412,6 +8545,9 @@ function gsh_tp_uninstall() {
         'gsh_tp_last_sync',
         GSH_TP_CACHE_KEY,          // permanente Daten-Option (seit 3.3.0)
         GSH_TP_BACKUP_KEY,
+        'gsh_tp_curriculr_origin',
+        'gsh_tp_curriculr_profile_map',
+        'gsh_tp_curriculr_db_version',
     ) as $opt ) {
         delete_option( $opt );
     }
@@ -8446,4 +8582,5 @@ function gsh_tp_uninstall() {
     delete_option( 'gsh_tp_cache_ver' );
 
     wp_clear_scheduled_hook( 'gsh_tp_cron_refresh' );
+    wp_clear_scheduled_hook( 'gsh_tp_curriculr_daily_backup' );
 }

@@ -959,3 +959,20 @@
     margin: .25rem .5rem .5rem;
     line-height: 1.4;
 }
+
+/* ---------- Datensicherung-Seite (WP Admin) ---------- */
+.gsh-backup-wrap h1 { margin-bottom: 24px; }
+.gsh-backup-section {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px 24px;
+    max-width: 640px;
+    margin-bottom: 20px;
+}
+.gsh-backup-section h2 { margin-top: 0; font-size: 1rem; }
+.gsh-backup-section p  { margin-top: 0; color: #50575e; }
+.gsh-backup-file-input { display: block; margin-bottom: 12px; }
+
+/* ---------- Plugin-Listenzeile: Datensicherung-Link ---------- */
+.gsh-plugin-backup-link { color: #b91c1c; font-weight: 600; }
