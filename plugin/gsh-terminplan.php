@@ -8420,6 +8420,9 @@ function gsh_tp_uninstall() {
         'gsh_tp_last_sync',
         GSH_TP_CACHE_KEY,          // permanente Daten-Option (seit 3.3.0)
         GSH_TP_BACKUP_KEY,
+        'gsh_tp_curriculr_origin',
+        'gsh_tp_curriculr_profile_map',
+        'gsh_tp_curriculr_db_version',
     ) as $opt ) {
         delete_option( $opt );
     }
@@ -8454,4 +8457,5 @@ function gsh_tp_uninstall() {
     delete_option( 'gsh_tp_cache_ver' );
 
     wp_clear_scheduled_hook( 'gsh_tp_cron_refresh' );
+    wp_clear_scheduled_hook( 'gsh_tp_curriculr_daily_backup' );
 }
