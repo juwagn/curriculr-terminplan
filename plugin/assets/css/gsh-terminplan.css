@@ -959,3 +959,6 @@
     margin: .25rem .5rem .5rem;
     line-height: 1.4;
 }
+
+/* ---------- Plugin-Listenzeile: Datensicherung-Link ---------- */
+.gsh-plugin-backup-link { color: #b91c1c; font-weight: 600; }

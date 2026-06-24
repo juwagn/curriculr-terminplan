@@ -2233,7 +2233,7 @@ add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_delete_warn' );
  * @return string[] Modified action links with backup link prepended.
  */
 function gsh_tp_plugin_action_links( $links ) {
-    $backup_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=gsh-terminplan-backup' ) ) . '" style="color:#b91c1c;font-weight:600">Einstellungen sichern ↗</a>';
+    $backup_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=gsh-terminplan-backup' ) ) . '" class="gsh-plugin-backup-link">Einstellungen sichern ↗</a>';
     array_unshift( $links, $backup_link );
     return $links;
 }
