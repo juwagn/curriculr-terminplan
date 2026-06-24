@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.20.1
+ * Version:     4.21.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.21.0:
+ * - [NEU] Datensicherung-Seite: Einstellungen als JSON exportieren und importieren
+ * - [NEU] Warnhinweis beim Plugin-Löschen mit Link zur Datensicherung
+ * - [FIX] Uninstall-Hook löscht jetzt alle curriculr_origin / curriculr_profile_map / curriculr_db_version Optionen
+ * - [FIX] Uninstall-Hook bereinigt jetzt auch den gsh_tp_curriculr_daily_backup Cron-Job
  * Changelog 4.20.1:
  * - [SECURITY] Kiosk-Template: X-Frame-Options SAMEORIGIN immer senden (Legacy-Fallback für Browser ohne CSP-Support); zuvor nur CSP frame-ancestors gesendet wenn IServ-Domain gesetzt
  * Changelog 4.20.0:
@@ -570,7 +575,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.20.1' );
+define( 'GSH_TP_VERSION',       '4.21.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -814,6 +819,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.21.0',
+            'entries'  => array(
+                array( 'tag' => 'NEU', 'text' => 'Datensicherung-Seite: Einstellungen als JSON exportieren und importieren' ),
+                array( 'tag' => 'NEU', 'text' => 'Warnhinweis beim Plugin-Löschen mit Link zur Datensicherung' ),
+                array( 'tag' => 'FIX', 'text' => 'Uninstall-Hook löscht jetzt alle curriculr_origin / curriculr_profile_map / curriculr_db_version Optionen' ),
+                array( 'tag' => 'FIX', 'text' => 'Uninstall-Hook bereinigt jetzt auch den gsh_tp_curriculr_daily_backup Cron-Job' ),
+            ),
+        ),
         array(
             'version'  => '4.20.1',
             'entries'  => array(
