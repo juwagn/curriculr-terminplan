@@ -857,7 +857,8 @@ function gsh_tp_curriculr_apply_settings( $settings ) {
 function gsh_tp_curriculr_handle_export() {
     check_admin_referer( 'gsh_tp_curriculr_export_nonce' );
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Keine Berechtigung.', 403 );
+        status_header( 403 );
+        exit;
     }
     $payload = wp_json_encode(
         array(
@@ -880,7 +881,8 @@ function gsh_tp_curriculr_handle_export() {
 function gsh_tp_curriculr_handle_import() {
     check_admin_referer( 'gsh_tp_import_settings' );
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Keine Berechtigung.', 403 );
+        status_header( 403 );
+        exit;
     }
     $page_url = admin_url( 'options-general.php?page=gsh-terminplan-backup' );
 
