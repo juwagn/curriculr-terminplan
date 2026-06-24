@@ -786,6 +786,74 @@ function gsh_tp_curriculr_backup_cron() {
     }
 }
 
+/* ---------- Settings Backup: Export / Import ---------- */
+
+function gsh_tp_curriculr_gather_settings() {
+    $profiles = get_option( 'gsh_tp_profiles', array() );
+    $data     = array(
+        'gsh_tp_profiles'              => $profiles,
+        'gsh_tp_ical_url'              => get_option( 'gsh_tp_ical_url', '' ),
+        'gsh_tp_cache_duration'        => get_option( 'gsh_tp_cache_duration', 3600 ),
+        'gsh_tp_schuljahr_start'       => get_option( 'gsh_tp_schuljahr_start', '' ),
+        'gsh_tp_quartal_grenzen'       => get_option( 'gsh_tp_quartal_grenzen', '' ),
+        'gsh_tp_kategorie_mapping'     => get_option( 'gsh_tp_kategorie_mapping', '' ),
+        'gsh_tp_categories'            => get_option( 'gsh_tp_categories', array() ),
+        'gsh_tp_kiosk_token'           => get_option( 'gsh_tp_kiosk_token', '' ),
+        'gsh_tp_draft_kiosk_token'     => get_option( 'gsh_tp_draft_kiosk_token', '' ),
+        'gsh_tp_iserv_domain'          => get_option( 'gsh_tp_iserv_domain', '' ),
+        'gsh_tp_curriculr_origin'      => get_option( 'gsh_tp_curriculr_origin', '' ),
+        'gsh_tp_curriculr_profile_map' => get_option( 'gsh_tp_curriculr_profile_map', array() ),
+    );
+    if ( is_array( $profiles ) ) {
+        foreach ( $profiles as $p ) {
+            $pid = sanitize_key( $p['id'] ?? '' );
+            if ( $pid ) {
+                $ck          = gsh_tp_ck( 'gsh_tp_ical_', $pid );
+                $data[ $ck ] = get_option( $ck, '' );
+            }
+        }
+    }
+    return $data;
+}
+
+function gsh_tp_curriculr_apply_settings( $settings ) {
+    if ( ! is_array( $settings ) ) {
+        return;
+    }
+    $allowlist = array(
+        'gsh_tp_profiles',
+        'gsh_tp_ical_url',
+        'gsh_tp_cache_duration',
+        'gsh_tp_schuljahr_start',
+        'gsh_tp_quartal_grenzen',
+        'gsh_tp_kategorie_mapping',
+        'gsh_tp_categories',
+        'gsh_tp_kiosk_token',
+        'gsh_tp_draft_kiosk_token',
+        'gsh_tp_iserv_domain',
+        'gsh_tp_curriculr_origin',
+        'gsh_tp_curriculr_profile_map',
+    );
+    foreach ( $allowlist as $key ) {
+        if ( array_key_exists( $key, $settings ) ) {
+            update_option( $key, $settings[ $key ] );
+        }
+    }
+    $profiles = $settings['gsh_tp_profiles'] ?? array();
+    if ( is_array( $profiles ) ) {
+        foreach ( $profiles as $p ) {
+            $pid = sanitize_key( $p['id'] ?? '' );
+            if ( ! $pid ) {
+                continue;
+            }
+            $ck = gsh_tp_ck( 'gsh_tp_ical_', $pid );
+            if ( array_key_exists( $ck, $settings ) ) {
+                update_option( $ck, $settings[ $ck ] );
+            }
+        }
+    }
+}
+
 /* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
 
 if ( function_exists( 'add_action' ) ) {
