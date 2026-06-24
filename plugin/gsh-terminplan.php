@@ -2059,7 +2059,7 @@ function gsh_tp_admin_menu() {
  *
  * Erreichbar unter Einstellungen → Datensicherung.
  *
- * @since 3.14.0
+ * @since 4.21.0
  * @return void
  */
 function gsh_tp_backup_page() {
@@ -2207,7 +2207,7 @@ add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
  * Enqueues the delete-warning script on plugins.php and the backup-page CSS
  * on both plugins.php and the backup settings page.
  *
- * @since 3.17.0
+ * @since 4.21.0
  * @param string $hook Current admin page hook.
  * @return void
  */
@@ -2242,7 +2242,7 @@ add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_delete_warn' );
 /**
  * Adds a "Einstellungen sichern" link to the plugin action links on plugins.php.
  *
- * @since 3.17.0
+ * @since 4.21.0
  * @param string[] $links Existing action links.
  * @return string[] Modified action links with backup link prepended.
  */

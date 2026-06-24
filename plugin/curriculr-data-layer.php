@@ -868,6 +868,10 @@ function gsh_tp_curriculr_handle_export() {
         ),
         JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
     );
+    if ( false === $payload ) {
+        status_header( 500 );
+        exit;
+    }
     $date = gmdate( 'Y-m-d' );
     header( 'Content-Type: application/json; charset=utf-8' );
     header( 'Content-Disposition: attachment; filename="curriculr-settings-' . $date . '.json"' );
