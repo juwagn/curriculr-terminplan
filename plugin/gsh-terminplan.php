@@ -2030,7 +2030,68 @@ function gsh_tp_admin_menu() {
         GSH_TP_SLUG,
         'gsh_tp_settings_page'
     );
+    add_options_page(
+        'Schul-Terminplan – Datensicherung',
+        'Datensicherung',
+        'manage_options',
+        'gsh-terminplan-backup',
+        'gsh_tp_backup_page'
+    );
     // Kein separater Menüpunkt für Feedback-Log mehr – ist jetzt Tab in der Hauptseite
+}
+
+/**
+ * Rendert die Datensicherungs-Seite (Export + Import) im WordPress-Backend.
+ *
+ * Erreichbar unter Einstellungen → Datensicherung.
+ *
+ * @since 3.14.0
+ * @return void
+ */
+function gsh_tp_backup_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    $imported   = ! empty( $_GET['imported'] );
+    $import_err = (int) ( $_GET['import_error'] ?? 0 );
+    $err_msgs   = array(
+        1 => 'Keine Datei ausgewählt.',
+        2 => 'Datei zu groß (max. 512 KB).',
+        3 => 'Ungültiges Dateiformat. Bitte eine Curriculr-Export-Datei wählen.',
+    );
+    ?>
+    <div class="wrap gsh-backup-wrap">
+        <h1>Schul-Terminplan – Datensicherung</h1>
+
+        <?php if ( $imported ) : ?>
+        <div class="notice notice-success is-dismissible"><p>Einstellungen erfolgreich importiert.</p></div>
+        <?php endif; ?>
+        <?php if ( $import_err && isset( $err_msgs[ $import_err ] ) ) : ?>
+        <div class="notice notice-error is-dismissible"><p><?php echo esc_html( $err_msgs[ $import_err ] ); ?></p></div>
+        <?php endif; ?>
+
+        <div class="gsh-backup-section">
+            <h2>Einstellungen exportieren</h2>
+            <p>Lädt alle Plugin-Einstellungen als JSON-Datei herunter. Curriculr-Planungsdokumente sind nicht enthalten — diese verbleiben in der Datenbank.</p>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <?php wp_nonce_field( 'gsh_tp_curriculr_export_nonce' ); ?>
+                <input type="hidden" name="action" value="gsh_tp_curriculr_export">
+                <button type="submit" class="button button-primary">Einstellungen exportieren</button>
+            </form>
+        </div>
+
+        <div class="gsh-backup-section">
+            <h2>Einstellungen importieren</h2>
+            <p>Stellt alle Plugin-Einstellungen aus einer Export-Datei wieder her. Vorhandene Einstellungen werden überschrieben.</p>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+                <?php wp_nonce_field( 'gsh_tp_import_settings' ); ?>
+                <input type="hidden" name="action" value="gsh_tp_import_settings">
+                <input type="file" name="settings_file" accept=".json" required class="gsh-backup-file-input">
+                <?php submit_button( 'Einstellungen importieren', 'secondary', 'submit', false ); ?>
+            </form>
+        </div>
+    </div>
+    <?php
 }
 
 /**
