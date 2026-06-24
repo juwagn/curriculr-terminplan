@@ -2189,6 +2189,56 @@ function gsh_tp_enqueue_frontend_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
 
+/**
+ * Enqueues the delete-warning script on plugins.php and the backup-page CSS
+ * on both plugins.php and the backup settings page.
+ *
+ * @since 3.17.0
+ * @param string $hook Current admin page hook.
+ * @return void
+ */
+function gsh_tp_enqueue_admin_delete_warn( $hook ) {
+    // Enqueue backup-page CSS on both plugins.php and the backup page itself.
+    if ( in_array( $hook, array( 'plugins.php', 'settings_page_gsh-terminplan-backup' ), true ) ) {
+        wp_enqueue_style(
+            'gsh-terminplan',
+            plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
+            array(),
+            GSH_TP_VERSION
+        );
+    }
+    if ( 'plugins.php' !== $hook ) {
+        return;
+    }
+    wp_enqueue_script(
+        'gsh-curriculr-delete-warn',
+        plugin_dir_url( __FILE__ ) . 'assets/js/curriculr-delete-warn.js',
+        array(),
+        GSH_TP_VERSION,
+        true
+    );
+    wp_localize_script(
+        'gsh-curriculr-delete-warn',
+        'gshDeleteWarn',
+        array( 'backupUrl' => admin_url( 'options-general.php?page=gsh-terminplan-backup' ) )
+    );
+}
+add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_delete_warn' );
+
+/**
+ * Adds a "Einstellungen sichern" link to the plugin action links on plugins.php.
+ *
+ * @since 3.17.0
+ * @param string[] $links Existing action links.
+ * @return string[] Modified action links with backup link prepended.
+ */
+function gsh_tp_plugin_action_links( $links ) {
+    $backup_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=gsh-terminplan-backup' ) ) . '" style="color:#b91c1c;font-weight:600">Einstellungen sichern ↗</a>';
+    array_unshift( $links, $backup_link );
+    return $links;
+}
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'gsh_tp_plugin_action_links' );
+
 // ENTFERNT v3.16.0: gsh_tp_enqueue_tour_assets() – Shepherd.js vollständig entfernt.
 // Das Hilfe-Overlay ist jetzt ein schlichtes natives HTML/CSS/JS-Overlay (kein CDN).
 
