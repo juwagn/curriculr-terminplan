@@ -533,6 +533,15 @@ function gsh_tp_curriculr_register_rest() {
             ),
         )
     );
+    register_rest_route(
+        'curriculr/v1',
+        '/profile-map',
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'gsh_tp_curriculr_rest_profile_map_put',
+            'permission_callback' => 'gsh_tp_curriculr_perm',
+        )
+    );
 }
 
 function gsh_tp_curriculr_rest_health() {
@@ -631,6 +640,48 @@ function gsh_tp_curriculr_rest_feed_group( $req ) {
     // phpcs:ignore -- raw ICS output, bewusst kein wp_die.
     echo $ics;
     exit;
+}
+
+/**
+ * POST /curriculr/v1/profile-map
+ *
+ * Body: { sj: string, mappings: [{profileId: string, group: string|null}] }
+ * Saves the group→profile mapping for one school year into the WP option.
+ *
+ * @since 4.22.0
+ */
+function gsh_tp_curriculr_rest_profile_map_put( $req ) {
+    $body     = $req->get_json_params();
+    $sj       = isset( $body['sj'] ) ? sanitize_key( $body['sj'] ) : '';
+    $mappings = isset( $body['mappings'] ) ? $body['mappings'] : null;
+
+    if ( '' === $sj ) {
+        return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'sj required' ), 400 );
+    }
+    if ( ! is_array( $mappings ) || empty( $mappings ) ) {
+        return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'mappings required, must be non-empty array' ), 400 );
+    }
+
+    $normalised = array();
+    foreach ( $mappings as $m ) {
+        if ( ! is_array( $m ) ) {
+            return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'each mapping must be an object' ), 400 );
+        }
+        $pid = sanitize_key( $m['profileId'] ?? '' );
+        if ( '' === $pid ) {
+            return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'profileId required and must be non-empty' ), 400 );
+        }
+        $group        = ( isset( $m['group'] ) && is_string( $m['group'] ) && '' !== $m['group'] )
+            ? sanitize_text_field( $m['group'] ) : null;
+        $normalised[] = array( 'profileId' => $pid, 'group' => $group );
+    }
+
+    $map        = get_option( 'gsh_tp_curriculr_profile_map', array() );
+    $map        = is_array( $map ) ? $map : array();
+    $map[ $sj ] = $normalised;
+    update_option( 'gsh_tp_curriculr_profile_map', $map );
+
+    return new WP_REST_Response( array( 'updated' => true ), 200 );
 }
 
 function gsh_tp_curriculr_rest_revisions_list( $req ) {
