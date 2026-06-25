@@ -427,6 +427,10 @@ function gsh_tp_curriculr_feed_url( $sj, $token ) {
     return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '.ics' );
 }
 
+function gsh_tp_curriculr_feed_url_group( $sj, $token, $group ) {
+    return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '/' . rawurlencode( $group ) . '.ics' );
+}
+
 function gsh_tp_curriculr_perm( $req ) {
     return gsh_tp_curriculr_guard_perm( $req );
 }
@@ -494,6 +498,15 @@ function gsh_tp_curriculr_register_rest() {
         array(
             'methods'             => 'GET',
             'callback'            => 'gsh_tp_curriculr_rest_feed',
+            'permission_callback' => '__return_true',
+        )
+    );
+    register_rest_route(
+        'curriculr/v1',
+        '/feed/(?P<sj>[a-z0-9_\-]+)/(?P<token>[A-Za-z0-9]+)/(?P<group>[^/\.]+)\.ics',
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'gsh_tp_curriculr_rest_feed_group',
             'permission_callback' => '__return_true',
         )
     );
@@ -601,6 +614,25 @@ function gsh_tp_curriculr_rest_feed( $req ) {
     exit;
 }
 
+function gsh_tp_curriculr_rest_feed_group( $req ) {
+    $row = gsh_tp_curriculr_repo_get( $req['sj'] );
+    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+        return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
+    }
+    $group = sanitize_text_field( urldecode( $req['group'] ) );
+    $doc   = json_decode( $row['json'], true );
+    $ics   = gsh_tp_curriculr_build_ics( $doc, $group );
+
+    if ( ! headers_sent() ) {
+        header( 'Content-Type: text/calendar; charset=utf-8' );
+        header( 'Content-Disposition: inline; filename="' . sanitize_key( $req['sj'] ) . '-' . sanitize_key( $group ) . '.ics"' );
+        header( 'Cache-Control: max-age=300' );
+    }
+    // phpcs:ignore -- raw ICS output, bewusst kein wp_die.
+    echo $ics;
+    exit;
+}
+
 function gsh_tp_curriculr_rest_revisions_list( $req ) {
     global $wpdb;
     $table = gsh_tp_curriculr_revisions_table();
@@ -692,58 +724,77 @@ function gsh_tp_curriculr_profile_for( $sj ) {
     // (Nicht-Disruption: das Live-Profil darf nie versehentlich umgebogen werden).
     $map = get_option( 'gsh_tp_curriculr_profile_map', array() );
     $sj  = sanitize_key( $sj );
-    return ( is_array( $map ) && isset( $map[ $sj ] ) ) ? $map[ $sj ] : '';
+    if ( ! is_array( $map ) || ! isset( $map[ $sj ] ) ) {
+        return array();
+    }
+    $val = $map[ $sj ];
+    // Lazy migration: old format stored a plain profile-ID string.
+    if ( is_string( $val ) && '' !== $val ) {
+        $normalised = array( array( 'profileId' => $val, 'group' => null ) );
+        $map[ $sj ] = $normalised;
+        update_option( 'gsh_tp_curriculr_profile_map', $map );
+        return $normalised;
+    }
+    return is_array( $val ) ? $val : array();
 }
 
 function gsh_tp_curriculr_after_put( $sj, $token ) {
-    $pid = gsh_tp_curriculr_profile_for( $sj );
-    if ( ! $pid ) {
+    $mappings = gsh_tp_curriculr_profile_for( $sj );
+    if ( empty( $mappings ) ) {
         return;
     }
-    $feed_url = gsh_tp_curriculr_feed_url( $sj, $token );
 
     $row = gsh_tp_curriculr_repo_get( $sj );
     $doc = $row ? json_decode( $row['json'], true ) : null;
 
-    // Anzeigefenster aus dem Doc ableiten: ohne diese Synchronisierung rendert
-    // die Entwurf-Vorschau Wochen des falschen Schuljahres → leerer Plan.
-    $grenzen = is_array( $doc ) ? gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) : '';
+    $grenzen  = is_array( $doc ) ? gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) : '';
     $sj_start = '';
-    if ( '' !== $grenzen && gsh_tp_curriculr_is_iso_date( $doc['schoolyear']['firstSchoolDay'] ) ) {
-        // gsh_tp_schulwoche() erwartet den ersten Montag des Schuljahres.
+    if ( '' !== $grenzen && isset( $doc['schoolyear']['firstSchoolDay'] ) && gsh_tp_curriculr_is_iso_date( $doc['schoolyear']['firstSchoolDay'] ) ) {
         $sj_start = gsh_tp_curriculr_monday_of_week( $doc['schoolyear']['firstSchoolDay'] );
     }
 
     $profiles = gsh_tp_get_profiles();
     $changed  = false;
-    foreach ( $profiles as &$p ) {
-        if ( ! isset( $p['id'] ) || $p['id'] !== $pid ) {
+
+    foreach ( $mappings as $mapping ) {
+        if ( empty( $mapping['profileId'] ) ) {
             continue;
         }
-        if ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) {
-            $p['ical_url'] = $feed_url;
-            $changed       = true;
+        $pid      = $mapping['profileId'];
+        $group    = isset( $mapping['group'] ) && is_string( $mapping['group'] ) ? $mapping['group'] : null;
+        $feed_url = ( null === $group )
+            ? gsh_tp_curriculr_feed_url( $sj, $token )
+            : gsh_tp_curriculr_feed_url_group( $sj, $token, $group );
+
+        foreach ( $profiles as &$p ) {
+            if ( ! isset( $p['id'] ) || $p['id'] !== $pid ) {
+                continue;
+            }
+            if ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) {
+                $p['ical_url'] = $feed_url;
+                $changed       = true;
+            }
+            if ( '' !== $grenzen && ( ! isset( $p['quartal_grenzen'] ) || $p['quartal_grenzen'] !== $grenzen ) ) {
+                $p['quartal_grenzen'] = $grenzen;
+                $changed              = true;
+            }
+            if ( '' !== $sj_start && ( ! isset( $p['schuljahr_start'] ) || $p['schuljahr_start'] !== $sj_start ) ) {
+                $p['schuljahr_start'] = $sj_start;
+                $changed              = true;
+            }
         }
-        if ( '' !== $grenzen && ( ! isset( $p['quartal_grenzen'] ) || $p['quartal_grenzen'] !== $grenzen ) ) {
-            $p['quartal_grenzen'] = $grenzen;
-            $changed              = true;
+        unset( $p );
+
+        // Write group-filtered ICS directly to the profile cache.
+        if ( $row && function_exists( 'gsh_tp_ck' ) && is_array( $doc ) ) {
+            $pid_key = sanitize_key( $pid );
+            update_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ), gsh_tp_curriculr_build_ics( $doc, $group ), false );
+            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid_key ) );
         }
-        if ( '' !== $sj_start && ( ! isset( $p['schuljahr_start'] ) || $p['schuljahr_start'] !== $sj_start ) ) {
-            $p['schuljahr_start'] = $sj_start;
-            $changed              = true;
-        }
-    }
-    unset( $p );
-    if ( $changed ) {
-        update_option( 'gsh_tp_profiles', $profiles, true );
     }
 
-    // ICS direkt in den Cache schreiben — zuverlässiger als Loopback-HTTP (Shared Hosting).
-    // gsh_tp_ck() ist in gsh-terminplan.php definiert und zum Zeitpunkt dieses Aufrufs bereits geladen.
-    if ( $row && function_exists( 'gsh_tp_ck' ) && is_array( $doc ) ) {
-        $pid_key = sanitize_key( $pid );
-        update_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ), gsh_tp_curriculr_build_ics( $doc ), false );
-        delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid_key ) );
+    if ( $changed ) {
+        update_option( 'gsh_tp_profiles', $profiles, true );
     }
 }
 

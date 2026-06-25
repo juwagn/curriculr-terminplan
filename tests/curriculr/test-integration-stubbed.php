@@ -183,4 +183,47 @@ gsh_assert_eq( $pa2->data['authorName'], 'Max Mustermann', '409 includes authorN
 gsh_assert_true( strlen( $pa2->data['savedAt'] ) > 0, '409 includes non-empty savedAt' );
 $GLOBALS['gsh_tp_curriculr_current_claims'] = null;
 
+/* ---------- after_put: n:m mappings write per-profile filtered ICS cache ---------- */
+$GLOBALS['options']['gsh_tp_curriculr_profile_map'] = array(
+    'sj_nm_test' => array(
+        array( 'profileId' => 'p_all',  'group' => null          ),
+        array( 'profileId' => 'p_sl',   'group' => 'Schulleitung' ),
+    ),
+);
+// Insert a fresh doc so repo_get returns something with events.
+$doc_nm = array(
+    'meta'       => array( 'name' => 'Test NM' ),
+    'categories' => array(),
+    'events'     => array(
+        array( 'id' => 'nm1', 'title' => 'Alle', 'allDay' => true, 'start' => '2026-09-01', 'end' => '2026-09-01', 'groups' => array(), 'categoryId' => '' ),
+        array( 'id' => 'nm2', 'title' => 'SL',   'allDay' => true, 'start' => '2026-09-02', 'end' => '2026-09-02', 'groups' => array( 'Schulleitung' ), 'categoryId' => '' ),
+        array( 'id' => 'nm3', 'title' => 'Kol',  'allDay' => true, 'start' => '2026-09-03', 'end' => '2026-09-03', 'groups' => array( 'Kollegium' ),   'categoryId' => '' ),
+    ),
+    'schoolyear' => array( 'id' => 'sj_nm_test', 'firstSchoolDay' => '2026-09-01', 'holidays' => array() ),
+);
+$GLOBALS['wpdb']->rows['sj_nm_test'] = array(
+    'schoolyear'  => 'sj_nm_test',
+    'json'        => json_encode( $doc_nm ),
+    'version'     => 1,
+    'stage'       => 'oeffentlich',
+    'feed_token'  => 'nmtoken',
+    'updated_at'  => '2026-09-01 00:00:00',
+);
+unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p_all' ) ] );
+unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p_sl' ) ] );
+gsh_tp_curriculr_after_put( 'sj_nm_test', 'nmtoken' );
+
+$ics_p_all = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p_all' ) ] ?? '';
+$ics_p_sl  = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p_sl'  ) ] ?? '';
+
+// Catch-all profile: all 3 events present.
+gsh_assert_contains( $ics_p_all, 'UID:nm1@curriculr-planner', 'n:m catch-all: nm1 (no group) present' );
+gsh_assert_contains( $ics_p_all, 'UID:nm2@curriculr-planner', 'n:m catch-all: nm2 (Schulleitung) present' );
+gsh_assert_contains( $ics_p_all, 'UID:nm3@curriculr-planner', 'n:m catch-all: nm3 (Kollegium) present' );
+
+// Schulleitung profile: nm1 (no group) + nm2 (Schulleitung) but not nm3 (Kollegium).
+gsh_assert_contains( $ics_p_sl, 'UID:nm1@curriculr-planner', 'n:m SL filter: nm1 (no group) present' );
+gsh_assert_contains( $ics_p_sl, 'UID:nm2@curriculr-planner', 'n:m SL filter: nm2 (Schulleitung) present' );
+gsh_assert_true( strpos( $ics_p_sl, 'UID:nm3@curriculr-planner' ) === false, 'n:m SL filter: nm3 (Kollegium) excluded' );
+
 gsh_test_done();
