@@ -428,7 +428,7 @@ function gsh_tp_curriculr_feed_url( $sj, $token ) {
 }
 
 function gsh_tp_curriculr_feed_url_group( $sj, $token, $group ) {
-    return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '/' . rawurlencode( $group ) . '.ics' );
+    return rest_url( 'curriculr/v1/feed/' . rawurlencode( $sj ) . '/' . $token . '/' . str_replace( '.', '%2E', rawurlencode( $group ) ) . '.ics' );
 }
 
 function gsh_tp_curriculr_perm( $req ) {
@@ -503,7 +503,7 @@ function gsh_tp_curriculr_register_rest() {
     );
     register_rest_route(
         'curriculr/v1',
-        '/feed/(?P<sj>[a-z0-9_\-]+)/(?P<token>[A-Za-z0-9]+)/(?P<group>[^/\.]+)\.ics',
+        '/feed/(?P<sj>[a-z0-9_\-]+)/(?P<token>[A-Za-z0-9]+)/(?P<group>[^/]+)\.ics',
         array(
             'methods'             => 'GET',
             'callback'            => 'gsh_tp_curriculr_rest_feed_group',
@@ -625,7 +625,7 @@ function gsh_tp_curriculr_rest_feed_group( $req ) {
 
     if ( ! headers_sent() ) {
         header( 'Content-Type: text/calendar; charset=utf-8' );
-        header( 'Content-Disposition: inline; filename="' . sanitize_key( $req['sj'] ) . '-' . sanitize_key( $group ) . '.ics"' );
+        header( 'Content-Disposition: inline; filename="' . sanitize_file_name( $req['sj'] ) . '-' . sanitize_file_name( $group ) . '.ics"' );
         header( 'Cache-Control: max-age=300' );
     }
     // phpcs:ignore -- raw ICS output, bewusst kein wp_die.
