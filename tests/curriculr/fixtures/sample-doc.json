@@ -1,7 +1,7 @@
 {
   "meta": { "name": "Terminplan 2026/27" },
   "categories": [
-    { "id": "konferenz", "label": "Konferenz" },
+    { "id": "konferenz",   "label": "Konferenz"   },
     { "id": "elternabend", "label": "Elternabend" }
   ],
   "events": [
@@ -27,6 +27,28 @@
       "location": "",
       "notes": "",
       "groups": [],
+      "categoryId": "elternabend"
+    },
+    {
+      "id": "ev3",
+      "title": "SL-Runde",
+      "allDay": true,
+      "start": "2026-10-05",
+      "end": "2026-10-05",
+      "location": "",
+      "notes": "",
+      "groups": ["Schulleitung"],
+      "categoryId": "konferenz"
+    },
+    {
+      "id": "ev4",
+      "title": "Elternabend Kl. 5",
+      "allDay": true,
+      "start": "2026-10-12",
+      "end": "2026-10-12",
+      "location": "",
+      "notes": "",
+      "groups": ["Eltern"],
       "categoryId": "elternabend"
     }
   ]

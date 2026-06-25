@@ -106,7 +106,7 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     return $lines;
 }
 
-function gsh_tp_curriculr_build_ics( $doc ) {
+function gsh_tp_curriculr_build_ics( $doc, $target_group = null ) {
     $name        = isset( $doc['meta']['name'] ) ? $doc['meta']['name'] : 'Schulterminplan';
     $cats_by_id  = array();
     if ( ! empty( $doc['categories'] ) ) {
@@ -124,6 +124,12 @@ function gsh_tp_curriculr_build_ics( $doc ) {
     );
     if ( ! empty( $doc['events'] ) ) {
         foreach ( $doc['events'] as $e ) {
+            if ( null !== $target_group ) {
+                $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
+                if ( ! empty( $groups ) && ! in_array( $target_group, $groups, true ) ) {
+                    continue;
+                }
+            }
             $lines = array_merge( $lines, gsh_tp_curriculr_build_event( $e, $cats_by_id ) );
         }
     }
@@ -131,6 +137,7 @@ function gsh_tp_curriculr_build_ics( $doc ) {
     // Schulferien und gesetzliche Feiertage aus dem Schuljahr als VEVENT-Einträge.
     // Ohne diese Einträge fehlen Ferienzeiträume im ICS-Feed und werden in der
     // WP-Anzeige nicht als graue Ferien-Zeilen dargestellt.
+    // Holidays have no groups — always included regardless of target_group.
     if ( ! empty( $doc['schoolyear']['holidays'] ) && is_array( $doc['schoolyear']['holidays'] ) ) {
         foreach ( $doc['schoolyear']['holidays'] as $h ) {
             if ( empty( $h['start'] ) || empty( $h['end'] ) || empty( $h['label'] ) ) {
