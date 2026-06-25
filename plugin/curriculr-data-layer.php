@@ -125,6 +125,7 @@ function gsh_tp_curriculr_build_ics( $doc, $target_group = null ) {
     if ( ! empty( $doc['events'] ) ) {
         foreach ( $doc['events'] as $e ) {
             if ( null !== $target_group ) {
+                // Missing or non-array groups key → treat as no restriction (same as groups: []).
                 $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
                 if ( ! empty( $groups ) && ! in_array( $target_group, $groups, true ) ) {
                     continue;
