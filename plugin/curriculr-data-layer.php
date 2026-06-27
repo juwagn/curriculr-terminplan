@@ -679,7 +679,7 @@ function gsh_tp_curriculr_rest_profile_map_put( $req ) {
     $map        = get_option( 'gsh_tp_curriculr_profile_map', array() );
     $map        = is_array( $map ) ? $map : array();
     $map[ $sj ] = $normalised;
-    update_option( 'gsh_tp_curriculr_profile_map', $map );
+    update_option( 'gsh_tp_curriculr_profile_map', $map, false );
 
     return new WP_REST_Response( array( 'updated' => true ), 200 );
 }
@@ -783,7 +783,7 @@ function gsh_tp_curriculr_profile_for( $sj ) {
     if ( is_string( $val ) && '' !== $val ) {
         $normalised = array( array( 'profileId' => $val, 'group' => null ) );
         $map[ $sj ] = $normalised;
-        update_option( 'gsh_tp_curriculr_profile_map', $map );
+        update_option( 'gsh_tp_curriculr_profile_map', $map, false );
         return $normalised;
     }
     return is_array( $val ) ? $val : array();

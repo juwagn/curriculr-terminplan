@@ -67,6 +67,8 @@ All routes except `/health` and `/auth/*` require Bearer app-token (validated by
 | GET | `/doc/{sj}/revisions` | `gsh_tp_curriculr_rest_revisions_list` |
 | GET | `/doc/{sj}/revisions/{id}` | `gsh_tp_curriculr_rest_revision_get` |
 | GET | `/feed/{sj}/{token}.ics` | `gsh_tp_curriculr_rest_feed` (token-auth, public) |
+| GET | `/feed/{sj}/{token}/{group}.ics` | `gsh_tp_curriculr_rest_feed_group` (token-auth, public, group-filtered) |
+| POST | `/profile-map` | `gsh_tp_curriculr_rest_profile_map_put` (Bearer-auth) |
 | POST | `/auth/token` | (curriculr-auth) app-token exchange |
 
 **Conflict detection:** PUT compares `base_version` in request envelope with current `version` in DB. Mismatch → 409 with `authorName`/`savedAt` from revisions table.
