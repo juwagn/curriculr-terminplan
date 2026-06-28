@@ -1,0 +1,17 @@
+# Curriculr release vX.Y.Z
+# Vor dem Commit: Version in gsh-terminplan.php an 4 Stellen bumpen.
+#
+# Changelog-Eintrag in gsh_tp_changelog() als ERSTEN Block einfügen:
+#
+#   array(
+#       'version' => 'X.Y.Z',
+#       'entries' => array(
+#           array( 'tag' => 'NEU',      'text' => '...' ),
+#           array( 'tag' => 'FIX',      'text' => '...' ),
+#           array( 'tag' => 'SECURITY', 'text' => '...' ),
+#           array( 'tag' => 'UX',       'text' => '...' ),
+#           array( 'tag' => 'INFRA',    'text' => '...' ),
+#       ),
+#   ),
+#
+# Nur benötigte Tags einfügen — leere Einträge weglassen.

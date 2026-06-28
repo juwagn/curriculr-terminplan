@@ -20,6 +20,9 @@ php tests/curriculr/test-revisions.php
 php tests/curriculr/test-envelope.php
 php tests/curriculr/test-integration-stubbed.php
 php tests/curriculr/test-version.php
+
+# Activate commit template (run once per clone)
+git config commit.template .gitmessage
 ```
 
 No build system. No Composer. No npm. Edit files, `php -l`, test, ZIP + upload.
@@ -91,6 +94,19 @@ In `gsh-terminplan.php`:
 4. Changelog block in the header comment
 
 Bump rule: bugfix → patch, new feature → minor, breaking REST/DB change → major.
+
+### Changelog Tags
+
+| Tag | Wann verwenden |
+|-----|----------------|
+| `NEU` | Neues user-sichtbares Feature |
+| `FIX` | Bugfix |
+| `SECURITY` | Sicherheitsrelevante Änderung |
+| `UX` | UX/Layout-Verbesserung ohne neues Feature |
+| `DESIGN` | Rein visuelle Änderung (Farben, Spacing) |
+| `INFRA` | Intern/Tooling, kein user-sichtbarer Effekt |
+
+Only insert tags that apply to the release — omit unused ones.
 
 ## CSS Rule
 
