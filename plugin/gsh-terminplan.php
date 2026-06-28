@@ -3,10 +3,12 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.22.0
+ * Version:     4.23.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.23.0:
+ * - [NEU] Update-Hinweis im WP-Admin nach Plugin-Update (dismissibel, per-Version)
  * Changelog 4.22.0:
  * - [NEU] Mehrfach-Kalender: ein Schuljahr kann mehrere Gruppen-ICS-Feeds bedienen (n:m Profil-Mapping)
  * - [NEU] REST POST /curriculr/v1/profile-map — SPA kann Gruppen→Profil-Mapping direkt speichern
@@ -579,7 +581,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.22.0' );
+define( 'GSH_TP_VERSION',       '4.23.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -823,6 +825,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.23.0',
+            'entries'  => array(
+                array( 'tag' => 'NEU', 'text' => 'Update-Hinweis im WP-Admin nach Plugin-Update (dismissibel, per-Version)' ),
+            ),
+        ),
         array(
             'version'  => '4.22.0',
             'entries'  => array(
@@ -2286,6 +2294,9 @@ add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
 add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Kategorien-AJAX (nur eingeloggte Admins)
 add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
+// Update-Notice (erscheint nach Plugin-Update bis dismissed)
+add_action( 'admin_notices',                 'gsh_tp_update_notice' );
+add_action( 'wp_ajax_gsh_tp_dismiss_notice', 'gsh_tp_ajax_dismiss_notice' );
 // Entwurf-Vorschau: Plugin-Template servieren + in WP-Seitenvorlage-Dropdown registrieren
 add_filter( 'template_include',    'gsh_tp_draft_template_include' );
 add_filter( 'theme_page_templates', 'gsh_tp_register_draft_template' );
@@ -2546,6 +2557,68 @@ function gsh_tp_save_categories( array $categories ) {
     // nicht zurückgesetzt werden kann – da der AJAX-Request danach endet, ist das kein Problem.
 
     return $verify;
+}
+
+/**
+ * Zeigt einen dismissiblen Admin-Hinweis nach einem Plugin-Update.
+ * Vergleich GSH_TP_VERSION mit gespeicherter gsh_tp_noticed_version.
+ *
+ * @since 4.23.0
+ */
+function gsh_tp_update_notice() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    if ( GSH_TP_VERSION === get_option( 'gsh_tp_noticed_version', '' ) ) {
+        return;
+    }
+    $cl      = gsh_tp_changelog();
+    $entries = ! empty( $cl ) ? $cl[0]['entries'] : array();
+    $nonce   = wp_create_nonce( 'gsh_tp_dismiss_notice' );
+    ?>
+    <div class="notice notice-info is-dismissible" id="gsh-tp-update-notice">
+        <p>
+            <strong>Curriculr <?php echo esc_html( GSH_TP_VERSION ); ?> installiert</strong>
+            &mdash; <a href="#" onclick="if(typeof gshAdminChangelogOpen==='function'){gshAdminChangelogOpen();}return false;">Vollständiges Changelog</a>
+        </p>
+        <?php if ( ! empty( $entries ) ) : ?>
+        <ul>
+            <?php foreach ( $entries as $entry ) : ?>
+            <li>
+                <strong>[<?php echo esc_html( $entry['tag'] ); ?>]</strong>
+                <?php echo esc_html( $entry['text'] ); ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </div>
+    <script>
+    (function() {
+        var el = document.getElementById('gsh-tp-update-notice');
+        if ( ! el ) { return; }
+        el.addEventListener('click', function(e) {
+            if ( ! e.target.classList.contains('notice-dismiss') ) { return; }
+            jQuery.post(ajaxurl, {
+                action:      'gsh_tp_dismiss_notice',
+                _ajax_nonce: <?php echo wp_json_encode( $nonce ); ?>
+            });
+        });
+    }());
+    </script>
+    <?php
+}
+
+/**
+ * AJAX-Handler: Notice dismisst → gsh_tp_noticed_version auf aktuelle Version setzen.
+ *
+ * @since 4.23.0
+ */
+function gsh_tp_ajax_dismiss_notice() {
+    check_ajax_referer( 'gsh_tp_dismiss_notice' );
+    if ( current_user_can( 'manage_options' ) ) {
+        update_option( 'gsh_tp_noticed_version', GSH_TP_VERSION, false );
+    }
+    wp_die();
 }
 
 /**
