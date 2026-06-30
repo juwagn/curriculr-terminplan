@@ -645,21 +645,30 @@ function gsh_tp_curriculr_rest_feed_group( $req ) {
 /**
  * POST /curriculr/v1/profile-map
  *
- * Body: { sj: string, mappings: [{profileId: string, group: string|null}] }
- * Saves the group→profile mapping for one school year into the WP option.
+ * New form (4.24.0): { sj: string, label: string, groups: string[] }
+ * Old form (kompat):  { sj: string, mappings: [{profileId: string, group: string|null}] }
  *
- * @since 4.22.0
+ * @since 4.22.0 (rewritten 4.24.0)
  */
 function gsh_tp_curriculr_rest_profile_map_put( $req ) {
-    $body     = $req->get_json_params();
-    $sj       = isset( $body['sj'] ) ? sanitize_key( $body['sj'] ) : '';
-    $mappings = isset( $body['mappings'] ) ? $body['mappings'] : null;
+    $body = $req->get_json_params();
+    $sj   = isset( $body['sj'] ) ? sanitize_key( $body['sj'] ) : '';
 
     if ( '' === $sj ) {
         return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'sj required' ), 400 );
     }
+
+    // Detect form: new = has 'groups' key (even if empty array)
+    if ( array_key_exists( 'groups', $body ) ) {
+        $label  = isset( $body['label'] ) ? sanitize_text_field( $body['label'] ) : $sj;
+        $groups = is_array( $body['groups'] ) ? $body['groups'] : array();
+        return gsh_tp_curriculr_provision_schoolyear( $sj, $label, $groups );
+    }
+
+    // Old form: { sj, mappings:[{profileId, group}] } — Kompat-Pfad
+    $mappings = isset( $body['mappings'] ) ? $body['mappings'] : null;
     if ( ! is_array( $mappings ) || empty( $mappings ) ) {
-        return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'mappings required, must be non-empty array' ), 400 );
+        return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'mappings required (old form) or groups required (new form)' ), 400 );
     }
 
     $normalised = array();
@@ -669,7 +678,7 @@ function gsh_tp_curriculr_rest_profile_map_put( $req ) {
         }
         $pid = sanitize_key( $m['profileId'] ?? '' );
         if ( '' === $pid ) {
-            return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'profileId required and must be non-empty' ), 400 );
+            return new WP_REST_Response( array( 'code' => 'invalid_input', 'message' => 'profileId required' ), 400 );
         }
         $group        = ( isset( $m['group'] ) && is_string( $m['group'] ) && '' !== $m['group'] )
             ? sanitize_text_field( $m['group'] ) : null;
@@ -682,6 +691,132 @@ function gsh_tp_curriculr_rest_profile_map_put( $req ) {
     update_option( 'gsh_tp_curriculr_profile_map', $map, false );
 
     return new WP_REST_Response( array( 'updated' => true ), 200 );
+}
+
+/**
+ * Provisioniert ein Schuljahr mit Haupt-Kalender + optionalen Gruppen-Kalendern.
+ *
+ * Legt das Schuljahr (falls fehlt) und alle angeforderten Kalender an.
+ * Entfernte verwaltete Gruppen-Kalender werden als orphaned markiert (nicht gelöscht).
+ * Vorhandene verwaiste Kalender werden reaktiviert wenn ihre Gruppe wieder genannt wird.
+ *
+ * @since 4.24.0
+ * @param  string $sj     Schuljahr-Schlüssel (z.B. 'sj_2026_27').
+ * @param  string $label  Schuljahr-Label (z.B. '2026/27').
+ * @param  array  $groups Gruppenname-Liste (Strings).
+ * @return WP_REST_Response
+ */
+function gsh_tp_curriculr_provision_schoolyear( $sj, $label, $groups ) {
+    // Deduplizieren und sanitieren der Gruppen
+    $requested = array();
+    foreach ( (array) $groups as $g ) {
+        $g = sanitize_text_field( $g );
+        if ( '' !== $g && ! in_array( $g, $requested, true ) ) {
+            $requested[] = $g;
+        }
+    }
+
+    // Limit: max 7 Gruppen (= 8 Kalender inkl. Haupt)
+    if ( count( $requested ) > 7 ) {
+        return new WP_REST_Response(
+            array( 'code' => 'limit_exceeded', 'message' => 'Max 7 group calendars per schoolyear (8 total)' ),
+            400
+        );
+    }
+
+    $schoolyears = gsh_tp_get_schoolyears();
+
+    // Schuljahr finden oder anlegen
+    $sy_idx = null;
+    foreach ( $schoolyears as $i => $sy ) {
+        if ( $sy['key'] === $sj ) {
+            $sy_idx = $i;
+            break;
+        }
+    }
+    if ( null === $sy_idx ) {
+        $schoolyears[] = array(
+            'key'       => sanitize_key( $sj ),
+            'label'     => sanitize_text_field( $label ),
+            'is_active' => false,
+            'created'   => current_time( 'Y-m-d' ),
+            'shared'    => array( 'quartal_grenzen' => '', 'schuljahr_start' => '', 'cache_duration' => 3600 ),
+            'calendars' => array(),
+        );
+        $sy_idx = count( $schoolyears ) - 1;
+    }
+
+    $sy = &$schoolyears[ $sy_idx ];
+
+    // Haupt-Kalender sicherstellen
+    $has_main = false;
+    foreach ( $sy['calendars'] as $cal ) {
+        if ( null === $cal['group'] ) {
+            $has_main = true;
+            break;
+        }
+    }
+    if ( ! $has_main ) {
+        array_unshift( $sy['calendars'], array(
+            'group'    => null,
+            'label'    => sanitize_text_field( $label ) . ' · Alle Termine',
+            'ical_url' => '',
+            'is_draft' => false,
+            'managed'  => true,
+            'orphaned' => false,
+        ) );
+    }
+
+    // Gruppen-Kalender sicherstellen / un-orphanen
+    foreach ( $requested as $group ) {
+        $found = false;
+        foreach ( $sy['calendars'] as &$cal ) {
+            if ( $cal['group'] === $group ) {
+                $cal['orphaned'] = false; // un-orphan on re-add
+                $found = true;
+                break;
+            }
+        }
+        unset( $cal );
+        if ( ! $found ) {
+            $sy['calendars'][] = array(
+                'group'    => $group,
+                'label'    => $group,
+                'ical_url' => '',
+                'is_draft' => false,
+                'managed'  => true,
+                'orphaned' => false,
+            );
+        }
+    }
+
+    // Verwaltete Gruppen-Kalender die nicht (mehr) angefordert sind → orphaned
+    foreach ( $sy['calendars'] as &$cal ) {
+        if ( null === $cal['group'] ) {
+            continue; // Haupt niemals orphanen
+        }
+        if ( ! empty( $cal['managed'] ) && ! in_array( $cal['group'], $requested, true ) ) {
+            $cal['orphaned'] = true;
+        }
+    }
+    unset( $cal );
+
+    gsh_tp_save_schoolyears( $schoolyears );
+
+    // Response: alle nicht-orphaned Kalender mit Feed-URL (leer wenn noch kein Token)
+    $result = array();
+    foreach ( $sy['calendars'] as $cal ) {
+        if ( ! empty( $cal['orphaned'] ) ) {
+            continue;
+        }
+        $result[] = array(
+            'group'   => $cal['group'],
+            'label'   => $cal['label'],
+            'feedUrl' => ( '' !== $cal['ical_url'] ) ? $cal['ical_url'] : null,
+        );
+    }
+
+    return new WP_REST_Response( array( 'updated' => true, 'calendars' => $result ), 200 );
 }
 
 function gsh_tp_curriculr_rest_revisions_list( $req ) {
@@ -789,7 +924,85 @@ function gsh_tp_curriculr_profile_for( $sj ) {
     return is_array( $val ) ? $val : array();
 }
 
+/**
+ * Nach erfolgreichem PUT: ICS-Cache + Feed-URL für alle Kalender dieses Schuljahres aktualisieren.
+ *
+ * Dual-path: schoolyears-nativ wenn das Schuljahr in gsh_tp_schoolyears liegt,
+ * sonst legacy-Pfad via gsh_tp_curriculr_profile_map (Kompat für alte Installs).
+ *
+ * @since 4.6.0 (dual-path seit 4.24.0)
+ * @param  string $sj    Schuljahr-Schlüssel.
+ * @param  string $token Feed-Token.
+ */
 function gsh_tp_curriculr_after_put( $sj, $token ) {
+    // Check schoolyears first (new nested model)
+    $schoolyears = gsh_tp_get_schoolyears();
+    $sy_idx      = null;
+    foreach ( $schoolyears as $i => $sy ) {
+        if ( $sy['key'] === $sj ) {
+            $sy_idx = $i;
+            break;
+        }
+    }
+
+    if ( null !== $sy_idx ) {
+        gsh_tp_curriculr_after_put_nested( $schoolyears, $sy_idx, $sj, $token );
+        return;
+    }
+
+    // Legacy path: read from profile_map → flat profiles
+    gsh_tp_curriculr_after_put_legacy( $sj, $token );
+}
+
+/**
+ * after_put for nested schoolyears model.
+ *
+ * @since 4.24.0
+ */
+function gsh_tp_curriculr_after_put_nested( &$schoolyears, $sy_idx, $sj, $token ) {
+    $sy  = &$schoolyears[ $sy_idx ];
+    $row = gsh_tp_curriculr_repo_get( $sj );
+    $doc = $row ? json_decode( $row['json'], true ) : null;
+
+    $grenzen  = is_array( $doc ) ? gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) : '';
+    $sj_start = '';
+    if ( '' !== $grenzen && isset( $doc['schoolyear']['firstSchoolDay'] ) && gsh_tp_curriculr_is_iso_date( $doc['schoolyear']['firstSchoolDay'] ) ) {
+        $sj_start = gsh_tp_curriculr_monday_of_week( $doc['schoolyear']['firstSchoolDay'] );
+    }
+
+    if ( '' !== $grenzen )  { $sy['shared']['quartal_grenzen'] = $grenzen; }
+    if ( '' !== $sj_start ) { $sy['shared']['schuljahr_start'] = $sj_start; }
+
+    foreach ( $sy['calendars'] as &$cal ) {
+        if ( ! empty( $cal['orphaned'] ) ) {
+            continue;
+        }
+        $group    = $cal['group'];
+        $cal_id   = gsh_tp_calendar_id( $sj, $group );
+        $feed_url = ( null === $group )
+            ? gsh_tp_curriculr_feed_url( $sj, $token )
+            : gsh_tp_curriculr_feed_url_group( $sj, $token, $group );
+
+        $cal['ical_url'] = $feed_url;
+
+        if ( $row && function_exists( 'gsh_tp_ck' ) && is_array( $doc ) ) {
+            $pid_key = sanitize_key( $cal_id );
+            update_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ), gsh_tp_curriculr_build_ics( $doc, $group ), false );
+            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid_key ) );
+        }
+    }
+    unset( $cal );
+
+    gsh_tp_save_schoolyears( $schoolyears );
+}
+
+/**
+ * after_put legacy path: reads gsh_tp_curriculr_profile_map → gsh_tp_profiles (flat).
+ * Runs only when schoolyears model doesn't have this sj yet.
+ *
+ * @since 4.24.0 (extracted from original after_put)
+ */
+function gsh_tp_curriculr_after_put_legacy( $sj, $token ) {
     $mappings = gsh_tp_curriculr_profile_for( $sj );
     if ( empty( $mappings ) ) {
         return;
@@ -804,13 +1017,12 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
         $sj_start = gsh_tp_curriculr_monday_of_week( $doc['schoolyear']['firstSchoolDay'] );
     }
 
-    $profiles = gsh_tp_get_profiles();
+    $profiles = get_option( 'gsh_tp_profiles', array() );
+    $profiles = is_array( $profiles ) ? $profiles : array();
     $changed  = false;
 
     foreach ( $mappings as $mapping ) {
-        if ( empty( $mapping['profileId'] ) ) {
-            continue;
-        }
+        if ( empty( $mapping['profileId'] ) ) { continue; }
         $pid      = $mapping['profileId'];
         $group    = isset( $mapping['group'] ) && is_string( $mapping['group'] ) ? $mapping['group'] : null;
         $feed_url = ( null === $group )
@@ -818,25 +1030,13 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
             : gsh_tp_curriculr_feed_url_group( $sj, $token, $group );
 
         foreach ( $profiles as &$p ) {
-            if ( ! isset( $p['id'] ) || $p['id'] !== $pid ) {
-                continue;
-            }
-            if ( ! isset( $p['ical_url'] ) || $p['ical_url'] !== $feed_url ) {
-                $p['ical_url'] = $feed_url;
-                $changed       = true;
-            }
-            if ( '' !== $grenzen && ( ! isset( $p['quartal_grenzen'] ) || $p['quartal_grenzen'] !== $grenzen ) ) {
-                $p['quartal_grenzen'] = $grenzen;
-                $changed              = true;
-            }
-            if ( '' !== $sj_start && ( ! isset( $p['schuljahr_start'] ) || $p['schuljahr_start'] !== $sj_start ) ) {
-                $p['schuljahr_start'] = $sj_start;
-                $changed              = true;
-            }
+            if ( ! isset( $p['id'] ) || $p['id'] !== $pid ) { continue; }
+            if ( ( $p['ical_url'] ?? '' ) !== $feed_url ) { $p['ical_url'] = $feed_url; $changed = true; }
+            if ( '' !== $grenzen && ( $p['quartal_grenzen'] ?? '' ) !== $grenzen ) { $p['quartal_grenzen'] = $grenzen; $changed = true; }
+            if ( '' !== $sj_start && ( $p['schuljahr_start'] ?? '' ) !== $sj_start ) { $p['schuljahr_start'] = $sj_start; $changed = true; }
         }
         unset( $p );
 
-        // Write group-filtered ICS directly to the profile cache.
         if ( $row && function_exists( 'gsh_tp_ck' ) && is_array( $doc ) ) {
             $pid_key = sanitize_key( $pid );
             update_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ), gsh_tp_curriculr_build_ics( $doc, $group ), false );
