@@ -1386,10 +1386,43 @@ unset( $_gsh_old );
 /**
  * Liefert alle gespeicherten Schuljahr-Profile.
  *
- * @since 3.5.0
+ * Since 4.24.0 this reads from the nested gsh_tp_schoolyears source-of-truth
+ * and projects each calendar entry to the flat profile shape consumed by the
+ * rest of the plugin. Falls back to the legacy gsh_tp_profiles flat option
+ * when no schoolyears have been saved yet (pre-migration state).
+ *
+ * @since 3.5.0 (rewritten 4.24.0)
  * @return array Array von Profil-Arrays.
  */
 function gsh_tp_get_profiles() {
+    $schoolyears = gsh_tp_get_schoolyears();
+    if ( ! empty( $schoolyears ) ) {
+        // Nested source-of-truth: project to flat profile shape.
+        $profiles = array();
+        foreach ( $schoolyears as $sy ) {
+            foreach ( ( $sy['calendars'] ?? array() ) as $cal ) {
+                $id = gsh_tp_calendar_id( $sy['key'], $cal['group'] );
+                $profiles[] = array(
+                    'id'              => $id,
+                    'label'           => $cal['label'],
+                    'ical_url'        => $cal['ical_url'] ?? '',
+                    'cache_duration'  => $sy['shared']['cache_duration'] ?? 3600,
+                    'quartal_grenzen' => $sy['shared']['quartal_grenzen'] ?? '',
+                    'schuljahr_start' => $sy['shared']['schuljahr_start'] ?? '',
+                    'is_active'       => ( ! empty( $sy['is_active'] ) && null === $cal['group'] ),
+                    'is_draft'        => ! empty( $cal['is_draft'] ),
+                    'created'         => $sy['created'] ?? '',
+                    // Extra fields for new code
+                    'sj_key'          => $sy['key'],
+                    'group'           => $cal['group'],
+                    'managed'         => ! empty( $cal['managed'] ),
+                    'orphaned'        => ! empty( $cal['orphaned'] ),
+                );
+            }
+        }
+        return $profiles;
+    }
+    // Fallback: pre-migration flat option.
     $raw = get_option( 'gsh_tp_profiles', array() );
     return is_array( $raw ) ? $raw : array();
 }
@@ -1439,6 +1472,102 @@ function gsh_tp_active_profile_id() {
  */
 function gsh_tp_save_profiles( $profiles ) {
     update_option( 'gsh_tp_profiles', $profiles, true );
+}
+
+/* ── Schuljahr-Model (nested, 4.24.0) ── */
+
+/**
+ * Liefert alle Schuljahre aus der nested Source-of-Truth.
+ *
+ * @since 4.24.0
+ * @return array Array von Schuljahr-Arrays.
+ */
+function gsh_tp_get_schoolyears() {
+    $raw = get_option( 'gsh_tp_schoolyears', array() );
+    return is_array( $raw ) ? $raw : array();
+}
+
+/**
+ * Speichert das Schuljahr-Array.
+ *
+ * @since 4.24.0
+ * @param  array $schoolyears Bereinigte Schuljahre.
+ */
+function gsh_tp_save_schoolyears( $schoolyears ) {
+    update_option( 'gsh_tp_schoolyears', $schoolyears, true );
+}
+
+/**
+ * Erzeugt eine stabile Profil-ID für einen Kalender.
+ *
+ * Haupt-Kalender: id = sj_key.
+ * Gruppen-Kalender: id = sj_key . '__' . sanitize_key(group).
+ *
+ * @since 4.24.0
+ * @param  string      $sj_key Schuljahr-Schlüssel.
+ * @param  string|null $group  Gruppenname oder null für Haupt-Kalender.
+ * @return string              Stabile Profil-ID.
+ */
+function gsh_tp_calendar_id( $sj_key, $group ) {
+    $base = sanitize_key( $sj_key );
+    if ( null === $group || '' === $group ) {
+        return $base;
+    }
+    return $base . '__' . sanitize_key( $group );
+}
+
+/**
+ * Sanitiert einen Kalender-Eintrag.
+ *
+ * @since 4.24.0
+ * @param  array $cal Roher Kalender-Eintrag.
+ * @return array      Bereinigter Kalender-Eintrag.
+ */
+function gsh_tp_sanitize_calendar( $cal ) {
+    $group = isset( $cal['group'] ) && is_string( $cal['group'] ) && '' !== $cal['group']
+        ? sanitize_text_field( $cal['group'] ) : null;
+    return array(
+        'group'    => $group,
+        'label'    => sanitize_text_field( $cal['label'] ?? '' ),
+        'ical_url' => isset( $cal['ical_url'] ) ? gsh_tp_sanitize_url_raw( $cal['ical_url'] ) : '',
+        'is_draft' => ! empty( $cal['is_draft'] ),
+        'managed'  => ! empty( $cal['managed'] ),
+        'orphaned' => ! empty( $cal['orphaned'] ),
+    );
+}
+
+/**
+ * Sanitiert ein Schuljahr-Array.
+ *
+ * @since 4.24.0
+ * @param  array $sy Rohes Schuljahr-Array.
+ * @return array     Bereinigtes Schuljahr-Array oder leeres Array bei fehlendem Key.
+ */
+function gsh_tp_sanitize_schoolyear( $sy ) {
+    $key = sanitize_key( $sy['key'] ?? '' );
+    if ( '' === $key ) {
+        return array();
+    }
+    $shared = $sy['shared'] ?? array();
+    $cals   = array();
+    foreach ( (array) ( $sy['calendars'] ?? array() ) as $cal ) {
+        $clean = gsh_tp_sanitize_calendar( $cal );
+        if ( '' !== ( $clean['label'] ?? '' ) || null === $clean['group'] ) {
+            $cals[] = $clean;
+        }
+    }
+    return array(
+        'key'       => $key,
+        'label'     => sanitize_text_field( $sy['label'] ?? $key ),
+        'is_active' => ! empty( $sy['is_active'] ),
+        'created'   => sanitize_text_field( $sy['created'] ?? current_time( 'Y-m-d' ) ),
+        'shared'    => array(
+            'quartal_grenzen' => sanitize_textarea_field( $shared['quartal_grenzen'] ?? '' ),
+            'schuljahr_start' => sanitize_text_field( $shared['schuljahr_start'] ?? '' ),
+            'cache_duration'  => max( 300, min( 86400, absint( $shared['cache_duration'] ?? 3600 ) ) ),
+        ),
+        'calendars' => $cals,
+    );
 }
 
 /**
