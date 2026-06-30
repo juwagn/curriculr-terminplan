@@ -1571,6 +1571,65 @@ function gsh_tp_sanitize_schoolyear( $sy ) {
 }
 
 /**
+ * Einmalige Migration: flache gsh_tp_profiles → gsh_tp_schoolyears.
+ *
+ * Guard: läuft nur wenn gsh_tp_schoolyears leer ist und gsh_tp_profiles Daten hat.
+ * profile_map wird NICHT migriert — Kompat-Pfad bleibt aktiv.
+ * Wird per admin_init aufgerufen.
+ *
+ * @since 4.24.0
+ */
+function gsh_tp_migrate_profiles_to_schoolyears() {
+    // Guard: schoolyears already populated → nothing to do.
+    if ( ! empty( gsh_tp_get_schoolyears() ) ) {
+        return;
+    }
+    $flat = get_option( 'gsh_tp_profiles', array() );
+    if ( empty( $flat ) || ! is_array( $flat ) ) {
+        return;
+    }
+
+    $schoolyears = array();
+    foreach ( $flat as $p ) {
+        $key = sanitize_key( $p['id'] ?? '' );
+        if ( '' === $key ) {
+            continue;
+        }
+        // Check for duplicate key (shouldn't happen but be safe).
+        foreach ( $schoolyears as $existing ) {
+            if ( $existing['key'] === $key ) {
+                continue 2;
+            }
+        }
+        $schoolyears[] = array(
+            'key'       => $key,
+            'label'     => sanitize_text_field( $p['label'] ?? $key ),
+            'is_active' => ! empty( $p['is_active'] ),
+            'created'   => sanitize_text_field( $p['created'] ?? current_time( 'Y-m-d' ) ),
+            'shared'    => array(
+                'quartal_grenzen' => sanitize_textarea_field( $p['quartal_grenzen'] ?? '' ),
+                'schuljahr_start' => sanitize_text_field( $p['schuljahr_start'] ?? '' ),
+                'cache_duration'  => max( 300, min( 86400, absint( $p['cache_duration'] ?? 3600 ) ) ),
+            ),
+            'calendars' => array(
+                array(
+                    'group'    => null,
+                    'label'    => sanitize_text_field( $p['label'] ?? $key ) . ' · Alle Termine',
+                    'ical_url' => gsh_tp_sanitize_url_raw( $p['ical_url'] ?? '' ),
+                    'is_draft' => ! empty( $p['is_draft'] ),
+                    'managed'  => false, // pre-existing calendars are manual, not managed
+                    'orphaned' => false,
+                ),
+            ),
+        );
+    }
+
+    if ( ! empty( $schoolyears ) ) {
+        gsh_tp_save_schoolyears( $schoolyears );
+    }
+}
+
+/**
  * Sanitiert ein einzelnes Profil-Array.
  *
  * Stellt sicher, dass alle Felder typsicher und sauber sind.
@@ -1711,6 +1770,7 @@ function gsh_tp_maybe_migrate() {
     }
 }
 add_action( 'admin_init', 'gsh_tp_maybe_migrate' );
+add_action( 'admin_init', 'gsh_tp_migrate_profiles_to_schoolyears' );
 
 /**
  * Löscht alle Cache-Keys einer bestimmten Schema-Version über alle Profile.

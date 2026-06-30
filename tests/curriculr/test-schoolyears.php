@@ -152,4 +152,54 @@ $profiles_fallback = gsh_tp_get_profiles();
 gsh_assert_eq( count( $profiles_fallback ), 1, 'fallback to flat option when schoolyears missing' );
 gsh_assert_eq( $profiles_fallback[0]['id'], 'old_id', 'old flat profile id preserved in fallback' );
 
+// ---- Migration: flat gsh_tp_profiles → gsh_tp_schoolyears ----
+$GLOBALS['_wp_options'] = array(); // fresh state
+update_option( 'gsh_tp_profiles', array(
+    array( 'id' => 'sj_2025_26', 'label' => 'Schuljahr 2025/26', 'ical_url' => 'https://iserv.de/cal.ics',
+           'cache_duration' => 7200, 'quartal_grenzen' => "2025-09-01|2025-11-28\n2025-12-01|2026-02-06",
+           'schuljahr_start' => '2025-09-01', 'is_active' => true, 'is_draft' => false, 'created' => '2025-01-01' ),
+    array( 'id' => 'sj_2026_27', 'label' => 'Schuljahr 2026/27', 'ical_url' => '',
+           'cache_duration' => 3600, 'quartal_grenzen' => '', 'schuljahr_start' => '',
+           'is_active' => false, 'is_draft' => true, 'created' => '2026-06-01' ),
+) );
+
+gsh_tp_migrate_profiles_to_schoolyears();
+
+$migrated = gsh_tp_get_schoolyears();
+gsh_assert_eq( count( $migrated ), 2, 'migration creates 2 schoolyears' );
+
+$sy25 = null;
+$sy26 = null;
+foreach ( $migrated as $sy ) {
+    if ( 'sj_2025_26' === $sy['key'] ) $sy25 = $sy;
+    if ( 'sj_2026_27' === $sy['key'] ) $sy26 = $sy;
+}
+gsh_assert_true( null !== $sy25, '2025/26 schoolyear migrated' );
+gsh_assert_true( null !== $sy26, '2026/27 schoolyear migrated' );
+gsh_assert_eq( $sy25['is_active'], true,  '2025/26 is_active preserved' );
+gsh_assert_eq( $sy26['is_active'], false, '2026/27 not active preserved' );
+gsh_assert_eq( $sy25['shared']['cache_duration'], 7200, 'cache_duration migrated' );
+gsh_assert_eq( $sy25['shared']['schuljahr_start'], '2025-09-01', 'schuljahr_start migrated' );
+
+// Main calendar ID must equal original flat profile ID
+gsh_assert_eq( count( $sy25['calendars'] ), 1, 'one calendar per migrated schoolyear' );
+gsh_assert_eq( $sy25['calendars'][0]['group'], null, 'migrated calendar is main (group=null)' );
+gsh_assert_eq( $sy25['calendars'][0]['ical_url'], 'https://iserv.de/cal.ics', 'ical_url migrated' );
+gsh_assert_eq( $sy25['calendars'][0]['managed'], false, 'migrated calendar not managed (manual)' );
+
+// Projection after migration: id of main = sj_key (same as old flat id)
+$proj = gsh_tp_get_profiles();
+$ids = array_column( $proj, 'id' );
+gsh_assert_true( in_array( 'sj_2025_26', $ids, true ), 'old flat id preserved as calendar id after migration' );
+
+// Idempotency: running migration again must not duplicate
+gsh_tp_migrate_profiles_to_schoolyears();
+gsh_assert_eq( count( gsh_tp_get_schoolyears() ), 2, 'migration is idempotent' );
+
+// profile_map NOT auto-migrated (stays as-is)
+$map_before = array( 'sj_2025_26' => array( array( 'profileId' => 'sj_2025_26', 'group' => null ) ) );
+update_option( 'gsh_tp_curriculr_profile_map', $map_before );
+gsh_tp_migrate_profiles_to_schoolyears(); // re-run
+gsh_assert_eq( get_option( 'gsh_tp_curriculr_profile_map' ), $map_before, 'profile_map not touched by migration' );
+
 gsh_test_done();
