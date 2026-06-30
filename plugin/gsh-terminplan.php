@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.24.0
+ * Version:     4.25.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.25.0:
+ * - [NEU] Schuljahr löschen: nicht-aktive Schuljahre inkl. DB-Daten und ICS-Cache entfernbar
+ * - [UX]  Danger-Zone als <details>-Element — zweistufige Bestätigung ohne nativen confirm()-Dialog
  * Changelog 4.24.0:
  * - [UX] Schuljahr-Profile-Tab: schoolyear-zentriertes Layout, freie Label/Key-Eingabe beim Anlegen
  * - [UX] Curriculr-Sync-Tab entfernt — Origin-Einstellung jetzt im System-Tab
@@ -584,7 +587,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.24.0' );
+define( 'GSH_TP_VERSION',       '4.25.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -828,6 +831,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.25.0',
+            'entries'  => array(
+                array( 'tag' => 'NEU', 'text' => 'Schuljahr löschen: nicht-aktive Schuljahre inkl. DB-Daten und ICS-Cache entfernbar' ),
+                array( 'tag' => 'UX',  'text' => 'Danger-Zone als <details>-Element — zweistufige Bestätigung ohne nativen confirm()-Dialog' ),
+            ),
+        ),
         array(
             'version'  => '4.24.0',
             'entries'  => array(
@@ -3292,6 +3302,64 @@ function gsh_tp_handle_delete_calendar() {
 }
 
 /**
+ * POST-Handler: Schuljahr löschen (inkl. DB-Daten und ICS-Cache).
+ *
+ * Verweigert das Löschen des aktiven Schuljahres und des letzten verbleibenden.
+ *
+ * @since 4.25.0
+ * @return void
+ */
+function gsh_tp_handle_delete_schoolyear() {
+    global $wpdb;
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_dsy_key'] ?? '' ) );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dsy_n'] ?? '' ) ), 'gsh_tp_del_sy_' . $sy_key ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    if ( '' === $sy_key ) {
+        echo '<div class="notice notice-error"><p>Schuljahr-Schlüssel fehlt.</p></div>'; return;
+    }
+
+    $schoolyears = gsh_tp_get_schoolyears();
+    $target      = null;
+    foreach ( $schoolyears as $sy ) {
+        if ( $sy['key'] === $sy_key ) { $target = $sy; break; }
+    }
+    if ( null === $target ) {
+        echo '<div class="notice notice-error"><p>Schuljahr nicht gefunden.</p></div>'; return;
+    }
+    if ( ! empty( $target['is_active'] ) ) {
+        echo '<div class="notice notice-error"><p>Das aktive Schuljahr kann nicht gelöscht werden.</p></div>'; return;
+    }
+    if ( count( $schoolyears ) <= 1 ) {
+        echo '<div class="notice notice-error"><p>Das letzte Schuljahr kann nicht gelöscht werden.</p></div>'; return;
+    }
+
+    // ICS-Cache und Transients für alle Kalender dieses Schuljahres entfernen.
+    foreach ( $target['calendars'] as $cal ) {
+        $cal_id  = gsh_tp_calendar_id( $sy_key, $cal['group'] );
+        $pid_key = sanitize_key( $cal_id );
+        delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid_key ) );
+        delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid_key ) );
+        delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid_key ) );
+    }
+
+    // Dokument und alle Revisionen aus DB löschen.
+    $docs_table = gsh_tp_curriculr_table();
+    $rev_table  = gsh_tp_curriculr_revisions_table();
+    $wpdb->delete( $docs_table, array( 'schoolyear' => $sy_key ), array( '%s' ) );
+    $wpdb->delete( $rev_table,  array( 'schoolyear' => $sy_key ), array( '%s' ) );
+
+    // Schuljahr aus der Option entfernen.
+    $schoolyears = array_values( array_filter( $schoolyears, function ( $s ) use ( $sy_key ) {
+        return $s['key'] !== $sy_key;
+    } ) );
+    gsh_tp_save_schoolyears( $schoolyears );
+
+    wp_safe_redirect( admin_url( 'options-general.php?page=gsh-terminplan' ) );
+    exit;
+}
+
+/**
  * POST-Handler: Profil speichern.
  *
  * @param array $profiles Profil-Array (by reference).
@@ -3587,6 +3655,7 @@ function gsh_tp_settings_page() {
     if ( isset( $_POST['gsh_tp_save_shared'] ) )         { gsh_tp_handle_save_shared(); }
     if ( isset( $_POST['gsh_tp_activate_schoolyear'] ) ) { gsh_tp_handle_activate_schoolyear(); }
     if ( isset( $_POST['gsh_tp_del_cal'] ) )             { gsh_tp_handle_delete_calendar(); }
+    if ( isset( $_POST['gsh_tp_del_sy'] ) )              { gsh_tp_handle_delete_schoolyear(); }
 
     // ── Tabs (fest, funktional) ──
     $tabs = array(
@@ -4446,6 +4515,31 @@ function gsh_tp_render_profile_tab_v2() {
             <?php endforeach; ?>
             </tbody>
         </table>
+
+        <?php if ( empty( $sy['is_active'] ) ) : ?>
+        <details style="padding:10px 16px;border-top:1px solid #c3c4c7">
+            <summary style="cursor:pointer;color:#a93226;font-size:12px;user-select:none;list-style:none;display:flex;align-items:center;gap:6px">
+                <span>&#9656;</span> Schuljahr löschen&hellip;
+            </summary>
+            <div style="margin-top:10px;padding:14px 16px;background:#fdf0f0;border:1px solid #e8a0a0;border-radius:4px">
+                <p style="margin:0 0 10px;color:#7b241c;font-size:13px">
+                    <strong>Achtung:</strong> Alle Termin-Daten, Revisionen und Kalender für
+                    <strong>„<?php echo esc_html( $sy['label'] ); ?>"</strong>
+                    werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
+                <form method="post" style="margin:0">
+                    <?php wp_nonce_field( 'gsh_tp_del_sy_' . $pid, 'gsh_tp_dsy_n' ); ?>
+                    <input type="hidden" name="gsh_tp_dsy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
+                    <button type="submit" name="gsh_tp_del_sy" value="1"
+                            class="button"
+                            style="background:#c0392b;color:#fff;border-color:#a93226;box-shadow:none">
+                        Schuljahr „<?php echo esc_html( $sy['label'] ); ?>" endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </details>
+        <?php endif; ?>
+
     </div>
     <?php endforeach; ?>
     <?php
