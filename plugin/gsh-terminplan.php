@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.23.0
+ * Version:     4.24.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * Changelog 4.24.0:
+ * - [UX] Schuljahr-Profile-Tab: schoolyear-zentriertes Layout, freie Label/Key-Eingabe beim Anlegen
+ * - [UX] Curriculr-Sync-Tab entfernt — Origin-Einstellung jetzt im System-Tab
  * Changelog 4.23.0:
  * - [NEU] Update-Hinweis im WP-Admin nach Plugin-Update (dismissibel, per-Version)
  * Changelog 4.22.0:
@@ -581,7 +584,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.23.0' );
+define( 'GSH_TP_VERSION',       '4.24.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -825,6 +828,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version'  => '4.24.0',
+            'entries'  => array(
+                array( 'tag' => 'UX', 'text' => 'Schuljahr-Profile-Tab: schoolyear-zentriertes Layout, freie Label/Key-Eingabe beim Anlegen' ),
+                array( 'tag' => 'UX', 'text' => 'Curriculr-Sync-Tab entfernt — Origin-Einstellung jetzt im System-Tab' ),
+            ),
+        ),
         array(
             'version'  => '4.23.0',
             'entries'  => array(
@@ -3156,6 +3166,131 @@ function gsh_tp_handle_new_profile( &$profiles ) {
     }
 }
 
+/* ── POST-Handler: Schuljahr-Admin (4.24.0) ── */
+
+/**
+ * POST-Handler: Neues Schuljahr anlegen.
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_handle_new_schoolyear() {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_nsy_n'] ?? '' ) ), 'gsh_tp_new_schoolyear' ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    $key   = sanitize_key( wp_unslash( $_POST['gsh_tp_new_sy_key'] ?? '' ) );
+    $label = sanitize_text_field( wp_unslash( $_POST['gsh_tp_new_sy_label'] ?? '' ) );
+    if ( '' === $key ) { echo '<div class="notice notice-error"><p>Schuljahr-Schlüssel fehlt.</p></div>'; return; }
+
+    $schoolyears = gsh_tp_get_schoolyears();
+    foreach ( $schoolyears as $sy ) {
+        if ( $sy['key'] === $key ) {
+            echo '<div class="notice notice-warning"><p>Schuljahr <strong>' . esc_html( $key ) . '</strong> existiert bereits.</p></div>'; return;
+        }
+    }
+    if ( count( $schoolyears ) >= 5 ) {
+        echo '<div class="notice notice-error"><p>Maximal 5 Schuljahre.</p></div>'; return;
+    }
+    $schoolyears[] = array(
+        'key'       => $key,
+        'label'     => $label ?: $key,
+        'is_active' => false,
+        'created'   => current_time( 'Y-m-d' ),
+        'shared'    => array( 'quartal_grenzen' => '', 'schuljahr_start' => '', 'cache_duration' => 3600 ),
+        'calendars' => array(),
+    );
+    gsh_tp_save_schoolyears( $schoolyears );
+    echo '<div class="notice notice-success"><p>Schuljahr <strong>' . esc_html( $label ?: $key ) . '</strong> angelegt.</p></div>';
+}
+
+/**
+ * POST-Handler: Schuljahr-Label speichern.
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_handle_save_schoolyear() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_ssy_key'] ?? '' ) );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ 'gsh_tp_ssy_n_' . $sy_key ] ?? '' ) ), 'gsh_tp_save_schoolyear_' . $sy_key ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    $label       = sanitize_text_field( wp_unslash( $_POST['gsh_tp_ssy_label'] ?? '' ) );
+    $schoolyears = gsh_tp_get_schoolyears();
+    $changed     = false;
+    foreach ( $schoolyears as &$sy ) {
+        if ( $sy['key'] === $sy_key ) { $sy['label'] = $label ?: $sy['key']; $changed = true; break; }
+    }
+    unset( $sy );
+    if ( $changed ) { gsh_tp_save_schoolyears( $schoolyears ); echo '<div class="notice notice-success"><p>Schuljahr gespeichert.</p></div>'; }
+}
+
+/**
+ * POST-Handler: Geteilte Schuljahr-Einstellungen speichern.
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_handle_save_shared() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_ssh_key'] ?? '' ) );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_ssh_n'] ?? '' ) ), 'gsh_tp_save_shared_' . $sy_key ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    $schoolyears = gsh_tp_get_schoolyears();
+    foreach ( $schoolyears as &$sy ) {
+        if ( $sy['key'] !== $sy_key ) { continue; }
+        $sy['shared']['schuljahr_start'] = sanitize_text_field( wp_unslash( $_POST['gsh_tp_ssh_start'] ?? '' ) );
+        $sy['shared']['cache_duration']  = max( 300, min( 86400, absint( $_POST['gsh_tp_ssh_cache'] ?? 3600 ) ) );
+        $sy['shared']['quartal_grenzen'] = sanitize_textarea_field( wp_unslash( $_POST['gsh_tp_ssh_quartal'] ?? '' ) );
+        break;
+    }
+    unset( $sy );
+    gsh_tp_save_schoolyears( $schoolyears );
+    echo '<div class="notice notice-success"><p>Einstellungen gespeichert.</p></div>';
+}
+
+/**
+ * POST-Handler: Schuljahr als aktiv setzen.
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_handle_activate_schoolyear() {
+    $act_key = sanitize_key( wp_unslash( $_POST['gsh_tp_asy_key'] ?? '' ) );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_asy_n'] ?? '' ) ), 'gsh_tp_activate_sy_' . $act_key ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    $schoolyears = gsh_tp_get_schoolyears();
+    foreach ( $schoolyears as &$sy ) { $sy['is_active'] = ( $sy['key'] === $act_key ); }
+    unset( $sy );
+    gsh_tp_save_schoolyears( $schoolyears );
+    echo '<div class="notice notice-success"><p>Schuljahr als aktiv gesetzt.</p></div>';
+}
+
+/**
+ * POST-Handler: Nicht-Haupt-Kalender aus einem Schuljahr löschen.
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_handle_delete_calendar() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_dc_sy'] ?? '' ) );
+    $group  = sanitize_text_field( wp_unslash( $_POST['gsh_tp_dc_cal'] ?? '' ) );
+    $cal_id = gsh_tp_calendar_id( $sy_key, $group );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_dc_n'] ?? '' ) ), 'gsh_tp_del_cal_' . sanitize_key( $cal_id ) ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    if ( '' === $group ) { echo '<div class="notice notice-error"><p>Haupt-Kalender kann nicht gelöscht werden.</p></div>'; return; }
+    $schoolyears = gsh_tp_get_schoolyears();
+    foreach ( $schoolyears as &$sy ) {
+        if ( $sy['key'] !== $sy_key ) { continue; }
+        $sy['calendars'] = array_values( array_filter( $sy['calendars'], function ( $c ) use ( $group ) { return $c['group'] !== $group; } ) );
+        break;
+    }
+    unset( $sy );
+    gsh_tp_save_schoolyears( $schoolyears );
+    echo '<div class="notice notice-success"><p>Kalender <strong>' . esc_html( $group ) . '</strong> gelöscht.</p></div>';
+}
+
 /**
  * POST-Handler: Profil speichern.
  *
@@ -3446,13 +3581,20 @@ function gsh_tp_settings_page() {
 
     gsh_tp_settings_handle_post( $profiles );
 
+    // POST: new schoolyear admin actions (4.24.0)
+    if ( isset( $_POST['gsh_tp_new_schoolyear'] ) )      { gsh_tp_handle_new_schoolyear(); }
+    if ( isset( $_POST['gsh_tp_save_schoolyear'] ) )     { gsh_tp_handle_save_schoolyear(); }
+    if ( isset( $_POST['gsh_tp_save_shared'] ) )         { gsh_tp_handle_save_shared(); }
+    if ( isset( $_POST['gsh_tp_activate_schoolyear'] ) ) { gsh_tp_handle_activate_schoolyear(); }
+    if ( isset( $_POST['gsh_tp_del_cal'] ) )             { gsh_tp_handle_delete_calendar(); }
+
     // ── Tabs (fest, funktional) ──
     $tabs = array(
-        '_profile'    => 'Schuljahr-Profil',
+        '_profile'    => 'Schuljahr-Profile',
         '_kategorien' => 'Kategorien',
-        '_sync'       => 'Curriculr-Sync',
         '_kiosk'      => 'Kiosk',
         '_system'     => 'System &amp; Logs',
+        // '_sync' removed — Curriculr-Sync 1:1 mapping superseded by SPA auto-provisioning
     );
 
     // Aktiver Tab (Whitelist gegen $tabs)
@@ -3567,15 +3709,12 @@ function gsh_tp_settings_page() {
         <?php
         if ( '_kategorien' === $active_tab ) {
             gsh_tp_render_kategorien_tab();
-        } elseif ( '_sync' === $active_tab ) {
-            gsh_tp_render_sync_tab();
         } elseif ( '_kiosk' === $active_tab ) {
             gsh_tp_render_kiosk_tab();
         } elseif ( '_system' === $active_tab ) {
             gsh_tp_render_system_tab();
         } else { // _profile
-            gsh_tp_render_profile_chooser( $profiles, $sel_profile );
-            gsh_tp_render_profile_tab( $sel_profile );
+            gsh_tp_render_profile_tab_v2();
         }
         ?>
     </div>
@@ -4157,6 +4296,162 @@ function gsh_tp_render_kategorien_tab() {
 }
 
 /**
+ * Rendert den Schuljahr-Profile-Tab (schoolyear-zentriert, 4.24.0).
+ *
+ * @since 4.24.0
+ * @return void
+ */
+function gsh_tp_render_profile_tab_v2() {
+    $schoolyears = gsh_tp_get_schoolyears();
+    ?>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <h2 style="margin:0">Schuljahr-Profile</h2>
+        <?php if ( count( $schoolyears ) < 5 ) : ?>
+        <form method="post" style="margin:0">
+            <?php wp_nonce_field( 'gsh_tp_new_schoolyear', 'gsh_tp_nsy_n' ); ?>
+            <input type="text" name="gsh_tp_new_sy_key"   placeholder="sj_2027_28" class="regular-text" style="width:130px" required />
+            <input type="text" name="gsh_tp_new_sy_label" placeholder="2027/28"    class="regular-text" style="width:100px" required />
+            <button type="submit" name="gsh_tp_new_schoolyear" value="1" class="button" style="color:#27ae60;border-color:#27ae60">
+                + Neues Schuljahr
+            </button>
+        </form>
+        <?php endif; ?>
+    </div>
+
+    <?php if ( empty( $schoolyears ) ) : ?>
+        <p class="description">Noch keine Schuljahre vorhanden. Erstelle das erste Schuljahr oder synchronisiere über den Planner.</p>
+    <?php endif; ?>
+
+    <?php foreach ( $schoolyears as $sy ) :
+        $sy_key = $sy['key'];
+        $pid    = sanitize_key( $sy_key );
+    ?>
+    <div style="border:1px solid #c3c4c7;border-radius:6px;margin-bottom:20px;overflow:hidden">
+        <!-- Schuljahr-Header -->
+        <div style="background:<?php echo ! empty( $sy['is_active'] ) ? '#e6f4ea' : '#f6f7f7'; ?>;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <form method="post" style="margin:0;display:flex;align-items:center;gap:8px;flex:1">
+                <?php wp_nonce_field( 'gsh_tp_save_schoolyear_' . $pid, 'gsh_tp_ssy_n_' . $pid ); ?>
+                <input type="hidden" name="gsh_tp_ssy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
+                <strong style="min-width:60px">Schuljahr:</strong>
+                <input type="text" name="gsh_tp_ssy_label" value="<?php echo esc_attr( $sy['label'] ); ?>"
+                       class="regular-text" style="width:140px" />
+                <button type="submit" name="gsh_tp_save_schoolyear" value="1" class="button button-small">Speichern</button>
+            </form>
+            <?php if ( empty( $sy['is_active'] ) ) : ?>
+            <form method="post" style="margin:0">
+                <?php wp_nonce_field( 'gsh_tp_activate_sy_' . $pid, 'gsh_tp_asy_n' ); ?>
+                <input type="hidden" name="gsh_tp_asy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
+                <button type="submit" name="gsh_tp_activate_schoolyear" value="1"
+                        class="button button-small" style="color:#1e8449;border-color:#1e8449">
+                    Als aktiv setzen
+                </button>
+            </form>
+            <?php else : ?>
+                <span style="background:#1e8449;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
+            <?php endif; ?>
+            <span style="color:#888;font-size:12px">ID: <code><?php echo esc_html( $sy_key ); ?></code></span>
+        </div>
+
+        <!-- Shared Settings (Quartal etc.) -->
+        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7">
+            <form method="post">
+                <?php wp_nonce_field( 'gsh_tp_save_shared_' . $pid, 'gsh_tp_ssh_n' ); ?>
+                <input type="hidden" name="gsh_tp_ssh_key" value="<?php echo esc_attr( $sy_key ); ?>" />
+                <table class="form-table" style="margin:0">
+                    <tr>
+                        <th style="padding:4px 10px 4px 0;width:200px"><label>Start Schulwoche 01</label></th>
+                        <td style="padding:4px 0">
+                            <input type="date" name="gsh_tp_ssh_start" value="<?php echo esc_attr( $sy['shared']['schuljahr_start'] ?? '' ); ?>" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th style="padding:4px 10px 4px 0"><label>Cache-Dauer (Sek.)</label></th>
+                        <td style="padding:4px 0">
+                            <input type="number" name="gsh_tp_ssh_cache" min="300" max="86400"
+                                   value="<?php echo esc_attr( $sy['shared']['cache_duration'] ?? 3600 ); ?>" style="width:100px" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th style="padding:4px 10px 4px 0"><label>Quartalsgrenzen</label></th>
+                        <td style="padding:4px 0">
+                            <textarea name="gsh_tp_ssh_quartal" rows="4" class="large-text"
+                            ><?php echo esc_textarea( $sy['shared']['quartal_grenzen'] ?? '' ); ?></textarea>
+                            <p class="description" style="margin:2px 0 0">Pro Zeile: Startdatum|Enddatum (JJJJ-MM-TT).</p>
+                        </td>
+                    </tr>
+                </table>
+                <p><button type="submit" name="gsh_tp_save_shared" value="1" class="button">Einstellungen speichern</button></p>
+            </form>
+        </div>
+
+        <!-- Kalender-Liste -->
+        <table class="widefat" style="border:none;box-shadow:none">
+            <thead>
+                <tr>
+                    <th>Kalender</th>
+                    <th>Feed-URL</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $sy['calendars'] as $cal ) :
+                $cal_id  = gsh_tp_calendar_id( $sy_key, $cal['group'] );
+                $is_main = null === $cal['group'];
+                $row_bg  = ! empty( $cal['orphaned'] ) ? '#fff8f0' : '#fff';
+            ?>
+                <tr style="background:<?php echo esc_attr( $row_bg ); ?>">
+                    <td>
+                        <?php if ( $is_main ) : ?>
+                            <strong>Alle Termine</strong>
+                            <span style="font-size:11px;color:#888;margin-left:6px">(Haupt-Kalender)</span>
+                        <?php else : ?>
+                            <?php echo esc_html( $cal['group'] ); ?>
+                            <?php if ( ! empty( $cal['managed'] ) ) : ?>
+                                <span style="font-size:11px;background:#e6f0ff;color:#1a56db;padding:1px 6px;border-radius:10px;margin-left:4px">Curriculr</span>
+                            <?php endif; ?>
+                            <?php if ( ! empty( $cal['orphaned'] ) ) : ?>
+                                <span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:10px;margin-left:4px">verwaist</span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <br><span style="font-size:11px;color:#aaa">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
+                    </td>
+                    <td>
+                        <?php if ( ! empty( $cal['ical_url'] ) ) : ?>
+                            <input type="text" readonly value="<?php echo esc_attr( $cal['ical_url'] ); ?>"
+                                   style="width:100%;font-size:12px;border:1px solid #ddd;padding:3px 6px"
+                                   onclick="this.select()" title="Klicken zum Auswählen" />
+                        <?php else : ?>
+                            <em style="color:#aaa;font-size:12px">— wird nach Planner-Speichern gesetzt —</em>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:#b7950b">Entwurf</span>' : '<span style="color:#1e8449">Beschlossen</span>'; ?>
+                    </td>
+                    <td>
+                        <?php if ( ! $is_main ) : ?>
+                        <form method="post" style="margin:0;display:inline">
+                            <?php wp_nonce_field( 'gsh_tp_del_cal_' . sanitize_key( $cal_id ), 'gsh_tp_dc_n' ); ?>
+                            <input type="hidden" name="gsh_tp_dc_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
+                            <input type="hidden" name="gsh_tp_dc_cal" value="<?php echo esc_attr( $cal['group'] ); ?>" />
+                            <button type="submit" name="gsh_tp_del_cal" value="1"
+                                    class="button button-small" style="color:#c0392b;border-color:#c0392b"
+                                    onclick="return confirm('Kalender «<?php echo esc_js( $cal['group'] ); ?>» wirklich löschen?')">
+                                &times; Löschen
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endforeach; ?>
+    <?php
+}
+
+/**
  * Rendert den Sync-Tab (Curriculr Planner-Sync).
  *
  * @since 4.10.0
@@ -4479,6 +4774,73 @@ function gsh_tp_render_system_tab() {
     // Import-Sektion entfernt in v3.12.0 – wird durch externes Tool ersetzt.
     // (Ehemals: Terminplan-Import Excel → ICS mit SheetJS)
 
+    echo '<hr style="margin:24px 0" />';
+
+    // Curriculr REST-Einstellungen (Origin + Profil-Zuordnung) — ehemals im Curriculr-Sync-Tab
+    ?>
+    <h2>Curriculr REST-Einstellungen</h2>
+    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+        <strong>Erlaubte Planner-Adresse (CORS-Origin):</strong>
+        Nur Anfragen von dieser Adresse werden vom REST-Endpunkt <code>curriculr/v1</code> akzeptiert.
+    </div>
+    <form method="post" action="">
+        <?php wp_nonce_field( 'gsh_tp_save_curriculr', 'gsh_tp_cur_n' ); ?>
+        <input type="hidden" name="gsh_tp_save_curriculr" value="1" />
+        <table class="form-table">
+            <tr>
+                <th><label for="gsh_tp_curriculr_origin_sys">Erlaubte Planner-Adresse</label></th>
+                <td>
+                    <input type="url" id="gsh_tp_curriculr_origin_sys" name="gsh_tp_curriculr_origin"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' ) ); ?>"
+                           class="regular-text" placeholder="https://juwagn.github.io" />
+                    <p class="description">
+                        Online-Planner: <code>https://juwagn.github.io</code> (Standard).<br>
+                        Zum lokalen Testen: <code>http://localhost:5173</code> &ndash; nur Schema + Host + Port, ohne Pfad, ohne Schr&auml;gstrich am Ende.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th>REST-Schnittstelle</th>
+                <td>
+                    <?php
+                    $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
+                    echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
+                    ?>
+                </td>
+            </tr>
+            <?php
+            $cur_map     = get_option( 'gsh_tp_curriculr_profile_map', array() );
+            $cur_sj_key  = array_key_first( $cur_map ) ?? '';
+            $cur_prof_id = $cur_map ? reset( $cur_map ) : '';
+            ?>
+            <tr>
+                <th><label for="gsh_tp_curriculr_sj_key_sys">Profil-Zuordnung</label></th>
+                <td>
+                    <input type="text" id="gsh_tp_curriculr_sj_key_sys" name="gsh_tp_curriculr_sj_key"
+                           value="<?php echo esc_attr( $cur_sj_key ); ?>"
+                           class="regular-text" placeholder="sj_2026_27" />
+                    &rarr;
+                    <select name="gsh_tp_curriculr_profile_id">
+                        <option value="">— kein Profil —</option>
+                        <?php foreach ( gsh_tp_get_profiles() as $p ) : ?>
+                            <option value="<?php echo esc_attr( $p['id'] ); ?>"
+                                <?php selected( $cur_prof_id, $p['id'] ); ?>>
+                                <?php echo esc_html( $p['id'] . ( ! empty( $p['is_active'] ) ? ' (aktiv)' : '' ) ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="description">
+                        Schuljahr-Schl&uuml;ssel, den der Planner sendet (z.B. <code>sj_2026_27</code>), dem Profil zuordnen, das der Terminplan anzeigen soll.<br>
+                        Nur wenn diese Zuordnung gesetzt ist, aktualisiert sich die Anzeige automatisch bei &bdquo;&Ouml;ffentlich schalten&ldquo;.
+                    </p>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button( 'Curriculr-Einstellungen speichern' ); ?>
+    </form>
+
+    <?php
     echo '<hr style="margin:24px 0" />';
     gsh_tp_render_sync_log_tab();
     echo '<hr style="margin:24px 0" />';
