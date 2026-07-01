@@ -1508,6 +1508,32 @@ function gsh_tp_get_schoolyears() {
 }
 
 /**
+ * Reads stage + last-sent timestamp for a schoolyear from wp_curriculr_docs.
+ *
+ * @param  string $sj_key  Schoolyear key, e.g. 'sj_2026_27'.
+ * @return array{ stage: string, last_sent: string }|null  Null if no doc exists yet.
+ */
+function gsh_tp_get_doc_status( $sj_key ) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'curriculr_docs';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT stage, updated_at FROM `{$table}` WHERE sj = %s LIMIT 1",
+            $sj_key
+        ),
+        ARRAY_A
+    );
+    if ( ! $row ) {
+        return null;
+    }
+    return array(
+        'stage'     => (string) ( $row['stage']      ?? 'entwurf' ),
+        'last_sent' => (string) ( $row['updated_at'] ?? '' ),
+    );
+}
+
+/**
  * Speichert das Schuljahr-Array.
  *
  * @since 4.24.0
@@ -4447,6 +4473,42 @@ function gsh_tp_render_profile_tab_v2() {
                 </span>
             </details>
         </div>
+
+        <?php
+        // Status badge — shows Veröffentlichungs-Stufe from wp_curriculr_docs.
+        $doc_status   = gsh_tp_get_doc_status( $sy_key );
+        $stage_labels = array(
+            'entwurf'     => 'Entwurf',
+            'genehmigt'   => 'Intern',
+            'oeffentlich' => 'Öffentlich',
+        );
+        $stage_colors = array(
+            'entwurf'     => '#d97706',
+            'genehmigt'   => '#00467D',
+            'oeffentlich' => '#16a34a',
+        );
+        if ( $doc_status ) :
+            $s_label = $stage_labels[ $doc_status['stage'] ] ?? esc_html( $doc_status['stage'] );
+            $s_color = $stage_colors[ $doc_status['stage'] ] ?? '#888';
+            $s_time  = $doc_status['last_sent']
+                ? date_i18n( 'd.m.Y, H:i', strtotime( $doc_status['last_sent'] ) ) . ' Uhr'
+                : '';
+        ?>
+        <div style="padding:6px 16px;background:#f0f0f1;border-bottom:1px solid #c3c4c7;font-size:12px;color:#3c434a">
+            Veröffentlichung:
+            <span style="display:inline-block;font-weight:600;padding:1px 8px;border-radius:10px;margin-left:4px;
+                         background:<?php echo esc_attr( $s_color ); ?>22;
+                         color:<?php echo esc_attr( $s_color ); ?>;
+                         border:1px solid <?php echo esc_attr( $s_color ); ?>44">
+                <?php echo esc_html( $s_label ); ?>
+            </span>
+            <?php if ( $s_time ) : ?>
+                <span style="color:#888;margin-left:8px">
+                    Zuletzt gesendet: <?php echo esc_html( $s_time ); ?>
+                </span>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- Shared Settings (Quartal etc.) -->
         <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7">
