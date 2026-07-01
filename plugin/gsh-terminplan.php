@@ -4414,8 +4414,11 @@ function gsh_tp_render_profile_tab_v2() {
                 <input type="hidden" name="gsh_tp_asy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <button type="submit" name="gsh_tp_activate_schoolyear" value="1"
                         class="button button-small" style="color:#1e8449;border-color:#1e8449">
-                    Als aktiv setzen
+                    Als aktives Schuljahr setzen
                 </button>
+                <p class="description" style="margin:4px 0 0;font-size:12px">
+                    Dieses Schuljahr wird dann auf der Schulwebsite angezeigt.
+                </p>
             </form>
             <?php else : ?>
                 <span style="background:#1e8449;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
