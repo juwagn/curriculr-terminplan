@@ -3190,6 +3190,10 @@ function gsh_tp_handle_new_schoolyear() {
     }
     $key   = sanitize_key( wp_unslash( $_POST['gsh_tp_new_sy_key'] ?? '' ) );
     $label = sanitize_text_field( wp_unslash( $_POST['gsh_tp_new_sy_label'] ?? '' ) );
+    if ( '' === $key ) {
+        // Kein Schlüssel angegeben (neues Formular zeigt das Feld nur "Erweitert") — aus Label ableiten.
+        $key = 'sj_' . sanitize_key( str_replace( '/', '_', $label ) );
+    }
     if ( '' === $key ) { echo '<div class="notice notice-error"><p>Schuljahr-Schlüssel fehlt.</p></div>'; return; }
 
     $schoolyears = gsh_tp_get_schoolyears();
@@ -4378,13 +4382,26 @@ function gsh_tp_render_profile_tab_v2() {
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <h2 style="margin:0">Schuljahre</h2>
         <?php if ( count( $schoolyears ) < 5 ) : ?>
-        <form method="post" style="margin:0">
+        <form method="post" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <?php wp_nonce_field( 'gsh_tp_new_schoolyear', 'gsh_tp_nsy_n' ); ?>
-            <input type="text" name="gsh_tp_new_sy_key"   placeholder="sj_2027_28" class="regular-text" style="width:130px" required />
-            <input type="text" name="gsh_tp_new_sy_label" placeholder="2027/28"    class="regular-text" style="width:100px" required />
-            <button type="submit" name="gsh_tp_new_schoolyear" value="1" class="button" style="color:#27ae60;border-color:#27ae60">
-                + Neues Schuljahr
+            <input type="text" name="gsh_tp_new_sy_label" placeholder="2027/28"
+                   class="regular-text" style="width:110px" required />
+            <button type="submit" name="gsh_tp_new_schoolyear" value="1"
+                    class="button" style="color:#27ae60;border-color:#27ae60">
+                + Schuljahr anlegen
             </button>
+            <details style="display:inline-block">
+                <summary style="color:#aaa;font-size:11px;cursor:pointer;list-style:none">
+                    Schlüssel (Erweitert)
+                </summary>
+                <div style="margin-top:4px">
+                    <input type="text" name="gsh_tp_new_sy_key" placeholder="sj_2027_28"
+                           class="regular-text" style="width:130px" />
+                    <p class="description" style="font-size:11px;margin-top:2px">
+                        Wird automatisch aus dem Label vorgeschlagen. Nur ändern wenn nötig.
+                    </p>
+                </div>
+            </details>
         </form>
         <?php endif; ?>
     </div>
@@ -4423,7 +4440,12 @@ function gsh_tp_render_profile_tab_v2() {
             <?php else : ?>
                 <span style="background:#1e8449;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
             <?php endif; ?>
-            <span style="color:#888;font-size:12px">ID: <code><?php echo esc_html( $sy_key ); ?></code></span>
+            <details style="display:inline-block">
+                <summary style="color:#aaa;font-size:11px;cursor:pointer;list-style:none">Erweitert</summary>
+                <span style="color:#888;font-size:12px;display:block;margin-top:4px">
+                    ID: <code><?php echo esc_html( $sy_key ); ?></code>
+                </span>
+            </details>
         </div>
 
         <!-- Shared Settings (Quartal etc.) -->
