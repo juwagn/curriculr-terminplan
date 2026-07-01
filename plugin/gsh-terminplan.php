@@ -3667,6 +3667,11 @@ function gsh_tp_settings_page() {
 
     // Aktiver Tab (Whitelist gegen $tabs)
     $active_tab = sanitize_key( $_GET['tab'] ?? '' );
+    // Redirect legacy _kiosk bookmarks — Kiosk settings are now in System tab.
+    if ( '_kiosk' === $active_tab ) {
+        wp_redirect( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system' ) );
+        exit;
+    }
     if ( ! array_key_exists( $active_tab, $tabs ) ) {
         $active_tab = '_profile';
     }
@@ -3777,8 +3782,6 @@ function gsh_tp_settings_page() {
         <?php
         if ( '_kategorien' === $active_tab ) {
             gsh_tp_render_kategorien_tab();
-        } elseif ( '_kiosk' === $active_tab ) {
-            gsh_tp_render_kiosk_tab();
         } elseif ( '_system' === $active_tab ) {
             gsh_tp_render_system_tab();
         } else { // _profile
@@ -4794,6 +4797,10 @@ function gsh_tp_render_kiosk_tab() {
  * @return void
  */
 function gsh_tp_render_system_tab() {
+    // Kiosk + Entwurf-Vorschau — moved from former standalone Kiosk tab.
+    gsh_tp_render_kiosk_tab();
+    echo '<hr style="margin:24px 0" />';
+
     $cur_cfg = gsh_tp_curriculr_auth_config();
     $cur_defs = array(
         'CURRICULR_ISERV_BASE_URL'      => ! empty( $cur_cfg['iserv_base'] ),
