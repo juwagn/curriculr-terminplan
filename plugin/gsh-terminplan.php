@@ -3659,9 +3659,8 @@ function gsh_tp_settings_page() {
 
     // ── Tabs (fest, funktional) ──
     $tabs = array(
-        '_profile'    => 'Schuljahr-Profile',
+        '_profile'    => 'Schuljahre',
         '_kategorien' => 'Kategorien',
-        '_kiosk'      => 'Kiosk',
         '_system'     => 'System &amp; Logs',
         // '_sync' removed — Curriculr-Sync 1:1 mapping superseded by SPA auto-provisioning
     );
@@ -4374,7 +4373,7 @@ function gsh_tp_render_profile_tab_v2() {
     $schoolyears = gsh_tp_get_schoolyears();
     ?>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-        <h2 style="margin:0">Schuljahr-Profile</h2>
+        <h2 style="margin:0">Schuljahre</h2>
         <?php if ( count( $schoolyears ) < 5 ) : ?>
         <form method="post" style="margin:0">
             <?php wp_nonce_field( 'gsh_tp_new_schoolyear', 'gsh_tp_nsy_n' ); ?>
