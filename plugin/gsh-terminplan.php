@@ -1519,7 +1519,7 @@ function gsh_tp_get_doc_status( $sj_key ) {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
     $row = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT stage, updated_at FROM `{$table}` WHERE sj = %s LIMIT 1",
+            "SELECT stage, updated_at FROM `{$table}` WHERE schoolyear = %s LIMIT 1",
             $sj_key
         ),
         ARRAY_A
