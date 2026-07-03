@@ -1,3 +1,4 @@
+
 # Design: Kategorien aus Planner übernehmen
 
 **Datum:** 2026-07-02

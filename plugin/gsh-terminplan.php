@@ -3,11 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.27.0
+ * Version:     4.27.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.27.0
+ * v4.27.1
+ * - [FIX] Schuljahre-Tab (v2): Kalender-Status (Entwurf/Beschlossen) war seit 4.24.0 nur Text-Anzeige — Umschalten fehlte, Entwurf-Kiosk dadurch für neue/synchronisierte Schuljahre unerreichbar
+ * Changelog 4.27.0:
  * - [NEU] Kategorien-Tab: Kategorien aus einem Planner-Schuljahr übernehmen (Label/Farbe je Kategorie werden übernommen, WP-seitige Stichwörter für das IServ-Keyword-Matching bleiben unverändert)
  * Changelog 4.26.0:
  * - [UX] Tab „Schuljahr-Profile" umbenannt in „Schuljahre"
@@ -595,7 +597,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.27.0' );
+define( 'GSH_TP_VERSION',       '4.27.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -839,6 +841,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.27.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Schuljahre-Tab (v2): Kalender-Status (Entwurf/Beschlossen) war seit 4.24.0 nur Text-Anzeige — Umschalten fehlte, Entwurf-Kiosk dadurch für neue/synchronisierte Schuljahre unerreichbar' ),
+            ),
+        ),
         array(
             'version' => '4.27.0',
             'entries' => array(
@@ -3388,6 +3396,42 @@ function gsh_tp_handle_delete_calendar() {
 }
 
 /**
+ * POST-Handler: Status (Entwurf/Beschlossen) eines Kalenders umschalten.
+ *
+ * @since 4.26.1
+ * @return void
+ */
+function gsh_tp_handle_toggle_draft() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_td_sy'] ?? '' ) );
+    $group  = sanitize_text_field( wp_unslash( $_POST['gsh_tp_td_cal'] ?? '' ) );
+    $cal_id = gsh_tp_calendar_id( $sy_key, '' === $group ? null : $group );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_td_n'] ?? '' ) ), 'gsh_tp_toggle_draft_' . sanitize_key( $cal_id ) ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>'; return;
+    }
+    $schoolyears = gsh_tp_get_schoolyears();
+    $changed     = false;
+    foreach ( $schoolyears as &$sy ) {
+        if ( $sy['key'] !== $sy_key ) { continue; }
+        foreach ( $sy['calendars'] as &$cal ) {
+            $this_group = null === $cal['group'] ? '' : $cal['group'];
+            if ( $this_group !== $group ) { continue; }
+            $cal['is_draft'] = empty( $cal['is_draft'] );
+            $changed = true;
+            break;
+        }
+        unset( $cal );
+        break;
+    }
+    unset( $sy );
+    if ( $changed ) {
+        gsh_tp_save_schoolyears( $schoolyears );
+        echo '<div class="notice notice-success"><p>Status aktualisiert.</p></div>';
+    } else {
+        echo '<div class="notice notice-error"><p>Kalender nicht gefunden.</p></div>';
+    }
+}
+
+/**
  * POST-Handler: Schuljahr löschen (inkl. DB-Daten und ICS-Cache).
  *
  * Verweigert das Löschen des aktiven Schuljahres und des letzten verbleibenden.
@@ -3741,6 +3785,7 @@ function gsh_tp_settings_page() {
     if ( isset( $_POST['gsh_tp_save_shared'] ) )         { gsh_tp_handle_save_shared(); }
     if ( isset( $_POST['gsh_tp_activate_schoolyear'] ) ) { gsh_tp_handle_activate_schoolyear(); }
     if ( isset( $_POST['gsh_tp_del_cal'] ) )             { gsh_tp_handle_delete_calendar(); }
+    if ( isset( $_POST['gsh_tp_toggle_draft'] ) )        { gsh_tp_handle_toggle_draft(); }
     if ( isset( $_POST['gsh_tp_del_sy'] ) )              { gsh_tp_handle_delete_schoolyear(); }
 
     // ── Tabs (fest, funktional) ──
@@ -4737,7 +4782,15 @@ function gsh_tp_render_profile_tab_v2() {
                         <?php endif; ?>
                     </td>
                     <td>
-                        <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:#b7950b">Entwurf</span>' : '<span style="color:#1e8449">Beschlossen</span>'; ?>
+                        <form method="post" style="margin:0;display:flex;align-items:center;gap:8px">
+                            <?php wp_nonce_field( 'gsh_tp_toggle_draft_' . sanitize_key( $cal_id ), 'gsh_tp_td_n' ); ?>
+                            <input type="hidden" name="gsh_tp_td_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
+                            <input type="hidden" name="gsh_tp_td_cal" value="<?php echo esc_attr( $cal['group'] ?? '' ); ?>" />
+                            <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:#b7950b">Entwurf</span>' : '<span style="color:#1e8449">Beschlossen</span>'; ?>
+                            <button type="submit" name="gsh_tp_toggle_draft" value="1" class="button button-small">
+                                <?php echo ! empty( $cal['is_draft'] ) ? 'Als beschlossen markieren' : 'Als Entwurf markieren'; ?>
+                            </button>
+                        </form>
                     </td>
                     <td>
                         <?php if ( ! $is_main ) : ?>
