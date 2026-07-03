@@ -4181,6 +4181,37 @@ function gsh_tp_render_kategorien_tab() {
 
     <input type="hidden" id="gsh-cat-nonce" value="<?php echo esc_attr( $nonce_value ); ?>">
 
+    <?php
+    global $wpdb;
+    $docs_table   = gsh_tp_curriculr_table();
+    $planner_docs = $wpdb->get_results( "SELECT schoolyear, json FROM $docs_table ORDER BY updated_at DESC", ARRAY_A );
+    $planner_docs = is_array( $planner_docs ) ? $planner_docs : array();
+
+    $active_sj = '';
+    foreach ( gsh_tp_get_schoolyears() as $sy ) {
+        if ( ! empty( $sy['is_active'] ) ) { $active_sj = $sy['key']; break; }
+    }
+    ?>
+    <?php if ( ! empty( $planner_docs ) ) : ?>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;flex-wrap:wrap">
+        <label for="gsh-cat-import-sj" style="font-weight:600">Aus Planner übernehmen:</label>
+        <select id="gsh-cat-import-sj">
+            <?php foreach ( $planner_docs as $d ) :
+                $doc_arr = json_decode( $d['json'], true );
+                $name    = ( is_array( $doc_arr ) && ! empty( $doc_arr['meta']['name'] ) ) ? $doc_arr['meta']['name'] : $d['schoolyear'];
+            ?>
+                <option value="<?php echo esc_attr( $d['schoolyear'] ); ?>" <?php selected( $active_sj, $d['schoolyear'] ); ?>>
+                    <?php echo esc_html( $name ); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="button" class="button" id="gsh-cat-import-btn">Aus Planner übernehmen</button>
+        <span id="gsh-cat-import-status" style="font-size:12px;color:#646970"></span>
+    </div>
+    <?php else : ?>
+    <p class="description" style="margin-bottom:14px">Keine Planner-Schuljahre synchronisiert – „Aus Planner übernehmen" ist noch nicht verfügbar.</p>
+    <?php endif; ?>
+
     <div id="gsh-cat-editor">
     <table class="widefat" id="gsh-cat-table" style="table-layout:fixed;margin-bottom:8px">
         <thead>
@@ -4250,11 +4281,14 @@ function gsh_tp_render_kategorien_tab() {
         'use strict';
 
         // Kategorien-State aus dem initialen DOM aufbauen
-        var tbody    = document.getElementById('gsh-cat-tbody');
-        var addBtn   = document.getElementById('gsh-cat-add');
-        var saveBtn  = document.getElementById('gsh-cat-save');
-        var statusEl = document.getElementById('gsh-cat-status');
-        var nonce    = (document.getElementById('gsh-cat-nonce') || {}).value || '';
+        var tbody         = document.getElementById('gsh-cat-tbody');
+        var addBtn        = document.getElementById('gsh-cat-add');
+        var saveBtn       = document.getElementById('gsh-cat-save');
+        var statusEl      = document.getElementById('gsh-cat-status');
+        var nonce         = (document.getElementById('gsh-cat-nonce') || {}).value || '';
+        var importBtn     = document.getElementById('gsh-cat-import-btn');
+        var importSelect  = document.getElementById('gsh-cat-import-sj');
+        var importStatus  = document.getElementById('gsh-cat-import-status');
 
         // Live-Vorschau nach Farbänderung aktualisieren
         function updatePreview(row) {
@@ -4436,6 +4470,69 @@ function gsh_tp_render_kategorien_tab() {
                 } finally {
                     saveBtn.disabled    = false;
                     saveBtn.textContent = origTxt;
+                }
+            });
+        }
+
+        // Aus Planner übernehmen: fetch + clientseitiger Merge in die Tabelle
+        if (importBtn) {
+            importBtn.addEventListener('click', async function () {
+                var sj = importSelect ? importSelect.value : '';
+                if (!sj) return;
+                importBtn.disabled    = true;
+                var origImportTxt     = importBtn.textContent;
+                importBtn.textContent = 'Wird geladen…';
+                importStatus.textContent = '';
+
+                try {
+                    var response = await fetch(
+                        (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+                        {
+                            method:  'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body:    new URLSearchParams({
+                                action: 'gsh_tp_import_categories_from_planner',
+                                nonce:  nonce,
+                                sj:     sj,
+                            }).toString()
+                        }
+                    );
+                    var result = await response.json();
+
+                    if (result.success && result.data && Array.isArray(result.data.categories)) {
+                        var updated = 0, added = 0;
+                        result.data.categories.forEach(function (cat) {
+                            var rows  = tbody.querySelectorAll('.gsh-cat-row');
+                            var match = null;
+                            rows.forEach(function (row) {
+                                var idVal = (row.querySelector('.gsh-cat-id') || {}).value || '';
+                                if (idVal === cat.id) { match = row; }
+                            });
+                            if (match) {
+                                var labelInput = match.querySelector('.gsh-cat-label');
+                                var colorInput = match.querySelector('.gsh-cat-color');
+                                if (labelInput) labelInput.value = cat.label || '';
+                                if (colorInput) colorInput.value = cat.color || '#94a3b8';
+                                updatePreview(match);
+                                updated++;
+                            } else {
+                                var newRow = document.createElement('tr');
+                                newRow.className = 'gsh-cat-row';
+                                newRow.innerHTML = buildRowHtml({ id: cat.id, slug: cat.slug, label: cat.label, color: cat.color, keywords: [] });
+                                tbody.appendChild(newRow);
+                                added++;
+                            }
+                        });
+                        importStatus.textContent = added + ' übernommen, ' + updated + ' aktualisiert – bitte prüfen und speichern.';
+                    } else {
+                        var msg = result.data && result.data.message ? result.data.message : 'Fehler beim Laden.';
+                        importStatus.textContent = '✗ ' + msg;
+                    }
+                } catch (err) {
+                    importStatus.textContent = '✗ Netzwerkfehler: ' + err.message;
+                } finally {
+                    importBtn.disabled    = false;
+                    importBtn.textContent = origImportTxt;
                 }
             });
         }
