@@ -2545,6 +2545,7 @@ add_action( 'wp_ajax_gsh_tp_feedback',        'gsh_tp_ajax_feedback' );
 add_action( 'wp_ajax_nopriv_gsh_tp_feedback', 'gsh_tp_ajax_feedback' );
 // Kategorien-AJAX (nur eingeloggte Admins)
 add_action( 'wp_ajax_gsh_tp_save_categories', 'gsh_tp_ajax_save_categories' );
+add_action( 'wp_ajax_gsh_tp_import_categories_from_planner', 'gsh_tp_ajax_import_categories_from_planner' );
 // Update-Notice (erscheint nach Plugin-Update bis dismissed)
 add_action( 'admin_notices',                 'gsh_tp_update_notice' );
 add_action( 'wp_ajax_gsh_tp_dismiss_notice', 'gsh_tp_ajax_dismiss_notice' );
@@ -2917,6 +2918,37 @@ function gsh_tp_ajax_save_categories(): void {
         'message'    => 'Kategorien gespeichert.',
         'categories' => $saved,
     ) );
+}
+
+/**
+ * AJAX-Handler: liefert die Kategorien eines Planner-Schuljahrs zum Übernehmen.
+ *
+ * Rein lesend — schreibt niemals gsh_tp_categories. Persistiert wird
+ * ausschließlich über den bestehenden gsh_tp_ajax_save_categories()-Pfad,
+ * nachdem der Admin das clientseitige Merge-Ergebnis geprüft hat.
+ *
+ * @since 4.27.0
+ * @return void  Sendet JSON-Response und beendet die Ausführung.
+ */
+function gsh_tp_ajax_import_categories_from_planner(): void {
+    check_ajax_referer( 'gsh_tp_save_categories_nonce', 'nonce' );
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => 'Keine Berechtigung.' ), 403 );
+        return;
+    }
+
+    $sj  = sanitize_key( wp_unslash( $_POST['sj'] ?? '' ) );
+    $row = $sj ? gsh_tp_curriculr_repo_get( $sj ) : null;
+    if ( ! $row ) {
+        wp_send_json_error( array( 'message' => 'Schuljahr nicht gefunden.' ), 404 );
+        return;
+    }
+
+    $doc  = json_decode( $row['json'], true );
+    $cats = is_array( $doc['categories'] ?? null ) ? $doc['categories'] : array();
+
+    wp_send_json_success( array( 'categories' => $cats ) );
 }
 
 /**
