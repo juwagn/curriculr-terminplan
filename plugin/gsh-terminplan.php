@@ -3,11 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.26.0
+ * Version:     4.27.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.26.0
+ * v4.27.0
+ * - [NEU] Kategorien-Tab: Kategorien aus einem Planner-Schuljahr übernehmen (Label/Farbe je Kategorie werden übernommen, WP-seitige Stichwörter für das IServ-Keyword-Matching bleiben unverändert)
+ * Changelog 4.26.0:
  * - [UX] Tab „Schuljahr-Profile" umbenannt in „Schuljahre"
  * - [UX] Kiosk-Tab in System-Tab integriert; ?tab=_kiosk leitet auf ?tab=_system weiter
  * - [UX] „Als aktiv setzen" → „Als aktives Schuljahr setzen" mit Erklärungstext
@@ -593,7 +595,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.26.0' );
+define( 'GSH_TP_VERSION',       '4.27.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -837,6 +839,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.27.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Kategorien-Tab: Kategorien aus einem Planner-Schuljahr übernehmen (Label/Farbe je Kategorie werden übernommen, WP-seitige Stichwörter für das IServ-Keyword-Matching bleiben unverändert)' ),
+            ),
+        ),
         array(
             'version' => '4.26.0',
             'entries' => array(
