@@ -72,6 +72,7 @@ function wp_json_encode( $d ) { return json_encode( $d ); }
 function current_user_can( $c ) { return true; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function gsh_tp_get_profiles() { return $GLOBALS['profiles'] ?? array(); }
+function gsh_tp_get_schoolyears() { return array(); } // dieser Test übt den Legacy-Pfad via profile_map aus, keine verschachtelten Schuljahre
 function gsh_tp_active_profile_id() { return 'p1'; }
 function gsh_tp_ck( $prefix, $pid ) { return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION; }
 function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
