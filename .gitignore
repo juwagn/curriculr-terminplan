@@ -12,6 +12,7 @@ _old/
 .agents/
 .superpowers/
 claude/
+.worktrees/
 
 # Lokale Tools & Aufgaben-Notizen
 tools/
