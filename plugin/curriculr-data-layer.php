@@ -1297,6 +1297,10 @@ function gsh_tp_curriculr_handle_doc_import() {
     $author       = array( 'sub' => 'manual:' . get_current_user_id(), 'name' => (string) $user->display_name );
 
     $res = gsh_tp_curriculr_repo_put( $sy_key, $parsed['doc'], $base_version, $stage, $author );
+    if ( $res['status'] !== 'ok' ) {
+        echo '<div class="notice notice-error"><p>Hochladen fehlgeschlagen — der Stand hat sich zwischenzeitlich geändert. Bitte erneut versuchen.</p></div>';
+        return;
+    }
     gsh_tp_curriculr_after_put( $sy_key, $res['feed_token'] );
 
     echo '<div class="notice notice-success"><p>Planungsdokument für <strong>' . esc_html( $sy_key ) . '</strong> hochgeladen (Version ' . (int) $res['version'] . ').</p></div>';
