@@ -1239,6 +1239,101 @@ function gsh_tp_curriculr_handle_import() {
     exit;
 }
 
+/**
+ * POST-Handler: Planungsdokument (JSON) manuell hochladen — SSO-Alternative.
+ *
+ * Inline-Handler (kein admin-post.php/exit) — läuft mitten in gsh_tp_settings_page()
+ * und gibt ein <div class="notice"> zurück, analog zu gsh_tp_handle_new_schoolyear().
+ * Erzwingt Überschreiben (baseVersion = aktuelle Version), da der Admin bereits über
+ * die Bestätigungs-Checkbox zugestimmt hat — keine 409-Konflikt-UI im manuellen Pfad.
+ *
+ * @since 4.28.0
+ * @return void
+ */
+function gsh_tp_curriculr_handle_doc_import() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_di_sy'] ?? '' ) );
+    $pid    = sanitize_key( $sy_key );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ 'gsh_tp_di_n_' . $pid ] ?? '' ) ), 'gsh_tp_doc_import_' . $pid ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>';
+        return;
+    }
+
+    $known = false;
+    foreach ( gsh_tp_get_schoolyears() as $sy ) {
+        if ( $sy['key'] === $sy_key ) { $known = true; break; }
+    }
+    if ( ! $known ) {
+        echo '<div class="notice notice-error"><p>Unbekanntes Schuljahr.</p></div>';
+        return;
+    }
+
+    $current_row = gsh_tp_curriculr_repo_get( $sy_key );
+    if ( $current_row && empty( $_POST['gsh_tp_di_confirm'] ) ) {
+        echo '<div class="notice notice-error"><p>Bitte bestätige, dass der aktuelle Stand überschrieben werden soll.</p></div>';
+        return;
+    }
+
+    $upload_error = $_FILES['gsh_tp_di_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+    if ( empty( $_FILES['gsh_tp_di_file']['tmp_name'] ) || UPLOAD_ERR_OK !== $upload_error ) {
+        echo '<div class="notice notice-error"><p>Keine Datei ausgewählt.</p></div>';
+        return;
+    }
+    if ( (int) ( $_FILES['gsh_tp_di_file']['size'] ?? 0 ) > 2 * 1024 * 1024 ) {
+        echo '<div class="notice notice-error"><p>Datei zu groß (max. 2 MB).</p></div>';
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+    $raw    = file_get_contents( $_FILES['gsh_tp_di_file']['tmp_name'] );
+    $parsed = gsh_tp_curriculr_decode_doc_upload( $raw );
+    if ( ! $parsed['valid'] ) {
+        echo '<div class="notice notice-error"><p>Ungültiges Dokumentformat. Bitte eine Curriculr-JSON-Backup-Datei wählen.</p></div>';
+        return;
+    }
+
+    $stage        = gsh_tp_curriculr_normalize_stage( wp_unslash( $_POST['gsh_tp_di_stage'] ?? 'entwurf' ) );
+    $base_version = $current_row ? (int) $current_row['version'] : 0;
+    $user         = wp_get_current_user();
+    $author       = array( 'sub' => 'manual:' . get_current_user_id(), 'name' => (string) $user->display_name );
+
+    $res = gsh_tp_curriculr_repo_put( $sy_key, $parsed['doc'], $base_version, $stage, $author );
+    gsh_tp_curriculr_after_put( $sy_key, $res['feed_token'] );
+
+    echo '<div class="notice notice-success"><p>Planungsdokument für <strong>' . esc_html( $sy_key ) . '</strong> hochgeladen (Version ' . (int) $res['version'] . ').</p></div>';
+}
+
+/**
+ * admin-post.php-Handler: Aktuellen Planungsdokument-Stand als JSON herunterladen.
+ *
+ * Braucht header()+exit für den Datei-Download — läuft deshalb über die separate
+ * admin-post.php-Request statt inline in gsh_tp_settings_page() (dort ist zum
+ * Zeitpunkt des Seiten-Callbacks bereits HTML gesendet, header() würde fehlschlagen).
+ *
+ * @since 4.28.0
+ * @return void
+ */
+function gsh_tp_curriculr_handle_doc_export() {
+    $sj = sanitize_key( wp_unslash( $_GET['sj'] ?? '' ) );
+    check_admin_referer( 'gsh_tp_curriculr_doc_export_' . $sj );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        status_header( 403 );
+        exit;
+    }
+    $row = gsh_tp_curriculr_repo_get( $sj );
+    if ( ! $row ) {
+        status_header( 404 );
+        exit;
+    }
+    $payload = $row['json'];
+    header( 'Content-Type: application/json; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( $sj ) . '-' . gmdate( 'Y-m-d' ) . '.json"' );
+    header( 'Content-Length: ' . strlen( $payload ) );
+    header( 'Cache-Control: no-cache, no-store' );
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rohe JSON-Ausgabe, bewusst kein wp_die.
+    echo $payload;
+    exit;
+}
+
 /* ---------- WP: Hooks (nur unter WordPress aktiv) ---------- */
 
 if ( function_exists( 'add_action' ) ) {
@@ -1261,6 +1356,7 @@ if ( function_exists( 'add_action' ) ) {
     add_action( 'gsh_tp_curriculr_daily_backup', 'gsh_tp_curriculr_backup_cron' );
     add_action( 'admin_post_gsh_tp_curriculr_export', 'gsh_tp_curriculr_handle_export' );
     add_action( 'admin_post_gsh_tp_import_settings',  'gsh_tp_curriculr_handle_import' );
+    add_action( 'admin_post_gsh_tp_curriculr_doc_export', 'gsh_tp_curriculr_handle_doc_export' );
     add_action(
         'wp_loaded',
         function () {
