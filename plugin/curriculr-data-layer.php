@@ -194,6 +194,20 @@ function gsh_tp_curriculr_validate_envelope( $body ) {
     return array( 'valid' => empty( $errors ), 'errors' => $errors );
 }
 
+/* ---------- Pure: Datei-Upload-Dekodierung (manueller Import, Spec 2026-07-04) ---------- */
+
+function gsh_tp_curriculr_decode_doc_upload( $raw ) {
+    $decoded = json_decode( (string) $raw, true );
+    if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+        return array( 'valid' => false, 'errors' => array( 'invalid_json' ) );
+    }
+    $envelope = gsh_tp_curriculr_validate_envelope( array( 'doc' => $decoded, 'baseVersion' => 0 ) );
+    if ( ! $envelope['valid'] ) {
+        return array( 'valid' => false, 'errors' => $envelope['errors'] );
+    }
+    return array( 'valid' => true, 'doc' => $decoded );
+}
+
 /* ---------- Pure: Stufen-Normalisierung (entwurf|genehmigt|oeffentlich) ---------- */
 
 function gsh_tp_curriculr_normalize_stage( $stage ) {
