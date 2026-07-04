@@ -3,11 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.28.0
+ * Version:     4.28.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.28.0
+ * v4.28.1
+ * - [SECURITY] Entwurf-Kiosk-Template (page-terminplan-entwurf.php): CSP frame-ancestors + X-Frame-Options SAMEORIGIN tatsächlich ergänzt — der 4.27.2-Changelog-Eintrag dafür war nie committed worden, Server-/Host-Default blockierte weiterhin das IServ-iframe-Embedding
+ * Changelog 4.28.0:
  * - [NEU] Schuljahr-Karte: manueller Planungsdokument-Upload (JSON) als Alternative zu IServ-SSO — Admin exportiert im Planer "JSON-Backup" und lädt es hier hoch; inkl. "Sichern ↓"-Download des aktuellen Stands vor dem Überschreiben
  * Changelog 4.27.1:
  * - [FIX] Schuljahre-Tab (v2): Kalender-Status (Entwurf/Beschlossen) war seit 4.24.0 nur Text-Anzeige — Umschalten fehlte, Entwurf-Kiosk dadurch für neue/synchronisierte Schuljahre unerreichbar
@@ -599,7 +601,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.28.0' );
+define( 'GSH_TP_VERSION',       '4.28.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -843,6 +845,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.28.1',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'Entwurf-Kiosk-Template: CSP frame-ancestors + X-Frame-Options SAMEORIGIN tatsächlich ergänzt — der 4.27.2-Eintrag dafür war nie committed worden, Server-/Host-Default blockierte weiterhin das IServ-iframe-Embedding' ),
+            ),
+        ),
         array(
             'version' => '4.28.0',
             'entries' => array(

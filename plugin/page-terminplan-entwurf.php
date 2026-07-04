@@ -30,6 +30,15 @@ if ( ! function_exists( 'gsh_tp_check_draft_kiosk_access' ) || ! gsh_tp_check_dr
 
 nocache_headers();
 
+// CSP frame-ancestors: erlaubt IServ-Domain + 'self' als Einbetter.
+// X-Frame-Options SAMEORIGIN als Legacy-Fallback für Browser ohne CSP-Support.
+// Kein ALLOW-FROM — deprecated, kein Browser-Support mehr.
+$iserv_domain = get_option( 'gsh_tp_iserv_domain', '' );
+if ( $iserv_domain ) {
+	header( "Content-Security-Policy: frame-ancestors 'self' " . esc_url_raw( $iserv_domain ) );
+}
+header( 'X-Frame-Options: SAMEORIGIN' );
+
 // Kiosk-Kontext setzen BEVOR do_shortcode läuft, damit der Shortcode keinen
 // zweiten Entwurfs-Banner rendert (gsh_tp_draft_kiosk_context() prüft dieses Flag).
 if ( function_exists( 'gsh_tp_draft_kiosk_context' ) ) {
