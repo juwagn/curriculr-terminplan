@@ -184,4 +184,20 @@ $list2 = gsh_tp_curriculr_rest_revisions_list( new Gsh_Fake_Req( array( 'sj' => 
 gsh_assert_true( isset( $list2->data[0]['author_sub'] ), 'revisions_list enthält author_sub' );
 gsh_assert_eq( $list2->data[0]['author_sub'], 'iserv-u77', 'revisions_list author_sub korrekt' );
 
+/* ---------- 10. Author override takes precedence over guard claims ---------- */
+$GLOBALS['wpdb'] = new Gsh_Fake_Wpdb_Rev();
+$GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'iserv-should-not-be-used', 'name' => 'Guard Name' );
+gsh_tp_curriculr_repo_put( 'sj_override', $doc, 0, 'entwurf', array( 'sub' => 'manual:1', 'name' => 'Admin Manuell' ) );
+$rev_override = reset( $GLOBALS['wpdb']->revs );
+gsh_assert_eq( $rev_override['author_sub'], 'manual:1', 'author_override wins over guard claims (sub)' );
+gsh_assert_eq( $rev_override['author_name'], 'Admin Manuell', 'author_override wins over guard claims (name)' );
+
+/* ---------- 11. Omitting author_override preserves existing guard-claims behavior ---------- */
+$GLOBALS['wpdb'] = new Gsh_Fake_Wpdb_Rev();
+$GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'iserv-u55', 'name' => 'Dana' );
+gsh_tp_curriculr_repo_put( 'sj_no_override', $doc, 0 );
+$rev_default = reset( $GLOBALS['wpdb']->revs );
+gsh_assert_eq( $rev_default['author_sub'], 'iserv-u55', 'no override -> falls back to guard claims (sub)' );
+gsh_assert_eq( $rev_default['author_name'], 'Dana', 'no override -> falls back to guard claims (name)' );
+
 gsh_test_done();

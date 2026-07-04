@@ -335,7 +335,7 @@ function gsh_tp_curriculr_repo_get( $sj ) {
     return $row ? $row : null;
 }
 
-function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf' ) {
+function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf', $author_override = null ) {
     global $wpdb;
     $table    = gsh_tp_curriculr_table();
     $sj       = sanitize_key( $sj );
@@ -379,9 +379,9 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
 
     // Revision-Snapshot + Retention-Prune.
     $json_str    = wp_json_encode( $doc );
-    $guard       = function_exists( 'gsh_tp_curriculr_guard_current_claims' )
-        ? gsh_tp_curriculr_guard_current_claims()
-        : null;
+    $guard       = null !== $author_override
+        ? $author_override
+        : ( function_exists( 'gsh_tp_curriculr_guard_current_claims' ) ? gsh_tp_curriculr_guard_current_claims() : null );
     $author_sub  = $guard ? (string) ( $guard['sub'] ?? '' ) : '';
     $author_name = $guard ? (string) ( $guard['name'] ?? '' ) : '';
     gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name );
