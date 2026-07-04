@@ -3,11 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.27.1
+ * Version:     4.28.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.27.1
+ * v4.28.0
+ * - [NEU] Schuljahr-Karte: manueller Planungsdokument-Upload (JSON) als Alternative zu IServ-SSO — Admin exportiert im Planer "JSON-Backup" und lädt es hier hoch; inkl. "Sichern ↓"-Download des aktuellen Stands vor dem Überschreiben
+ * Changelog 4.27.1:
  * - [FIX] Schuljahre-Tab (v2): Kalender-Status (Entwurf/Beschlossen) war seit 4.24.0 nur Text-Anzeige — Umschalten fehlte, Entwurf-Kiosk dadurch für neue/synchronisierte Schuljahre unerreichbar
  * Changelog 4.27.0:
  * - [NEU] Kategorien-Tab: Kategorien aus einem Planner-Schuljahr übernehmen (Label/Farbe je Kategorie werden übernommen, WP-seitige Stichwörter für das IServ-Keyword-Matching bleiben unverändert)
@@ -597,7 +599,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.27.1' );
+define( 'GSH_TP_VERSION',       '4.28.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -841,6 +843,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.28.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Schuljahr-Karte: manueller Planungsdokument-Upload (JSON) als Alternative zu IServ-SSO — inkl. "Sichern ↓"-Download des aktuellen Stands vor dem Überschreiben' ),
+            ),
+        ),
         array(
             'version' => '4.27.1',
             'entries' => array(
@@ -1551,7 +1559,7 @@ function gsh_tp_get_doc_status( $sj_key ) {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
     $row = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT stage, updated_at FROM `{$table}` WHERE schoolyear = %s LIMIT 1",
+            "SELECT stage, updated_at, version FROM `{$table}` WHERE schoolyear = %s LIMIT 1",
             $sj_key
         ),
         ARRAY_A
@@ -1562,6 +1570,7 @@ function gsh_tp_get_doc_status( $sj_key ) {
     return array(
         'stage'     => (string) ( $row['stage']      ?? 'entwurf' ),
         'last_sent' => (string) ( $row['updated_at'] ?? '' ),
+        'version'   => (int) ( $row['version'] ?? 0 ),
     );
 }
 
@@ -3787,6 +3796,7 @@ function gsh_tp_settings_page() {
     if ( isset( $_POST['gsh_tp_del_cal'] ) )             { gsh_tp_handle_delete_calendar(); }
     if ( isset( $_POST['gsh_tp_toggle_draft'] ) )        { gsh_tp_handle_toggle_draft(); }
     if ( isset( $_POST['gsh_tp_del_sy'] ) )              { gsh_tp_handle_delete_schoolyear(); }
+    if ( isset( $_POST['gsh_tp_doc_import'] ) )          { gsh_tp_curriculr_handle_doc_import(); }
 
     // ── Tabs (fest, funktional) ──
     $tabs = array(
@@ -4707,6 +4717,41 @@ function gsh_tp_render_profile_tab_v2() {
             <?php endif; ?>
         </div>
         <?php endif; ?>
+
+        <!-- Planungsdokument: manueller Upload (SSO-Alternative, 4.28.0) -->
+        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7;background:#fafafa">
+            <strong style="display:block;margin-bottom:6px">Planungsdokument (manueller Upload)</strong>
+            <p class="description" style="margin:0 0 8px">
+                Für Schulen ohne IServ-SSO: Plan im Planer exportieren (Export ↓ → „JSON-Backup") und hier hochladen.
+            </p>
+            <?php if ( $doc_status ) :
+                $export_nonce = wp_create_nonce( 'gsh_tp_curriculr_doc_export_' . $pid );
+                $export_url   = admin_url( 'admin-post.php?action=gsh_tp_curriculr_doc_export&sj=' . rawurlencode( $sy_key ) . '&_wpnonce=' . $export_nonce );
+            ?>
+            <p style="margin:0 0 8px">
+                Aktueller Stand: Version <?php echo (int) $doc_status['version']; ?><?php echo $s_time ? ', ' . esc_html( $s_time ) : ''; ?>
+                — <a href="<?php echo esc_url( $export_url ); ?>">Sichern ↓</a>
+            </p>
+            <?php endif; ?>
+            <form method="post" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <?php wp_nonce_field( 'gsh_tp_doc_import_' . $pid, 'gsh_tp_di_n_' . $pid ); ?>
+                <input type="hidden" name="gsh_tp_di_sy" value="<?php echo esc_attr( $sy_key ); ?>" />
+                <input type="file" name="gsh_tp_di_file" accept=".json" required />
+                <select name="gsh_tp_di_stage">
+                    <option value="entwurf">Entwurf</option>
+                    <option value="genehmigt">Intern</option>
+                    <option value="oeffentlich">Öffentlich</option>
+                </select>
+                <?php if ( $doc_status ) : ?>
+                <label style="font-size:12px">
+                    <input type="checkbox" name="gsh_tp_di_confirm" value="1" /> aktuellen Stand überschreiben
+                </label>
+                <?php endif; ?>
+                <button type="submit" name="gsh_tp_doc_import" value="1" class="button">
+                    <?php echo $doc_status ? 'Dokument aktualisieren' : 'Dokument hochladen'; ?>
+                </button>
+            </form>
+        </div>
 
         <!-- Shared Settings (Quartal etc.) -->
         <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7">
