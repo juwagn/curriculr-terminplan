@@ -1548,10 +1548,10 @@ function gsh_tp_get_schoolyears() {
 }
 
 /**
- * Reads stage + last-sent timestamp for a schoolyear from wp_curriculr_docs.
+ * Reads stage + last-sent timestamp + version for a schoolyear from wp_curriculr_docs.
  *
  * @param  string $sj_key  Schoolyear key, e.g. 'sj_2026_27'.
- * @return array{ stage: string, last_sent: string }|null  Null if no doc exists yet.
+ * @return array{ stage: string, last_sent: string, version: int }|null  Null if no doc exists yet.
  */
 function gsh_tp_get_doc_status( $sj_key ) {
     global $wpdb;
