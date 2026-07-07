@@ -39,6 +39,8 @@ if ( $iserv_domain ) {
 	header( "Content-Security-Policy: frame-ancestors 'self' " . esc_url_raw( $iserv_domain ) );
 }
 header( 'X-Frame-Options: SAMEORIGIN' );
+// Token steht in der URL — Referrer darf nie an Dritt-Ressourcen leaken.
+header( 'Referrer-Policy: no-referrer' );
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -50,7 +52,7 @@ header( 'X-Frame-Options: SAMEORIGIN' );
 </head>
 <body class="gtp-kiosk <?php echo is_admin_bar_showing() ? 'admin-bar' : ''; ?>">
 
-<main style="max-width:1200px;margin:0 auto;padding:1rem">
+<main class="gtp-kiosk-main">
 	<?php echo do_shortcode( '[gsh_terminplan]' ); ?>
 </main>
 

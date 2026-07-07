@@ -3,11 +3,23 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.28.1
+ * Version:     4.29.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.28.1
+ * v4.29.0
+ * - [SECURITY] Google-Fonts-Import entfernt — Inter wird self-hosted aus assets/fonts/ geladen (DSGVO: keine IP-Übertragung an Google mehr)
+ * - [SECURITY] App-Token-Verify prüft jetzt iss/aud-Claims; Guard antwortet 401 statt 403 bei fehlendem/ungültigem Token
+ * - [SECURITY] REST-PUT/Doc-Upload: Tiefenvalidierung je Event (Datum/Zeit-Format) — kaputte Events können den öffentlichen ICS-Feed nicht mehr mit 500 lahmlegen (defensives build_event)
+ * - [SECURITY] repo_put atomar: paralleles Speichern zweier Nutzer erzeugt jetzt zuverlässig 409 statt Lost Update
+ * - [SECURITY] Kiosk-/Entwurf-Templates senden Referrer-Policy: no-referrer (Token in URL)
+ * - [SECURITY] Backup-Cron: Dateien älter als 30 Tage werden gelöscht (DSGVO-Speicherbegrenzung); index.html-Schutz neben .htaccess
+ * - [DESIGN] Design-Transfer aus dem Planner: Widget---gtp-Tokens auf Curricu:lr design-tokens gemappt (Marine-Farben, Inter, Radien 14/10/6) inkl. Dark-Mode-Gegenwerte
+ * - [UX] Fehler-/Hinweisboxen des Shortcodes und der Kiosk-Templates von Inline-Styles auf Token-basierte CSS-Klassen umgestellt
+ * - [INFRA] Feedback-Log: Einträge älter als 90 Tage werden automatisch entfernt; doc_list ohne N+1-Query
+ * v4.28.2
+ * - [FIX] Kiosk (beide Modi): Anfang/Ende-Uhrzeiten wurden nirgends angezeigt — gsh_tp_parse_event() behält von DATE-TIME-Werten nur das Datum, die Uhrzeit ging verloren. Jetzt zusätzlich aus DTSTART/DTEND extrahiert (gsh_tp_augment_event_times()) und als Zeit-Label über dem Termin-Titel angezeigt
+ * Changelog 4.28.1:
  * - [SECURITY] Entwurf-Kiosk-Template (page-terminplan-entwurf.php): CSP frame-ancestors + X-Frame-Options SAMEORIGIN tatsächlich ergänzt — der 4.27.2-Changelog-Eintrag dafür war nie committed worden, Server-/Host-Default blockierte weiterhin das IServ-iframe-Embedding
  * Changelog 4.28.0:
  * - [NEU] Schuljahr-Karte: manueller Planungsdokument-Upload (JSON) als Alternative zu IServ-SSO — Admin exportiert im Planer "JSON-Backup" und lädt es hier hoch; inkl. "Sichern ↓"-Download des aktuellen Stands vor dem Überschreiben
@@ -601,7 +613,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.28.1' );
+define( 'GSH_TP_VERSION',       '4.29.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -845,6 +857,25 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.29.0',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'Google-Fonts-Import entfernt — Inter wird self-hosted aus assets/fonts/ geladen (DSGVO: keine IP-Übertragung an Google mehr)' ),
+                array( 'tag' => 'SECURITY', 'text' => 'App-Token-Verify prüft jetzt iss/aud-Claims; Guard antwortet 401 statt 403 bei fehlendem/ungültigem Token' ),
+                array( 'tag' => 'SECURITY', 'text' => 'REST-PUT/Doc-Upload: Tiefenvalidierung je Event — kaputte Events können den öffentlichen ICS-Feed nicht mehr mit 500 lahmlegen' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Speichern ist jetzt atomar: gleichzeitiges Speichern zweier Nutzer erzeugt zuverlässig einen Konflikt-Hinweis statt stillem Überschreiben' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Kiosk-/Entwurf-Seiten senden Referrer-Policy: no-referrer; tägliche Backups werden nach 30 Tagen gelöscht (DSGVO)' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Design-Angleichung an den Curricu:lr Planner: Marine-Farbtöne, Inter-Schrift und Radien der Terminplan-Ansicht folgen jetzt den zentralen Design-Tokens — inklusive Dark Mode' ),
+                array( 'tag' => 'UX', 'text' => 'Fehler- und Hinweisboxen nutzen einheitliche, Theme-fähige Gestaltung statt fest verdrahteter Farben' ),
+                array( 'tag' => 'INFRA', 'text' => 'Feedback-Log löscht Einträge älter als 90 Tage automatisch; Schuljahr-Liste ohne N+1-Datenbankabfragen' ),
+            ),
+        ),
+        array(
+            'version' => '4.28.2',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Kiosk (beide Modi): Anfang/Ende-Uhrzeiten wurden nirgends angezeigt — gsh_tp_parse_event() behält von DATE-TIME-Werten nur das Datum, die Uhrzeit ging verloren. Jetzt zusätzlich aus DTSTART/DTEND extrahiert und als Zeit-Label über dem Termin-Titel angezeigt' ),
+            ),
+        ),
         array(
             'version' => '4.28.1',
             'entries' => array(
@@ -2325,6 +2356,11 @@ function gsh_tp_feedback_log( $type, $sender, $message, $ip_hash, $status ) {
         'ip'      => $ip_hash,
         'status'  => $status,
     ) );
+    // Einträge älter als 90 Tage entfernen
+    $cutoff = strtotime( '-90 days', current_time( 'timestamp' ) );
+    $log = array_values( array_filter( $log, function ( $e ) use ( $cutoff ) {
+        return isset( $e['ts'] ) && strtotime( $e['ts'] ) >= $cutoff;
+    } ) );
     // Maximal 200 Einträge behalten
     $log = array_slice( $log, 0, 200 );
     update_option( 'gsh_tp_feedback_log', $log, false );
@@ -5778,6 +5814,93 @@ function gsh_tp_parse_event( $blk ) {
     );
 }
 
+/**
+ * Ergänzt bereits geparste Events um die echte Uhrzeit aus DTSTART/DTEND.
+ *
+ * gsh_tp_parse_event() behält aus DATE-TIME-Werten nur das Datum (Y-m-d) —
+ * die Uhrzeit geht dabei verloren. Diese Funktion holt sie zusätzlich direkt
+ * aus dem iCal-Rohtext (per UID gematcht), ohne den Parser selbst anzufassen.
+ *
+ * @since 4.28.2
+ * @param  array  $events Events aus gsh_tp_parse_events().
+ * @param  string $data   Roher iCal-Text (gleiche Quelle wie beim Parsen).
+ * @return array          $events, ergänzt um 'time_start'/'time_end' (H:i oder '').
+ */
+function gsh_tp_augment_event_times( array $events, $data ) {
+    if ( empty( $events ) || empty( $data ) ) {
+        return $events;
+    }
+
+    preg_match_all( '/BEGIN:VEVENT(.*?)END:VEVENT/s', $data, $m );
+    if ( empty( $m[1] ) ) {
+        return $events;
+    }
+
+    $blocks_by_uid = array();
+    foreach ( $m[1] as $blk ) {
+        $blk = str_replace( "\r\n", "\n", $blk );
+        $blk = preg_replace( '/\n[ \t]/', '', $blk );
+        if ( preg_match( '/^UID:(.*)$/m', $blk, $um ) ) {
+            $blocks_by_uid[ trim( $um[1] ) ] = $blk;
+        }
+    }
+
+    $extract_time = function ( $blk, $prop ) {
+        if ( preg_match( '/^' . $prop . '(?:;[^:\n]*)?:(\d{8}T\d{6})/m', $blk, $tm ) ) {
+            return substr( $tm[1], 9, 2 ) . ':' . substr( $tm[1], 11, 2 );
+        }
+        return '';
+    };
+
+    foreach ( $events as &$ev ) {
+        $ev['time_start'] = '';
+        $ev['time_end']   = '';
+        if ( $ev['allday'] || empty( $ev['uid'] ) || empty( $blocks_by_uid[ $ev['uid'] ] ) ) {
+            continue;
+        }
+        $blk               = $blocks_by_uid[ $ev['uid'] ];
+        $ev['time_start']  = $extract_time( $blk, 'DTSTART' );
+        $ev['time_end']    = $extract_time( $blk, 'DTEND' );
+    }
+    unset( $ev );
+
+    return $events;
+}
+
+/**
+ * Liefert Anzeige-Titel (ohne eingeklammerte Zeitangabe) und Zeit-Label für
+ * ein Event. Bevorzugt die echte Uhrzeit aus time_start/time_end (siehe
+ * gsh_tp_augment_event_times()), fällt sonst auf die Legacy-Konvention
+ * „Titel (HH:MM–HH:MM Uhr)" im Titeltext zurück.
+ *
+ * @since 4.28.2
+ * @param  array $ev Event-Array, ggf. ergänzt um time_start/time_end.
+ * @return array      array( 'summary' => string, 'time' => string ).
+ */
+function gsh_tp_event_time_label( $ev ) {
+    $summary = $ev['summary'];
+    $time    = '';
+
+    if ( ! empty( $ev['time_start'] ) ) {
+        $time = ( ! empty( $ev['time_end'] ) && $ev['time_end'] !== $ev['time_start'] )
+            ? $ev['time_start'] . '–' . $ev['time_end']
+            : $ev['time_start'];
+    }
+
+    // Zeitangabe aus Klammern im Titel extrahieren: „Titel (HH:MM–HH:MM Uhr)"
+    if ( preg_match( '/^(.*?)\s*\((\d{1,2}:\d{2}(?:\s*[–\-]\s*\d{1,2}:\d{2})?(?:\s*Uhr)?)\)\s*$/', $summary, $m ) ) {
+        $summary = trim( $m[1] );
+        if ( ! $time ) {
+            $time = trim( $m[2] );
+        }
+    }
+
+    return array(
+        'summary' => $summary,
+        'time'    => $time,
+    );
+}
+
 /* ================================================================
    2b. ÄNDERUNGS-ERKENNUNG (Snapshot + Diff)
    ================================================================ */
@@ -5993,8 +6116,7 @@ function gsh_tp_shortcode( $atts ) {
     if ( 'entwurf' === $atts['schuljahr'] ) {
         // Entwurf-Modus: nur für Admins oder validierten Draft-Kiosk-Zugang sichtbar
         if ( ! current_user_can( 'manage_options' ) && ! gsh_tp_draft_kiosk_context() ) {
-            return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
-                 . 'border-radius:8px;color:#475569;text-align:center">'
+            return '<div class="gtp-msg gtp-msg--info">'
                  . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
         }
         $profile_id = '';
@@ -6005,8 +6127,7 @@ function gsh_tp_shortcode( $atts ) {
             }
         }
         if ( ! $profile_id ) {
-            return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
-                 . 'border-radius:8px;color:#475569;text-align:center">'
+            return '<div class="gtp-msg gtp-msg--info">'
                  . 'Kein Entwurf-Profil vorhanden.</div>';
         }
     }
@@ -6017,27 +6138,25 @@ function gsh_tp_shortcode( $atts ) {
 
     $profile = gsh_tp_get_profile( $profile_id );
     if ( ! $profile ) {
-        return '<div style="padding:1.5rem;background:#fadbd8;border:1px solid #e74c3c;'
-             . 'border-radius:8px;color:#922b21;text-align:center">'
+        return '<div class="gtp-msg gtp-msg--error">'
              . 'Kein Schuljahr-Profil gefunden. Bitte die Plugin-Einstellungen pr&uuml;fen.</div>';
     }
 
     // Entwurf-Modus: Entwürfe ohne schuljahr="entwurf" nur für Admins oder Draft-Kiosk
     if ( ! empty( $profile['is_draft'] ) && ! current_user_can( 'manage_options' ) && ! gsh_tp_draft_kiosk_context() ) {
-        return '<div style="padding:1.5rem;background:#f1f5f9;border:1px solid #94a3b8;'
-             . 'border-radius:8px;color:#475569;text-align:center">'
+        return '<div class="gtp-msg gtp-msg--info">'
              . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
     }
 
     $data = gsh_tp_fetch_ical( $profile_id );
     if ( ! $data ) {
-        return '<div style="padding:1.5rem;background:#fadbd8;border:1px solid #e74c3c;'
-             . 'border-radius:8px;color:#922b21;text-align:center">'
+        return '<div class="gtp-msg gtp-msg--error">'
              . esc_html__( 'Keine Kalenderdaten verfügbar. Bitte die iCal-URL in den Plugin-Einstellungen prüfen.', 'gsh-terminplan' )
              . '</div>';
     }
 
     $events  = gsh_tp_parse_events( $data );
+    $events  = gsh_tp_augment_event_times( $events, $data );
     $grenzen = gsh_tp_quartale( $profile_id );
     $sjs     = gsh_tp_opt( 'schuljahr_start', '2025-08-25', $profile_id );
 
@@ -6455,14 +6574,9 @@ function gsh_tp_shortcode( $atts ) {
  * @return string HTML-Attribut-String (z. B. data-summary="…" data-date="…" …).
  */
 function gsh_tp_event_data_attrs( $ev ) {
-    $summary = $ev['summary'];
-    $time    = '';
-
-    // Zeitangabe aus Klammern im Titel extrahieren: „Titel (HH:MM–HH:MM Uhr)"
-    if ( preg_match( '/^(.*?)\s*\((\d{1,2}:\d{2}(?:\s*[–\-]\s*\d{1,2}:\d{2})?(?:\s*Uhr)?)\)\s*$/', $summary, $m ) ) {
-        $summary = trim( $m[1] );
-        $time    = trim( $m[2] );
-    }
+    $lbl     = gsh_tp_event_time_label( $ev );
+    $summary = $lbl['summary'];
+    $time    = $lbl['time'];
 
     $desc    = $ev['description'];
     $loc     = isset( $ev['location'] ) ? $ev['location'] : '';
@@ -6618,13 +6732,15 @@ function gsh_tp_table( $index, $qd, $sjs, $annotation_map = array() ) {
                 $cat_ids  = (array) ( $ev['categories'] ?? array() );
                 $cc       = gsh_tp_primary_slug( $cat_ids, $cat_map_table );
                 $data_cats = esc_attr( implode( ',', $cat_ids ) );
+                $lbl       = gsh_tp_event_time_label( $ev );
+                $time_html = $lbl['time'] ? '<span class="ge-time">' . esc_html( $lbl['time'] ) . '</span>' : '';
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
                     . '" data-categories="' . $data_cats
                     . '" title="' . esc_attr( $ev['summary'] ) . '"'
                     . ' onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
-                    . esc_html( $ev['summary'] ) . '</div>';
+                    . $time_html . '<span class="ge-title">' . esc_html( $lbl['summary'] ) . '</span></div>';
             }
 
             $h .= '</td>';
@@ -6893,13 +7009,15 @@ function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
                 $cat_ids   = (array) ( $ev['categories'] ?? array() );
                 $cc        = gsh_tp_primary_slug( $cat_ids, $cat_map_mob );
                 $data_cats = esc_attr( implode( ',', $cat_ids ) );
+                $lbl       = gsh_tp_event_time_label( $ev );
+                $time_html = $lbl['time'] ? '<span class="ge-time">' . esc_html( $lbl['time'] ) . '</span>' : '';
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
                     . '" data-categories="' . $data_cats
                     . '" title="' . esc_attr( $ev['summary'] ) . '"'
                     . ' onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
-                    . esc_html( $ev['summary'] ) . '</div>';
+                    . $time_html . '<span class="ge-title">' . esc_html( $lbl['summary'] ) . '</span></div>';
             }
             $h .= '</div>'; // .gtp-mob-events
 
@@ -7094,16 +7212,16 @@ function gsh_tp_css() {
    ══════════════════════════════════════════════════════════════ */
 :root{
   /* Primär / Akzent */
-  --gtp-accent:       #00467D;
-  --gtp-accent-dark:  #00345C;
-  --gtp-accent-light: #E6F4FF;
+  --gtp-accent:       var(--marine-700, #00467D);
+  --gtp-accent-dark:  var(--marine-800, #00345C);
+  --gtp-accent-light: var(--marine-100, #E6F4FF);
   /* Oberflächen & Text */
-  --gtp-text:         #1e293b;
-  --gtp-text-muted:   #475569;
+  --gtp-text:         var(--text-main, #1e293b);
+  --gtp-text-muted:   var(--text-muted, #475569);
   --gtp-text-faint:   #94a3b8;
-  --gtp-bg:           #ffffff;
-  --gtp-surface:      #f8fafc;
-  --gtp-border:       #cbd5e1;
+  --gtp-bg:           var(--bg-surface-solid, #ffffff);
+  --gtp-surface:      var(--bg-muted, #f8fafc);
+  --gtp-border:       var(--border-strong, #cbd5e1);
   /* Heute-Akzent */
   --gtp-today-bg:     #E6F4FF;
   --gtp-today-bd:     #00467D;
@@ -7118,9 +7236,9 @@ function gsh_tp_css() {
   --gtp-space-6:  24px;
   --gtp-space-8:  32px;
   /* Border-Radius-Tokens */
-  --gtp-radius-sm:   4px;
-  --gtp-radius-md:   8px;
-  --gtp-radius-lg:   12px;
+  --gtp-radius-sm:   var(--radius-sm, 6px);
+  --gtp-radius-md:   var(--radius-btn, 10px);
+  --gtp-radius-lg:   var(--radius-card, 14px);
   --gtp-radius-xl:   16px;
   --gtp-radius-pill: 50px;
   --gtp-radius-full: 50%;
@@ -7132,7 +7250,7 @@ function gsh_tp_css() {
 
 /* ── Container ── */
 .gtp{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-family:var(--font-body, -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif);
   max-width:1200px;margin:0 auto;color:var(--gtp-text);
   background:var(--gtp-bg);border-radius:16px;
   box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);

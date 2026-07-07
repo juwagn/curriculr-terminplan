@@ -67,20 +67,35 @@ function gsh_tp_curriculr_ics_fold( $line ) {
 }
 
 function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
+    // Defensiv: Altdaten in der DB oder kaputte Events dürfen den Feed nie
+    // mit einer uncaught DateTime-Exception zum 500er machen (Spec SEC-MED-002).
+    // Fehlende Keys fallen auf '' zurück; ein Event ohne valides start/end wird
+    // komplett übersprungen statt eine Exception zu werfen.
+    if ( ! is_array( $e ) ) {
+        return array();
+    }
+    $id    = $e['id'] ?? '';
+    $title = $e['title'] ?? '';
+    $start = $e['start'] ?? '';
+    $end   = $e['end'] ?? '';
+    if ( ! gsh_tp_curriculr_is_iso_date( $start ) || ! gsh_tp_curriculr_is_iso_date( $end ) ) {
+        return array();
+    }
+
     $lines   = array( 'BEGIN:VEVENT' );
-    $lines[] = 'UID:' . gsh_tp_curriculr_ics_escape( $e['id'] ) . '@curriculr-planner';
+    $lines[] = 'UID:' . gsh_tp_curriculr_ics_escape( $id ) . '@curriculr-planner';
     $lines[] = 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' );
-    $lines[] = 'SUMMARY:' . gsh_tp_curriculr_ics_escape( $e['title'] );
+    $lines[] = 'SUMMARY:' . gsh_tp_curriculr_ics_escape( $title );
 
     if ( ! empty( $e['allDay'] ) ) {
-        $end_exclusive = ( new DateTime( $e['end'] ) )->modify( '+1 day' )->format( 'Ymd' );
-        $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $e['start'] );
+        $end_exclusive = ( new DateTime( $end ) )->modify( '+1 day' )->format( 'Ymd' );
+        $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $start );
         $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
     } else {
         $st      = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
         $et      = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
-        $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $e['start'], $st );
-        $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $e['end'], $et );
+        $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
+        $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
     }
 
     if ( ! empty( $e['location'] ) ) {
@@ -187,11 +202,55 @@ function gsh_tp_curriculr_validate_envelope( $body ) {
         $errors[] = 'doc_missing';
     } elseif ( ! isset( $body['doc']['events'] ) || ! is_array( $body['doc']['events'] ) ) {
         $errors[] = 'doc_events_missing';
+    } else {
+        foreach ( $body['doc']['events'] as $i => $e ) {
+            if ( ! gsh_tp_curriculr_validate_event( $e ) ) {
+                $errors[] = 'invalid_event_' . $i;
+            }
+        }
     }
     if ( ! array_key_exists( 'baseVersion', $body ) || ! is_int( $body['baseVersion'] ) ) {
         $errors[] = 'baseVersion_missing';
     }
     return array( 'valid' => empty( $errors ), 'errors' => $errors );
+}
+
+/* ---------- Pure: Event-Tiefenvalidierung (Spec SEC-MED-002) ---------- */
+// Minimalprüfung genau der Felder, die in build_event()/ICS-Ausgabe fließen.
+// Kein volles Schema — nur die Typen/Formate, deren Fehlen build_event() zum
+// Absturz bringen (DateTime-Exception) oder eine Property-Injection erlauben
+// würde (CRLF in start/end via ics_fmt_date/ics_fmt_datetime, unescaped).
+
+function gsh_tp_curriculr_validate_event( $e ) {
+    if ( ! is_array( $e ) ) {
+        return false;
+    }
+    if ( ! isset( $e['id'] ) || ! is_string( $e['id'] ) ) {
+        return false;
+    }
+    if ( ! isset( $e['title'] ) || ! is_string( $e['title'] ) ) {
+        return false;
+    }
+    if ( ! isset( $e['start'] ) || ! gsh_tp_curriculr_is_iso_date( $e['start'] ) ) {
+        return false;
+    }
+    if ( ! isset( $e['end'] ) || ! gsh_tp_curriculr_is_iso_date( $e['end'] ) ) {
+        return false;
+    }
+    if ( array_key_exists( 'startTime', $e ) && $e['startTime'] !== null ) {
+        if ( ! is_string( $e['startTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['startTime'] ) !== 1 ) {
+            return false;
+        }
+    }
+    if ( array_key_exists( 'endTime', $e ) && $e['endTime'] !== null ) {
+        if ( ! is_string( $e['endTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['endTime'] ) !== 1 ) {
+            return false;
+        }
+    }
+    if ( array_key_exists( 'allDay', $e ) && ! is_bool( $e['allDay'] ) ) {
+        return false;
+    }
+    return true;
 }
 
 /* ---------- Pure: Datei-Upload-Dekodierung (manueller Import, Spec 2026-07-04) ---------- */
@@ -335,6 +394,21 @@ function gsh_tp_curriculr_repo_get( $sj ) {
     return $row ? $row : null;
 }
 
+function gsh_tp_curriculr_repo_put_conflict( $sj, $current, $existing ) {
+    global $wpdb;
+    $rev_table = gsh_tp_curriculr_revisions_table();
+    $rev       = $wpdb->get_row( $wpdb->prepare(
+        "SELECT author_name, created_at FROM {$rev_table} WHERE schoolyear = %s AND version = %d LIMIT 1",
+        $sj, $current
+    ) );
+    return array(
+        'status'     => 'conflict',
+        'current'    => $existing,
+        'authorName' => $rev ? (string) $rev->author_name : '',
+        'savedAt'    => $rev ? (string) $rev->created_at  : '',
+    );
+}
+
 function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf', $author_override = null ) {
     global $wpdb;
     $table    = gsh_tp_curriculr_table();
@@ -342,18 +416,9 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     $existing = gsh_tp_curriculr_repo_get( $sj );
     $current  = $existing ? (int) $existing['version'] : 0;
 
+    // Schnellpfad: offensichtlicher Konflikt ohne DB-Write (Tests nutzen ihn direkt).
     if ( gsh_tp_curriculr_version_decision( $current, $base_version ) === 'conflict' ) {
-        $rev_table = gsh_tp_curriculr_revisions_table();
-        $rev       = $wpdb->get_row( $wpdb->prepare(
-            "SELECT author_name, created_at FROM {$rev_table} WHERE schoolyear = %s AND version = %d LIMIT 1",
-            $sj, $current
-        ) );
-        return array(
-            'status'     => 'conflict',
-            'current'    => $existing,
-            'authorName' => $rev ? (string) $rev->author_name : '',
-            'savedAt'    => $rev ? (string) $rev->created_at  : '',
-        );
+        return gsh_tp_curriculr_repo_put_conflict( $sj, $current, $existing );
     }
 
     $new_version = $current + 1;
@@ -361,9 +426,10 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         ? $existing['feed_token']
         : wp_generate_password( 32, false, false );
 
+    $json_str = wp_json_encode( $doc );
     $data = array(
         'schoolyear' => $sj,
-        'json'       => wp_json_encode( $doc ),
+        'json'       => $json_str,
         'version'    => $new_version,
         'stage'      => gsh_tp_curriculr_normalize_stage( $stage ),
         'updated_at' => current_time( 'mysql' ),
@@ -372,13 +438,26 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     );
 
     if ( $existing ) {
-        $wpdb->update( $table, $data, array( 'schoolyear' => $sj ) );
+        // Atomarer Update: version-Bedingung im WHERE schließt die Lost-Update-Race
+        // zwischen dem SELECT oben und diesem UPDATE (CODE-MED-002). Betrifft der
+        // Write 0 Zeilen, hat ein paralleler Request denselben baseVersion bereits
+        // committet -> frisches repo_get, Conflict wie im Schnellpfad.
+        $affected = $wpdb->update( $table, $data, array( 'schoolyear' => $sj, 'version' => $current ) );
+        if ( ! $affected ) {
+            $fresh = gsh_tp_curriculr_repo_get( $sj );
+            return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
+        }
     } else {
-        $wpdb->insert( $table, $data );
+        // Insert-Kollision (Duplicate-PK auf schoolyear durch Race) -> false statt
+        // PHP-Warning; wpdb::insert() gibt bei Fehler false zurück.
+        $ok = $wpdb->insert( $table, $data );
+        if ( ! $ok ) {
+            $fresh = gsh_tp_curriculr_repo_get( $sj );
+            return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
+        }
     }
 
     // Revision-Snapshot + Retention-Prune.
-    $json_str    = wp_json_encode( $doc );
     $guard       = null !== $author_override
         ? $author_override
         : ( function_exists( 'gsh_tp_curriculr_guard_current_claims' ) ? gsh_tp_curriculr_guard_current_claims() : null );
@@ -863,6 +942,20 @@ function gsh_tp_curriculr_rest_doc_list( $req = null ) {
         return new WP_REST_Response( array( 'error' => 'db_error' ), 500 );
     }
 
+    // Fetch all revisions in one query: map schoolyear→author_name
+    $revisions = $wpdb->get_results(
+        "SELECT r.schoolyear, r.author_name
+         FROM {$rev_table} r
+         INNER JOIN {$docs_table} d ON d.schoolyear = r.schoolyear AND d.version = r.version",
+        ARRAY_A
+    );
+    $author_map = array();
+    if ( $revisions ) {
+        foreach ( $revisions as $rev ) {
+            $author_map[ (string) $rev['schoolyear'] ] = (string) $rev['author_name'];
+        }
+    }
+
     $out = array();
     foreach ( (array) $rows as $row ) {
         $doc  = json_decode( $row['json'], true );
@@ -870,19 +963,13 @@ function gsh_tp_curriculr_rest_doc_list( $req = null ) {
             ? (string) $doc['meta']['name']
             : (string) $row['schoolyear'];
 
-        $rev = $wpdb->get_row( $wpdb->prepare(
-            "SELECT author_name FROM {$rev_table} WHERE schoolyear = %s AND version = %d LIMIT 1",
-            $row['schoolyear'],
-            (int) $row['version']
-        ) );
-
         $out[] = array(
             'sj'         => (string) $row['schoolyear'],
             'name'       => $name,
             'stage'      => isset( $row['stage'] ) ? (string) $row['stage'] : 'entwurf',
             'version'    => (int) $row['version'],
             'updatedAt'  => (string) $row['updated_at'],
-            'authorName' => $rev ? (string) $rev->author_name : '',
+            'authorName' => isset( $author_map[ (string) $row['schoolyear'] ] ) ? $author_map[ (string) $row['schoolyear'] ] : '',
         );
     }
 
@@ -1063,6 +1150,22 @@ function gsh_tp_curriculr_after_put_legacy( $sj, $token ) {
     }
 }
 
+/* ---------- Pure: Backup-Retention (PRIV-MED-001, Art. 5 Abs. 1 lit. e DSGVO) ---------- */
+// Dateien ohne Datumsmuster (z. B. .htaccess, index.html) werden nie als
+// abgelaufen gemeldet — reines String-/Zeit-Parsing, ohne WordPress lauffähig.
+
+function gsh_tp_curriculr_backup_is_expired( $filename, $now ) {
+    if ( ! preg_match( '/-(\d{4}-\d{2}-\d{2})\.(?:json|ics)$/', (string) basename( $filename ), $m ) ) {
+        return false;
+    }
+    $file_time = strtotime( $m[1] . ' 00:00:00 UTC' );
+    if ( false === $file_time ) {
+        return false;
+    }
+    $age_days = ( (int) $now - $file_time ) / 86400;
+    return $age_days > 30;
+}
+
 function gsh_tp_curriculr_backup_cron() {
     global $wpdb;
     $table = gsh_tp_curriculr_table();
@@ -1090,6 +1193,12 @@ function gsh_tp_curriculr_backup_cron() {
             FS_CHMOD_FILE
         );
     }
+    // Fallback für Server, die .htaccess nicht auswerten (z. B. Nginx) — leeres
+    // index.html verhindert Directory-Listing als zweite Verteidigungslinie.
+    $index_html = $backup_dir . '/index.html';
+    if ( ! file_exists( $index_html ) ) {
+        $wp_filesystem->put_contents( $index_html, '', FS_CHMOD_FILE );
+    }
 
     $stamp = gmdate( 'Y-m-d' );
     foreach ( $rows as $row ) {
@@ -1106,6 +1215,19 @@ function gsh_tp_curriculr_backup_cron() {
                 gsh_tp_curriculr_build_ics( $doc ),
                 FS_CHMOD_FILE
             );
+        }
+    }
+
+    // Speicherbegrenzung (Art. 5 Abs. 1 lit. e DSGVO): Backups älter als 30 Tage
+    // löschen. Hartes Zeitfenster, kein Setting (Spec PRIV-MED-001).
+    $now        = time();
+    $candidates = array_merge(
+        glob( "$backup_dir/*.json" ) ?: array(),
+        glob( "$backup_dir/*.ics" )  ?: array()
+    );
+    foreach ( $candidates as $path ) {
+        if ( gsh_tp_curriculr_backup_is_expired( $path, $now ) ) {
+            $wp_filesystem->delete( $path );
         }
     }
 }

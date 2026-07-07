@@ -54,15 +54,26 @@ class Gsh_Fake_Wpdb_Rev {
             $this->insert_id = $this->next_id;
             $this->revs[ $this->next_id ] = $data;
             $this->next_id++;
-        } else {
-            $this->docs[ $data['schoolyear'] ] = $data;
+            return 1;
         }
+        // Simuliert PRIMARY KEY (schoolyear): Duplicate-Insert schlägt fehl (Race).
+        if ( isset( $this->docs[ $data['schoolyear'] ] ) ) {
+            return false;
+        }
+        $this->docs[ $data['schoolyear'] ] = $data;
+        return 1;
     }
     public function update( $table, $data, $where ) {
         $key = $where['schoolyear'] ?? null;
-        if ( $key ) {
-            $this->docs[ $key ] = array_merge( $this->docs[ $key ] ?? array(), $data );
+        if ( null === $key || ! isset( $this->docs[ $key ] ) ) {
+            return false;
         }
+        // Atomare Bedingung: WHERE version = <base> muss zur gespeicherten Version passen.
+        if ( array_key_exists( 'version', $where ) && (int) $this->docs[ $key ]['version'] !== (int) $where['version'] ) {
+            return 0;
+        }
+        $this->docs[ $key ] = array_merge( $this->docs[ $key ], $data );
+        return 1;
     }
     public function query( $sql ) {
         if ( count( $this->revs ) > 50 ) {

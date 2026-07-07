@@ -82,6 +82,16 @@ gsh_assert_eq( $r['valid'], false, 'tampered token rejected' );
 $r = gsh_tp_curriculr_guard_validate_bearer( 'Bearer ' . $jwt, '', 1000 );
 gsh_assert_eq( $r['error'], 'no_key', 'empty key -> no_key' );
 
+/* ---------- validate_bearer: iss/aud pass-through (SEC-MED-003) ---------- */
+$r = gsh_tp_curriculr_guard_validate_bearer( 'Bearer ' . $jwt, $key, 1000, 'https://wp.test/wp-json/curriculr/v1', 'https://juwagn.github.io/curriculr-planner/' );
+gsh_assert_true( $r['valid'], 'validate_bearer with matching expected iss/aud is valid' );
+
+$r = gsh_tp_curriculr_guard_validate_bearer( 'Bearer ' . $jwt, $key, 1000, 'https://wrong.example/', '' );
+gsh_assert_eq( $r['error'], 'bad_iss', 'validate_bearer rejects wrong expected iss' );
+
+$r = gsh_tp_curriculr_guard_validate_bearer( 'Bearer ' . $jwt, $key, 1000, '', 'https://wrong.example/' );
+gsh_assert_eq( $r['error'], 'bad_aud', 'validate_bearer rejects wrong expected aud' );
+
 /* ---------- guard_perm + current_claims ---------- */
 $req = new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $jwt ) );
 $res = gsh_tp_curriculr_guard_perm( $req );
@@ -94,5 +104,32 @@ $res_err   = gsh_tp_curriculr_guard_perm( $req_empty );
 gsh_assert_true( $res_err instanceof WP_Error, 'guard_perm returns WP_Error on missing auth' );
 $stale = gsh_tp_curriculr_guard_current_claims();
 gsh_assert_true( $stale === null, 'current_claims null after failed guard_perm' );
+
+/* ---------- guard_perm rejects tokens with wrong iss/aud (SEC-MED-003) ---------- */
+$bad_aud_jwt = gsh_tp_curriculr_jwt_sign(
+    array(
+        'sub'    => 'iserv-sub-002',
+        'exp'    => 9999999999,
+        'iss'    => 'https://wp.test/wp-json/curriculr/v1',
+        'aud'    => 'https://attacker.example/',
+    ),
+    $key
+);
+$req_bad_aud = new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $bad_aud_jwt ) );
+$res_bad_aud = gsh_tp_curriculr_guard_perm( $req_bad_aud );
+gsh_assert_true( $res_bad_aud instanceof WP_Error, 'guard_perm rejects token with wrong aud' );
+
+$bad_iss_jwt = gsh_tp_curriculr_jwt_sign(
+    array(
+        'sub' => 'iserv-sub-003',
+        'exp' => 9999999999,
+        'iss' => 'https://evil.example/wp-json/curriculr/v1',
+        'aud' => 'https://juwagn.github.io/curriculr-planner/',
+    ),
+    $key
+);
+$req_bad_iss = new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $bad_iss_jwt ) );
+$res_bad_iss = gsh_tp_curriculr_guard_perm( $req_bad_iss );
+gsh_assert_true( $res_bad_iss instanceof WP_Error, 'guard_perm rejects token with wrong iss' );
 
 gsh_test_done();

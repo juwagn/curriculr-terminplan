@@ -36,10 +36,10 @@ To build a new ZIP (PHP files at root + assets/ subdir):
 ```bash
 cd curriculr-terminplan/plugin
 VER=$(grep "define.*GSH_TP_VERSION" gsh-terminplan.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
-zip ../../curriculr-terminplan-$VER.zip gsh-terminplan.php curriculr-data-layer.php curriculr-auth.php curriculr-guard.php page-terminplan-entwurf.php
+zip ../../curriculr-terminplan-$VER.zip gsh-terminplan.php curriculr-data-layer.php curriculr-auth.php curriculr-guard.php page-terminplan-entwurf.php page-terminplan-kiosk.php
 zip -r ../../curriculr-terminplan-$VER.zip assets/
 ```
-ZIP contents: 5 PHP files at root (incl. `page-terminplan-entwurf.php` page template, loaded from the plugin dir) + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css`.
+ZIP contents: 6 PHP files at root (incl. `page-terminplan-entwurf.php` + `page-terminplan-kiosk.php` page templates, loaded from the plugin dir) + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css`.
 
 ## Plugin File Architecture
 
@@ -60,7 +60,7 @@ Load order enforced by `require_once` sequence in `gsh-terminplan.php`:
 
 ## REST API (`curriculr/v1`)
 
-All routes except `/health` and `/auth/*` require Bearer app-token (validated by `gsh_tp_curriculr_guard_perm()`):
+Alle Routen außer `/auth/*` und den Token-Feeds; `/health` verlangt ebenfalls Bearer app-token (validated by `gsh_tp_curriculr_guard_perm()`):
 
 | Method | Route | Handler |
 |--------|-------|---------|

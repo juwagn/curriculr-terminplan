@@ -16,6 +16,22 @@ class Gsh_Fake_Wpdb_List {
     public $revs   = array();  // list of array(schoolyear, version, author_name)
 
     public function get_results( $query, $out = null ) {
+        // JOIN query for doc_list: match revisions to documents
+        if ( strpos( $query, 'INNER JOIN' ) !== false ) {
+            $result = array();
+            foreach ( $this->revs as $rev ) {
+                if ( isset( $this->docs[ $rev['schoolyear'] ] ) ) {
+                    $doc = $this->docs[ $rev['schoolyear'] ];
+                    if ( (int) $doc['version'] === (int) $rev['version'] ) {
+                        $result[] = array(
+                            'schoolyear' => $rev['schoolyear'],
+                            'author_name' => $rev['author_name'],
+                        );
+                    }
+                }
+            }
+            return $result;
+        }
         return array_values( $this->docs );
     }
     public function prepare( $q, ...$args ) {

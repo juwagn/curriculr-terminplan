@@ -70,7 +70,7 @@ function gsh_tp_curriculr_jwt_sign( $claims, $key ) {
     return $input . '.' . gsh_tp_curriculr_b64url_encode( $sig );
 }
 
-function gsh_tp_curriculr_jwt_verify( $jwt, $key, $now ) {
+function gsh_tp_curriculr_jwt_verify( $jwt, $key, $now, $expected_iss = '', $expected_aud = '' ) {
     if ( $key === '' ) {
         return array( 'valid' => false, 'error' => 'no_key' );
     }
@@ -89,6 +89,13 @@ function gsh_tp_curriculr_jwt_verify( $jwt, $key, $now ) {
     }
     if ( ! isset( $claims['exp'] ) || (int) $claims['exp'] < (int) $now ) {
         return array( 'valid' => false, 'error' => 'expired' );
+    }
+    // Leere expected-Werte = keine Prüfung (Rückwärtskompatibilität CLI-Tests).
+    if ( $expected_iss !== '' && ( ! isset( $claims['iss'] ) || $claims['iss'] !== $expected_iss ) ) {
+        return array( 'valid' => false, 'error' => 'bad_iss' );
+    }
+    if ( $expected_aud !== '' && ( ! isset( $claims['aud'] ) || $claims['aud'] !== $expected_aud ) ) {
+        return array( 'valid' => false, 'error' => 'bad_aud' );
     }
     return array( 'valid' => true, 'claims' => $claims );
 }

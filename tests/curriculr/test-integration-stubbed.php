@@ -52,11 +52,27 @@ class Gsh_Fake_Wpdb {
             $this->insert_id = $this->next_id;
             $this->revs[ $this->next_id ] = $data;
             $this->next_id++;
-        } else {
-            $this->rows[ $data['schoolyear'] ] = $data;
+            return 1;
         }
+        // Simuliert PRIMARY KEY (schoolyear): Duplicate-Insert schlägt fehl (Race).
+        if ( isset( $this->rows[ $data['schoolyear'] ] ) ) {
+            return false;
+        }
+        $this->rows[ $data['schoolyear'] ] = $data;
+        return 1;
     }
-    public function update( $t, $data, $where ) { $this->rows[ $where['schoolyear'] ] = array_merge( $this->rows[ $where['schoolyear'] ] ?? array(), $data ); }
+    public function update( $t, $data, $where ) {
+        $key = $where['schoolyear'] ?? null;
+        if ( null === $key || ! isset( $this->rows[ $key ] ) ) {
+            return false;
+        }
+        // Atomare Bedingung: WHERE version = <base> muss zur gespeicherten Version passen.
+        if ( array_key_exists( 'version', $where ) && (int) $this->rows[ $key ]['version'] !== (int) $where['version'] ) {
+            return 0;
+        }
+        $this->rows[ $key ] = array_merge( $this->rows[ $key ], $data );
+        return 1;
+    }
     public function query( $sql ) { return true; }
 }
 $GLOBALS['wpdb']      = new Gsh_Fake_Wpdb();
@@ -226,5 +242,36 @@ gsh_assert_contains( $ics_p_all, 'UID:nm3@curriculr-planner', 'n:m catch-all: nm
 gsh_assert_contains( $ics_p_sl, 'UID:nm1@curriculr-planner', 'n:m SL filter: nm1 (no group) present' );
 gsh_assert_contains( $ics_p_sl, 'UID:nm2@curriculr-planner', 'n:m SL filter: nm2 (Schulleitung) present' );
 gsh_assert_true( strpos( $ics_p_sl, 'UID:nm3@curriculr-planner' ) === false, 'n:m SL filter: nm3 (Kollegium) excluded' );
+
+/* ---------- Lost-Update-Race: atomarer UPDATE fängt ab, was der Schnellpfad
+   allein nicht sieht (CODE-MED-002) ---------- */
+class Gsh_Fake_Wpdb_Race extends Gsh_Fake_Wpdb {
+    public $race_armed = false;
+    public function get_row( $key, $out = null ) {
+        $row = parent::get_row( $key, $out );
+        if ( $this->race_armed && is_array( $row ) && ( $row['schoolyear'] ?? '' ) === 'sj_race' ) {
+            $this->race_armed = false; // einmalig auslösen
+            // Simuliert: zwischen diesem SELECT (repo_get in repo_put) und dem
+            // folgenden atomaren UPDATE committet ein paralleler Request bereits
+            // Version 2. Der Schnellpfad hatte hier noch Version 1 gesehen.
+            $this->rows['sj_race']['version'] = 2;
+        }
+        return $row;
+    }
+}
+$saved_wpdb    = $GLOBALS['wpdb'];
+$race_wpdb     = new Gsh_Fake_Wpdb_Race();
+$GLOBALS['wpdb'] = $race_wpdb;
+
+$r_race1 = gsh_tp_curriculr_repo_put( 'sj_race', $doc, 0 );
+gsh_assert_eq( $r_race1['status'], 'ok', 'race setup: first PUT ok' );
+gsh_assert_eq( $r_race1['version'], 1, 'race setup: version 1' );
+
+$race_wpdb->race_armed = true;
+$r_race2 = gsh_tp_curriculr_repo_put( 'sj_race', $doc, 1 );
+gsh_assert_eq( $r_race2['status'], 'conflict', 'atomic UPDATE catches lost-update race even though quick-path decision said ok' );
+gsh_assert_eq( $r_race2['current']['version'], 2, 'race conflict reports the version that actually won the race' );
+
+$GLOBALS['wpdb'] = $saved_wpdb;
 
 gsh_test_done();

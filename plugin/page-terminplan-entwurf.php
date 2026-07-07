@@ -38,6 +38,8 @@ if ( $iserv_domain ) {
 	header( "Content-Security-Policy: frame-ancestors 'self' " . esc_url_raw( $iserv_domain ) );
 }
 header( 'X-Frame-Options: SAMEORIGIN' );
+// Token steht in der URL — Referrer darf nie an Dritt-Ressourcen leaken.
+header( 'Referrer-Policy: no-referrer' );
 
 // Kiosk-Kontext setzen BEVOR do_shortcode läuft, damit der Shortcode keinen
 // zweiten Entwurfs-Banner rendert (gsh_tp_draft_kiosk_context() prüft dieses Flag).
@@ -55,8 +57,8 @@ if ( function_exists( 'gsh_tp_draft_kiosk_context' ) ) {
 </head>
 <body class="gtp-entwurf-kiosk <?php echo is_admin_bar_showing() ? 'admin-bar' : ''; ?>">
 
-<main style="max-width:1200px;margin:0 auto;padding:1rem">
-	<div class="gtp-draft-banner" style="margin-bottom:1.5rem;border-radius:6px;padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.5rem">
+<main class="gtp-kiosk-main">
+	<div class="gtp-draft-banner">
 		<?php echo gsh_tp_icon( 'alert-triangle' ); ?>
 		<span><strong>Entwurf</strong> &ndash; dieser Terminplan ist noch nicht beschlossen.
 		Bitte &Auml;nderungsw&uuml;nsche direkt an die Schulleitung melden.</span>
