@@ -1163,7 +1163,17 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
         if ( '' === $label ) {
             $label = $sj;
         }
-        gsh_tp_curriculr_provision_schoolyear( $sj, $label, array() );
+        $groups = array();
+        if ( is_array( $doc ) && ! empty( $doc['availableGroups'] ) && is_array( $doc['availableGroups'] ) ) {
+            foreach ( $doc['availableGroups'] as $g ) {
+                $g = trim( (string) $g );
+                if ( '' !== $g ) {
+                    $groups[] = $g;
+                }
+            }
+            $groups = array_slice( array_values( array_unique( $groups ) ), 0, 7 );
+        }
+        gsh_tp_curriculr_provision_schoolyear( $sj, $label, $groups );
 
         $schoolyears = gsh_tp_get_schoolyears();
         $sy_idx      = null;

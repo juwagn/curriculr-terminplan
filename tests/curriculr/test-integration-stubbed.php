@@ -190,6 +190,31 @@ $pub = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseV
 gsh_assert_eq( $pub->data['stage'], 'oeffentlich', 'stage carried through to oeffentlich' );
 gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'oeffentlich PUT without profile mapping leaves active profile untouched' );
 
+// Auto-Provision inkl. Gruppen-Kalender aus availableGroups (Spec 2026-07-15)
+$doc_grp = array(
+    'meta'            => array( 'name' => 'Grp 27/28' ),
+    'categories'      => array(),
+    'availableGroups' => array( 'Eltern', 'Kollegium' ),
+    'events'          => array(
+        array( 'id' => 'ap1', 'title' => 'T', 'allDay' => true, 'start' => '2027-09-01', 'end' => '2027-09-01', 'groups' => array() ),
+    ),
+    'schoolyear'      => array( 'id' => 'x', 'label' => '2027/28', 'firstSchoolDay' => '2027-09-01', 'holidays' => array() ),
+);
+$GLOBALS['wpdb']->rows['sj_2027_28'] = array(
+    'schoolyear' => 'sj_2027_28', 'json' => json_encode( $doc_grp ), 'version' => 1,
+    'stage' => 'entwurf', 'feed_token' => 'grptoken', 'updated_at' => '2027-09-01 00:00:00',
+);
+gsh_tp_curriculr_after_put( 'sj_2027_28', 'grptoken' );
+$grp_cals = array();
+foreach ( gsh_tp_get_schoolyears() as $sy_check ) {
+    if ( $sy_check['key'] === 'sj_2027_28' ) {
+        foreach ( $sy_check['calendars'] as $c ) { $grp_cals[] = $c['group']; }
+    }
+}
+gsh_assert_true( in_array( null, $grp_cals, true ), 'auto-provision: main calendar exists' );
+gsh_assert_true( in_array( 'Eltern', $grp_cals, true ), 'auto-provision: Eltern group calendar created' );
+gsh_assert_true( in_array( 'Kollegium', $grp_cals, true ), 'auto-provision: Kollegium group calendar created' );
+
 // Mit explizitem Mapping schreibt after_put das ICS direkt in den Profil-Cache (alle Stages).
 // Schoolyears-Store leeren, damit der Legacy-Pfad (profile_map) exercised wird.
 $GLOBALS['schoolyears'] = array();
