@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.32.0
+ * Version:     4.33.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.33.0
+ * - [NEU] Gruppen-Filter im Terminplan: Kolleg:innen können auf der öffentlichen Seite und in den Kiosk-Ansichten nach Planner-Gruppen (z. B. Eltern, Kollegium) filtern
+ * - [NEU] Kategorien-Sync: Labels und Farben aus dem Planner überschreiben beim Senden automatisch die Plugin-Kategorien — Stichwörter fürs IServ-Matching bleiben erhalten
+ * - [NEU] Neue Schuljahre aus dem Planner werden automatisch mit allen Gruppen-Kalendern angelegt (max 7)
+ * - [UX] Schuljahr-Karte warnt, wenn Planner-Gruppen ohne eigenen Kalender sind
  * v4.32.0
  * - [UX] Schuljahr-Karte zeigt jetzt zusätzlich, wer zuletzt gespeichert hat (Autor + Version) — bisher nur Zeitstempel ohne Person
  * v4.31.0
@@ -619,7 +624,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.32.0' );
+define( 'GSH_TP_VERSION',       '4.33.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -863,6 +868,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.33.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Gruppen-Filter im Terminplan: Kolleg:innen können auf der öffentlichen Seite und in den Kiosk-Ansichten nach Planner-Gruppen (z. B. Eltern, Kollegium) filtern' ),
+                array( 'tag' => 'NEU', 'text' => 'Kategorien-Sync: Labels und Farben aus dem Planner überschreiben beim Senden automatisch die Plugin-Kategorien — Stichwörter fürs IServ-Matching bleiben erhalten' ),
+                array( 'tag' => 'NEU', 'text' => 'Neue Schuljahre aus dem Planner werden automatisch mit allen Gruppen-Kalendern angelegt (max 7)' ),
+                array( 'tag' => 'UX', 'text' => 'Schuljahr-Karte warnt, wenn Planner-Gruppen ohne eigenen Kalender sind' ),
+            ),
+        ),
         array(
             'version' => '4.32.0',
             'entries' => array(
