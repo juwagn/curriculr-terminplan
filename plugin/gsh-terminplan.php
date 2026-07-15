@@ -8269,9 +8269,9 @@ function gtpSaveFilters(){
  */
 function gtpReset(){
   gtpSel = {};
+  gtpGrpSel = {};
   gtpApply();
   gtpSaveFilters();
-  gtpGrpSel = {};
   try{ localStorage.removeItem("gtpGrpSel"); }catch(e){}
   document.querySelectorAll(".gtp-gb").forEach(function(b){
     b.classList.add("gtp-gb-on");
