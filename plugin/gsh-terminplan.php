@@ -6938,10 +6938,12 @@ function gsh_tp_table( $index, $qd, $sjs, $annotation_map = array() ) {
             }
             $range = ( new DateTime( $ev['start'] ) )->format( 'd.m.' )
                    . '&ndash;' . $eff_end->format( 'd.m.' );
+            $groups_long = (array) ( $ev['groups'] ?? array() );
             $h .= '<div class="gn-long gc-' . esc_attr( $cc )
                 . '" data-c="' . esc_attr( $cc )
-                . '" data-categories="' . $data_cats
-                . '" title="' . esc_attr( wp_strip_all_tags( $tt ) ) . '">'
+                . '" data-categories="' . $data_cats . '"'
+                . ( $groups_long ? ' data-groups="' . esc_attr( implode( '|', $groups_long ) ) . '"' : '' )
+                . ' title="' . esc_attr( wp_strip_all_tags( $tt ) ) . '">'
                 . '<span class="gn-range">' . $range . '</span>'
                 . esc_html( $ev['summary'] )
                 . '</div>';
@@ -8318,13 +8320,15 @@ function gtpReset(){
   });
 }
 
-/* Kategorie-Filter auf Mobile ein-/ausklappen */
+/* Kategorie-Filter (+ Gruppen-Filter-Zeile) auf Mobile ein-/ausklappen */
 function gtpFilterToggle(){
   var body = document.getElementById("gtp-filt-body");
   var btn  = document.querySelector(".gtp-filt-toggle");
   if(!body) return;
   body.classList.toggle("gtp-filt-open");
   var open = body.classList.contains("gtp-filt-open");
+  var grpBody = document.getElementById("gtp-grp-body");
+  if(grpBody) grpBody.classList.toggle("gtp-filt-open", open);
   if(btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
@@ -8478,9 +8482,10 @@ function gtpApplyVisibility(el){
 }
 
 /**
- * Wendet den aktuellen Kategorie-Filter auf alle Elemente an.
+ * Wendet die aktuellen Kategorie- und Gruppen-Filter auf alle Elemente an.
  * Aktualisiert die Filter-Button-Optik (aktiv/inaktiv), blendet Events
- * (.ge), lange Termine (.gn-long) und Frist-Notizen (.gn) passend ein/aus.
+ * (.ge), lange Termine (.gn-long), Frist-Notizen (.gn) und Jahresraster-
+ * Events (.gtp-yr-ev) passend ein/aus.
  * Zeigt oder versteckt den Reset-Button je nach Filterzustand.
  */
 function gtpApply(){
@@ -8511,16 +8516,26 @@ function gtpApply(){
     gtpApplyVisibility(el);
   });
 
-  /* Lange Termine + Frist-Notizen: nur Kategorie-Filter */
+  /* Lange Termine + Frist-Notizen: Kategorie- + Gruppen-Filter */
   document.querySelectorAll(".gn-long[data-c], .gn[data-c]").forEach(function(el){
     var c = el.getAttribute("data-c");
-    el.style.display = !gtpSel[c] ? "" : "none";
+    var groupsAttr = el.getAttribute("data-groups");
+    var groupOk = true;
+    if(groupsAttr){
+      groupOk = groupsAttr.split("|").some(function(g){ return !gtpGrpSel[g]; });
+    }
+    el.style.display = (!gtpSel[c] && groupOk) ? "" : "none";
   });
 
-  /* Jahresraster-Events: Kategorie-Filter */
+  /* Jahresraster-Events: Kategorie- + Gruppen-Filter */
   document.querySelectorAll(".gtp-yr-ev[data-c]").forEach(function(el){
     var c = el.getAttribute("data-c");
-    el.style.display = !gtpSel[c] ? "" : "none";
+    var groupsAttr = el.getAttribute("data-groups");
+    var groupOk = true;
+    if(groupsAttr){
+      groupOk = groupsAttr.split("|").some(function(g){ return !gtpGrpSel[g]; });
+    }
+    el.style.display = (!gtpSel[c] && groupOk) ? "" : "none";
   });
 
   /* Reset-Button zeigen / verstecken */
