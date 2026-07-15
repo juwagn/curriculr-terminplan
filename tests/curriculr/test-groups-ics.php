@@ -21,4 +21,4 @@ gsh_assert_contains( $ics, 'X-GSH-GROUPS:A\\,B', 'comma inside group name escape
 preg_match( '/UID:g2@curriculr-planner.*?END:VEVENT/s', str_replace( "\r\n", "\n", $ics ), $m2 );
 gsh_assert_true( isset( $m2[0] ) && strpos( $m2[0], 'X-GSH-GROUPS' ) === false, 'empty groups -> no X field' );
 
-echo "ALL PASS\n";
+gsh_test_done();
