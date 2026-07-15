@@ -6266,6 +6266,18 @@ function gsh_tp_shortcode( $atts ) {
 
     $events  = gsh_tp_parse_events( $data );
     $events  = gsh_tp_augment_event_times( $events, $data );
+    $events = gsh_tp_augment_event_groups( $events, $data );
+
+    // Union aller Termin-Gruppen für die Filter-Chips (Filter-Bar-Builder liest sie).
+    $group_union = array();
+    foreach ( $events as $ev_g ) {
+        foreach ( (array) ( $ev_g['groups'] ?? array() ) as $g ) {
+            $group_union[ $g ] = true;
+        }
+    }
+    ksort( $group_union );
+    $GLOBALS['gsh_tp_group_union'] = array_keys( $group_union );
+
     $grenzen = gsh_tp_quartale( $profile_id );
     $sjs     = gsh_tp_opt( 'schuljahr_start', '2025-08-25', $profile_id );
 
@@ -6449,6 +6461,16 @@ function gsh_tp_shortcode( $atts ) {
     // „Sonstige"-Button für Termine ohne Kategorie-Match
     $o .= '<button type="button" class="gtp-fb gtp-fb-on" data-c="standard" onclick="gtpFil(this)" aria-pressed="true">Sonstige</button>';
     $o .= '</div>'; // #gtp-filt-body
+    $kiosk_groups = isset( $GLOBALS['gsh_tp_group_union'] ) ? (array) $GLOBALS['gsh_tp_group_union'] : array();
+    if ( $kiosk_groups ) {
+        $o .= '<div class="gtp-filt gtp-filt-open gtp-grp-row" id="gtp-grp-body">';
+        $o .= '<span class="gtp-grp-label">Gruppen:</span>';
+        foreach ( $kiosk_groups as $g ) {
+            $o .= '<button type="button" class="gtp-gb gtp-gb-on" data-g="' . esc_attr( $g )
+                . '" onclick="gtpGrpFil(this)" aria-pressed="true">' . esc_html( $g ) . '</button>';
+        }
+        $o .= '</div>';
+    }
     $o .= '</div>'; // .gtp-filt-wrap
 
     // Quartalspanels
@@ -6708,6 +6730,11 @@ function gsh_tp_event_data_attrs( $ev ) {
     $attrs .= ' data-cat="'     . esc_attr( $cat ) . '"';
     $attrs .= ' data-allday="'  . ( $ev['allday'] ? '1' : '0' ) . '"';
     $attrs .= ' data-uid="'     . esc_attr( isset( $ev['uid'] ) ? $ev['uid'] : '' ) . '"';
+
+    $groups = (array) ( $ev['groups'] ?? array() );
+    if ( $groups ) {
+        $attrs .= ' data-groups="' . esc_attr( implode( '|', $groups ) ) . '"';
+    }
 
     return $attrs;
 }
@@ -8202,6 +8229,16 @@ function gtpTab(q){
 
 var gtpSel = {}; // { slug: true } → Kategorie VERSTECKT; leer = alle sichtbar
 
+var gtpGrpSel = {}; /* { gruppe: true } -> Gruppe VERSTECKT; leer = alle sichtbar */
+function gtpGrpFil(btn){
+  var g = btn.getAttribute("data-g");
+  if(gtpGrpSel[g]){ delete gtpGrpSel[g]; } else { gtpGrpSel[g] = true; }
+  btn.classList.toggle("gtp-gb-on", !gtpGrpSel[g]);
+  btn.setAttribute("aria-pressed", gtpGrpSel[g] ? "false" : "true");
+  try{ localStorage.setItem("gtpGrpSel", JSON.stringify(gtpGrpSel)); }catch(e){}
+  gtpApply();
+}
+
 /**
  * Verarbeitet einen Klick auf einen Kategorie-Filterbutton.
  * Jeder Klick schaltet die Kategorie unabhängig ein oder aus (echter Toggle-Modus).
@@ -8234,6 +8271,12 @@ function gtpReset(){
   gtpSel = {};
   gtpApply();
   gtpSaveFilters();
+  gtpGrpSel = {};
+  try{ localStorage.removeItem("gtpGrpSel"); }catch(e){}
+  document.querySelectorAll(".gtp-gb").forEach(function(b){
+    b.classList.add("gtp-gb-on");
+    b.setAttribute("aria-pressed","true");
+  });
 }
 
 /* Kategorie-Filter auf Mobile ein-/ausklappen */
@@ -8372,14 +8415,20 @@ function gtpApplyVisibility(el){
   var c = el.getAttribute("data-c");
   var categoryOk = !gtpSel[c]; /* sichtbar wenn Kategorie nicht in der Versteckt-Liste */
 
+  var groupsAttr = el.getAttribute("data-groups");
+  var groupOk = true;
+  if(groupsAttr){
+    groupOk = groupsAttr.split("|").some(function(g){ return !gtpGrpSel[g]; });
+  }
+
   /* Kategorie-Filter: komplett verstecken wenn nicht passend */
-  el.style.display = categoryOk ? "" : "none";
+  el.style.display = (categoryOk && groupOk) ? "" : "none";
 
   /* Suche: Focus-Mode – Nicht-Treffer abdimmen (nur bei aktiver Suche) */
   var inp = document.getElementById("gtp-search-input");
   var q   = inp ? inp.value.trim().toLowerCase() : "";
 
-  if(categoryOk && q){
+  if(categoryOk && groupOk && q){
     var txt   = (el.textContent  || "").toLowerCase();
     var title = (el.getAttribute("title") || "").toLowerCase();
     var searchOk = txt.indexOf(q) !== -1 || title.indexOf(q) !== -1;
@@ -8683,6 +8732,16 @@ document.addEventListener("DOMContentLoaded",function(){
   try{
     var saved = localStorage.getItem("gtp_filters");
     if(saved){ gtpSel = JSON.parse(saved); gtpApply(); }
+    var savedG = localStorage.getItem("gtpGrpSel");
+    if(savedG){
+      gtpGrpSel = JSON.parse(savedG);
+      document.querySelectorAll(".gtp-gb").forEach(function(b){
+        var g = b.getAttribute("data-g");
+        b.classList.toggle("gtp-gb-on", !gtpGrpSel[g]);
+        b.setAttribute("aria-pressed", gtpGrpSel[g] ? "false" : "true");
+      });
+      gtpApply();
+    }
   }catch(e){}
 });
 
