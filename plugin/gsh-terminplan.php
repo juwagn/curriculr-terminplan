@@ -3,10 +3,16 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.29.0
+ * Version:     4.32.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.32.0
+ * - [UX] Schuljahr-Karte zeigt jetzt zusätzlich, wer zuletzt gespeichert hat (Autor + Version) — bisher nur Zeitstempel ohne Person
+ * v4.31.0
+ * - [FIX] Vom Planner gesendete neue Schuljahre waren in WordPress unsichtbar: after_put war ohne Zuordnung ein stilles No-op. Jetzt wird das Schuljahr automatisch (inaktiv) angelegt inkl. Haupt-Kalender + ICS-Cache — im Admin sichtbar und zuordenbar, Live-Anzeige bleibt unberührt
+ * v4.30.0
+ * - [NEU] Neue Einstellung "Schulbezeichnung (PDF-Kopfzeile)": eigener Schulname statt fest verdrahtetem "Gesamtschule Horst" auf dem Termin-PDF frei einstellbar
  * v4.29.0
  * - [SECURITY] Google-Fonts-Import entfernt — Inter wird self-hosted aus assets/fonts/ geladen (DSGVO: keine IP-Übertragung an Google mehr)
  * - [SECURITY] App-Token-Verify prüft jetzt iss/aud-Claims; Guard antwortet 401 statt 403 bei fehlendem/ungültigem Token
@@ -613,7 +619,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.29.0' );
+define( 'GSH_TP_VERSION',       '4.32.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -857,6 +863,24 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.32.0',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Schuljahr-Karte zeigt jetzt zusätzlich, wer zuletzt gespeichert hat (Autor + Version) — bisher nur Zeitstempel ohne Person' ),
+            ),
+        ),
+        array(
+            'version' => '4.31.0',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Vom Planner gesendete neue Schuljahre waren in WordPress unsichtbar (stilles No-op ohne Zuordnung). Jetzt automatische, inaktive Anlage inkl. Haupt-Kalender und ICS-Cache — im Admin sichtbar und zuordenbar, Live-Anzeige bleibt unberührt' ),
+            ),
+        ),
+        array(
+            'version' => '4.30.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Neue Einstellung "Schulbezeichnung (PDF-Kopfzeile)": eigener Schulname statt fest verdrahtetem "Gesamtschule Horst" auf dem Termin-PDF frei einstellbar' ),
+            ),
+        ),
         array(
             'version' => '4.29.0',
             'entries' => array(
@@ -1606,10 +1630,24 @@ function gsh_tp_get_doc_status( $sj_key ) {
     if ( ! $row ) {
         return null;
     }
+    $version     = (int) ( $row['version'] ?? 0 );
+    $author_name = '';
+    if ( function_exists( 'gsh_tp_curriculr_revisions_table' ) ) {
+        $rev_table = gsh_tp_curriculr_revisions_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $author_name = (string) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT author_name FROM `{$rev_table}` WHERE schoolyear = %s AND version = %d LIMIT 1",
+                $sj_key,
+                $version
+            )
+        );
+    }
     return array(
-        'stage'     => (string) ( $row['stage']      ?? 'entwurf' ),
-        'last_sent' => (string) ( $row['updated_at'] ?? '' ),
-        'version'   => (int) ( $row['version'] ?? 0 ),
+        'stage'       => (string) ( $row['stage']      ?? 'entwurf' ),
+        'last_sent'   => (string) ( $row['updated_at'] ?? '' ),
+        'version'     => $version,
+        'author_name' => $author_name,
     );
 }
 
@@ -3630,6 +3668,7 @@ function gsh_tp_handle_save_kiosk( &$profiles ) {
         update_option( 'gsh_tp_kiosk_token',    sanitize_text_field( wp_unslash( $_POST['gsh_tp_kiosk_token'] ?? '' ) ) );
         update_option( 'gsh_tp_iserv_domain',   esc_url_raw( wp_unslash( $_POST['gsh_tp_iserv_domain'] ?? '' ) ) );
         update_option( 'gsh_tp_feedback_email', sanitize_email( wp_unslash( $_POST['gsh_tp_feedback_email'] ?? '' ) ) );
+        update_option( 'gsh_tp_school_name', sanitize_text_field( wp_unslash( $_POST['gsh_tp_school_name'] ?? '' ) ) );
         echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kiosk-Einstellungen gespeichert.</p></div>';
     } else {
         echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>';
@@ -4757,6 +4796,10 @@ function gsh_tp_render_profile_tab_v2() {
             <?php if ( $s_time ) : ?>
                 <span style="color:#888;margin-left:8px">
                     Zuletzt gesendet: <?php echo esc_html( $s_time ); ?>
+                    <?php if ( ! empty( $doc_status['author_name'] ) ) : ?>
+                        von <strong style="color:#3c434a"><?php echo esc_html( $doc_status['author_name'] ); ?></strong>
+                    <?php endif; ?>
+                    · Version <?php echo (int) $doc_status['version']; ?>
                 </span>
             <?php endif; ?>
         </div>
@@ -5145,6 +5188,16 @@ function gsh_tp_render_kiosk_tab() {
                            class="regular-text" placeholder="deine@schule.de" />
                     <p class="description">An diese Adresse werden Feedback-Nachrichten aus dem Terminplan gesendet.
                     Standard: WordPress-Admin-E-Mail (<code><?php echo esc_html( get_bloginfo( 'admin_email' ) ); ?></code>).</p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="gsh_tp_school_name">Schulbezeichnung (PDF-Kopfzeile)</label></th>
+                <td>
+                    <input type="text" id="gsh_tp_school_name" name="gsh_tp_school_name"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_school_name', 'Gesamtschule Horst' ) ); ?>"
+                           class="regular-text" placeholder="Gesamtschule Horst" />
+                    <p class="description">Erscheint oben links neben dem Curriculr-Logo auf dem Termin-PDF (Quartal- und Jahres-Export).
+                    Bei zwei Worten wird nach dem ersten Wort umgebrochen (z.&nbsp;B. "Gesamtschule" / "Horst").</p>
                 </td>
             </tr>
             <tr>
@@ -6235,7 +6288,9 @@ function gsh_tp_shortcode( $atts ) {
     $feedback_nonce = wp_create_nonce( 'gsh_tp_feedback_nonce' );
     $ajax_url       = admin_url( 'admin-ajax.php' );
 
-    $o .= '<div class="gtp" id="gtp" data-view="quartal" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '">';
+    $school_name = esc_attr( get_option( 'gsh_tp_school_name', 'Gesamtschule Horst' ) );
+
+    $o .= '<div class="gtp" id="gtp" data-view="quartal" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '" data-school="' . $school_name . '">';
 
     // Entwurfs-Banner — nicht im Kiosk-Template (dort steht bereits ein Banner).
     if ( ! empty( $profile['is_draft'] ) && ! gsh_tp_draft_kiosk_context() ) {
@@ -8597,6 +8652,18 @@ setTimeout(function(){
    ══════════════════════════════════════════════════════ */
 
 /**
+ * Escaped HTML-Sonderzeichen für den Einsatz in String-Konkatenation
+ * (Kopfzeilen-Text kommt aus einer Admin-Einstellung, nicht aus dem DOM).
+ * @param {string} s
+ * @return {string}
+ */
+function gtpEsc(s){
+  return String(s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+
+/**
  * Druckt das aktuelle oder alle Quartale über einen unsichtbaren iframe.
  * Baut einen vollständigen HTML-Dokument-String mit eigenem Print-CSS auf,
  * schreibt ihn in den iframe und ruft contentWindow.print() auf. Der iframe-
@@ -8723,11 +8790,15 @@ function gtpPrint(mode,pdfTitle){
     +'</div>';
 
   /* ── Kopfzeile: Logo links | Titel rechts ── */
+  var schoolName=(gtpEl&&gtpEl.dataset.school)||"Gesamtschule Horst";
+  var schoolParts=schoolName.split(" ");
+  var schoolHtml=gtpEsc(schoolParts[0])
+    +(schoolParts.length>1 ? "<br>"+gtpEsc(schoolParts.slice(1).join(" ")) : "");
   var HDR='<div class="hdr">'
     +'<div class="hdr-logo">'
     +'<span class="hdr-logo-mark">Curriculr</span>'
     +'<span class="hdr-logo-sep"></span>'
-    +'<span class="hdr-logo-name">Gesamtschule<br>Horst</span>'
+    +'<span class="hdr-logo-name">'+schoolHtml+'</span>'
     +'</div>'
     +'<div class="hdr-title">'
     +'<div class="hdr-main">Schuljahresterminplan\u00a02025\u202f/\u202f26</div>'

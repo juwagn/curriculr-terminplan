@@ -88,7 +88,16 @@ function wp_json_encode( $d ) { return json_encode( $d ); }
 function current_user_can( $c ) { return true; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function gsh_tp_get_profiles() { return $GLOBALS['profiles'] ?? array(); }
-function gsh_tp_get_schoolyears() { return array(); } // dieser Test übt den Legacy-Pfad via profile_map aus, keine verschachtelten Schuljahre
+// Mutable schoolyears store: seit Auto-Provision (4.31.0) legt after_put fehlende
+// Schuljahre selbst an — der Stub muss Schreiben+Lesen können.
+$GLOBALS['schoolyears'] = array();
+function gsh_tp_get_schoolyears() { return $GLOBALS['schoolyears'] ?? array(); }
+function gsh_tp_save_schoolyears( $schoolyears ) { $GLOBALS['schoolyears'] = $schoolyears; }
+function gsh_tp_calendar_id( $sj_key, $group ) {
+    $base = sanitize_key( $sj_key );
+    return ( null === $group || '' === $group ) ? $base : $base . '__' . sanitize_key( $group );
+}
+function sanitize_text_field( $str ) { return trim( strip_tags( (string) $str ) ); }
 function gsh_tp_active_profile_id() { return 'p1'; }
 function gsh_tp_ck( $prefix, $pid ) { return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION; }
 function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
@@ -159,18 +168,31 @@ gsh_assert_true( strpos( $good->data['feedUrl'], '/feed/sj_2026_27/' ) !== false
 $nf = gsh_tp_curriculr_rest_feed( new Gsh_Fake_Req( array(), array( 'sj' => 'sj_2026_27', 'token' => 'WRONGTOKEN' ) ) );
 gsh_assert_true( $nf instanceof WP_REST_Response && $nf->status === 404, 'rest_feed wrong token -> 404' );
 
-/* ---------- Stage + Nicht-Disruption ---------- */
-// Standard-Stufe ist entwurf; ohne Mapping ist after_put ein No-op.
+/* ---------- Stage + Nicht-Disruption + Auto-Provision ---------- */
+// Standard-Stufe ist entwurf; ohne Mapping provisioniert after_put das Schuljahr
+// automatisch (inaktiv) — bestehende Profile bleiben unberührt (Live-Schutz).
 $draft = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 3 ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $draft->data['stage'], 'entwurf', 'PUT without stage defaults to entwurf' );
 gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'entwurf PUT without mapping does not write profile cache' );
 
-// Ohne explizites Profil-Mapping ist after_put auch für oeffentlich ein No-op (Live-Schutz).
+// Auto-Provision: Schuljahr angelegt (inaktiv), Haupt-Kalender vorhanden, ICS-Cache gefüllt.
+$auto_sy = null;
+foreach ( gsh_tp_get_schoolyears() as $sy_check ) {
+    if ( $sy_check['key'] === 'sj_2026_27' ) { $auto_sy = $sy_check; break; }
+}
+gsh_assert_true( null !== $auto_sy, 'unmapped PUT auto-provisions the schoolyear' );
+gsh_assert_true( empty( $auto_sy['is_active'] ), 'auto-provisioned schoolyear stays inactive (Live-Schutz)' );
+$auto_ics = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', sanitize_key( gsh_tp_calendar_id( 'sj_2026_27', null ) ) ) ] ?? '';
+gsh_assert_contains( $auto_ics, 'BEGIN:VCALENDAR', 'auto-provisioned main calendar gets ICS cache' );
+
+// Ohne explizites Profil-Mapping bleibt das aktive Profil auch für oeffentlich unberührt.
 $pub = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 4, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $pub->data['stage'], 'oeffentlich', 'stage carried through to oeffentlich' );
-gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'oeffentlich PUT without profile mapping is a safe no-op' );
+gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'oeffentlich PUT without profile mapping leaves active profile untouched' );
 
 // Mit explizitem Mapping schreibt after_put das ICS direkt in den Profil-Cache (alle Stages).
+// Schoolyears-Store leeren, damit der Legacy-Pfad (profile_map) exercised wird.
+$GLOBALS['schoolyears'] = array();
 $GLOBALS['options']['gsh_tp_curriculr_profile_map'] = array( 'sj_2026_27' => 'p1' );
 unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] );
 $pub2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 5, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );

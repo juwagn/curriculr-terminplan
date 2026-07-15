@@ -1046,13 +1046,47 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
         }
     }
 
-    if ( null !== $sy_idx ) {
-        gsh_tp_curriculr_after_put_nested( $schoolyears, $sy_idx, $sj, $token );
-        return;
+    if ( null === $sy_idx ) {
+        // Legacy install with explicit profile_map mapping → old flat path.
+        if ( ! empty( gsh_tp_curriculr_profile_for( $sj ) ) ) {
+            gsh_tp_curriculr_after_put_legacy( $sj, $token );
+            return;
+        }
+
+        // Weder Schuljahr noch Legacy-Mapping: bisher stilles No-op — das Doc
+        // lag in wp_curriculr_docs, aber Anzeige/Admin kannten es nicht (kein
+        // Kalender, keine Zuordnung). Auto-Provision legt das Schuljahr
+        // INAKTIV an (is_active=false, Live-Anzeige unberührt), damit es im
+        // Admin sichtbar/zuordenbar ist und der ICS-Cache gefüllt wird.
+        $row   = gsh_tp_curriculr_repo_get( $sj );
+        $doc   = $row ? json_decode( $row['json'], true ) : null;
+        $label = '';
+        if ( is_array( $doc ) ) {
+            if ( isset( $doc['schoolyear']['label'] ) && is_string( $doc['schoolyear']['label'] ) && '' !== $doc['schoolyear']['label'] ) {
+                $label = $doc['schoolyear']['label'];
+            } elseif ( isset( $doc['meta']['name'] ) && is_string( $doc['meta']['name'] ) ) {
+                $label = $doc['meta']['name'];
+            }
+        }
+        if ( '' === $label ) {
+            $label = $sj;
+        }
+        gsh_tp_curriculr_provision_schoolyear( $sj, $label, array() );
+
+        $schoolyears = gsh_tp_get_schoolyears();
+        $sy_idx      = null;
+        foreach ( $schoolyears as $i => $sy ) {
+            if ( $sy['key'] === $sj ) {
+                $sy_idx = $i;
+                break;
+            }
+        }
+        if ( null === $sy_idx ) {
+            return; // Provisionierung nicht möglich (z. B. Schoolyears-Store fehlt).
+        }
     }
 
-    // Legacy path: read from profile_map → flat profiles
-    gsh_tp_curriculr_after_put_legacy( $sj, $token );
+    gsh_tp_curriculr_after_put_nested( $schoolyears, $sy_idx, $sj, $token );
 }
 
 /**
