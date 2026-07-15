@@ -215,6 +215,39 @@ gsh_assert_true( in_array( null, $grp_cals, true ), 'auto-provision: main calend
 gsh_assert_true( in_array( 'Eltern', $grp_cals, true ), 'auto-provision: Eltern group calendar created' );
 gsh_assert_true( in_array( 'Kollegium', $grp_cals, true ), 'auto-provision: Kollegium group calendar created' );
 
+// Auto-Provision: after_put deckelt availableGroups selbst auf 7 VOR dem Aufruf von
+// provision_schoolyear() (die dortige Grenze weist bei >7 Gruppen komplett ab und legt
+// GAR NICHTS an). Ohne diesen Pre-Slice würde ein Doc mit >7 Gruppen das Schuljahr
+// stillschweigend gar nicht anlegen. 9 Gruppen rein, nur die ersten 7 dürfen ankommen.
+$doc_grp9 = array(
+    'meta'            => array( 'name' => 'Grp 28/29' ),
+    'categories'      => array(),
+    'availableGroups' => array( 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9' ),
+    'events'          => array(
+        array( 'id' => 'ap2', 'title' => 'T', 'allDay' => true, 'start' => '2028-09-01', 'end' => '2028-09-01', 'groups' => array() ),
+    ),
+    'schoolyear'      => array( 'id' => 'y', 'label' => '2028/29', 'firstSchoolDay' => '2028-09-01', 'holidays' => array() ),
+);
+$GLOBALS['wpdb']->rows['sj_2028_29'] = array(
+    'schoolyear' => 'sj_2028_29', 'json' => json_encode( $doc_grp9 ), 'version' => 1,
+    'stage' => 'entwurf', 'feed_token' => 'grp9token', 'updated_at' => '2028-09-01 00:00:00',
+);
+gsh_tp_curriculr_after_put( 'sj_2028_29', 'grp9token' );
+$sy9 = null;
+foreach ( gsh_tp_get_schoolyears() as $sy_check ) {
+    if ( $sy_check['key'] === 'sj_2028_29' ) { $sy9 = $sy_check; break; }
+}
+gsh_assert_true( null !== $sy9, 'auto-provision with >7 availableGroups still creates the schoolyear (pre-slice prevents provision_schoolyear from rejecting)' );
+$cals9     = $sy9 ? $sy9['calendars'] : array();
+$grp_names = array();
+foreach ( $cals9 as $c ) { $grp_names[] = $c['group']; }
+gsh_assert_eq( count( $cals9 ), 8, 'auto-provision with 9 availableGroups yields exactly 8 calendars (1 main + 7 group, capped)' );
+gsh_assert_true( in_array( null, $grp_names, true ), 'auto-provision: main calendar exists (>7 groups case)' );
+gsh_assert_true( in_array( 'G1', $grp_names, true ), 'auto-provision: G1 (first group) calendar created' );
+gsh_assert_true( in_array( 'G7', $grp_names, true ), 'auto-provision: G7 (7th group) calendar created' );
+gsh_assert_true( ! in_array( 'G8', $grp_names, true ), 'auto-provision: G8 (8th group) NOT created — cap excludes it' );
+gsh_assert_true( ! in_array( 'G9', $grp_names, true ), 'auto-provision: G9 (9th group) NOT created — cap excludes it' );
+
 // Mit explizitem Mapping schreibt after_put das ICS direkt in den Profil-Cache (alle Stages).
 // Schoolyears-Store leeren, damit der Legacy-Pfad (profile_map) exercised wird.
 $GLOBALS['schoolyears'] = array();
