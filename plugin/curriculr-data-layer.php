@@ -1118,7 +1118,13 @@ function gsh_tp_curriculr_after_put( $sj, $token ) {
     if ( $row0 ) {
         $doc0 = json_decode( $row0['json'], true );
         if ( is_array( $doc0 ) ) {
-            gsh_tp_curriculr_sync_categories( $doc0 );
+            try {
+                // Push darf nie an Sync-Nebenwirkungen scheitern: Doc ist bereits
+                // gespeichert, ein Fehler hier darf die PUT-Response nicht blockieren.
+                gsh_tp_curriculr_sync_categories( $doc0 );
+            } catch ( \Throwable $e ) {
+                // Fail-silent, wie gsh_tp_curriculr_repo_save_revision-Fehler auch nicht gesondert behandelt werden.
+            }
         }
     }
 
