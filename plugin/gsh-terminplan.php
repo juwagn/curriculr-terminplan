@@ -4805,6 +4805,31 @@ function gsh_tp_render_profile_tab_v2() {
         </div>
         <?php endif; ?>
 
+        <?php
+        // Diskrepanz Planner-Gruppen ↔ provisionierte Kalender sichtbar machen (Spec 2026-07-15).
+        $gsh_doc_row = function_exists( 'gsh_tp_curriculr_repo_get' ) ? gsh_tp_curriculr_repo_get( $sy_key ) : null;
+        if ( $gsh_doc_row ) :
+            $gsh_doc_json  = json_decode( $gsh_doc_row['json'], true );
+            $gsh_plan_grps = ( is_array( $gsh_doc_json ) && is_array( $gsh_doc_json['availableGroups'] ?? null ) )
+                ? array_map( 'strval', $gsh_doc_json['availableGroups'] ) : array();
+            $gsh_cal_grps  = array();
+            foreach ( $sy['calendars'] as $gsh_cal ) {
+                if ( null !== $gsh_cal['group'] && empty( $gsh_cal['orphaned'] ) ) {
+                    $gsh_cal_grps[] = (string) $gsh_cal['group'];
+                }
+            }
+            $gsh_missing = array_diff( $gsh_plan_grps, $gsh_cal_grps );
+            if ( $gsh_missing ) :
+        ?>
+        <div style="padding:6px 16px;background:#fff8e5;border-bottom:1px solid #c3c4c7;font-size:12px;color:#8a6d3b">
+            Gruppen im Plan ohne eigenen Kalender:
+            <strong><?php echo esc_html( implode( ', ', $gsh_missing ) ); ?></strong>
+            — im Planner unter Einstellungen &rarr; Ver&ouml;ffentlichung anhaken und
+            &bdquo;Kalender einrichten&ldquo; ausf&uuml;hren. Abo-Anleitung f&uuml;r Kolleg:innen:
+            <code>docs/kalender-abo-anleitung.md</code> im Planner-Repository.
+        </div>
+        <?php endif; endif; ?>
+
         <!-- Planungsdokument: manueller Upload (SSO-Alternative, 4.28.0) -->
         <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7;background:#fafafa">
             <strong style="display:block;margin-bottom:6px">Planungsdokument (manueller Upload)</strong>
