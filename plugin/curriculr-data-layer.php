@@ -1039,6 +1039,69 @@ function gsh_tp_curriculr_profile_for( $sj ) {
     return is_array( $val ) ? $val : array();
 }
 
+/* ---------- Kategorien-Sync: Planner ist Quelle für Label + Farbe (Spec 2026-07-15) ---------- */
+// Merge, nie löschen: Match per id (Fallback slug) -> Label/Farbe überschreiben,
+// Unbekannte anlegen (keywords leer), WP-Stichwörter und WP-eigene Kategorien
+// bleiben. Fail-silent: Rückgabewert wird vom PUT-Pfad ignoriert.
+
+function gsh_tp_curriculr_sync_categories( $doc ) {
+    if ( ! is_array( $doc ) || empty( $doc['categories'] ) || ! is_array( $doc['categories'] ) ) {
+        return false;
+    }
+    if ( ! function_exists( 'gsh_tp_get_categories' ) || ! function_exists( 'gsh_tp_save_categories' ) ) {
+        return false;
+    }
+
+    $existing = gsh_tp_get_categories();
+    $by_id    = array();
+    $by_slug  = array();
+    foreach ( $existing as $i => $cat ) {
+        $by_id[ (string) ( $cat['id'] ?? '' ) ] = $i;
+        if ( ! empty( $cat['slug'] ) ) {
+            $by_slug[ (string) $cat['slug'] ] = $i;
+        }
+    }
+
+    $hex     = '/^#[0-9a-fA-F]{6}$/';
+    $changed = false;
+
+    foreach ( $doc['categories'] as $pc ) {
+        if ( ! is_array( $pc ) ) {
+            continue;
+        }
+        $id    = sanitize_key( $pc['id'] ?? '' );
+        $label = sanitize_text_field( (string) ( $pc['label'] ?? '' ) );
+        $color = (string) ( $pc['color'] ?? '' );
+        $slug  = sanitize_key( $pc['slug'] ?? '' );
+        if ( '' === $id || '' === $label || ! preg_match( $hex, $color ) ) {
+            continue;
+        }
+        $idx = $by_id[ $id ] ?? ( '' !== $slug && isset( $by_slug[ $slug ] ) ? $by_slug[ $slug ] : null );
+        if ( null !== $idx ) {
+            if ( $existing[ $idx ]['label'] !== $label || $existing[ $idx ]['color'] !== $color ) {
+                $existing[ $idx ]['label'] = $label;
+                $existing[ $idx ]['color'] = $color;
+                $changed                   = true;
+            }
+        } else {
+            $existing[] = array(
+                'id'       => $id,
+                'label'    => $label,
+                'color'    => $color,
+                'slug'     => ( '' !== $slug ? $slug : $id ),
+                'keywords' => array(),
+            );
+            $by_id[ $id ] = count( $existing ) - 1;
+            $changed      = true;
+        }
+    }
+
+    if ( ! $changed ) {
+        return true;
+    }
+    return false !== gsh_tp_save_categories( $existing );
+}
+
 /**
  * Nach erfolgreichem PUT: ICS-Cache + Feed-URL für alle Kalender dieses Schuljahres aktualisieren.
  *
@@ -1050,6 +1113,15 @@ function gsh_tp_curriculr_profile_for( $sj ) {
  * @param  string $token Feed-Token.
  */
 function gsh_tp_curriculr_after_put( $sj, $token ) {
+    // Kategorien-Sync: Planner-Farben/-Labels gewinnen bei jedem Push.
+    $row0 = gsh_tp_curriculr_repo_get( $sj );
+    if ( $row0 ) {
+        $doc0 = json_decode( $row0['json'], true );
+        if ( is_array( $doc0 ) ) {
+            gsh_tp_curriculr_sync_categories( $doc0 );
+        }
+    }
+
     // Check schoolyears first (new nested model)
     $schoolyears = gsh_tp_get_schoolyears();
     $sy_idx      = null;
