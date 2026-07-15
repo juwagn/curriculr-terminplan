@@ -5921,6 +5921,62 @@ function gsh_tp_augment_event_times( array $events, $data ) {
 }
 
 /**
+ * Reichert geparste Events um Gruppen aus X-GSH-GROUPS an (Roh-ICS-Scan
+ * per UID, analog gsh_tp_augment_event_times — der Parser bleibt unberührt).
+ * Multi-Value-Semantik wie CATEGORIES: Split an un-escaped Kommas, danach
+ * ICS-Unescape je Wert.
+ *
+ * @since 4.33.0
+ * @param  array  $events Geparste Events (mit 'uid').
+ * @param  string $data   Rohe ICS-Daten.
+ * @return array          Events mit 'groups' => string[].
+ */
+function gsh_tp_augment_event_groups( array $events, $data ) {
+    foreach ( $events as &$ev ) {
+        $ev['groups'] = array();
+    }
+    unset( $ev );
+    if ( empty( $events ) || empty( $data ) ) {
+        return $events;
+    }
+
+    preg_match_all( '/BEGIN:VEVENT(.*?)END:VEVENT/s', $data, $m );
+    if ( empty( $m[1] ) ) {
+        return $events;
+    }
+
+    $groups_by_uid = array();
+    foreach ( $m[1] as $blk ) {
+        $blk = str_replace( "\r\n", "\n", $blk );
+        $blk = preg_replace( '/\n[ \t]/', '', $blk );
+        if ( ! preg_match( '/^UID:(.*)$/m', $blk, $um ) ) {
+            continue;
+        }
+        if ( ! preg_match( '/^X-GSH-GROUPS:(.*)$/m', $blk, $gm ) ) {
+            continue;
+        }
+        $list = array();
+        foreach ( preg_split( '/(?<!\\\\),/', trim( $gm[1] ) ) as $p ) {
+            $p = str_replace( array( '\\,', '\\;', '\\n', '\\\\' ), array( ',', ';', "\n", '\\' ), $p );
+            $p = trim( $p );
+            if ( '' !== $p ) {
+                $list[] = $p;
+            }
+        }
+        $groups_by_uid[ trim( $um[1] ) ] = $list;
+    }
+
+    foreach ( $events as &$ev ) {
+        if ( ! empty( $ev['uid'] ) && isset( $groups_by_uid[ $ev['uid'] ] ) ) {
+            $ev['groups'] = $groups_by_uid[ $ev['uid'] ];
+        }
+    }
+    unset( $ev );
+
+    return $events;
+}
+
+/**
  * Liefert Anzeige-Titel (ohne eingeklammerte Zeitangabe) und Zeit-Label für
  * ein Event. Bevorzugt die echte Uhrzeit aus time_start/time_end (siehe
  * gsh_tp_augment_event_times()), fällt sonst auf die Legacy-Konvention
