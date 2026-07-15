@@ -117,6 +117,20 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
         $lines[] = 'CATEGORIES:' . gsh_tp_curriculr_ics_escape( $cats_by_id[ $e['categoryId'] ] );
     }
 
+    if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
+        $groups = array();
+        foreach ( $e['groups'] as $g ) {
+            $g = trim( (string) $g );
+            if ( '' !== $g ) {
+                $groups[] = gsh_tp_curriculr_ics_escape( $g );
+            }
+        }
+        if ( $groups ) {
+            // Multi-Value wie CATEGORIES: Werte einzeln escaped, Separator-Komma roh.
+            $lines[] = 'X-GSH-GROUPS:' . implode( ',', $groups );
+        }
+    }
+
     $lines[] = 'END:VEVENT';
     return $lines;
 }
