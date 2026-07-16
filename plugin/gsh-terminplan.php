@@ -3,10 +3,12 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.34.0
+ * Version:     4.34.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.34.1
+ * - [FIX] Kiosk: Filter-Leiste ließ sich oberhalb 768px Breite nicht einklappen (Collapse-CSS war an die Mobile-Breakpoint gekoppelt) — Toggle wirkt jetzt in jeder Kiosk-Kachelbreite
  * v4.34.0
  * - [FIX] Kategorien-Sync: Planner ist jetzt alleinige Quelle — Kategorien ohne Planner-Gegenstück werden beim Push entfernt statt dauerhaft mitgeführt (WP-Stichwörter bei getroffenen Kategorien bleiben erhalten)
  * v4.33.0
@@ -626,7 +628,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.34.0' );
+define( 'GSH_TP_VERSION',       '4.34.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -870,6 +872,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.34.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Kiosk: Filter-Leiste ließ sich oberhalb 768px Breite nicht einklappen (Collapse-CSS war an die Mobile-Breakpoint gekoppelt) — Toggle wirkt jetzt in jeder Kiosk-Kachelbreite' ),
+            ),
+        ),
         array(
             'version' => '4.34.0',
             'entries' => array(
