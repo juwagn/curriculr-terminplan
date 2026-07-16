@@ -3,10 +3,12 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.34.1
+ * Version:     4.34.2
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.34.2
+ * - [UX] Filter-Kategorien: Labels umbrachen bei zwei Wörtern (z. B. „Jahrgang 5/6") auf zwei Zeilen und machten die Pillen ungleich hoch — jetzt einzeilig. Horizontaler Scroll ohne sichtbare Scrollbar (Kategorien fielen unbemerkt aus dem sichtbaren Bereich) ersetzt durch Zeilenumbruch + funktionierendes Einklappen, generalisiert die 4.34.1-Kiosk-Lösung auf die Hauptseite
  * v4.34.1
  * - [FIX] Kiosk: Filter-Leiste ließ sich oberhalb 768px Breite nicht einklappen (Collapse-CSS war an die Mobile-Breakpoint gekoppelt) — Toggle wirkt jetzt in jeder Kiosk-Kachelbreite
  * v4.34.0
@@ -628,7 +630,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.34.1' );
+define( 'GSH_TP_VERSION',       '4.34.2' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -872,6 +874,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.34.2',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Filter-Kategorien: Labels umbrachen bei zwei Wörtern (z. B. „Jahrgang 5/6") auf zwei Zeilen und machten die Pillen ungleich hoch — jetzt einzeilig. Horizontaler Scroll ohne sichtbare Scrollbar ersetzt durch Zeilenumbruch + funktionierendes Einklappen (generalisiert die 4.34.1-Kiosk-Lösung auf die Hauptseite)' ),
+            ),
+        ),
         array(
             'version' => '4.34.1',
             'entries' => array(
@@ -7545,12 +7553,14 @@ function gsh_tp_css() {
 }
 .gtp-filt-chevron{transition:transform .2s ease}
 .gtp-filt-open .gtp-filt-chevron,.gtp-filt-toggle[aria-expanded="true"] .gtp-filt-chevron{transform:rotate(90deg)}
-/* Desktop: eine Zeile, horizontal scrollbar – kein Wrapping */
+/* Zeilenumbruch statt verstecktem Horizontal-Scroll: alle Kategorien bleiben
+   sichtbar (kein Cut-off ohne Scrollbar-Hinweis), Toggle klappt echt ein/aus –
+   einheitlich mit dem Kiosk-Verhalten, nicht mehr auf Mobile beschränkt. */
 .gtp-filt{
-  display:flex;flex-wrap:nowrap;gap:6px;align-items:center;
-  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  max-height:0;overflow:hidden;transition:max-height .25s ease;
 }
-.gtp-filt::-webkit-scrollbar{display:none}
+.gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
 .gtp-filt-count{
   font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
   margin-left:.35em;letter-spacing:.02em;text-transform:none;
@@ -7558,6 +7568,7 @@ function gsh_tp_css() {
 .gtp-fb{
   padding:5px 14px;border:1.5px solid;border-radius:20px;
   font-size:.75rem;cursor:pointer;font-weight:600;line-height:1.5;
+  white-space:nowrap;
   transition:var(--gtp-tr);user-select:none;
 }
 .gtp-fb[data-c="standard"] {border-color:var(--c-st-bd);background:var(--c-st-bg);color:var(--c-st-tx)}
@@ -7793,9 +7804,6 @@ function gsh_tp_css() {
   .gtp-tab-sep{display:none}
   .gtp-view-toggle{font-size:.76rem;padding:.25em .6em}
   .gtp-filt-wrap{padding:.625rem .875rem}
-  /* Filter-Body auf Mobile: wrap + Collapse-Animation */
-  .gtp-filt{max-height:0;overflow:hidden;transition:max-height .25s ease;flex-wrap:wrap}
-  .gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
   .gtp-fb{white-space:nowrap;font-size:.72rem;padding:4px 10px}
   .gtp-tabs{margin:0 -1rem;padding:0 1rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
   .gtp-tabs::-webkit-scrollbar{display:none}

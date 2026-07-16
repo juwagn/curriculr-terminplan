@@ -1085,22 +1085,3 @@
 .gtp-gb{border:1px solid var(--gtp-border,#c3c4c7);border-radius:999px;padding:2px 10px;font-size:12px;background:transparent;cursor:pointer;opacity:.45;transition:opacity .15s}
 .gtp-gb.gtp-gb-on{opacity:1;background:var(--gtp-chip-bg,rgba(0,52,92,.08))}
 .gtp-gb:focus-visible{outline:2px solid var(--gtp-border,#00345C);outline-offset:1px}
-
-/* ═══════════════════════════════════════════════════════════════
-   KIOSK — Filter-Leiste immer einklappbar (4.34.1)
-   Der Basis-Shortcode koppelt das Collapse-Verhalten von .gtp-filt an
-   die Mobile-Breakpoint (< 768px). Kiosk-Kacheln werden aber in
-   IServ als iframe mit beliebiger Breite eingebettet — Toggle muss
-   deshalb hier unabhängig von der Viewport-Breite wirken.
-   ═══════════════════════════════════════════════════════════════ */
-.gtp-kiosk .gtp-filt {
-    max-height: 0;
-    overflow: hidden;
-    flex-wrap: wrap;
-    transition: max-height .25s ease;
-}
-
-.gtp-kiosk .gtp-filt.gtp-filt-open {
-    max-height: 400px;
-    overflow: visible;
-}
