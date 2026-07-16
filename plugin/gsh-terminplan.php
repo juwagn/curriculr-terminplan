@@ -3,10 +3,12 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.33.0
+ * Version:     4.34.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.34.0
+ * - [FIX] Kategorien-Sync: Planner ist jetzt alleinige Quelle — Kategorien ohne Planner-Gegenstück werden beim Push entfernt statt dauerhaft mitgeführt (WP-Stichwörter bei getroffenen Kategorien bleiben erhalten)
  * v4.33.0
  * - [NEU] Gruppen-Filter im Terminplan: Kolleg:innen können auf der öffentlichen Seite und in den Kiosk-Ansichten nach Planner-Gruppen (z. B. Eltern, Kollegium) filtern
  * - [NEU] Kategorien-Sync: Labels und Farben aus dem Planner überschreiben beim Senden automatisch die Plugin-Kategorien — Stichwörter fürs IServ-Matching bleiben erhalten
@@ -624,7 +626,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.33.0' );
+define( 'GSH_TP_VERSION',       '4.34.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -868,6 +870,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.34.0',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Kategorien-Sync: Planner ist jetzt alleinige Quelle — Kategorien ohne Planner-Gegenstück werden beim Push entfernt statt dauerhaft mitgeführt (WP-Stichwörter bei getroffenen Kategorien bleiben erhalten)' ),
+            ),
+        ),
         array(
             'version' => '4.33.0',
             'entries' => array(

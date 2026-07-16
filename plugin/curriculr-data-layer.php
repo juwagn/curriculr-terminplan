@@ -1039,10 +1039,14 @@ function gsh_tp_curriculr_profile_for( $sj ) {
     return is_array( $val ) ? $val : array();
 }
 
-/* ---------- Kategorien-Sync: Planner ist Quelle für Label + Farbe (Spec 2026-07-15) ---------- */
-// Merge, nie löschen: Match per id (Fallback slug) -> Label/Farbe überschreiben,
-// Unbekannte anlegen (keywords leer), WP-Stichwörter und WP-eigene Kategorien
-// bleiben. Fail-silent: Rückgabewert wird vom PUT-Pfad ignoriert.
+/* ---------- Kategorien-Sync: Planner ist alleinige Quelle (Spec 2026-07-16) ---------- */
+// Match per id (Fallback slug) -> Label/Farbe überschreiben, Unbekannte anlegen
+// (keywords leer), WP-Stichwörter bei getroffenen Kategorien bleiben erhalten.
+// Kategorien OHNE Planner-Gegenstück werden entfernt — der Planner ist die
+// alleinige Quelle für Kategorien, alte WP-eigene Kategorien werden nicht mehr
+// gebraucht. Ein Planner-Eintrag mit ungültigen Daten (Farbe/Label) löscht sein
+// Gegenstück nicht und überschreibt es nicht — er hält es nur am Leben.
+// Fail-silent: Rückgabewert wird vom PUT-Pfad ignoriert.
 
 function gsh_tp_curriculr_sync_categories( $doc ) {
     if ( ! is_array( $doc ) || empty( $doc['categories'] ) || ! is_array( $doc['categories'] ) ) {
@@ -1062,28 +1066,35 @@ function gsh_tp_curriculr_sync_categories( $doc ) {
         }
     }
 
-    $hex     = '/^#[0-9a-fA-F]{6}$/';
-    $changed = false;
+    $hex      = '/^#[0-9a-fA-F]{6}$/';
+    $changed  = false;
+    $keep_idx = array(); // Index -> true fuer jede $existing-Kategorie mit Planner-Gegenstueck.
 
     foreach ( $doc['categories'] as $pc ) {
         if ( ! is_array( $pc ) ) {
             continue;
         }
-        $id    = sanitize_key( $pc['id'] ?? '' );
-        $label = sanitize_text_field( (string) ( $pc['label'] ?? '' ) );
-        $color = (string) ( $pc['color'] ?? '' );
-        $slug  = sanitize_key( $pc['slug'] ?? '' );
-        if ( '' === $id || '' === $label || ! preg_match( $hex, $color ) ) {
+        $id = sanitize_key( $pc['id'] ?? '' );
+        if ( '' === $id ) {
             continue;
         }
-        $idx = $by_id[ $id ] ?? ( '' !== $slug && isset( $by_slug[ $slug ] ) ? $by_slug[ $slug ] : null );
+        $slug  = sanitize_key( $pc['slug'] ?? '' );
+        $idx   = $by_id[ $id ] ?? ( '' !== $slug && isset( $by_slug[ $slug ] ) ? $by_slug[ $slug ] : null );
+        $label = sanitize_text_field( (string) ( $pc['label'] ?? '' ) );
+        $color = (string) ( $pc['color'] ?? '' );
+        $valid = ( '' !== $label && preg_match( $hex, $color ) );
+
         if ( null !== $idx ) {
-            if ( $existing[ $idx ]['label'] !== $label || $existing[ $idx ]['color'] !== $color ) {
+            // Bestehende Kategorie bleibt in jedem Fall erhalten — auch wenn die
+            // eingehenden Planner-Daten fuer dieses Feld ungueltig sind, wird sie
+            // nicht geloescht oder mit kaputten Werten ueberschrieben.
+            $keep_idx[ $idx ] = true;
+            if ( $valid && ( $existing[ $idx ]['label'] !== $label || $existing[ $idx ]['color'] !== $color ) ) {
                 $existing[ $idx ]['label'] = $label;
                 $existing[ $idx ]['color'] = $color;
                 $changed                   = true;
             }
-        } else {
+        } elseif ( $valid ) {
             $existing[] = array(
                 'id'       => $id,
                 'label'    => $label,
@@ -1091,15 +1102,26 @@ function gsh_tp_curriculr_sync_categories( $doc ) {
                 'slug'     => ( '' !== $slug ? $slug : $id ),
                 'keywords' => array(),
             );
-            $by_id[ $id ] = count( $existing ) - 1;
-            $changed      = true;
+            $keep_idx[ count( $existing ) - 1 ] = true;
+            $by_id[ $id ]                       = count( $existing ) - 1;
+            $changed                            = true;
+        }
+    }
+
+    // Planner ist alleinige Quelle: Kategorien ohne Planner-Gegenstueck werden entfernt.
+    $filtered = array();
+    foreach ( $existing as $i => $cat ) {
+        if ( isset( $keep_idx[ $i ] ) ) {
+            $filtered[] = $cat;
+        } else {
+            $changed = true;
         }
     }
 
     if ( ! $changed ) {
         return true;
     }
-    return false !== gsh_tp_save_categories( $existing );
+    return false !== gsh_tp_save_categories( $filtered );
 }
 
 /**
