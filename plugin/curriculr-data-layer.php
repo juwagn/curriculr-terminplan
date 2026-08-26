@@ -871,6 +871,7 @@ function gsh_tp_curriculr_provision_schoolyear( $sj, $label, $groups ) {
             'is_draft' => false,
             'managed'  => true,
             'orphaned' => false,
+            'source'   => 'planner',
         ) );
     }
 
@@ -893,6 +894,7 @@ function gsh_tp_curriculr_provision_schoolyear( $sj, $label, $groups ) {
                 'is_draft' => false,
                 'managed'  => true,
                 'orphaned' => false,
+                'source'   => 'planner',
             );
         }
     }
@@ -1234,6 +1236,11 @@ function gsh_tp_curriculr_after_put_nested( &$schoolyears, $sy_idx, $sj, $token 
 
     foreach ( $sy['calendars'] as &$cal ) {
         if ( ! empty( $cal['orphaned'] ) ) {
+            continue;
+        }
+        // 4.36.0: Kalender mit externer Quelle (IServ-Feed) gehoeren dem Admin,
+        // nicht dem Planner. Weder Feed-URL noch ICS-Cache ueberschreiben.
+        if ( gsh_tp_cal_is_extern( $cal ) ) {
             continue;
         }
         $group    = $cal['group'];

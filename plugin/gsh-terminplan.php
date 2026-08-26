@@ -3,10 +3,17 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.34.2
+ * Version:     4.36.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.36.0
+ * - [NEU] IServ-Kalender direkt verbinden: Im Schuljahr-Bereich lässt sich wieder die Adresse eines freigegebenen IServ-Kalenders eintragen — das Plugin holt die Termine dann selbst ab und baut daraus Quartalsansicht und Druckansicht, ganz ohne Planer. Seit 4.24.0 war das Feld aus der Oberfläche verschwunden und die angezeigte Feed-URL nur noch die vom Plugin selbst erzeugte Abo-Adresse
+ * - [FIX] Verbundene IServ-Kalender werden beim Senden aus dem Planer nicht mehr überschrieben (neues Feld source=planner|extern pro Kalender; after_put überspringt externe Quellen)
+ * v4.35.1
+ * - [FIX] Anmerkungen-Spalte blieb in allen WP-Ansichten (Kiosk, Entwurf-Vorschau, öffentliche Seite) leer, sobald ein Schuljahr über das nested schoolyears-Model (seit 4.24.0) bzw. SPA-Auto-Provisioning angelegt wurde: die Annotation-Lookup nutzte ausschließlich die alte, dafür nie befüllte gsh_tp_curriculr_profile_map-Option. Nutzt jetzt zuerst sj_key direkt aus dem Profil, Legacy-Mapping nur noch als Fallback für alte Installs
+ * v4.35.0
+ * - [NEU] Kalender-Fußzeile: Kolleg:innen können den ICS-Kalender-Feed über die öffentliche Seite und die Kiosk-Ansichten abonnieren — webcal://-Link plus gleich gestalteter Copy-URL-Button (webcal lädt ohne registrierten OS-Handler nur eine Datei statt zu abonnieren) als eigene Toolbar-Zeile mit Trennlinie statt Box, plus ausklappbarer Kurzanleitung (SVG-Chevron) für Outlook/Google Kalender/Apple Kalender/Thunderbird (nur bei Curriculr-verwalteten Kalendern)
  * v4.34.2
  * - [UX] Filter-Kategorien: Labels umbrachen bei zwei Wörtern (z. B. „Jahrgang 5/6") auf zwei Zeilen und machten die Pillen ungleich hoch — jetzt einzeilig. Horizontaler Scroll ohne sichtbare Scrollbar (Kategorien fielen unbemerkt aus dem sichtbaren Bereich) ersetzt durch Zeilenumbruch + funktionierendes Einklappen, generalisiert die 4.34.1-Kiosk-Lösung auf die Hauptseite
  * v4.34.1
@@ -630,7 +637,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.34.2' );
+define( 'GSH_TP_VERSION',       '4.36.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -874,6 +881,25 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.36.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'IServ-Kalender direkt verbinden: Im Schuljahr-Bereich lässt sich wieder die Adresse eines freigegebenen IServ-Kalenders eintragen — das Plugin holt die Termine dann selbst ab und baut daraus Quartalsansicht und Druckansicht, ganz ohne Planer. Seit 4.24.0 war das Feld aus der Oberfläche verschwunden und die angezeigte Feed-URL nur noch die vom Plugin selbst erzeugte Abo-Adresse' ),
+                array( 'tag' => 'FIX', 'text' => 'Verbundene IServ-Kalender werden beim Senden aus dem Planer nicht mehr überschrieben (neues Feld source=planner|extern pro Kalender; after_put überspringt externe Quellen)' ),
+            ),
+        ),
+        array(
+            'version' => '4.35.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Anmerkungen-Spalte blieb in allen WP-Ansichten (Kiosk, Entwurf-Vorschau, öffentliche Seite) leer, sobald ein Schuljahr über das nested schoolyears-Model bzw. SPA-Auto-Provisioning angelegt wurde — Annotation-Lookup nutzt jetzt sj_key direkt aus dem Profil statt der nie befüllten Legacy-Option gsh_tp_curriculr_profile_map' ),
+            ),
+        ),
+        array(
+            'version' => '4.35.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Kalender-Fußzeile: Kolleg:innen können den ICS-Kalender-Feed über die öffentliche Seite und die Kiosk-Ansichten abonnieren — webcal://-Link plus gleich gestalteter Copy-URL-Button (webcal lädt ohne registrierten OS-Handler nur eine Datei statt zu abonnieren) als eigene Toolbar-Zeile mit Trennlinie statt Box, plus ausklappbarer Kurzanleitung (SVG-Chevron) für Outlook/Google Kalender/Apple Kalender/Thunderbird (nur bei Curriculr-verwalteten Kalendern)' ),
+            ),
+        ),
         array(
             'version' => '4.34.2',
             'entries' => array(
@@ -1578,6 +1604,7 @@ function gsh_tp_get_profiles() {
                     'group'           => $cal['group'],
                     'managed'         => ! empty( $cal['managed'] ),
                     'orphaned'        => ! empty( $cal['orphaned'] ),
+                    'source'          => gsh_tp_cal_is_extern( $cal ) ? 'extern' : 'planner',
                 );
             }
         }
@@ -1735,7 +1762,22 @@ function gsh_tp_sanitize_calendar( $cal ) {
         'is_draft' => ! empty( $cal['is_draft'] ),
         'managed'  => ! empty( $cal['managed'] ),
         'orphaned' => ! empty( $cal['orphaned'] ),
+        'source'   => gsh_tp_cal_is_extern( $cal ) ? 'extern' : 'planner',
     );
+}
+
+/**
+ * Prueft, ob ein Kalender-Eintrag als extern (IServ-Feed) markiert ist.
+ *
+ * Zentrale Stelle fuer den source-Discriminator ('planner'|'extern'), damit
+ * Default-Wert und Vergleich nicht an sieben Stellen einzeln geschrieben werden.
+ *
+ * @since 4.36.0
+ * @param  array $cal Kalender-Eintrag.
+ * @return bool       true wenn source==='extern'.
+ */
+function gsh_tp_cal_is_extern( $cal ) {
+    return 'extern' === ( $cal['source'] ?? 'planner' );
 }
 
 /**
@@ -1821,6 +1863,9 @@ function gsh_tp_migrate_profiles_to_schoolyears() {
                     'is_draft' => ! empty( $p['is_draft'] ),
                     'managed'  => false, // pre-existing calendars are manual, not managed
                     'orphaned' => false,
+                    // 4.36.0: Eine vor 4.24.0 von Hand eingetragene URL zeigt auf einen
+                    // fremden Kalender (IServ) und darf vom Planner nicht ueberschrieben werden.
+                    'source'   => gsh_tp_classify_calendar_source( $p['ical_url'] ?? '' ),
                 ),
             ),
         );
@@ -2030,6 +2075,82 @@ function gsh_tp_migrate_cache_version() {
 
     update_option( 'gsh_tp_cache_ver', GSH_TP_CACHE_VERSION );
 }
+/**
+ * Prueft, ob eine URL auf einen vom Plugin selbst erzeugten Curriculr-Feed zeigt.
+ *
+ * Unterscheidungsmerkmal fuer die Quelle eines Kalenders: der eigene Feed liegt
+ * immer unter der REST-Route curriculr/v1/feed/. Alles andere ist ein fremder
+ * Kalender (typisch: IServ).
+ *
+ * @since 4.36.0
+ * @param  string $url Zu pruefende URL.
+ * @return bool        true wenn es der eigene Feed ist.
+ */
+function gsh_tp_is_curriculr_feed_url( $url ) {
+    $url = (string) $url;
+    return '' !== $url && false !== strpos( $url, '/curriculr/v1/feed/' );
+}
+
+/**
+ * Bestimmt die Quelle ('planner'|'extern') eines Kalenders anhand seiner URL.
+ *
+ * Zentrale Klassifizierung fuer beide Nachruest-Migrationen (Flat-Profile-
+ * Migration und Source-Backfill), damit die Einordnung nicht an zwei Stellen
+ * getrennt gepflegt werden muss.
+ *
+ * @since 4.36.0
+ * @param  string $url Rohe oder bereits bereinigte iCal-URL.
+ * @return string       'planner' oder 'extern'.
+ */
+function gsh_tp_classify_calendar_source( $url ) {
+    $clean = gsh_tp_sanitize_url_raw( (string) $url );
+    if ( '' === $clean ) {
+        return 'planner'; // Kein Wert -> wird vom Planner befuellt, sobald gesendet wird.
+    }
+    return gsh_tp_is_curriculr_feed_url( $clean ) ? 'planner' : 'extern';
+}
+
+/**
+ * Einmalige 4.36.0-Nachrueststufe: Quelle bestehender Kalender bestimmen.
+ *
+ * Installationen, die vor 4.24.0 eine IServ-URL von Hand eingetragen hatten,
+ * wurden beim Modellwechsel ohne Quellen-Kennzeichnung uebernommen. Ohne diese
+ * Kennzeichnung wuerde der naechste Planner-Push die IServ-URL ueberschreiben.
+ * Laeuft genau einmal, danach schuetzt das Options-Flag vor Wiederholung.
+ *
+ * @since 4.36.0
+ * @return void
+ */
+function gsh_tp_migrate_calendar_source() {
+    if ( get_option( 'gsh_tp_source_migrated' ) ) {
+        return;
+    }
+    $schoolyears = gsh_tp_get_schoolyears();
+    $changed     = false;
+    foreach ( $schoolyears as &$sy ) {
+        // Wichtig: direkt ueber $sy['calendars'] iterieren. Ein Ausdruck wie
+        // ( $sy['calendars'] ?? array() ) liefert eine Kopie — Referenz-Schreibzugriffe
+        // darauf gingen verloren und die Migration liefe wirkungslos durch.
+        if ( ! isset( $sy['calendars'] ) || ! is_array( $sy['calendars'] ) ) {
+            continue;
+        }
+        foreach ( $sy['calendars'] as &$cal ) {
+            if ( ! is_array( $cal ) || isset( $cal['source'] ) ) {
+                continue;
+            }
+            $cal['source'] = gsh_tp_classify_calendar_source( $cal['ical_url'] ?? '' );
+            $changed       = true;
+        }
+        unset( $cal );
+    }
+    unset( $sy );
+    if ( $changed ) {
+        gsh_tp_save_schoolyears( $schoolyears );
+    }
+    update_option( 'gsh_tp_source_migrated', 1 );
+}
+add_action( 'admin_init', 'gsh_tp_migrate_calendar_source' );
+
 add_action( 'admin_init', 'gsh_tp_migrate_cache_version' );
 
 /**
@@ -3482,6 +3603,105 @@ function gsh_tp_handle_save_shared() {
 }
 
 /**
+ * POST-Handler: Externen IServ-Kalender mit einem Schuljahr verbinden.
+ *
+ * Setzt source='extern' auf dem Haupt-Kalender und speichert die Feed-URL.
+ * Solange source='extern' gilt, laesst gsh_tp_curriculr_after_put_v2() diesen
+ * Kalender unangetastet — Planner-Uebertragungen ueberschreiben ihn nicht mehr.
+ * Leere Eingabe loest die Verbindung und stellt source='planner' wieder her.
+ *
+ * @since 4.36.0
+ * @return void
+ */
+function gsh_tp_handle_save_extern_feed() {
+    $sy_key = sanitize_key( wp_unslash( $_POST['gsh_tp_xf_key'] ?? '' ) );
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gsh_tp_xf_n'] ?? '' ) ), 'gsh_tp_save_extern_feed_' . $sy_key ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitspr&uuml;fung fehlgeschlagen.</p></div>'; return;
+    }
+
+    $raw_url     = trim( (string) wp_unslash( $_POST['gsh_tp_xf_url'] ?? '' ) );
+    $schoolyears = gsh_tp_get_schoolyears();
+
+    $sy_idx = null;
+    foreach ( $schoolyears as $i => $sy ) {
+        if ( $sy['key'] === $sy_key ) { $sy_idx = $i; break; }
+    }
+    if ( null === $sy_idx ) {
+        echo '<div class="notice notice-error"><p>Schuljahr nicht gefunden.</p></div>'; return;
+    }
+
+    // Leeres Feld = Verbindung loesen.
+    if ( '' === $raw_url ) {
+        $touched = false;
+        foreach ( $schoolyears[ $sy_idx ]['calendars'] as &$cal ) {
+            if ( null === $cal['group'] && gsh_tp_cal_is_extern( $cal ) ) {
+                $cal['source']   = 'planner';
+                $cal['ical_url'] = '';
+                // Wieder wie jeder andere Planner-Hauptkalender behandeln, sonst bleibt
+                // z.B. die Abonnieren-Fusszeile im Frontend dauerhaft verborgen (gated auf 'managed').
+                $cal['managed']  = true;
+                $touched         = true;
+            }
+        }
+        unset( $cal );
+        if ( $touched ) {
+            gsh_tp_save_schoolyears( $schoolyears );
+            echo '<div class="notice notice-success"><p>Verbindung zum IServ-Kalender getrennt. '
+               . 'Das Schuljahr wird jetzt wieder aus dem Planer bef&uuml;llt.</p></div>';
+        }
+        return;
+    }
+
+    $check = gsh_tp_validate_ical_url( $raw_url );
+    if ( ! $check['valid'] ) {
+        echo '<div class="notice notice-error"><p>Die Adresse wurde nicht &uuml;bernommen: <strong>'
+           . esc_html( $check['error'] ) . '</strong>. In IServ findest du sie unter '
+           . 'Kalender &rarr; Verwaltung &rarr; Freigabe als Link, der mit <code>https://</code> beginnt.</p></div>';
+        return;
+    }
+
+    $found = false;
+    foreach ( $schoolyears[ $sy_idx ]['calendars'] as &$cal ) {
+        if ( null === $cal['group'] ) {
+            $cal['source']   = 'extern';
+            $cal['ical_url'] = $check['url'];
+            $cal['managed']  = false;
+            $found           = true;
+            break;
+        }
+    }
+    unset( $cal );
+
+    if ( ! $found ) {
+        array_unshift( $schoolyears[ $sy_idx ]['calendars'], array(
+            'group'    => null,
+            'label'    => $schoolyears[ $sy_idx ]['label'] . ' &middot; Alle Termine',
+            'ical_url' => $check['url'],
+            'is_draft' => false,
+            'managed'  => false,
+            'orphaned' => false,
+            'source'   => 'extern',
+        ) );
+    }
+
+    gsh_tp_save_schoolyears( $schoolyears );
+
+    // Direkt abrufen, damit sofort sichtbar ist ob die Adresse stimmt.
+    $pid = sanitize_key( gsh_tp_calendar_id( $sy_key, null ) );
+    delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
+    if ( gsh_tp_do_refresh( $pid ) ) {
+        $count = count( gsh_tp_parse_events( gsh_tp_fetch_ical( $pid ) ) );
+        echo '<div class="notice notice-success"><p>' . gsh_tp_icon( 'check' ) . ' Kalender verbunden &ndash; <strong>'
+           . (int) $count . '</strong> Termine &uuml;bernommen.</p></div>';
+    } else {
+        echo '<div class="notice notice-warning"><p>' . gsh_tp_icon( 'alert-triangle' )
+           . ' Adresse gespeichert, aber der Abruf hat nicht geklappt. Das liegt meist daran, dass der Kalender '
+           . 'in IServ noch nicht freigegeben ist oder die Adresse unvollst&auml;ndig kopiert wurde. '
+           . 'Details stehen im Tab &bdquo;System &amp; Logs&ldquo;.</p></div>';
+    }
+}
+
+/**
  * POST-Handler: Schuljahr als aktiv setzen.
  *
  * @since 4.24.0
@@ -3913,6 +4133,7 @@ function gsh_tp_settings_page() {
     if ( isset( $_POST['gsh_tp_new_schoolyear'] ) )      { gsh_tp_handle_new_schoolyear(); }
     if ( isset( $_POST['gsh_tp_save_schoolyear'] ) )     { gsh_tp_handle_save_schoolyear(); }
     if ( isset( $_POST['gsh_tp_save_shared'] ) )         { gsh_tp_handle_save_shared(); }
+    if ( isset( $_POST['gsh_tp_save_extern_feed'] ) )    { gsh_tp_handle_save_extern_feed(); }
     if ( isset( $_POST['gsh_tp_activate_schoolyear'] ) ) { gsh_tp_handle_activate_schoolyear(); }
     if ( isset( $_POST['gsh_tp_del_cal'] ) )             { gsh_tp_handle_delete_calendar(); }
     if ( isset( $_POST['gsh_tp_toggle_draft'] ) )        { gsh_tp_handle_toggle_draft(); }
@@ -4935,6 +5156,51 @@ function gsh_tp_render_profile_tab_v2() {
             </form>
         </div>
 
+        <!-- Externer IServ-Kalender (4.36.0) -->
+        <?php
+        $x_main = null;
+        foreach ( $sy['calendars'] as $x_cal ) {
+            if ( null === $x_cal['group'] ) { $x_main = $x_cal; break; }
+        }
+        $x_extern = $x_main && gsh_tp_cal_is_extern( $x_main );
+        $x_url    = $x_extern ? ( $x_main['ical_url'] ?? '' ) : '';
+        $x_pid    = sanitize_key( gsh_tp_calendar_id( $sy_key, null ) );
+        $x_last   = get_option( 'gsh_tp_sync_' . $x_pid, '' );
+        ?>
+        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7;border-left:3px solid #0058a0;background:<?php echo $x_extern ? '#f0f6fc' : '#fafafa'; ?>">
+            <strong style="display:block;margin-bottom:6px">IServ-Kalender direkt verbinden</strong>
+            <p class="description" style="margin:0 0 8px">
+                Ohne Planer: Adresse eines freigegebenen IServ-Kalenders eintragen (in IServ meist unter
+                Kalender &rarr; Verwaltung &rarr; Freigabe als Link). Das Plugin holt die Termine dann selbst ab
+                und baut daraus Quartalsansicht und Druckansicht. Feld leeren trennt die Verbindung wieder.
+            </p>
+            <form method="post" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <?php wp_nonce_field( 'gsh_tp_save_extern_feed_' . $pid, 'gsh_tp_xf_n' ); ?>
+                <input type="hidden" name="gsh_tp_xf_key" value="<?php echo esc_attr( $sy_key ); ?>" />
+                <input type="url" name="gsh_tp_xf_url" value="<?php echo esc_attr( $x_url ); ?>"
+                       placeholder="https://schule.iserv.de/public/calendar/..."
+                       style="flex:1;min-width:320px;padding:4px 8px" />
+                <button type="submit" name="gsh_tp_save_extern_feed" value="1" class="button button-primary">
+                    <?php echo $x_extern ? 'Adresse aktualisieren' : 'Kalender verbinden'; ?>
+                </button>
+            </form>
+            <?php if ( $x_extern ) : ?>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="font-size:12px;color:#3c434a">
+                    Aktiv &ndash; Planer-&Uuml;bertragungen &uuml;berschreiben diesen Kalender nicht.
+                    <?php if ( $x_last ) : ?>
+                        Zuletzt abgerufen: <?php echo esc_html( date_i18n( 'd.m.Y, H:i', strtotime( $x_last . ' UTC' ) ) ); ?> Uhr.
+                    <?php endif; ?>
+                </span>
+                <form method="post" style="margin:0">
+                    <?php wp_nonce_field( 'gsh_tp_sync_manual', 'gsh_tp_sn' ); ?>
+                    <input type="hidden" name="gsh_tp_sync_pid" value="<?php echo esc_attr( $x_pid ); ?>" />
+                    <button type="submit" name="gsh_tp_sync" value="1" class="button button-small">Jetzt neu abrufen</button>
+                </form>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Kalender-Liste -->
         <table class="widefat" style="border:none;box-shadow:none">
             <thead>
@@ -4956,6 +5222,9 @@ function gsh_tp_render_profile_tab_v2() {
                         <?php if ( $is_main ) : ?>
                             <strong>Alle Termine</strong>
                             <span style="font-size:11px;color:#888;margin-left:6px">(Haupt-Kalender)</span>
+                            <?php if ( gsh_tp_cal_is_extern( $cal ) ) : ?>
+                                <span style="font-size:11px;background:#e6f0ff;color:#1a56db;padding:1px 6px;border-radius:10px;margin-left:4px">IServ</span>
+                            <?php endif; ?>
                         <?php else : ?>
                             <?php echo esc_html( $cal['group'] ); ?>
                             <?php if ( ! empty( $cal['managed'] ) ) : ?>
@@ -4968,10 +5237,18 @@ function gsh_tp_render_profile_tab_v2() {
                         <br><span style="font-size:11px;color:#aaa">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
                     </td>
                     <td>
+                        <?php $cal_extern = gsh_tp_cal_is_extern( $cal ); ?>
                         <?php if ( ! empty( $cal['ical_url'] ) ) : ?>
                             <input type="text" readonly value="<?php echo esc_attr( $cal['ical_url'] ); ?>"
                                    style="width:100%;font-size:12px;border:1px solid #ddd;padding:3px 6px"
                                    onclick="this.select()" title="Klicken zum Auswählen" />
+                            <span style="font-size:11px;color:#666">
+                                <?php echo $cal_extern
+                                    ? 'Quelle: IServ-Kalender (oben eingetragen)'
+                                    : 'Abo-Adresse für IServ und andere Kalender-Apps'; ?>
+                            </span>
+                        <?php elseif ( $cal_extern ) : ?>
+                            <em style="color:#aaa;font-size:12px">— Adresse oben eintragen —</em>
                         <?php else : ?>
                             <em style="color:#aaa;font-size:12px">— wird nach Planner-Speichern gesetzt —</em>
                         <?php endif; ?>
@@ -6353,18 +6630,24 @@ function gsh_tp_shortcode( $atts ) {
     // ── Annotationen aus dem Curriculr-Dokument laden ──
     // Die Planner-Anmerkungenspalte (0-basierte schoolweek) auf PHP-Schulwochen (1-basiert) mappen.
     $annotation_map = array();
-    $cur_sj_map = get_option( 'gsh_tp_curriculr_profile_map', array() );
-    if ( is_array( $cur_sj_map ) ) {
-        $sj_key = array_search( $profile_id, $cur_sj_map, true );
-        if ( false !== $sj_key ) {
-            $ann_row = gsh_tp_curriculr_repo_get( $sj_key );
-            if ( $ann_row && ! empty( $ann_row['json'] ) ) {
-                $ann_doc = json_decode( $ann_row['json'], true );
-                if ( is_array( $ann_doc ) && ! empty( $ann_doc['annotations'] ) ) {
-                    foreach ( $ann_doc['annotations'] as $ann ) {
-                        if ( isset( $ann['schoolweek'], $ann['text'] ) && trim( $ann['text'] ) !== '' ) {
-                            $annotation_map[ (int) $ann['schoolweek'] ] = $ann['text'];
-                        }
+    // Nested schoolyears-Model (seit 4.24.0) liefert sj_key direkt am Profil.
+    $ann_sj_key = $profile['sj_key'] ?? '';
+    if ( '' === $ann_sj_key ) {
+        // Legacy-Kompat: alte Installs ohne nested schoolyears-Model.
+        $cur_sj_map = get_option( 'gsh_tp_curriculr_profile_map', array() );
+        if ( is_array( $cur_sj_map ) ) {
+            $found = array_search( $profile_id, $cur_sj_map, true );
+            $ann_sj_key = false !== $found ? $found : '';
+        }
+    }
+    if ( '' !== $ann_sj_key ) {
+        $ann_row = gsh_tp_curriculr_repo_get( $ann_sj_key );
+        if ( $ann_row && ! empty( $ann_row['json'] ) ) {
+            $ann_doc = json_decode( $ann_row['json'], true );
+            if ( is_array( $ann_doc ) && ! empty( $ann_doc['annotations'] ) ) {
+                foreach ( $ann_doc['annotations'] as $ann ) {
+                    if ( isset( $ann['schoolweek'], $ann['text'] ) && trim( $ann['text'] ) !== '' ) {
+                        $annotation_map[ (int) $ann['schoolweek'] ] = $ann['text'];
                     }
                 }
             }
@@ -6563,6 +6846,43 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<button type="button" class="gtp-btn gtp-btn-feedback" id="gtp-feedback-btn"'
         . ' onclick="gtpFeedbackOpen()" aria-label="Feedback geben">'
         . gsh_tp_icon( 'message-circle' ) . ' Feedback</button>';
+    // Abo nur für Curriculr-verwaltete Kalender — bei manuell konfigurierten Profilen
+    // zeigt ical_url auf die (ggf. private) IServ-Fetch-Quelle des Admins.
+    //
+    // webcal:// löst nur dann direkt ein Kalender-Abo aus, wenn das Betriebssystem einen
+    // Handler dafür registriert hat (macOS/iOS: automatisch via Kalender-App; Windows/Linux/
+    // die meisten Browser: i. d. R. NICHT ohne manuelle Einrichtung). Ohne Handler behandelt
+    // der Browser den Link faktisch wie https:// und lädt die Datei herunter statt zu
+    // abonnieren. Deshalb: webcal-Link als Versuch anbieten, aber Copy-URL-Fallback mit
+    // Anleitung als verlässlichen, plattformunabhängigen Weg gleichwertig danebenstellen.
+    if ( ! empty( $profile['managed'] ) && ! empty( $profile['ical_url'] ) ) {
+        $ics_url    = $profile['ical_url'];
+        $webcal_url = preg_replace( '#^https?://#i', 'webcal://', $ics_url );
+        $o .= '<div class="gtp-ics-group">';
+        $o .= '<a href="' . esc_url( $webcal_url ) . '" class="gtp-btn gtp-btn-ics"'
+            . ' aria-label="Kalender abonnieren (funktioniert nur mit eingerichteter Kalender-App)">'
+            . gsh_tp_icon( 'bell' ) . ' Kalender abonnieren</a>';
+        $o .= '<button type="button" class="gtp-btn gtp-btn-ics" data-feed-url="' . esc_url( $ics_url ) . '"'
+            . ' onclick="gtpCopyFeed(this)" aria-label="Feed-URL kopieren">'
+            . gsh_tp_icon( 'link' ) . ' Feed-URL kopieren</button>';
+        // Ausklappbare Kurzanleitung — ohne die geht ein Teil des Kollegiums davon aus,
+        // der Klick allein reiche, und wundert sich dann über die heruntergeladene Datei
+        // statt ein laufendes Abo zu haben.
+        $o .= '<details class="gtp-ics-help">';
+        $o .= '<summary>' . gsh_tp_icon( 'chevron-right', '0.85em', 'gtp-ics-chevron' ) . ' Wie funktioniert das Abo?</summary>';
+        $o .= '<div class="gtp-ics-help-body">';
+        $o .= '<p>„Kalender abonnieren" anklicken. Öffnet sich deine Kalender-App? Dann bist du fertig — der Terminplan aktualisiert sich ab jetzt von selbst, sobald sich etwas ändert.</p>';
+        $o .= '<p>Passiert nichts oder wird stattdessen nur eine Datei heruntergeladen? Dann „Feed-URL kopieren" klicken und die Adresse manuell in deiner Kalender-App eintragen:</p>';
+        $o .= '<ul>';
+        $o .= '<li><strong>Outlook:</strong> Kalender hinzufügen &rarr; Aus dem Internet abonnieren &rarr; Adresse einfügen</li>';
+        $o .= '<li><strong>Apple Kalender:</strong> Ablage &rarr; Neues Kalenderabo &rarr; Adresse einfügen</li>';
+        $o .= '<li><strong>Google Kalender:</strong> „Weitere Kalender" (+) &rarr; Per URL &rarr; Adresse einfügen</li>';
+        $o .= '<li><strong>Thunderbird:</strong> Neuer Kalender &rarr; Im Netzwerk &rarr; iCalendar (ICS) &rarr; Adresse einfügen</li>';
+        $o .= '</ul>';
+        $o .= '</div>'; // .gtp-ics-help-body
+        $o .= '</details>';
+        $o .= '</div>'; // .gtp-ics-group
+    }
     $o .= '</div>'; // .gtp-ft-actions
     $o .= '<div class="gtp-ft-meta">';
     $o .= '<span class="gtp-src">Quelle: IServ-Kalender</span>';
@@ -7690,12 +8010,12 @@ function gsh_tp_css() {
 /* ── Footer ── */
 .gtp-ft{
   display:flex;flex-wrap:wrap;gap:10px;
-  justify-content:space-between;align-items:center;
+  justify-content:space-between;align-items:flex-start;
   margin-top:1.5rem;padding-top:1rem;
   border-top:1px solid var(--gtp-border);
 }
 .gtp-ft-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.gtp-ft-meta{display:flex;align-items:center;gap:8px;color:var(--gtp-text-faint);font-size:.75rem}
+.gtp-ft-meta{display:flex;align-items:center;gap:8px;color:var(--gtp-text-faint);font-size:.75rem;padding-top:4px}
 .gtp-btn{
   padding:8px 16px;background:var(--gtp-text);color:#fff;
   border:none;border-radius:8px;
@@ -7706,8 +8026,25 @@ function gsh_tp_css() {
 .gtp-btn:hover{background:#0f172a;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.2)}
 .gtp-btn-pdf{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none}
 .gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15)}
+.gtp-btn-ics{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.gtp-btn-ics:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15);color:var(--gtp-accent)}
 .gtp-btn-sec{background:var(--gtp-surface);border:1.5px solid var(--gtp-border);color:var(--gtp-text-muted);box-shadow:none}
 .gtp-btn-sec:hover{background:var(--gtp-bg);border-color:var(--gtp-text-muted);color:var(--gtp-text);transform:translateY(-1px);box-shadow:none}
+.gtp-btn-copied{background:var(--gtp-accent-light);border-color:var(--gtp-accent);color:var(--gtp-accent)}
+.gtp-ics-group{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:100%;
+  flex-basis:100%;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--gtp-border);
+}
+.gtp-ics-help{flex-basis:100%;font-size:.78rem;color:var(--gtp-text-muted)}
+.gtp-ics-help summary{cursor:pointer;color:var(--gtp-accent);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:5px}
+.gtp-ics-help summary::-webkit-details-marker{display:none}
+.gtp-ics-chevron{transition:transform .15s}
+.gtp-ics-help[open] .gtp-ics-chevron{transform:rotate(90deg)}
+.gtp-ics-help-body{margin-top:8px;padding:10px 12px;background:var(--gtp-bg);border-radius:8px;line-height:1.5}
+.gtp-ics-help-body p{margin:0 0 8px}
+.gtp-ics-help-body ul{margin:4px 0 0;padding-left:18px}
+.gtp-ics-help-body li{margin-bottom:4px}
 .gtp-pdf-loading{opacity:.55;pointer-events:none;cursor:default}
 .gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
@@ -9789,6 +10126,36 @@ if(window.matchMedia){
 
 /* Theme sofort initialisieren (kein Aufblitzen) */
 gtpInitTheme();
+
+/* ── Feed-URL kopieren (Fallback für Apps ohne webcal://-Support) ── */
+
+function gtpCopyFeed(btn) {
+  var url = btn.getAttribute('data-feed-url');
+  if (!url) return;
+  var restore = function() {
+    btn.classList.remove('gtp-btn-copied');
+    btn.innerHTML = btn.dataset.gtpOrigLabel;
+  };
+  var onCopied = function() {
+    if (!btn.dataset.gtpOrigLabel) btn.dataset.gtpOrigLabel = btn.innerHTML;
+    btn.classList.add('gtp-btn-copied');
+    btn.textContent = 'Kopiert!';
+    setTimeout(restore, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(onCopied);
+    return;
+  }
+  var ta = document.createElement('textarea');
+  ta.value = url;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) { /* noop */ }
+  document.body.removeChild(ta);
+  onCopied();
+}
 
 /* ── Hilfe-Overlay (seit 3.16.0, ersetzt Shepherd.js-Tour) ──────── */
 

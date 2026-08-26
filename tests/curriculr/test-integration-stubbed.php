@@ -100,6 +100,7 @@ function gsh_tp_calendar_id( $sj_key, $group ) {
 function sanitize_text_field( $str ) { return trim( strip_tags( (string) $str ) ); }
 function gsh_tp_active_profile_id() { return 'p1'; }
 function gsh_tp_ck( $prefix, $pid ) { return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION; }
+function gsh_tp_cal_is_extern( $cal ) { return 'extern' === ( $cal['source'] ?? 'planner' ); }
 function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
 function set_transient( $k, $v, $ttl = 0 ) { $GLOBALS['options'][ $k ] = $v; }
 $GLOBALS['gsh_tp_curriculr_current_claims'] = null;
