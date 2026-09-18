@@ -87,4 +87,16 @@
   --transition: 150ms ease-out;
   --transition-slow: 250ms ease-out;
 
+  /* Homepage-Register ([gsh_termine] auf geshorst.de): Türkis der Schul-Website.
+     --up-accent nur für Linien/Flächen — als Text zu kontrastarm, dafür --up-accent-ink (5,2:1). */
+  --up-accent: #04D2C8;
+  --up-accent-ink: #047A74;
+  --up-accent-soft: #E6FAF9;
+  --up-line: #ECEEF1;
+  --up-ink-3: #5F6368;
+  --up-weekend: #F3F4F6;
+  --up-hol-bg: #F4EFE4;
+  --up-hol-line: #E8DCC0;
+  --up-hol-ink: #6B5A2E;
+
 }

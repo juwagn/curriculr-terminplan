@@ -3,10 +3,29 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.36.0
+ * Version:     4.41.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.41.0
+ * - [NEU] Neuer Einstellungs-Tab „Shortcodes & Hilfe“: alle Shortcodes mit Erklärung, Attributen und Beispielen sowie ein Generator, der Gruppe, Kategorien und Optionen per Auswahl zu einem fertigen Shortcode zum Kopieren zusammenstellt
+ * - [NEU] Kategorien in [gsh_termine] und [gsh_monat]: kategorien="…" zeigt nur diese Kategorien, auch_kategorien="…" zeigt Termine dieser Kategorien zusätzlich – auch ohne passende Gruppe (z. B. „Allgemein“ für Eltern)
+ * v4.40.0
+ * - [NEU] Monatsansicht [gsh_monat]: Monatsraster Mo–So inkl. Wochenende im Look der Startseiten-Vorschau, mit Gruppenfilter (z. B. gruppe="Eltern"), Blättern zwischen Monaten ohne JavaScript, Ferien-Tönung, Legende und optionalem Abo-Button; auf dem Handy automatisch als Tagesliste nur mit Terminen
+ * - [INFRA] Gemeinsamer Einstieg für die öffentlichen Planner-Ansichten (Profil/Entwurf-Prüfung, Abo-Button)
+ * v4.39.0
+ * - [UX] Startseiten-Terminvorschau [gsh_termine] neu aufgebaut (Experten-Review UI/UX/Webdesign): eine chronologische Agenda nur mit Tagen, an denen etwas stattfindet, statt zwei ungleich gefüllter Wochenkarten; Wochen als Zwischenüberschrift, Ferien als Band, mehrtägige Termine einmal mit „seit/bis“, Kategorie zusätzlich als Text
+ * - [NEU] Übersichtsleiste Mo–So mit Kategorie-Punkten, Ferien-Markierung und Sprunglinks zum Tag, Legende; ab 8 Terminen klappt der Rest unter „weitere Termine“ ein; bei leerem Zeitraum wird der nächste Termin genannt
+ * - [FIX] Terminvorschau zerfiel im Theme (Terminkarte in 48px-Spalte gequetscht): jedes Layout-Element hat jetzt eine feste Rasterposition, Screenreader-Text sitzt im Datum, Theme-Listen-/Überschriften-Stile werden neutralisiert; Breite per Container Query statt Viewport
+ * - [UX] Gecachte Startseite: kleines Skript (assets/js/gsh-termine.js, defer) korrigiert „Heute/Morgen“ und blendet abgelaufene Termine aus; ohne JS bleibt alles vollständig
+ * v4.38.0
+ * - [NEU] Neuer Shortcode [gsh_termine]: kompakte Terminvorschau für die Startseite (Standard: diese und nächste Woche) direkt aus dem Planner — mit Gruppenfilter (z. B. gruppe="Eltern"), Wochenend-Terminen, Ferienhinweisen, Planner-Kategoriefarben sowie optionalem Link zur Gesamtübersicht und Abo-Button. Ersetzt das externe ICS-Calendar-Plugin auf der Startseite
+ * - [NEU] Termine am Wochenende (z. B. Tag der offenen Tür am Samstag) erscheinen automatisch in der Anmerkungen-Spalte von Tabelle, Agenda und Kiosk — keine zusätzliche Anmerkung im Planner mehr nötig
+ * v4.37.0
+ * - [NEU] Mehrere Planner-Anmerkungen pro Schulwoche werden in öffentlicher Ansicht, Entwurf und Kiosk in ihrer festgelegten Reihenfolge dargestellt
+ * - [FIX] Planner-Anmerkungen werden anhand des tatsächlichen Wochenmontags statt einer abweichenden WP-Schulwochennummer eingeordnet; vollständige Ferienwochen verschieben sie nicht mehr
+ * v4.36.1
+ * - [FIX] Kalender-Abo-Button ("Kalender abonnieren") in der Kiosk-Kachel: target="_top" ergänzt — Chromium blockiert seit M103 externe Protokolle (webcal:) aus sandboxed cross-origin iframes ("Dieser Inhalt ist blockiert" in Edge, stilles Nichtstun in Safari), da die Kiosk-Seite als IServ-iframe-Kachel eingebettet wird. Navigation im Top-Frame ist von der Browser-Restriktion nicht betroffen
  * v4.36.0
  * - [NEU] IServ-Kalender direkt verbinden: Im Schuljahr-Bereich lässt sich wieder die Adresse eines freigegebenen IServ-Kalenders eintragen — das Plugin holt die Termine dann selbst ab und baut daraus Quartalsansicht und Druckansicht, ganz ohne Planer. Seit 4.24.0 war das Feld aus der Oberfläche verschwunden und die angezeigte Feed-URL nur noch die vom Plugin selbst erzeugte Abo-Adresse
  * - [FIX] Verbundene IServ-Kalender werden beim Senden aus dem Planer nicht mehr überschrieben (neues Feld source=planner|extern pro Kalender; after_put überspringt externe Quellen)
@@ -637,7 +656,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.36.0' );
+define( 'GSH_TP_VERSION',       '4.41.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -881,6 +900,49 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.41.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Neuer Einstellungs-Tab „Shortcodes & Hilfe“: alle Shortcodes mit Erklärung, Attributen und Beispielen sowie ein Generator, der Gruppe, Kategorien und Optionen per Auswahl zu einem fertigen Shortcode zusammenstellt' ),
+                array( 'tag' => 'NEU', 'text' => 'Kategorien in [gsh_termine] und [gsh_monat]: kategorien="…" zeigt nur diese Kategorien, auch_kategorien="…" zeigt Termine dieser Kategorien zusätzlich – auch ohne passende Gruppe (z. B. „Allgemein“ für Eltern)' ),
+            ),
+        ),
+        array(
+            'version' => '4.40.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Monatsansicht [gsh_monat]: Monatsraster Mo–So inkl. Wochenende im Look der Startseiten-Vorschau, mit Gruppenfilter (z. B. gruppe="Eltern"), Blättern zwischen Monaten, Ferien-Tönung, Legende und optionalem Abo-Button; auf dem Handy automatisch als Tagesliste' ),
+                array( 'tag' => 'INFRA', 'text' => 'Gemeinsamer Einstieg für die öffentlichen Planner-Ansichten (Profil- und Entwurfsprüfung, Abo-Button)' ),
+            ),
+        ),
+        array(
+            'version' => '4.39.0',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Startseiten-Terminvorschau [gsh_termine] neu aufgebaut: eine chronologische Agenda nur mit Tagen, an denen etwas stattfindet, statt zwei ungleich gefüllter Wochenkarten; Wochen als Zwischenüberschrift, Ferien als Band, mehrtägige Termine einmal mit „seit/bis“, Kategorie zusätzlich als Text' ),
+                array( 'tag' => 'NEU', 'text' => 'Übersichtsleiste Mo–So mit Kategorie-Punkten, Ferien-Markierung und Sprunglinks, Legende; ab 8 Terminen klappt der Rest unter „weitere Termine“ ein (Attribut max); bei leerem Zeitraum wird der nächste Termin genannt' ),
+                array( 'tag' => 'FIX', 'text' => 'Terminvorschau zerfiel im Homepage-Theme (Terminkarte in schmale Spalte gequetscht): feste Rasterpositionen, Screenreader-Text im Datum, Theme-Stile für Listen und Überschriften neutralisiert, Breite per Container Query' ),
+                array( 'tag' => 'UX', 'text' => 'Gecachte Startseite: kleines Skript korrigiert „Heute/Morgen“ und blendet abgelaufene Termine aus; ohne JavaScript bleibt die Vorschau vollständig' ),
+            ),
+        ),
+        array(
+            'version' => '4.38.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Neuer Shortcode [gsh_termine]: kompakte Terminvorschau für die Startseite (Standard: diese und nächste Woche) direkt aus dem Planner — mit Gruppenfilter (z. B. gruppe="Eltern"), Wochenend-Terminen, Ferienhinweisen, Planner-Kategoriefarben sowie optionalem Link zur Gesamtübersicht und Abo-Button' ),
+                array( 'tag' => 'NEU', 'text' => 'Termine am Wochenende (z. B. Tag der offenen Tür am Samstag) erscheinen automatisch in der Anmerkungen-Spalte von Tabelle, Agenda und Kiosk — keine zusätzliche Anmerkung im Planner mehr nötig' ),
+            ),
+        ),
+        array(
+            'version' => '4.37.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Mehrere Planner-Anmerkungen pro Schulwoche werden in öffentlicher Ansicht, Entwurf und Kiosk in ihrer festgelegten Reihenfolge dargestellt' ),
+                array( 'tag' => 'FIX', 'text' => 'Planner-Anmerkungen werden anhand des tatsächlichen Wochenmontags statt einer abweichenden WP-Schulwochennummer eingeordnet; vollständige Ferienwochen verschieben sie nicht mehr' ),
+            ),
+        ),
+        array(
+            'version' => '4.36.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Kalender-Abo-Button ("Kalender abonnieren") in der Kiosk-Kachel: target="_top" ergänzt — Chromium blockiert seit M103 externe Protokolle (webcal:) aus sandboxed cross-origin iframes ("Dieser Inhalt ist blockiert" in Edge, stilles Nichtstun in Safari), da die Kiosk-Seite als IServ-iframe-Kachel eingebettet wird. Navigation im Top-Frame ist von der Browser-Restriktion nicht betroffen' ),
+            ),
+        ),
         array(
             'version' => '4.36.0',
             'entries' => array(
@@ -4145,6 +4207,7 @@ function gsh_tp_settings_page() {
         '_profile'    => 'Schuljahre',
         '_kategorien' => 'Kategorien',
         '_system'     => 'System &amp; Logs',
+        '_hilfe'      => 'Shortcodes &amp; Hilfe',
         // '_sync' removed — Curriculr-Sync 1:1 mapping superseded by SPA auto-provisioning
     );
 
@@ -4267,6 +4330,8 @@ function gsh_tp_settings_page() {
             gsh_tp_render_kategorien_tab();
         } elseif ( '_system' === $active_tab ) {
             gsh_tp_render_system_tab();
+        } elseif ( '_hilfe' === $active_tab ) {
+            gsh_tp_render_help_tab();
         } else { // _profile
             gsh_tp_render_profile_tab_v2();
         }
@@ -4274,6 +4339,252 @@ function gsh_tp_settings_page() {
     </div>
     <?php
 }
+
+/**
+ * Referenz aller Shortcodes für die Hilfeseite (eine Quelle für Tabelle + Generator).
+ *
+ * @since 4.41.0
+ * @return array<string, array{title: string, purpose: string, where: string, attrs: array, examples: array}>
+ */
+function gsh_tp_shortcode_reference() {
+    $common = array(
+        'gruppe'          => array( 'Planner-Gruppe, z. B. „Eltern“. Leer = alle Termine. Termine ohne Gruppe sind immer sichtbar.', 'leer' ),
+        'kategorien'      => array( 'Nur Termine dieser Kategorien zeigen (Name oder Slug, kommagetrennt).', 'leer = alle' ),
+        'auch_kategorien' => array( 'Termine dieser Kategorien zusätzlich zeigen – auch wenn sie nicht zur Gruppe gehören (z. B. „Allgemein“ für Eltern).', 'leer' ),
+        'abo'             => array( '„ja“ zeigt den Button „Kalender abonnieren“ für den (Gruppen-)ICS-Feed. Achtung: macht die Feed-Adresse öffentlich.', 'aus' ),
+        'titel'           => array( 'Eigene Überschrift über der Ansicht.', 'keine' ),
+        'schuljahr'       => array( 'Profil-ID eines bestimmten Schuljahres.', 'aktives Schuljahr' ),
+    );
+    return array(
+        'gsh_termine'    => array(
+            'title'    => 'Terminvorschau (Startseite)',
+            'purpose'  => 'Kompakte Vorschau der nächsten zwei Wochen: Übersichtsleiste Mo–So mit Sprunglinks, darunter bzw. daneben eine chronologische Terminliste (nur Tage mit Terminen), Ferien als Hinweiszeile. Am Wochenende wird eine Woche mehr gezeigt.',
+            'where'    => 'Startseite, Bereich „Aktuelle Termine“ – in einem WPBakery-Text-Block (nicht „Raw HTML“).',
+            'attrs'    => array(
+                'gruppe'          => $common['gruppe'],
+                'kategorien'      => $common['kategorien'],
+                'auch_kategorien' => $common['auch_kategorien'],
+                'wochen'          => array( 'Anzahl Wochen ab der aktuellen (1–6).', '2' ),
+                'max'             => array( 'Anzahl Termine, bevor der Rest unter „weitere Termine“ eingeklappt wird. 0 = alle.', '8' ),
+                'link'            => array( 'Adresse der vollständigen Terminseite, erzeugt den Button „Alle Termine“.', 'kein Button' ),
+                'link_text'       => array( 'Beschriftung des Link-Buttons.', 'Alle Termine' ),
+                'abo'             => $common['abo'],
+                'titel'           => $common['titel'],
+                'ebene'           => array( 'Überschriften-Ebene 2–6 für Titel und Wochenüberschriften.', '5' ),
+                'schuljahr'       => $common['schuljahr'],
+            ),
+            'examples' => array(
+                '[gsh_termine gruppe="Eltern" link="/termine/"]',
+                '[gsh_termine gruppe="Eltern" auch_kategorien="Allgemein" max="6"]',
+            ),
+        ),
+        'gsh_monat'      => array(
+            'title'    => 'Monatsansicht',
+            'purpose'  => 'Monatsraster Mo–So inklusive Wochenende mit Blättern zwischen den Monaten, Ferien-Tönung und Legende. Auf dem Handy automatisch als Tagesliste.',
+            'where'    => 'Eigene Seite, z. B. „Termine für Eltern“.',
+            'attrs'    => array(
+                'gruppe'          => $common['gruppe'],
+                'kategorien'      => $common['kategorien'],
+                'auch_kategorien' => $common['auch_kategorien'],
+                'abo'             => $common['abo'],
+                'titel'           => $common['titel'],
+                'ebene'           => array( 'Überschriften-Ebene 2–6 für den Monatsnamen.', '3' ),
+                'schuljahr'       => $common['schuljahr'],
+            ),
+            'examples' => array(
+                '[gsh_monat gruppe="Eltern"]',
+                '[gsh_monat gruppe="Eltern" auch_kategorien="Allgemein" abo="ja"]',
+            ),
+        ),
+        'gsh_terminplan' => array(
+            'title'    => 'Terminplan (Quartalsansicht)',
+            'purpose'  => 'Der vollständige Schul-Terminplan mit Quartals-Tabs, Jahresansicht, Heatmap, Suche, Kategorie- und Gruppenfiltern, PDF-Export und Feedback. Wochenend-Termine erscheinen in der Anmerkungen-Spalte. Wird auch von der Kiosk-Seite genutzt.',
+            'where'    => 'Terminplan-Seite der Homepage bzw. Seitenvorlage „Terminplan Kiosk“ für IServ.',
+            'attrs'    => array(
+                'quartal'   => array( '„auto“ (aktuelles Quartal), „1“–„4“ oder „alle“.', 'auto' ),
+                'schuljahr' => array( 'Profil-ID; „entwurf“ zeigt den Entwurf (nur für Admins).', 'aktives Schuljahr' ),
+            ),
+            'examples' => array(
+                '[gsh_terminplan]',
+                '[gsh_terminplan schuljahr="entwurf"]',
+            ),
+        ),
+    );
+}
+
+/**
+ * Tab „Shortcodes & Hilfe": Generator (Gruppe/Kategorien per Auswahl) und
+ * Referenz aller Shortcodes mit Attributen und Beispielen.
+ *
+ * @since 4.41.0
+ * @return void
+ */
+function gsh_tp_render_help_tab() {
+    $source     = gsh_tp_public_curriculr_source( '', 'Hilfe' );
+    $categories = array();
+    $groups     = array();
+    if ( $source['src'] ) {
+        $doc = $source['src']['doc'];
+        foreach ( (array) ( $doc['categories'] ?? array() ) as $c ) {
+            if ( is_array( $c ) && ! empty( $c['label'] ) ) {
+                $categories[] = array( 'label' => (string) $c['label'], 'color' => preg_match( '/^#[0-9a-fA-F]{6}$/', (string) ( $c['color'] ?? '' ) ) ? $c['color'] : '#94A3B8' );
+            }
+        }
+        foreach ( (array) ( $doc['availableGroups'] ?? array() ) as $g ) {
+            $groups[ (string) $g ] = true;
+        }
+        foreach ( (array) ( $doc['events'] ?? array() ) as $e ) {
+            foreach ( (array) ( $e['groups'] ?? array() ) as $g ) {
+                $groups[ (string) $g ] = true;
+            }
+        }
+        unset( $groups[''] );
+        ksort( $groups );
+    }
+    $reference = gsh_tp_shortcode_reference();
+    ?>
+    <div class="gtp-adm-help">
+        <p class="gtp-adm-help-intro">
+            Shortcodes fügen die Termine aus dem Curricu:lr Planner in beliebige Seiten ein.
+            Einfach den Shortcode in einen <strong>Text-Block</strong> einfügen (in WPBakery nicht in „Raw HTML“ – dort werden Shortcodes nicht ausgeführt).
+            Nach Änderungen ggf. „Cache leeren“.
+        </p>
+
+        <section class="gtp-adm-card" aria-labelledby="gtp-adm-gen-h">
+            <h2 id="gtp-adm-gen-h">Shortcode zusammenstellen</h2>
+            <form id="gtp-adm-gen" class="gtp-adm-gen" onsubmit="return false">
+                <fieldset>
+                    <legend>Ansicht</legend>
+                    <?php foreach ( $reference as $tag => $ref ) : ?>
+                        <label class="gtp-adm-radio">
+                            <input type="radio" name="gtp_gen_tag" value="<?php echo esc_attr( $tag ); ?>" <?php checked( 'gsh_termine', $tag ); ?>>
+                            <?php echo esc_html( $ref['title'] ); ?> <code>[<?php echo esc_html( $tag ); ?>]</code>
+                        </label>
+                    <?php endforeach; ?>
+                </fieldset>
+
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <label for="gtp-gen-gruppe">Gruppe</label>
+                    <select id="gtp-gen-gruppe" data-attr="gruppe">
+                        <option value="">Alle Termine</option>
+                        <?php foreach ( array_keys( $groups ) as $g ) : ?>
+                            <option value="<?php echo esc_attr( $g ); ?>" <?php selected( 'Eltern', $g ); ?>><?php echo esc_html( $g ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <span class="gtp-adm-label">Kategorien</span>
+                    <?php if ( $categories ) : ?>
+                        <table class="gtp-adm-cats">
+                            <thead><tr><th scope="col">Kategorie</th><th scope="col">nur diese</th><th scope="col">zusätzlich zeigen<br><small>(auch ohne Gruppe)</small></th></tr></thead>
+                            <tbody>
+                            <?php foreach ( $categories as $cat ) : ?>
+                                <tr>
+                                    <th scope="row"><i class="gtp-adm-dot" style="--dot:<?php echo esc_attr( $cat['color'] ); ?>"></i><?php echo esc_html( $cat['label'] ); ?></th>
+                                    <td><input type="checkbox" data-cat="only" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( 'Nur ' . $cat['label'] ); ?>"></td>
+                                    <td><input type="checkbox" data-cat="also" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( $cat['label'] . ' zusätzlich zeigen' ); ?>"></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <p class="description">„nur diese“ leer lassen = alle Kategorien. „zusätzlich“ z. B. für „Allgemein“, damit allgemeine Schultermine auch ohne Gruppe „Eltern“ erscheinen.</p>
+                    <?php else : ?>
+                        <p class="description">Noch kein Curricu:lr-Plan im aktiven Schuljahr – Kategorien können trotzdem von Hand eingetragen werden (Attribut <code>kategorien</code>).</p>
+                    <?php endif; ?>
+                </div>
+
+                <div class="gtp-adm-row" data-for="gsh_termine">
+                    <label for="gtp-gen-wochen">Wochen</label>
+                    <input type="number" id="gtp-gen-wochen" data-attr="wochen" data-default="2" min="1" max="6" value="2">
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine">
+                    <label for="gtp-gen-max">Termine vor „weitere“</label>
+                    <input type="number" id="gtp-gen-max" data-attr="max" data-default="8" min="0" max="50" value="8">
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine">
+                    <label for="gtp-gen-link">Link „Alle Termine“</label>
+                    <input type="text" id="gtp-gen-link" data-attr="link" placeholder="/termine/">
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <label for="gtp-gen-titel">Überschrift</label>
+                    <input type="text" id="gtp-gen-titel" data-attr="titel" placeholder="optional">
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <label><input type="checkbox" data-attr="abo" data-value="ja"> Button „Kalender abonnieren“ zeigen</label>
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_terminplan">
+                    <label for="gtp-gen-quartal">Quartal</label>
+                    <select id="gtp-gen-quartal" data-attr="quartal" data-default="auto">
+                        <option value="auto">automatisch (aktuelles)</option>
+                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                        <option value="alle">alle</option>
+                    </select>
+                </div>
+
+                <div class="gtp-adm-out">
+                    <label for="gtp-gen-out">Fertiger Shortcode</label>
+                    <div class="gtp-adm-out-row">
+                        <input type="text" id="gtp-gen-out" readonly value="[gsh_termine gruppe=&quot;Eltern&quot;]">
+                        <button type="button" class="button button-primary" id="gtp-gen-copy">Kopieren</button>
+                    </div>
+                    <p class="gtp-adm-copied" id="gtp-gen-copied" role="status" aria-live="polite"></p>
+                </div>
+            </form>
+        </section>
+
+        <?php foreach ( $reference as $tag => $ref ) : ?>
+            <section class="gtp-adm-card" aria-labelledby="gtp-adm-<?php echo esc_attr( $tag ); ?>">
+                <h2 id="gtp-adm-<?php echo esc_attr( $tag ); ?>"><?php echo esc_html( $ref['title'] ); ?> <code>[<?php echo esc_html( $tag ); ?>]</code></h2>
+                <p><?php echo esc_html( $ref['purpose'] ); ?></p>
+                <p><strong>Einsatz:</strong> <?php echo esc_html( $ref['where'] ); ?></p>
+                <table class="widefat striped gtp-adm-attrs">
+                    <thead><tr><th scope="col">Attribut</th><th scope="col">Bedeutung</th><th scope="col">Standard</th></tr></thead>
+                    <tbody>
+                    <?php foreach ( $ref['attrs'] as $name => $info ) : ?>
+                        <tr><td><code><?php echo esc_html( $name ); ?></code></td><td><?php echo esc_html( $info[0] ); ?></td><td><?php echo esc_html( $info[1] ); ?></td></tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="gtp-adm-ex-h"><strong>Beispiele</strong></p>
+                <ul class="gtp-adm-ex">
+                    <?php foreach ( $ref['examples'] as $ex ) : ?>
+                        <li><code><?php echo esc_html( $ex ); ?></code></li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endforeach; ?>
+
+        <section class="gtp-adm-card" aria-labelledby="gtp-adm-notes">
+            <h2 id="gtp-adm-notes">Gut zu wissen</h2>
+            <ul class="gtp-adm-notes">
+                <li><strong>Gruppen und Kategorien</strong> kommen aus dem Curricu:lr Planner. Ein Termin ohne Gruppe gilt für alle und erscheint in jeder Gruppenansicht.</li>
+                <li><strong>Wochenend-Termine</strong> (z. B. Tag der offenen Tür) im Planner in der Spalte „Sa/So“ anlegen. Sie erscheinen im Eltern-Kalender (ICS), in <code>[gsh_termine]</code>, <code>[gsh_monat]</code> und in der Anmerkungen-Spalte von <code>[gsh_terminplan]</code>.</li>
+                <li><strong>Anmerkungen</strong> aus dem Planner erscheinen nur in der Anmerkungen-Spalte des Terminplans – nicht im ICS-Feed und nicht in Vorschau/Monatsansicht.</li>
+                <li><strong>Kiosk-Ansicht</strong> für IServ: Seite mit der Vorlage „Terminplan Kiosk“ anlegen, Token im Tab „System &amp; Logs“ erzeugen.</li>
+                <li>Entwurfs-Schuljahre sind in allen Shortcodes nur für Administratoren sichtbar.</li>
+            </ul>
+        </section>
+    </div>
+    <?php
+}
+
+/**
+ * Lädt Styles + Generator-Skript nur auf dem Hilfe-Tab der Einstellungsseite.
+ *
+ * @since 4.41.0
+ * @param string $hook Admin-Seiten-Hook.
+ * @return void
+ */
+function gsh_tp_enqueue_admin_help( $hook ) {
+    if ( 'settings_page_' . GSH_TP_SLUG !== $hook || '_hilfe' !== sanitize_key( $_GET['tab'] ?? '' ) ) { // phpcs:ignore WordPress.Security.NonceVerification -- read-only tab switch
+        return;
+    }
+    wp_enqueue_style( 'gsh-terminplan-tokens', plugin_dir_url( __FILE__ ) . 'assets/css/design-tokens.css', array(), GSH_TP_VERSION );
+    wp_enqueue_style( 'gsh-terminplan', plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css', array( 'gsh-terminplan-tokens' ), GSH_TP_VERSION );
+    wp_enqueue_script( 'gsh-admin-help', plugin_dir_url( __FILE__ ) . 'assets/js/gsh-admin-help.js', array(), GSH_TP_VERSION, true );
+}
+add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_help' );
 
 /**
  * Rendert den Profil-Chooser (Dropdown + "+ Neues Schuljahr"-Button).
@@ -6627,31 +6938,14 @@ function gsh_tp_shortcode( $atts ) {
     // Einmaliger Aufbau des Date-Index für O(1)-Lookup statt O(n) pro Tag
     $date_index = gsh_tp_build_date_index( $events );
 
-    // ── Annotationen aus dem Curriculr-Dokument laden ──
-    // Die Planner-Anmerkungenspalte (0-basierte schoolweek) auf PHP-Schulwochen (1-basiert) mappen.
+    // ── Anmerkungen aus dem Curriculr-Dokument laden ──
+    // Map ist nach tatsächlichem Wochenmontag indiziert; sie bleibt damit auch
+    // hinter vollständigen Ferienwochen mit dem Planner synchron. Wochenend-
+    // Termine landen ebenfalls hier, weil die Tabelle nur Mo–Fr zeigt.
     $annotation_map = array();
-    // Nested schoolyears-Model (seit 4.24.0) liefert sj_key direkt am Profil.
-    $ann_sj_key = $profile['sj_key'] ?? '';
-    if ( '' === $ann_sj_key ) {
-        // Legacy-Kompat: alte Installs ohne nested schoolyears-Model.
-        $cur_sj_map = get_option( 'gsh_tp_curriculr_profile_map', array() );
-        if ( is_array( $cur_sj_map ) ) {
-            $found = array_search( $profile_id, $cur_sj_map, true );
-            $ann_sj_key = false !== $found ? $found : '';
-        }
-    }
-    if ( '' !== $ann_sj_key ) {
-        $ann_row = gsh_tp_curriculr_repo_get( $ann_sj_key );
-        if ( $ann_row && ! empty( $ann_row['json'] ) ) {
-            $ann_doc = json_decode( $ann_row['json'], true );
-            if ( is_array( $ann_doc ) && ! empty( $ann_doc['annotations'] ) ) {
-                foreach ( $ann_doc['annotations'] as $ann ) {
-                    if ( isset( $ann['schoolweek'], $ann['text'] ) && trim( $ann['text'] ) !== '' ) {
-                        $annotation_map[ (int) $ann['schoolweek'] ] = $ann['text'];
-                    }
-                }
-            }
-        }
+    $ann_src        = gsh_tp_profile_curriculr_doc( $profile_id, $profile );
+    if ( $ann_src ) {
+        $annotation_map = gsh_tp_curriculr_display_notes( $ann_src['doc'] );
     }
 
     $aq      = ( $atts['quartal'] === 'auto' || $atts['quartal'] === 'alle' )
@@ -6859,7 +7153,11 @@ function gsh_tp_shortcode( $atts ) {
         $ics_url    = $profile['ical_url'];
         $webcal_url = preg_replace( '#^https?://#i', 'webcal://', $ics_url );
         $o .= '<div class="gtp-ics-group">';
-        $o .= '<a href="' . esc_url( $webcal_url ) . '" class="gtp-btn gtp-btn-ics"'
+        // target="_top": Kiosk-Seite läuft oft als cross-origin iframe-Kachel in IServ.
+        // Chromium blockiert seit M103 externe Protokolle (webcal:, mailto: ...), wenn die
+        // Navigation aus einem sandboxed Subframe kommt ("Dieser Inhalt ist blockiert"-Fehler
+        // in Edge, stilles No-Op in Safari) — Navigation im Top-Frame ist davon nicht betroffen.
+        $o .= '<a href="' . esc_url( $webcal_url ) . '" class="gtp-btn gtp-btn-ics" target="_top"'
             . ' aria-label="Kalender abonnieren (funktioniert nur mit eingerichteter Kalender-App)">'
             . gsh_tp_icon( 'bell' ) . ' Kalender abonnieren</a>';
         $o .= '<button type="button" class="gtp-btn gtp-btn-ics" data-feed-url="' . esc_url( $ics_url ) . '"'
@@ -7072,6 +7370,584 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '</div>'; // .gtp
     $o .= gsh_tp_js();
     return $o;
+}
+
+/**
+ * Lädt das gespeicherte Curriculr-Planner-Dokument zu einem Profil.
+ *
+ * Nested schoolyears-Model (seit 4.24.0) liefert sj_key direkt am Profil;
+ * alte Installs ohne nested Model fallen auf gsh_tp_curriculr_profile_map zurück.
+ *
+ * @since 4.38.0
+ * @param  string $profile_id Profil-ID.
+ * @param  array  $profile    Profil-Array aus gsh_tp_get_profile().
+ * @return array{sj: string, row: array, doc: array}|null  null ohne Curriculr-Dokument.
+ */
+function gsh_tp_profile_curriculr_doc( $profile_id, $profile ) {
+    $sj_key = $profile['sj_key'] ?? '';
+    if ( '' === $sj_key ) {
+        $cur_sj_map = get_option( 'gsh_tp_curriculr_profile_map', array() );
+        if ( is_array( $cur_sj_map ) ) {
+            $found  = array_search( $profile_id, $cur_sj_map, true );
+            $sj_key = false !== $found ? $found : '';
+        }
+    }
+    if ( '' === $sj_key ) {
+        return null;
+    }
+    $row = gsh_tp_curriculr_repo_get( $sj_key );
+    if ( ! $row || empty( $row['json'] ) ) {
+        return null;
+    }
+    $doc = json_decode( $row['json'], true );
+    return is_array( $doc ) ? array( 'sj' => $sj_key, 'row' => $row, 'doc' => $doc ) : null;
+}
+
+/* ================================================================
+   5a. SHORTCODE [gsh_termine] — Terminvorschau für die Startseite
+   ================================================================ */
+
+/**
+ * Kurzer Datumsbereich: "14.–20.09." im selben Monat, sonst "28.09.–04.10.".
+ *
+ * @since 4.38.0
+ * @param  string $from ISO-Datum.
+ * @param  string $to   ISO-Datum.
+ * @return string
+ */
+function gsh_tp_up_range( $from, $to ) {
+    $a = new DateTime( $from );
+    $b = new DateTime( $to );
+    if ( $from === $to ) {
+        return $a->format( 'd.m.' );
+    }
+    if ( $a->format( 'Y-m' ) === $b->format( 'Y-m' ) ) {
+        return $a->format( 'd.' ) . '–' . $b->format( 'd.m.' );
+    }
+    return $a->format( 'd.m.' ) . '–' . $b->format( 'd.m.' );
+}
+
+/**
+ * Shortcode-Handler [gsh_termine]: Terminvorschau für die Startseite.
+ *
+ * Aufbau (Ergebnis Experten-Review UI/UX/Webdesign, 4.39.0):
+ * links eine Mo–So-Übersichtsleiste (Sprunglinks, Kategorie-Punkte, Ferien,
+ * Legende) + Aktionen, rechts eine chronologische Agenda nur mit Tagen, an
+ * denen etwas stattfindet; Wochen als Zwischenüberschrift, Ferien als Band.
+ * Mobil untereinander (Container Query auf die Blockbreite, nicht den Viewport).
+ * Jedes Grid-Kind hat eine feste grid-area, damit vom Theme eingeschleuste
+ * Knoten das Layout nicht verschieben. Ohne JS vollständig; assets/js/
+ * gsh-termine.js korrigiert nur „Heute/Morgen" bei gecachter Seite.
+ *
+ * Attribute:
+ *   gruppe    Planner-Gruppe, z. B. "Eltern" (leer = alle). Termine ohne Gruppe
+ *             sind immer sichtbar — gleiche Regel wie der Gruppen-ICS-Feed.
+ *   kategorien       Nur diese Planner-Kategorien (kommagetrennt, Name oder Slug).
+ *   auch_kategorien  Diese Kategorien zusätzlich zeigen, auch ohne passende Gruppe
+ *                    (z. B. "Allgemein" für Eltern).
+ *   wochen    Anzahl Wochen ab der aktuellen (1–6, Standard 2; am Wochenende +1).
+ *   schuljahr Profil-ID (leer = aktives Profil).
+ *   titel     Optionale Überschrift (leer = keine, die Seite hat meist eine eigene).
+ *   ebene     Überschriften-Ebene für Titel/Wochen (2–6, Standard 5 unter der h4 der Seite).
+ *   max       Termine bis zum Einklappen des Rests unter „Weitere Termine" (Standard 8, 0 = alle).
+ *   link      Optionale URL zur vollständigen Terminübersicht.
+ *   link_text Beschriftung des Links (Standard "Alle Termine").
+ *   abo       "ja" = Abo-Link für den (Gruppen-)ICS-Feed anzeigen.
+ *
+ * @since 4.38.0
+ * @param  array $atts Shortcode-Attribute.
+ * @return string HTML
+ */
+add_shortcode( 'gsh_termine', 'gsh_tp_upcoming_shortcode' );
+
+function gsh_tp_upcoming_shortcode( $atts ) {
+    static $instance = 0;
+    $atts = shortcode_atts( array(
+        'gruppe'          => '',
+        'kategorien'      => '',
+        'auch_kategorien' => '',
+        'wochen'    => '2',
+        'schuljahr' => '',
+        'titel'     => '',
+        'ebene'     => '5',
+        'max'       => '8',
+        'link'      => '',
+        'link_text' => 'Alle Termine',
+        'abo'       => '',
+    ), $atts, 'gsh_termine' );
+
+    $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Terminvorschau' );
+    if ( ! $source['src'] ) {
+        return $source['html'];
+    }
+    $src = $source['src'];
+
+    wp_enqueue_script(
+        'gsh-termine',
+        plugin_dir_url( __FILE__ ) . 'assets/js/gsh-termine.js',
+        array(),
+        GSH_TP_VERSION,
+        array( 'in_footer' => true, 'strategy' => 'defer' )
+    );
+
+    $group    = sanitize_text_field( $atts['gruppe'] );
+    $now      = current_datetime();
+    $today    = $now->format( 'Y-m-d' );
+    $tomorrow = $now->modify( '+1 day' )->format( 'Y-m-d' );
+    $data     = gsh_tp_curriculr_agenda( $src['doc'], $today, $group, (int) $atts['wochen'], gsh_tp_public_category_filter( $atts ) );
+    $uid      = 'gtp-up-' . ( ++$instance );
+    $level    = max( 2, min( 6, (int) $atts['ebene'] ) );
+    $max      = max( 0, (int) $atts['max'] );
+
+    $dow_short = array( 1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So' );
+    $dow_long  = array( 1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag', 6 => 'Samstag', 7 => 'Sonntag' );
+    $mon_long  = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' );
+    $long_date = static function ( $iso ) use ( $dow_long, $mon_long ) {
+        $d = new DateTime( $iso );
+        return $dow_long[ (int) $d->format( 'N' ) ] . ', ' . $d->format( 'j' ) . '. ' . $mon_long[ (int) $d->format( 'n' ) ];
+    };
+
+    $o = '<section class="gtp-up" id="' . $uid . '" data-today="' . esc_attr( $today ) . '"';
+    if ( '' !== $atts['titel'] ) {
+        $o .= ' aria-labelledby="' . $uid . '-t"><h' . $level . ' class="gtp-up-title" id="' . $uid . '-t">' . esc_html( $atts['titel'] ) . '</h' . $level . '>';
+        $level = min( 6, $level + 1 );
+    } else {
+        $o .= ' aria-label="Aktuelle Termine">';
+    }
+    $o .= '<div class="gtp-up-grid">';
+
+    // ── Übersichtsleiste ──
+    if ( $data['strip'] ) {
+        $first = new DateTime( $data['strip'][0][0]['date'] );
+        $last  = new DateTime( end( $data['strip'] )[6]['date'] );
+        $span  = $first->format( 'n' ) === $last->format( 'n' )
+            ? $first->format( 'j' ) . '.–' . $last->format( 'j' ) . '. ' . $mon_long[ (int) $last->format( 'n' ) ]
+            : $first->format( 'j' ) . '. ' . $mon_long[ (int) $first->format( 'n' ) ] . ' – ' . $last->format( 'j' ) . '. ' . $mon_long[ (int) $last->format( 'n' ) ];
+
+        $o .= '<div class="gtp-up-side">';
+        $o .= '<p class="gtp-up-span">' . esc_html( $span ) . '</p>';
+        $o .= '<div class="gtp-up-strip-hd" aria-hidden="true">';
+        foreach ( $dow_short as $label ) {
+            $o .= '<span>' . $label . '</span>';
+        }
+        $o .= '</div>';
+        $o .= '<nav aria-label="Tage mit Terminen"><ol class="gtp-up-strip">';
+        $has_holiday = false;
+        foreach ( $data['strip'] as $row ) {
+            foreach ( $row as $cell ) {
+                $cls = 'gtp-up-cell';
+                $cls .= $cell['past'] ? ' is-past' : '';
+                $cls .= $cell['today'] ? ' is-today' : '';
+                $cls .= $cell['weekend'] ? ' is-we' : '';
+                if ( '' !== $cell['holiday'] ) {
+                    $cls        .= ' is-hol';
+                    $has_holiday = true;
+                }
+                $inner = '<span class="gtp-up-cnum">' . (int) substr( $cell['date'], 8, 2 ) . '</span><span class="gtp-up-dots">';
+                foreach ( $cell['colors'] as $color ) {
+                    $inner .= '<i style="--dot:' . esc_attr( $color ) . '"></i>';
+                }
+                $inner .= $cell['count'] > count( $cell['colors'] ) && $cell['count'] > 3 ? '<b>+</b>' : '';
+                $inner .= '</span>';
+                $title  = '' !== $cell['holiday'] ? ' title="' . esc_attr( $cell['holiday'] ) . '"' : '';
+                if ( $cell['anchor'] ) {
+                    $label = $long_date( $cell['date'] ) . ': ' . $cell['count'] . ( 1 === $cell['count'] ? ' Termin' : ' Termine' );
+                    $o    .= '<li class="' . $cls . '" data-date="' . esc_attr( $cell['date'] ) . '"><a class="gtp-up-cin" href="#' . $uid . '-' . esc_attr( $cell['date'] ) . '" aria-label="' . esc_attr( $label ) . '"' . $title . '>' . $inner . '</a></li>';
+                } else {
+                    $o .= '<li class="' . $cls . '" data-date="' . esc_attr( $cell['date'] ) . '" aria-hidden="true"><span class="gtp-up-cin"' . $title . '>' . $inner . '</span></li>';
+                }
+            }
+        }
+        $o .= '</ol></nav>';
+        if ( $data['categories'] || $has_holiday ) {
+            $o .= '<ul class="gtp-up-legend">';
+            foreach ( $data['categories'] as $cat ) {
+                $o .= '<li><i style="--dot:' . esc_attr( $cat['color'] ) . '"></i>' . esc_html( $cat['label'] ) . '</li>';
+            }
+            if ( $has_holiday ) {
+                $o .= '<li class="is-hol"><i></i>Ferien</li>';
+            }
+            $o .= '</ul>';
+        }
+        $o .= '</div>'; // .gtp-up-side
+    }
+
+    // ── Agenda ──
+    $week_labels = array( 'Diese Woche', 'Nächste Woche', 'Übernächste Woche' );
+    $total       = 0;
+    foreach ( $data['entries'] as $entry ) {
+        $total += 'day' === $entry['type'] ? count( $entry['events'] ) : 0;
+    }
+    $main    = '';
+    $rest    = '';
+    $in_rest = false;
+    $shown   = 0;
+    $cur_wk  = -1;
+    $open    = false;
+    foreach ( $data['entries'] as $entry ) {
+        if ( ! $in_rest && $max > 0 && $shown >= $max && 'day' === $entry['type'] ) {
+            if ( $open ) {
+                $main .= '</ol>';
+                $open  = false;
+            }
+            $in_rest = true;
+            $cur_wk  = -1;
+        }
+        $h = '';
+        if ( $entry['week'] !== $cur_wk ) {
+            if ( $open ) {
+                $h .= '</ol>';
+            }
+            $cur_wk = $entry['week'];
+            $mon    = ( new DateTime( $data['strip'][0][0]['date'] ) )->modify( '+' . ( 7 * $cur_wk ) . ' days' );
+            $sun    = ( clone $mon )->modify( '+6 days' )->format( 'Y-m-d' );
+            $label  = $week_labels[ $cur_wk ] ?? 'In ' . $cur_wk . ' Wochen';
+            $h     .= '<h' . $level . ' class="gtp-up-wk"><span>' . esc_html( $label ) . '</span> <span class="gtp-up-wk-range">'
+                . esc_html( gsh_tp_up_range( max( $mon->format( 'Y-m-d' ), $today ), $sun ) ) . '</span></h' . $level . '>';
+            $h     .= '<ol class="gtp-up-days">';
+            $open   = true;
+        }
+
+        if ( 'holiday' === $entry['type'] ) {
+            $h .= '<li class="gtp-up-hol">' . gsh_tp_icon( 'sun', '1em' ) . '<span><strong>' . esc_html( $entry['label'] ) . '</strong> &middot; '
+                . esc_html( gsh_tp_up_range( $entry['start'], $entry['end'] ) ) . '</span></li>';
+        } else {
+            $d     = new DateTime( $entry['date'] );
+            $rel   = $entry['date'] === $today ? 'Heute' : ( $entry['date'] === $tomorrow ? 'Morgen' : '' );
+            $until = $entry['date'];
+            foreach ( $entry['events'] as $ev ) {
+                $until = max( $until, '' !== $ev['until'] ? $ev['until'] : $entry['date'] );
+            }
+            $h .= '<li class="gtp-up-day' . ( $entry['date'] === $today ? ' is-today' : '' ) . '" id="' . $uid . '-' . esc_attr( $entry['date'] ) . '"'
+                . ' data-date="' . esc_attr( $entry['date'] ) . '" data-until="' . esc_attr( $until ) . '">';
+            $h .= '<time class="gtp-up-date" datetime="' . esc_attr( $entry['date'] ) . '">'
+                . '<span class="gtp-up-dow" aria-hidden="true">' . $dow_short[ (int) $d->format( 'N' ) ] . '</span>'
+                . '<span class="gtp-up-dnum" aria-hidden="true">' . $d->format( 'j' ) . '</span>'
+                . '<span class="gtp-up-rel" aria-hidden="true">' . $rel . '</span>'
+                . '<span class="gtp-up-sr">' . esc_html( $long_date( $entry['date'] ) ) . '</span>'
+                . '</time>';
+            $h .= '<ul class="gtp-up-evs">';
+            foreach ( $entry['events'] as $ev ) {
+                if ( '' !== $ev['since'] ) {
+                    $when = '<span class="gtp-up-when-txt">seit ' . esc_html( gsh_tp_curriculr_day_label( $ev['since'] ) ) . '</span>';
+                } elseif ( $ev['allDay'] ) {
+                    $when = '<span class="gtp-up-when-txt">ganztägig</span>';
+                } else {
+                    $when = '<time datetime="' . esc_attr( $entry['date'] . 'T' . $ev['startTime'] ) . '">' . esc_html( str_replace( ':', '.', $ev['startTime'] ) ) . '</time>';
+                    if ( '' !== $ev['endTime'] ) {
+                        $when .= '<span class="gtp-up-to"><span class="gtp-up-sr"> bis </span><span aria-hidden="true">–</span>' . esc_html( str_replace( ':', '.', $ev['endTime'] ) ) . '</span>';
+                    }
+                    $when .= '<span class="gtp-up-sr"> Uhr</span>';
+                }
+                $meta = array();
+                if ( '' !== $ev['category'] ) {
+                    $meta[] = '<span class="gtp-up-cat"><i aria-hidden="true"></i>' . esc_html( $ev['category'] ) . '</span>';
+                }
+                if ( '' !== $ev['location'] ) {
+                    $meta[] = '<span>' . gsh_tp_icon( 'map-pin', '0.95em' ) . '<span class="gtp-up-sr">Ort: </span>' . esc_html( $ev['location'] ) . '</span>';
+                }
+                if ( '' !== $ev['until'] ) {
+                    $meta[] = '<span>bis ' . esc_html( gsh_tp_curriculr_day_label( $ev['until'] ) ) . '</span>';
+                }
+                $h .= '<li class="gtp-up-ev" data-end="' . esc_attr( '' !== $ev['until'] ? $ev['until'] : $entry['date'] ) . '" style="--ev-c:' . esc_attr( $ev['color'] ) . '">'
+                    . '<span class="gtp-up-when">' . $when . '</span>'
+                    . '<span class="gtp-up-bar" aria-hidden="true"></span>'
+                    . '<span class="gtp-up-body"><span class="gtp-up-ev-title">' . esc_html( $ev['title'] ) . '</span>'
+                    . ( $meta ? '<span class="gtp-up-meta">' . implode( '', $meta ) . '</span>' : '' )
+                    . '</span></li>';
+                $shown += $in_rest ? 0 : 1;
+            }
+            $h .= '</ul></li>';
+        }
+
+        if ( $in_rest ) {
+            $rest .= $h;
+        } else {
+            $main .= $h;
+        }
+    }
+    if ( $open ) {
+        if ( $in_rest ) {
+            $rest .= '</ol>';
+        } else {
+            $main .= '</ol>';
+        }
+    }
+
+    $o .= '<div class="gtp-up-list">';
+    if ( ! $data['entries'] ) {
+        $o .= '<p class="gtp-up-empty">In den nächsten zwei Wochen stehen keine Termine an.';
+        if ( $data['next'] ) {
+            $o .= '<br>Nächster Termin: <strong>' . esc_html( gsh_tp_curriculr_day_label( $data['next']['start'] ) ) . '</strong> &middot; ' . esc_html( $data['next']['title'] );
+        }
+        $o .= '</p>';
+    } else {
+        $o .= $main;
+        if ( '' !== $rest ) {
+            $hidden = $total - $shown;
+            $o     .= '<details class="gtp-up-more"><summary>' . gsh_tp_icon( 'chevron-right', '1em', 'gtp-up-more-icon' )
+                . esc_html( $hidden . ( 1 === $hidden ? ' weiterer Termin' : ' weitere Termine' ) ) . '</summary>' . $rest . '</details>';
+        }
+    }
+    $o .= '</div>'; // .gtp-up-list
+
+    // ── Aktionen ──
+    $actions = '';
+    if ( '' !== $atts['link'] ) {
+        $actions .= '<a class="gtp-up-btn" href="' . esc_url( $atts['link'] ) . '">'
+            . esc_html( $atts['link_text'] ) . gsh_tp_icon( 'chevron-right', '1em' ) . '</a>';
+    }
+    $actions .= gsh_tp_public_abo_button( $src, $group, $atts['abo'] );
+    if ( '' !== $actions ) {
+        $o .= '<div class="gtp-up-act">' . $actions . '</div>';
+    }
+
+    $o .= '</div>'; // .gtp-up-grid
+    $o .= '</section>';
+    return $o;
+}
+
+/**
+ * Gemeinsamer Einstieg der öffentlichen Planner-Ansichten ([gsh_termine], [gsh_monat]):
+ * Profil + Curriculr-Dokument laden, Entwürfe vor Besuchern verbergen.
+ *
+ * @since 4.40.0
+ * @param  string $schuljahr Profil-ID aus dem Shortcode (leer = aktives Profil).
+ * @param  string $label     Name der Ansicht für Admin-Hinweise.
+ * @return array{src: ?array, html: string} src null → html enthält die (ggf. leere) Ausgabe.
+ */
+function gsh_tp_public_curriculr_source( $schuljahr, $label ) {
+    // Öffentliche Seiten: Besucher sehen bei Konfigurationsproblemen nichts,
+    // Admins einen Hinweis, damit ein leerer Block nicht unbemerkt bleibt.
+    $is_admin   = current_user_can( 'manage_options' );
+    $fail       = static function ( $msg ) use ( $is_admin, $label ) {
+        return array( 'src' => null, 'html' => $is_admin ? '<div class="gtp-msg gtp-msg--info">' . esc_html( $label . ': ' . $msg ) . '</div>' : '' );
+    };
+    $profile_id = sanitize_key( $schuljahr ) ?: gsh_tp_active_profile_id();
+    $profile    = $profile_id ? gsh_tp_get_profile( $profile_id ) : null;
+    if ( ! $profile ) {
+        return $fail( 'Kein Schuljahr-Profil gefunden.' );
+    }
+    if ( ! empty( $profile['is_draft'] ) && ! $is_admin ) {
+        return array( 'src' => null, 'html' => '' );
+    }
+    $src = gsh_tp_profile_curriculr_doc( $profile_id, $profile );
+    if ( ! $src ) {
+        return $fail( 'Für dieses Schuljahr liegt noch kein Curricu:lr-Plan vor.' );
+    }
+    return array( 'src' => $src, 'html' => '' );
+}
+
+/**
+ * Abo-Button für den (Gruppen-)ICS-Feed eines Curriculr-Dokuments, oder ''.
+ *
+ * @since 4.40.0
+ */
+function gsh_tp_public_abo_button( $src, $group, $abo ) {
+    $token = (string) ( $src['row']['feed_token'] ?? '' );
+    if ( ! in_array( strtolower( (string) $abo ), array( 'ja', '1', 'true' ), true ) || '' === $token ) {
+        return '';
+    }
+    $feed_url = '' !== $group
+        ? gsh_tp_curriculr_feed_url_group( $src['sj'], $token, $group )
+        : gsh_tp_curriculr_feed_url( $src['sj'], $token );
+    return '<a class="gtp-up-btn gtp-up-btn--ghost" href="' . esc_url( preg_replace( '#^https?://#i', 'webcal://', $feed_url ), array( 'webcal', 'https', 'http' ) ) . '">'
+        . gsh_tp_icon( 'bell', '1em' ) . 'Kalender abonnieren</a>'
+        . '<p class="gtp-up-note">Für Handy, Outlook &amp; Co. — aktualisiert sich automatisch.</p>';
+}
+
+/**
+ * Kategorienfilter aus Shortcode-Attributen: kategorien = nur diese,
+ * auch_kategorien = zusätzlich zeigen, auch ohne passende Gruppe.
+ *
+ * @since 4.41.0
+ * @param  array $atts Shortcode-Attribute.
+ * @return array{only: string[], also: string[]}
+ */
+function gsh_tp_public_category_filter( $atts ) {
+    return array(
+        'only' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['kategorien'] ?? '' ) ),
+        'also' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['auch_kategorien'] ?? '' ) ),
+    );
+}
+
+/* ================================================================
+   5a2. SHORTCODE [gsh_monat] — Monatsansicht im Startseiten-Look
+   ================================================================ */
+
+/**
+ * Shortcode-Handler [gsh_monat]: Monatsraster Mo–So (inkl. Wochenende) aus dem
+ * Curriculr-Planner-Dokument, im Look der Startseiten-Vorschau [gsh_termine].
+ * Blättern per Link (?gtp_monat=YYYY-MM), ohne JavaScript. Schmale Blöcke
+ * (Handy) zeigen statt des Rasters eine Tagesliste nur mit Terminen.
+ *
+ * Attribute: gruppe, kategorien, auch_kategorien, schuljahr, titel, ebene (Standard 3), abo — wie [gsh_termine].
+ *
+ * @since 4.40.0
+ * @param  array $atts Shortcode-Attribute.
+ * @return string HTML
+ */
+add_shortcode( 'gsh_monat', 'gsh_tp_month_shortcode' );
+
+function gsh_tp_month_shortcode( $atts ) {
+    static $instance = 0;
+    $atts = shortcode_atts( array(
+        'gruppe'          => '',
+        'kategorien'      => '',
+        'auch_kategorien' => '',
+        'schuljahr' => '',
+        'titel'     => '',
+        'ebene'     => '3',
+        'abo'       => '',
+    ), $atts, 'gsh_monat' );
+
+    $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Monatsansicht' );
+    if ( ! $source['src'] ) {
+        return $source['html'];
+    }
+    $src = $source['src'];
+
+    wp_enqueue_script(
+        'gsh-termine',
+        plugin_dir_url( __FILE__ ) . 'assets/js/gsh-termine.js',
+        array(),
+        GSH_TP_VERSION,
+        array( 'in_footer' => true, 'strategy' => 'defer' )
+    );
+
+    $group     = sanitize_text_field( $atts['gruppe'] );
+    $today     = current_datetime()->format( 'Y-m-d' );
+    $requested = isset( $_GET['gtp_monat'] ) ? sanitize_text_field( wp_unslash( $_GET['gtp_monat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- read-only navigation
+    $data      = gsh_tp_curriculr_month( $src['doc'], $requested, $today, $group, gsh_tp_public_category_filter( $atts ) );
+    $uid       = 'gtp-mo-' . ( ++$instance );
+    $level     = max( 2, min( 6, (int) $atts['ebene'] ) );
+    $dow_short = array( 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So' );
+    $nav_url   = static function ( $ym ) use ( $uid ) {
+        return esc_url( add_query_arg( 'gtp_monat', $ym ) . '#' . $uid );
+    };
+    $month_name = static function ( $ym ) {
+        return gsh_tp_curriculr_month( array(), $ym, $ym . '-01' )['label'];
+    };
+
+    $o  = '<section class="gtp-up gtp-mo" id="' . $uid . '" data-today="' . esc_attr( $today ) . '" aria-label="' . esc_attr( '' !== $atts['titel'] ? $atts['titel'] : 'Terminkalender' ) . '">';
+    if ( '' !== $atts['titel'] ) {
+        $o .= '<p class="gtp-up-span">' . esc_html( $atts['titel'] ) . '</p>';
+    }
+    $o .= '<div class="gtp-mo-hd">';
+    $o .= '<a class="gtp-mo-nav" href="' . $nav_url( $data['prev'] ) . '" aria-label="' . esc_attr( 'Vorheriger Monat: ' . $month_name( $data['prev'] ) ) . '">' . gsh_tp_icon( 'chevron-left', '1.1em' ) . '</a>';
+    $o .= '<h' . $level . ' class="gtp-mo-title">' . esc_html( $data['label'] ) . '</h' . $level . '>';
+    $o .= '<a class="gtp-mo-nav" href="' . $nav_url( $data['next'] ) . '" aria-label="' . esc_attr( 'Nächster Monat: ' . $month_name( $data['next'] ) ) . '">' . gsh_tp_icon( 'chevron-right', '1.1em' ) . '</a>';
+    if ( substr( $today, 0, 7 ) !== $data['ym'] ) {
+        $o .= '<a class="gtp-mo-now" href="' . esc_url( remove_query_arg( 'gtp_monat' ) . '#' . $uid ) . '">Heute</a>';
+    }
+    $o .= '</div>';
+
+    $o .= '<div class="gtp-mo-wd" aria-hidden="true">';
+    foreach ( $dow_short as $i => $label ) {
+        $o .= '<span' . ( $i >= 5 ? ' class="is-we"' : '' ) . '>' . $label . '</span>';
+    }
+    $o .= '</div>';
+
+    $any = false;
+    $o  .= '<ol class="gtp-mo-grid">';
+    foreach ( $data['weeks'] as $row ) {
+        foreach ( $row as $d => $cell ) {
+            $dnum = (int) substr( $cell['date'], 8, 2 );
+            if ( $cell['out'] ) {
+                $o .= '<li class="gtp-mo-cell is-out" aria-hidden="true"><div class="gtp-mo-dh"><span class="gtp-mo-dnum">' . $dnum . '</span></div></li>';
+                continue;
+            }
+            $chips = array_filter( $cell['items'], static function ( $it ) {
+                return 'chip' === $it['kind'];
+            } );
+            $any   = $any || $chips;
+            $cls   = 'gtp-mo-cell';
+            $cls  .= $cell['today'] ? ' is-today' : '';
+            $cls  .= $cell['past'] ? ' is-past' : '';
+            $cls  .= $cell['weekend'] ? ' is-we' : '';
+            $cls  .= '' !== $cell['holiday'] ? ' is-hol' : '';
+            $cls  .= $chips ? '' : ' is-empty';
+            $o    .= '<li class="' . $cls . '" data-date="' . esc_attr( $cell['date'] ) . '">';
+            $o    .= '<div class="gtp-mo-dh">'
+                . '<time class="gtp-mo-dnum" datetime="' . esc_attr( $cell['date'] ) . '" aria-hidden="true">' . $dnum . '</time>'
+                . '<span class="gtp-mo-dfull">' . esc_html( gsh_tp_curriculr_day_label( $cell['date'] ) ) . '</span>';
+            // Ferienname nur am ersten Ferientag einer Rasterzeile bzw. des Monats — sonst reicht die Tönung.
+            if ( '' !== $cell['holiday'] && ( 0 === $d || 1 === $dnum || ! gsh_tp_up_is_holiday_on( $data['weeks'], $cell['date'], $cell['holiday'], -1 ) ) ) {
+                $o .= '<span class="gtp-mo-hol">' . esc_html( $cell['holiday'] ) . '</span>';
+            }
+            $o .= '</div>';
+            if ( $cell['items'] ) {
+                $o .= '<ul class="gtp-mo-evs">';
+                foreach ( $cell['items'] as $it ) {
+                    $style = ' style="--ev-c:' . esc_attr( $it['color'] ) . '"';
+                    if ( 'strip' === $it['kind'] ) {
+                        $o .= '<li class="gtp-mo-strip"' . $style . ' title="' . esc_attr( $it['title'] ) . '" aria-hidden="true"></li>';
+                        continue;
+                    }
+                    if ( $it['cont'] ) {
+                        $time = 'Fortsetzung';
+                    } elseif ( $it['allDay'] ) {
+                        $time = 'ganztägig';
+                    } else {
+                        $time = gsh_tp_curriculr_time_label( $it['startTime'], $it['endTime'] );
+                    }
+                    $meta = array();
+                    if ( '' !== $it['category'] ) {
+                        $meta[] = $it['category'];
+                    }
+                    if ( '' !== $it['location'] ) {
+                        $meta[] = $it['location'];
+                    }
+                    if ( '' !== $it['until'] ) {
+                        $meta[] = 'bis ' . gsh_tp_curriculr_day_label( $it['until'] );
+                    }
+                    $o .= '<li class="gtp-mo-ev' . ( $it['cont'] ? ' is-cont' : '' ) . '"' . $style
+                        . ' title="' . esc_attr( $it['title'] . ( $meta ? ' · ' . implode( ' · ', $meta ) : '' ) ) . '">'
+                        . '<span class="gtp-mo-time">' . esc_html( $time ) . '</span>'
+                        . '<span class="gtp-mo-t">' . esc_html( $it['title'] ) . '</span>'
+                        . ( $meta ? '<span class="gtp-mo-meta">' . esc_html( implode( ' · ', $meta ) ) . '</span>' : '' )
+                        . '</li>';
+                }
+                $o .= '</ul>';
+            }
+            $o .= '</li>';
+        }
+    }
+    $o .= '</ol>';
+    if ( ! $any ) {
+        $o .= '<p class="gtp-mo-empty">Keine Termine in diesem Monat.</p>';
+    }
+
+    if ( $data['categories'] ) {
+        $o .= '<ul class="gtp-up-legend">';
+        foreach ( $data['categories'] as $cat ) {
+            $o .= '<li><i style="--dot:' . esc_attr( $cat['color'] ) . '"></i>' . esc_html( $cat['label'] ) . '</li>';
+        }
+        $o .= '</ul>';
+    }
+    $abo = gsh_tp_public_abo_button( $src, $group, $atts['abo'] );
+    if ( '' !== $abo ) {
+        $o .= '<div class="gtp-up-act gtp-mo-act">' . $abo . '</div>';
+    }
+    $o .= '</section>';
+    return $o;
+}
+
+/**
+ * true, wenn der Tag $offset Tage neben $date im Raster dieselbe Ferienbezeichnung trägt.
+ *
+ * @since 4.40.0
+ */
+function gsh_tp_up_is_holiday_on( $weeks, $date, $label, $offset ) {
+    $target = ( new DateTime( $date ) )->modify( sprintf( '%+d days', $offset ) )->format( 'Y-m-d' );
+    foreach ( $weeks as $row ) {
+        foreach ( $row as $cell ) {
+            if ( $cell['date'] === $target ) {
+                return $cell['holiday'] === $label;
+            }
+        }
+    }
+    return false;
 }
 
 /* ================================================================
@@ -7293,9 +8169,12 @@ function gsh_tp_table( $index, $qd, $sjs, $annotation_map = array() ) {
                 . '</div>';
         }
 
-        // Planner-Anmerkung (0-basierter Index = SW-Nummer direkt)
-        if ( $sw >= 0 && isset( $annotation_map[ $sw ] ) ) {
-            $h .= '<div class="gn-annotation">' . esc_html( $annotation_map[ $sw ] ) . '</div>';
+        // Planner-Anmerkungen sind per tatsächlichem Wochenmontag gruppiert.
+        $annotation_week_start = $c->format( 'Y-m-d' );
+        if ( isset( $annotation_map[ $annotation_week_start ] ) ) {
+            foreach ( $annotation_map[ $annotation_week_start ] as $annotation_text ) {
+                $h .= '<div class="gn-annotation">' . esc_html( $annotation_text ) . '</div>';
+            }
         }
 
         $h .= '</td>';
@@ -7464,9 +8343,11 @@ function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
             . '</span>';
         $h .= '</div>';
 
-        // Planner-Anmerkung unterhalb des Wochenkopfs
-        if ( $sw >= 0 && isset( $annotation_map[ $sw ] ) ) {
-            $h .= '<div class="gtp-mob-annotation">' . esc_html( $annotation_map[ $sw ] ) . '</div>';
+        // Planner-Anmerkungen unterhalb des Wochenkopfs, nach tatsächlichem Montag.
+        if ( isset( $annotation_map[ $week['monday'] ] ) ) {
+            foreach ( $annotation_map[ $week['monday'] ] as $annotation_text ) {
+                $h .= '<div class="gtp-mob-annotation">' . esc_html( $annotation_text ) . '</div>';
+            }
         }
 
         // ── Tage Montag–Freitag ──
