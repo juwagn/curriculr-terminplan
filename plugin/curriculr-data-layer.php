@@ -222,11 +222,37 @@ function gsh_tp_curriculr_validate_envelope( $body ) {
                 $errors[] = 'invalid_event_' . $i;
             }
         }
+        if ( isset( $body['doc']['annotations'] ) && ! is_array( $body['doc']['annotations'] ) ) {
+            $errors[] = 'annotations_invalid';
+        } elseif ( isset( $body['doc']['annotations'] ) ) {
+            foreach ( $body['doc']['annotations'] as $i => $annotation ) {
+                if ( ! gsh_tp_curriculr_validate_annotation( $annotation ) ) {
+                    $errors[] = 'invalid_annotation_' . $i;
+                }
+            }
+        }
     }
     if ( ! array_key_exists( 'baseVersion', $body ) || ! is_int( $body['baseVersion'] ) ) {
         $errors[] = 'baseVersion_missing';
     }
     return array( 'valid' => empty( $errors ), 'errors' => $errors );
+}
+
+/** Accept schema-v6 annotations and the legacy schoolweek format stored by v5 docs. */
+function gsh_tp_curriculr_validate_annotation( $annotation ) {
+    if ( ! is_array( $annotation ) || ! isset( $annotation['text'] ) || ! is_string( $annotation['text'] ) ) {
+        return false;
+    }
+    if ( isset( $annotation['weekStart'] ) || isset( $annotation['id'] ) || isset( $annotation['order'] ) ) {
+        return isset( $annotation['id'], $annotation['weekStart'], $annotation['order'], $annotation['updatedAt'] )
+            && is_string( $annotation['id'] ) && '' !== $annotation['id']
+            && gsh_tp_curriculr_is_iso_date( $annotation['weekStart'] )
+            && is_int( $annotation['order'] ) && $annotation['order'] >= 0
+            && is_string( $annotation['updatedAt'] );
+    }
+    return isset( $annotation['schoolweek'], $annotation['updatedAt'] )
+        && is_int( $annotation['schoolweek'] ) && $annotation['schoolweek'] >= 0
+        && is_string( $annotation['updatedAt'] );
 }
 
 /* ---------- Pure: Event-Tiefenvalidierung (Spec SEC-MED-002) ---------- */
@@ -315,6 +341,526 @@ function gsh_tp_curriculr_monday_of_week( $iso ) {
         $d->modify( '-' . ( $dow - 1 ) . ' days' );
     }
     return $d->format( 'Y-m-d' );
+}
+
+/** Count Monday–Friday holiday days using the Planner's inclusive holiday semantics. */
+function gsh_tp_curriculr_week_holiday_days( $monday, $holidays ) {
+    $count = 0;
+    for ( $day = 0; $day < 5; $day++ ) {
+        $current = clone $monday;
+        if ( $day > 0 ) {
+            $current->modify( '+' . $day . ' days' );
+        }
+        $iso = $current->format( 'Y-m-d' );
+        foreach ( $holidays as $holiday ) {
+            if ( ! is_array( $holiday ) || ! isset( $holiday['start'], $holiday['end'] ) ) {
+                continue;
+            }
+            if ( $iso >= $holiday['start'] && $iso <= $holiday['end'] ) {
+                $count++;
+                break;
+            }
+        }
+    }
+    return $count;
+}
+
+/**
+ * Resolve an old planner schoolweek index exactly as computeSchoolweeks(): the
+ * first week is always SW 00, and only complete Monday–Friday holiday weeks
+ * are skipped afterwards. Returns the Monday ISO date or null.
+ */
+function gsh_tp_curriculr_legacy_annotation_week_start( $schoolyear, $schoolweek ) {
+    if ( ! is_array( $schoolyear ) || ! isset( $schoolyear['firstSchoolDay'], $schoolyear['lastSchoolDay'] )
+        || ! gsh_tp_curriculr_is_iso_date( $schoolyear['firstSchoolDay'] )
+        || ! gsh_tp_curriculr_is_iso_date( $schoolyear['lastSchoolDay'] )
+        || ! is_int( $schoolweek ) || $schoolweek < 0 ) {
+        return null;
+    }
+    $monday = new DateTime( gsh_tp_curriculr_monday_of_week( $schoolyear['firstSchoolDay'] ) );
+    $last = new DateTime( $schoolyear['lastSchoolDay'] );
+    $holidays = isset( $schoolyear['holidays'] ) && is_array( $schoolyear['holidays'] ) ? $schoolyear['holidays'] : array();
+    $index = 0;
+    $first = true;
+    while ( $monday <= $last ) {
+        if ( $first || gsh_tp_curriculr_week_holiday_days( $monday, $holidays ) < 5 ) {
+            if ( $index === $schoolweek ) {
+                return $monday->format( 'Y-m-d' );
+            }
+            $index++;
+        }
+        $first = false;
+        $monday->modify( '+7 days' );
+    }
+    return null;
+}
+
+/**
+ * Build the presentation map from the planner document. v6 stores a stable
+ * Monday directly; legacy documents are resolved with the same holiday-aware
+ * indexing as the planner. Values are ordered note texts per Monday.
+ */
+function gsh_tp_curriculr_annotation_map( $doc ) {
+    if ( ! is_array( $doc ) || ! isset( $doc['annotations'] ) || ! is_array( $doc['annotations'] ) ) {
+        return array();
+    }
+    $entries = array();
+    foreach ( $doc['annotations'] as $position => $annotation ) {
+        if ( ! is_array( $annotation ) || ! isset( $annotation['text'] ) || ! is_string( $annotation['text'] ) || '' === trim( $annotation['text'] ) ) {
+            continue;
+        }
+        $week_start = null;
+        $order = $position;
+        $id = (string) $position;
+        if ( isset( $annotation['weekStart'] ) && gsh_tp_curriculr_is_iso_date( $annotation['weekStart'] ) ) {
+            $week_start = gsh_tp_curriculr_monday_of_week( $annotation['weekStart'] );
+            $order = isset( $annotation['order'] ) && is_int( $annotation['order'] ) && $annotation['order'] >= 0 ? $annotation['order'] : $position;
+            $id = isset( $annotation['id'] ) && is_string( $annotation['id'] ) ? $annotation['id'] : $id;
+        } elseif ( isset( $annotation['schoolweek'] ) && is_int( $annotation['schoolweek'] ) ) {
+            $week_start = gsh_tp_curriculr_legacy_annotation_week_start( isset( $doc['schoolyear'] ) ? $doc['schoolyear'] : array(), $annotation['schoolweek'] );
+        }
+        if ( null !== $week_start ) {
+            $entries[] = array( 'weekStart' => $week_start, 'text' => $annotation['text'], 'order' => $order, 'id' => $id, 'position' => $position );
+        }
+    }
+    usort( $entries, function( $left, $right ) {
+        if ( $left['weekStart'] !== $right['weekStart'] ) {
+            return strcmp( $left['weekStart'], $right['weekStart'] );
+        }
+        if ( $left['order'] !== $right['order'] ) {
+            return $left['order'] <=> $right['order'];
+        }
+        if ( $left['id'] !== $right['id'] ) {
+            return strcmp( $left['id'], $right['id'] );
+        }
+        return $left['position'] <=> $right['position'];
+    } );
+    $map = array();
+    foreach ( $entries as $entry ) {
+        if ( ! isset( $map[ $entry['weekStart'] ] ) ) {
+            $map[ $entry['weekStart'] ] = array();
+        }
+        $map[ $entry['weekStart'] ][] = $entry['text'];
+    }
+    return $map;
+}
+
+/* ---------- Pure: Wochenend-Hinweise + Terminvorschau ---------- */
+
+/** "Sa 26.09." — kurzer deutscher Tageslabel für ein ISO-Datum. */
+function gsh_tp_curriculr_day_label( $iso ) {
+    static $dows = array( 1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So' );
+    $d = new DateTime( $iso );
+    return $dows[ (int) $d->format( 'N' ) ] . ' ' . $d->format( 'd.m.' );
+}
+
+/** "10.00–14.00" bzw. "10.00" — Zeitformat wie im Planner (EventBlock fmtTime). */
+function gsh_tp_curriculr_time_label( $start_time, $end_time ) {
+    $st = str_replace( ':', '.', (string) $start_time );
+    $et = str_replace( ':', '.', (string) $end_time );
+    if ( '' === $st ) {
+        return '';
+    }
+    return '' !== $et ? $st . '–' . $et : $st;
+}
+
+/**
+ * Validiert ein Planner-Event für die Anzeige. Liefert start/end (end >= start)
+ * und den getrimmten Titel oder null, wenn das Event unbrauchbar ist.
+ */
+function gsh_tp_curriculr_event_span( $e ) {
+    if ( ! is_array( $e ) ) {
+        return null;
+    }
+    $start = $e['start'] ?? '';
+    $end   = $e['end'] ?? '';
+    $title = trim( (string) ( $e['title'] ?? '' ) );
+    if ( ! gsh_tp_curriculr_is_iso_date( $start ) || '' === $title ) {
+        return null;
+    }
+    if ( ! gsh_tp_curriculr_is_iso_date( $end ) || $end < $start ) {
+        $end = $start;
+    }
+    return array( 'start' => $start, 'end' => $end, 'title' => $title );
+}
+
+/** Zeitfelder eines Events; ganztägige Events liefern leere Strings. */
+function gsh_tp_curriculr_event_times( $e ) {
+    if ( ! empty( $e['allDay'] ) ) {
+        return array( '', '' );
+    }
+    $st = isset( $e['startTime'] ) && is_string( $e['startTime'] ) ? $e['startTime'] : '';
+    $et = isset( $e['endTime'] ) && is_string( $e['endTime'] ) ? $e['endTime'] : '';
+    return array( $st, $et );
+}
+
+/**
+ * Termine, die an einem Samstag/Sonntag beginnen, als Anmerkungstext pro
+ * Wochenmontag. Die WP-Tabelle zeigt nur Mo–Fr; so erscheinen Wochenend-
+ * Termine (z. B. Tag der offenen Tür) in der Anmerkungen-Spalte, ohne dass
+ * die Schulleitung sie zusätzlich als Anmerkung pflegen muss. Events, die
+ * werktags beginnen, sind in der Tabelle bereits sichtbar und werden übersprungen.
+ */
+function gsh_tp_curriculr_weekend_notes( $doc ) {
+    if ( ! is_array( $doc ) || empty( $doc['events'] ) || ! is_array( $doc['events'] ) ) {
+        return array();
+    }
+    $items = array();
+    foreach ( $doc['events'] as $e ) {
+        $span = gsh_tp_curriculr_event_span( $e );
+        if ( null === $span || (int) ( new DateTime( $span['start'] ) )->format( 'N' ) < 6 ) {
+            continue;
+        }
+        list( $st, $et ) = gsh_tp_curriculr_event_times( $e );
+        $label = gsh_tp_curriculr_day_label( $span['start'] );
+        if ( $span['end'] !== $span['start'] ) {
+            $label .= '–' . gsh_tp_curriculr_day_label( $span['end'] );
+        }
+        $text = $label . ': ' . $span['title'];
+        $time = gsh_tp_curriculr_time_label( $st, $et );
+        if ( '' !== $time ) {
+            $text .= ', ' . $time . ' Uhr';
+        }
+        $items[] = array(
+            'monday' => gsh_tp_curriculr_monday_of_week( $span['start'] ),
+            'sort'   => $span['start'] . ' ' . $st . ' ' . $span['title'],
+            'text'   => $text,
+        );
+    }
+    usort( $items, function( $a, $b ) {
+        return strcmp( $a['sort'], $b['sort'] );
+    } );
+    $map = array();
+    foreach ( $items as $item ) {
+        $map[ $item['monday'] ][] = $item['text'];
+    }
+    return $map;
+}
+
+/** Anmerkungen-Spalte der WP-Anzeige: Planner-Anmerkungen + Wochenend-Termine. */
+function gsh_tp_curriculr_display_notes( $doc ) {
+    $map = gsh_tp_curriculr_annotation_map( $doc );
+    foreach ( gsh_tp_curriculr_weekend_notes( $doc ) as $monday => $texts ) {
+        $map[ $monday ] = array_merge( $map[ $monday ] ?? array(), $texts );
+    }
+    return $map;
+}
+
+/** "Allgemein, elternarbeit" → ['allgemein', 'elternarbeit'] (getrimmt, klein, ohne Leere). */
+function gsh_tp_curriculr_parse_list( $str ) {
+    $out = array();
+    foreach ( explode( ',', (string) $str ) as $part ) {
+        $part = trim( $part );
+        if ( '' !== $part ) {
+            $out[] = function_exists( 'mb_strtolower' ) ? mb_strtolower( $part, 'UTF-8' ) : strtolower( $part );
+        }
+    }
+    return array_values( array_unique( $out ) );
+}
+
+/**
+ * Sichtbarkeit eines Termins in den öffentlichen Ansichten.
+ * - filter['only']: nur diese Kategorien (Label oder Slug, Groß-/Kleinschreibung egal).
+ * - filter['also']: diese Kategorien zusätzlich zeigen, auch wenn der Termin nicht zur
+ *   Gruppe gehört (z. B. „Allgemein“ für Eltern).
+ */
+function gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter = array() ) {
+    $only = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['only'] ?? array() ) ) );
+    $also = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['also'] ?? array() ) ) );
+    $cat  = isset( $e['categoryId'] ) && isset( $cats[ $e['categoryId'] ] ) ? $cats[ $e['categoryId'] ] : null;
+    $keys = $cat ? gsh_tp_curriculr_parse_list( ( $cat['label'] ?? '' ) . ',' . ( $cat['slug'] ?? '' ) ) : array();
+    if ( $only && ! array_intersect( $keys, $only ) ) {
+        return false;
+    }
+    if ( gsh_tp_curriculr_event_in_group( $e, $group ) ) {
+        return true;
+    }
+    return $also && array_intersect( $keys, $also );
+}
+
+/** Gruppenfilter mit derselben Semantik wie der Gruppen-ICS-Feed: ohne Gruppen = für alle. */
+function gsh_tp_curriculr_event_in_group( $e, $group ) {
+    if ( '' === $group ) {
+        return true;
+    }
+    $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
+    return ! $groups || in_array( $group, $groups, true );
+}
+
+/**
+ * Datenmodell der Startseiten-Terminvorschau [gsh_termine]: chronologische
+ * Agenda ab $today bis Sonntag der nächsten Woche (am Wochenende eine Woche
+ * mehr), dazu eine Mo–So-Übersichtsleiste und die Legende.
+ *
+ * - entries: Tage mit Terminen und Ferien-Bänder, chronologisch, mit Wochenindex
+ *   relativ zum Montag der aktuellen Woche (0 = diese Woche).
+ * - Mehrtägige Termine erscheinen einmal: am Starttag bzw. heute, wenn sie
+ *   schon laufen ('since'), mit 'until' bei späterem Ende.
+ * - next: erster passender Termin nach dem Fenster, falls das Fenster leer ist.
+ *
+ * @return array{from: string, to: string, strip: array, entries: array, categories: array, next: ?array}
+ */
+function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter = array() ) {
+    $empty = array( 'from' => '', 'to' => '', 'strip' => array(), 'entries' => array(), 'categories' => array(), 'next' => null );
+    if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
+        return $empty;
+    }
+    $doc    = is_array( $doc ) ? $doc : array();
+    $weeks  = max( 1, min( 6, (int) $weeks ) );
+    $rows   = $weeks + ( (int) ( new DateTime( $today ) )->format( 'N' ) >= 6 ? 1 : 0 );
+    $monday = gsh_tp_curriculr_monday_of_week( $today );
+    $to     = ( new DateTime( $monday ) )->modify( '+' . ( 7 * $rows - 1 ) . ' days' )->format( 'Y-m-d' );
+    $week_of = function( $date ) use ( $monday ) {
+        return intdiv( (int) ( new DateTime( $monday ) )->diff( new DateTime( $date ) )->days, 7 );
+    };
+
+    $cats = array();
+    foreach ( ( isset( $doc['categories'] ) && is_array( $doc['categories'] ) ) ? $doc['categories'] : array() as $c ) {
+        if ( is_array( $c ) && isset( $c['id'] ) ) {
+            $cats[ $c['id'] ] = $c;
+        }
+    }
+
+    $by_day = array();
+    $next   = null;
+    foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
+        $span = gsh_tp_curriculr_event_span( $e );
+        if ( null === $span || $span['end'] < $today || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+            continue;
+        }
+        if ( $span['start'] > $to ) {
+            if ( null === $next || $span['start'] < $next['start'] ) {
+                $next = array( 'title' => $span['title'], 'start' => $span['start'] );
+            }
+            continue;
+        }
+        list( $st, $et ) = gsh_tp_curriculr_event_times( $e );
+        $cat   = isset( $e['categoryId'] ) && isset( $cats[ $e['categoryId'] ] ) ? $cats[ $e['categoryId'] ] : null;
+        $color = $cat && isset( $cat['color'] ) && preg_match( '/^#[0-9a-fA-F]{6}$/', (string) $cat['color'] ) ? $cat['color'] : '#94A3B8';
+        $show  = max( $span['start'], $today );
+        $by_day[ $show ][] = array(
+            'title'     => $span['title'],
+            'allDay'    => '' === $st,
+            'startTime' => $st,
+            'endTime'   => $et,
+            'since'     => $span['start'] < $show ? $span['start'] : '',
+            'until'     => $span['end'] > $show ? $span['end'] : '',
+            'location'  => isset( $e['location'] ) && is_string( $e['location'] ) ? trim( $e['location'] ) : '',
+            'category'  => $cat && isset( $cat['label'] ) ? (string) $cat['label'] : '',
+            'color'     => $color,
+        );
+    }
+    foreach ( $by_day as &$items ) {
+        usort( $items, function( $a, $b ) {
+            $ra = ( '' !== $a['since'] ? 0 : ( $a['allDay'] ? 1 : 2 ) );
+            $rb = ( '' !== $b['since'] ? 0 : ( $b['allDay'] ? 1 : 2 ) );
+            return ( $ra <=> $rb ) ?: ( strcmp( $a['startTime'], $b['startTime'] ) ?: strcmp( $a['title'], $b['title'] ) );
+        } );
+    }
+    unset( $items );
+    ksort( $by_day );
+
+    $entries  = array();
+    $holidays = array();
+    $sy       = isset( $doc['schoolyear'] ) && is_array( $doc['schoolyear'] ) ? $doc['schoolyear'] : array();
+    foreach ( ( isset( $sy['holidays'] ) && is_array( $sy['holidays'] ) ) ? $sy['holidays'] : array() as $h ) {
+        if ( ! is_array( $h ) || empty( $h['label'] ) || ! gsh_tp_curriculr_is_iso_date( $h['start'] ?? '' ) || ! gsh_tp_curriculr_is_iso_date( $h['end'] ?? '' ) ) {
+            continue;
+        }
+        $holidays[] = $h;
+        if ( $h['end'] < $today || $h['start'] > $to ) {
+            continue;
+        }
+        $date      = max( $h['start'], $today );
+        $entries[] = array( 'type' => 'holiday', 'date' => $date, 'week' => $week_of( $date ), 'label' => (string) $h['label'], 'start' => $h['start'], 'end' => $h['end'] );
+    }
+    foreach ( $by_day as $date => $items ) {
+        $entries[] = array( 'type' => 'day', 'date' => $date, 'week' => $week_of( $date ), 'events' => $items );
+    }
+    usort( $entries, function( $a, $b ) {
+        // Ferien-Band vor den Terminen desselben Tages.
+        return strcmp( $a['date'], $b['date'] ) ?: ( 'holiday' === $a['type'] ? -1 : 1 );
+    } );
+
+    $legend = array();
+    foreach ( $by_day as $items ) {
+        foreach ( $items as $it ) {
+            if ( '' !== $it['category'] && ! isset( $legend[ $it['category'] ] ) ) {
+                $legend[ $it['category'] ] = array( 'label' => $it['category'], 'color' => $it['color'] );
+            }
+        }
+    }
+
+    $strip = array();
+    $cur   = new DateTime( $monday );
+    for ( $r = 0; $r < $rows; $r++ ) {
+        $row = array();
+        for ( $d = 0; $d < 7; $d++ ) {
+            $date    = $cur->format( 'Y-m-d' );
+            $holiday = '';
+            foreach ( $holidays as $h ) {
+                if ( $h['start'] <= $date && $h['end'] >= $date ) {
+                    $holiday = (string) $h['label'];
+                    break;
+                }
+            }
+            $colors = array();
+            foreach ( $by_day[ $date ] ?? array() as $it ) {
+                $colors[ $it['color'] ] = true;
+            }
+            $row[] = array(
+                'date'    => $date,
+                'past'    => $date < $today,
+                'today'   => $date === $today,
+                'weekend' => $d >= 5,
+                'holiday' => $holiday,
+                'anchor'  => isset( $by_day[ $date ] ),
+                'count'   => count( $by_day[ $date ] ?? array() ),
+                'colors'  => array_slice( array_keys( $colors ), 0, 3 ),
+            );
+            $cur->modify( '+1 day' );
+        }
+        $strip[] = $row;
+    }
+
+    return array(
+        'from'       => $today,
+        'to'         => $to,
+        'strip'      => $strip,
+        'entries'    => $entries,
+        'categories' => array_values( $legend ),
+        'next'       => $by_day ? null : $next,
+    );
+}
+
+/**
+ * Datenmodell der Monatsansicht [gsh_monat]: Mo–So-Raster eines Monats inkl.
+ * Wochenenden. Pro Tag 'items': 'chip' (Termin mit Titel) oder 'strip'
+ * (dünner Farbstreifen für einen laufenden Mehrtages-Termin). Mehrtägige
+ * Termine erscheinen als Chip am Starttag sowie am Wochenanfang und am
+ * Monatsersten ('cont' = Fortsetzung), dazwischen als Streifen.
+ *
+ * @param string $ym    'YYYY-MM'; ungültig → Monat von $today.
+ * @return array{ym: string, label: string, prev: string, next: string, weeks: array, categories: array}
+ */
+function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '', $filter = array() ) {
+    static $months = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' );
+    if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
+        $today = gmdate( 'Y-m-d' );
+    }
+    if ( ! is_string( $ym ) || ! preg_match( '/^(\d{4})-(0[1-9]|1[0-2])$/', $ym ) ) {
+        $ym = substr( $today, 0, 7 );
+    }
+    $doc   = is_array( $doc ) ? $doc : array();
+    $first = new DateTime( $ym . '-01' );
+    $last  = ( clone $first )->modify( 'last day of this month' )->format( 'Y-m-d' );
+    $start = gsh_tp_curriculr_monday_of_week( $first->format( 'Y-m-d' ) );
+    $end   = ( new DateTime( gsh_tp_curriculr_monday_of_week( $last ) ) )->modify( '+6 days' )->format( 'Y-m-d' );
+
+    $cats = array();
+    foreach ( ( isset( $doc['categories'] ) && is_array( $doc['categories'] ) ) ? $doc['categories'] : array() as $c ) {
+        if ( is_array( $c ) && isset( $c['id'] ) ) {
+            $cats[ $c['id'] ] = $c;
+        }
+    }
+
+    $events = array();
+    foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
+        $span = gsh_tp_curriculr_event_span( $e );
+        if ( null === $span || $span['end'] < $ym . '-01' || $span['start'] > $last || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+            continue;
+        }
+        list( $st, $et ) = gsh_tp_curriculr_event_times( $e );
+        $cat      = isset( $e['categoryId'] ) && isset( $cats[ $e['categoryId'] ] ) ? $cats[ $e['categoryId'] ] : null;
+        $events[] = $span + array(
+            'allDay'    => '' === $st,
+            'startTime' => $st,
+            'endTime'   => $et,
+            'location'  => isset( $e['location'] ) && is_string( $e['location'] ) ? trim( $e['location'] ) : '',
+            'category'  => $cat && isset( $cat['label'] ) ? (string) $cat['label'] : '',
+            'color'     => $cat && isset( $cat['color'] ) && preg_match( '/^#[0-9a-fA-F]{6}$/', (string) $cat['color'] ) ? $cat['color'] : '#94A3B8',
+        );
+    }
+    usort( $events, function( $a, $b ) {
+        if ( $a['allDay'] !== $b['allDay'] ) {
+            return $a['allDay'] ? -1 : 1;
+        }
+        return strcmp( $a['startTime'], $b['startTime'] ) ?: strcmp( $a['title'], $b['title'] );
+    } );
+
+    $holidays = array();
+    $sy       = isset( $doc['schoolyear'] ) && is_array( $doc['schoolyear'] ) ? $doc['schoolyear'] : array();
+    foreach ( ( isset( $sy['holidays'] ) && is_array( $sy['holidays'] ) ) ? $sy['holidays'] : array() as $h ) {
+        if ( is_array( $h ) && ! empty( $h['label'] ) && gsh_tp_curriculr_is_iso_date( $h['start'] ?? '' ) && gsh_tp_curriculr_is_iso_date( $h['end'] ?? '' ) ) {
+            $holidays[] = $h;
+        }
+    }
+
+    $legend = array();
+    $weeks  = array();
+    $cur    = new DateTime( $start );
+    while ( $cur->format( 'Y-m-d' ) <= $end ) {
+        $row = array();
+        for ( $d = 0; $d < 7; $d++ ) {
+            $date    = $cur->format( 'Y-m-d' );
+            $out     = substr( $date, 0, 7 ) !== $ym;
+            $holiday = '';
+            foreach ( $holidays as $h ) {
+                if ( $h['start'] <= $date && $h['end'] >= $date ) {
+                    $holiday = (string) $h['label'];
+                    break;
+                }
+            }
+            $items = array();
+            if ( ! $out ) {
+                foreach ( $events as $ev ) {
+                    if ( $ev['start'] > $date || $ev['end'] < $date ) {
+                        continue;
+                    }
+                    $is_chip = $ev['start'] === $date || 0 === $d || substr( $date, 8 ) === '01';
+                    $items[] = array(
+                        'kind'      => $is_chip ? 'chip' : 'strip',
+                        'cont'      => $ev['start'] !== $date,
+                        'title'     => $ev['title'],
+                        'allDay'    => $ev['allDay'],
+                        'startTime' => $ev['startTime'],
+                        'endTime'   => $ev['endTime'],
+                        'until'     => $ev['end'] !== $date ? $ev['end'] : '',
+                        'location'  => $ev['location'],
+                        'category'  => $ev['category'],
+                        'color'     => $ev['color'],
+                    );
+                    if ( '' !== $ev['category'] && ! isset( $legend[ $ev['category'] ] ) ) {
+                        $legend[ $ev['category'] ] = array( 'label' => $ev['category'], 'color' => $ev['color'] );
+                    }
+                }
+                // Chips vor Streifen, sonst Reihenfolge wie sortiert.
+                usort( $items, function( $a, $b ) {
+                    return ( 'strip' === $a['kind'] ) <=> ( 'strip' === $b['kind'] );
+                } );
+            }
+            $row[] = array(
+                'date'    => $date,
+                'out'     => $out,
+                'today'   => $date === $today,
+                'past'    => $date < $today,
+                'weekend' => $d >= 5,
+                'holiday' => $holiday,
+                'items'   => $items,
+            );
+            $cur->modify( '+1 day' );
+        }
+        $weeks[] = $row;
+    }
+
+    return array(
+        'ym'         => $ym,
+        'label'      => $months[ (int) $first->format( 'n' ) ] . ' ' . $first->format( 'Y' ),
+        'prev'       => ( clone $first )->modify( '-1 month' )->format( 'Y-m' ),
+        'next'       => ( clone $first )->modify( '+1 month' )->format( 'Y-m' ),
+        'weeks'      => $weeks,
+        'categories' => array_values( $legend ),
+    );
 }
 
 function gsh_tp_curriculr_quartal_grenzen_from_doc( $doc ) {
