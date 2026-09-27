@@ -48,6 +48,99 @@ function gsh_tp_curriculr_auth_is_configured( $config ) {
         && ! empty( $config['app_token_key'] );
 }
 
+/* ---------- Pure: App-Registry — Login für mehrere Apps (ab 4.42.0) ---------- */
+// Weitere Curricu:lr-Apps (z. B. der Klausurplaner) registrieren sich über den
+// WordPress-Filter 'curriculr_apps' mit eigener URL und eigenen IServ-Gruppen.
+// 'terminplan' kommt immer aus CURRICULR_SPA_URL / CURRICULR_ALLOWED_GROUPS und
+// ist per Filter weder überschreib- noch entfernbar.
+
+function gsh_tp_curriculr_split_groups( $groups ) {
+    if ( is_string( $groups ) ) {
+        $groups = explode( ',', $groups );
+    }
+    if ( ! is_array( $groups ) ) {
+        return array();
+    }
+    $out = array();
+    foreach ( $groups as $g ) {
+        if ( is_string( $g ) && trim( $g ) !== '' ) {
+            $out[] = trim( $g );
+        }
+    }
+    return array_values( array_unique( $out ) );
+}
+
+function gsh_tp_curriculr_normalize_app_url( $url ) {
+    if ( ! is_string( $url ) ) {
+        return '';
+    }
+    $url = trim( $url );
+    if ( ! preg_match( '#^(https://[^/\s?\#:]+(:\d{1,5})?|http://localhost(:\d{1,5})?)(/[^\s?\#]*)?$#i', $url ) ) {
+        return '';
+    }
+    return rtrim( $url, '/' ) . '/';
+}
+
+function gsh_tp_curriculr_normalize_apps( $apps, $config ) {
+    $out = array(
+        'terminplan' => array(
+            'url'    => $config['spa_url'],
+            'groups' => $config['allowed_groups'],
+        ),
+    );
+    if ( ! is_array( $apps ) ) {
+        return $out;
+    }
+    foreach ( $apps as $key => $app ) {
+        if ( ! is_string( $key ) || $key === 'terminplan' || ! preg_match( '/^[a-z0-9-]{1,32}$/', $key ) || ! is_array( $app ) ) {
+            continue;
+        }
+        $url    = gsh_tp_curriculr_normalize_app_url( $app['url'] ?? '' );
+        $groups = gsh_tp_curriculr_split_groups( $app['groups'] ?? array() );
+        if ( $url === '' || empty( $groups ) ) {
+            continue;
+        }
+        $out[ $key ] = array( 'url' => $url, 'groups' => $groups );
+    }
+    return $out;
+}
+
+function gsh_tp_curriculr_apps() {
+    $config = gsh_tp_curriculr_auth_config();
+    $apps   = array(
+        'terminplan' => array( 'url' => $config['spa_url'], 'groups' => $config['allowed_groups'] ),
+    );
+    if ( function_exists( 'apply_filters' ) ) {
+        $apps = apply_filters( 'curriculr_apps', $apps );
+    }
+    return gsh_tp_curriculr_normalize_apps( $apps, $config );
+}
+
+function gsh_tp_curriculr_app_origin( $url ) {
+    $p = is_string( $url ) ? parse_url( $url ) : false;
+    if ( ! is_array( $p ) || empty( $p['scheme'] ) || empty( $p['host'] ) ) {
+        return '';
+    }
+    return strtolower( $p['scheme'] ) . '://' . strtolower( $p['host'] ) . ( isset( $p['port'] ) ? ':' . (int) $p['port'] : '' );
+}
+
+/**
+ * CORS: Die Anfrage-Origin wird nur gespiegelt, wenn sie zu einer zusätzlich
+ * registrierten App gehört; sonst gilt wie bisher die Terminplan-Origin.
+ */
+function gsh_tp_curriculr_cors_origin( $request_origin, $default_origin, $apps ) {
+    $wanted = gsh_tp_curriculr_app_origin( is_string( $request_origin ) ? rtrim( trim( $request_origin ), '/' ) : '' );
+    if ( $wanted === '' ) {
+        return $default_origin;
+    }
+    foreach ( $apps as $key => $app ) {
+        if ( $key !== 'terminplan' && gsh_tp_curriculr_app_origin( $app['url'] ) === $wanted ) {
+            return $wanted;
+        }
+    }
+    return $default_origin;
+}
+
 /* ---------- Pure: base64url + HS256 JWT (eigenes App-Token) ---------- */
 
 function gsh_tp_curriculr_b64url_encode( $data ) {

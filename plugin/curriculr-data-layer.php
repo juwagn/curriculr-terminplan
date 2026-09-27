@@ -1093,7 +1093,9 @@ function gsh_tp_curriculr_allowed_origin() {
 }
 
 function gsh_tp_curriculr_send_cors() {
-    header( 'Access-Control-Allow-Origin: ' . esc_url_raw( gsh_tp_curriculr_allowed_origin() ) );
+    $request_origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? (string) wp_unslash( $_SERVER['HTTP_ORIGIN'] ) : '';
+    $origin         = gsh_tp_curriculr_cors_origin( $request_origin, gsh_tp_curriculr_allowed_origin(), gsh_tp_curriculr_apps() );
+    header( 'Access-Control-Allow-Origin: ' . esc_url_raw( $origin ) );
     header( 'Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS' );
     header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
     header( 'Vary: Origin' );
