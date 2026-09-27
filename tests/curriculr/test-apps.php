@@ -42,6 +42,13 @@ class WP_REST_Response { public $data; public $status; public function __constru
 function add_action() {}
 
 require __DIR__ . '/../../plugin/curriculr-auth.php';
+require __DIR__ . '/../../plugin/curriculr-guard.php';
+
+class Gsh_Fake_Guard_Req {
+    private $headers;
+    public function __construct( $headers = array() ) { $this->headers = $headers; }
+    public function get_header( $name ) { return $this->headers[ strtolower( $name ) ] ?? null; }
+}
 
 $KP_URL = 'https://klausurplan.schule.de/';
 $with_klausurplan = function ( $apps ) use ( $KP_URL ) {
@@ -156,5 +163,56 @@ gsh_assert_eq( $res->status, 400, 'unbekannte App → 400' );
 gsh_assert_eq( $res->data, array( 'error' => 'unknown_app' ), 'Fehlercode unknown_app' );
 gsh_assert_eq( $GLOBALS['redirects'], array(), 'kein Redirect bei unbekannter App' );
 gsh_assert_eq( $GLOBALS['transients'], array(), 'kein State-Transient bei unbekannter App' );
+
+/* ---------- guard_validate_for_app (rein, feste Zeit) ---------- */
+$GLOBALS['app_filter'] = $with_klausurplan;
+$apps = gsh_tp_curriculr_apps();
+$key  = 'k0123456789abcdef0123456789abcdef';
+$iss  = 'https://wp.test/wp-json/curriculr/v1';
+$now  = 2000;
+$kp_fixed = gsh_tp_curriculr_jwt_sign( gsh_tp_curriculr_claims_for_app( 'sub-1', 'Frau Muster', array( 'Oberstufenleitung' ), $apps['klausurplan'], 1000, 1800, $iss ), $key );
+$tp_fixed = gsh_tp_curriculr_jwt_sign( gsh_tp_curriculr_claims_for_app( 'sub-2', 'Herr Leiter', array( 'Schulleitung' ), $apps['terminplan'], 1000, 1800, $iss ), $key );
+
+$r = gsh_tp_curriculr_guard_validate_for_app( 'Bearer ' . $kp_fixed, $key, $now, $iss, $apps['klausurplan'] );
+gsh_assert_eq( array( $r['valid'], $r['status'] ), array( true, 200 ), 'Klausurplan-Token gilt für klausurplan' );
+gsh_assert_eq( $r['claims']['name'], 'Frau Muster', 'Claims durchgereicht' );
+
+$r = gsh_tp_curriculr_guard_validate_for_app( 'Bearer ' . $tp_fixed, $key, $now, $iss, $apps['klausurplan'] );
+gsh_assert_eq( array( $r['valid'], $r['status'] ), array( false, 401 ), 'Terminplan-Token an Klausurplan → 401 (aud)' );
+
+$r = gsh_tp_curriculr_guard_validate_for_app( 'Bearer ' . $kp_fixed, $key, 99999, $iss, $apps['klausurplan'] );
+gsh_assert_eq( array( $r['valid'], $r['status'] ), array( false, 401 ), 'abgelaufen → 401' );
+
+$r = gsh_tp_curriculr_guard_validate_for_app( '', $key, $now, $iss, $apps['klausurplan'] );
+gsh_assert_eq( array( $r['valid'], $r['status'] ), array( false, 401 ), 'ohne Bearer → 401' );
+
+$r = gsh_tp_curriculr_guard_validate_for_app( 'Bearer ' . $kp_fixed, $key, $now, $iss, null );
+gsh_assert_eq( array( $r['valid'], $r['status'] ), array( false, 401 ), 'unbekannte App → 401' );
+
+$app_narrow = array( 'url' => $KP_URL, 'groups' => array( 'Nurandere' ) );
+$r = gsh_tp_curriculr_guard_validate_for_app( 'Bearer ' . $kp_fixed, $key, $now, $iss, $app_narrow );
+gsh_assert_eq( array( $r['valid'], $r['status'], $r['error'] ), array( false, 403, 'forbidden' ), 'Gruppe inzwischen nicht mehr freigegeben → 403' );
+
+/* ---------- WP-Hüllen (nutzen time(), deshalb Tokens mit aktueller Zeit) ---------- */
+$kp_live = gsh_tp_curriculr_jwt_sign( gsh_tp_curriculr_claims_for_app( 'sub-1', 'Frau Muster', array( 'Oberstufenleitung' ), $apps['klausurplan'], time(), 1800, $iss ), $key );
+$tp_live = gsh_tp_curriculr_jwt_sign( gsh_tp_curriculr_claims_for_app( 'sub-2', 'Herr Leiter', array( 'Schulleitung' ), $apps['terminplan'], time(), 1800, $iss ), $key );
+
+$ok = gsh_tp_curriculr_guard_for_app( new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $kp_live ) ), 'klausurplan' );
+gsh_assert_eq( $ok, true, 'guard_for_app akzeptiert passendes Token' );
+gsh_assert_eq( gsh_tp_curriculr_guard_current_claims()['sub'], 'sub-1', 'Claims für Callbacks gesetzt' );
+
+$err = gsh_tp_curriculr_guard_for_app( new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $tp_live ) ), 'klausurplan' );
+gsh_assert_eq( $err instanceof WP_Error, true, 'fremdes Token → WP_Error' );
+gsh_assert_eq( $err->data['status'], 401, 'fremdes Token → Status 401' );
+gsh_assert_eq( gsh_tp_curriculr_guard_current_claims(), null, 'Claims nach Fehlschlag gelöscht' );
+
+$err = gsh_tp_curriculr_guard_for_app( new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $kp_live ) ), 'gibtsnicht' );
+gsh_assert_eq( $err->data['status'], 401, 'unbekannter App-Schlüssel → 401' );
+
+$err = gsh_tp_curriculr_guard_perm( new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $kp_live ) ) );
+gsh_assert_eq( $err instanceof WP_Error, true, 'Klausurplan-Token an Terminplan-Route abgelehnt' );
+gsh_assert_eq( $err->data['status'], 401, 'mit Status 401' );
+$ok = gsh_tp_curriculr_guard_perm( new Gsh_Fake_Guard_Req( array( 'authorization' => 'Bearer ' . $tp_live ) ) );
+gsh_assert_eq( $ok, true, 'Terminplan-Token an Terminplan-Route weiter gültig' );
 
 gsh_test_done();
