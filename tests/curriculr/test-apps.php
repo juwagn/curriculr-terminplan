@@ -23,7 +23,11 @@ function set_transient( $k, $v, $ttl ) { $GLOBALS['transients'][ $k ] = $v; retu
 function get_transient( $k ) { return $GLOBALS['transients'][ $k ] ?? false; }
 function delete_transient( $k ) { unset( $GLOBALS['transients'][ $k ] ); return true; }
 function wp_generate_password( $l = 12, $s = true, $e = true ) { return substr( str_repeat( 'aB3xY9Qz', 16 ), 0, $l ); }
-function wp_redirect( $u ) { $GLOBALS['redirects'][] = $u; }
+class Gsh_Test_Redirect extends Exception {
+    public $url;
+    public function __construct( $url ) { parent::__construct( 'redirect: ' . $url ); $this->url = $url; }
+}
+function wp_redirect( $u ) { $GLOBALS['redirects'][] = $u; throw new Gsh_Test_Redirect( $u ); }
 function wp_remote_post( $u, $a = array() ) { return array_shift( $GLOBALS['remote_queue'] ); }
 function wp_remote_get( $u, $a = array() ) { return array_shift( $GLOBALS['remote_queue'] ); }
 function wp_remote_retrieve_body( $r ) { return is_array( $r ) ? ( $r['body'] ?? '' ) : ''; }
@@ -106,6 +110,30 @@ gsh_assert_eq( $apps['terminplan']['url'], 'https://juwagn.github.io/curriculr-p
 $GLOBALS['app_filter'] = function ( $apps ) { return 'kaputt'; };
 gsh_assert_eq( array_keys( gsh_tp_curriculr_apps() ), array( 'terminplan' ), 'Filter liefert kein Array → nur terminplan' );
 
+/* ---------- apps(): App-URL kollidiert mit Terminplan / Duplikate ---------- */
+$GLOBALS['app_filter'] = function ( $apps ) {
+    $apps['klausurplan'] = array( 'url' => 'https://juwagn.github.io/curriculr-planner', 'groups' => array( 'X' ) );
+    return $apps;
+};
+$apps = gsh_tp_curriculr_apps();
+gsh_assert_eq( array_keys( $apps ), array( 'terminplan' ), 'App mit Terminplan-URL (ohne Slash) wird verworfen' );
+
+$GLOBALS['app_filter'] = function ( $apps ) {
+    $apps['klausurplan'] = array( 'url' => 'HTTPS://JUWAGN.GITHUB.IO/curriculr-planner/', 'groups' => array( 'X' ) );
+    return $apps;
+};
+$apps = gsh_tp_curriculr_apps();
+gsh_assert_eq( array_keys( $apps ), array( 'terminplan' ), 'App mit Terminplan-URL (Groß-/Kleinschreibung, kein Slash) wird verworfen' );
+
+$GLOBALS['app_filter'] = function ( $apps ) {
+    $apps['a'] = array( 'url' => 'https://dup.example/', 'groups' => array( 'X' ) );
+    $apps['b'] = array( 'url' => 'https://dup.example/', 'groups' => array( 'Y' ) );
+    return $apps;
+};
+$apps = gsh_tp_curriculr_apps();
+gsh_assert_eq( array_keys( $apps ), array( 'terminplan', 'a' ), 'Zwei Apps mit gleicher URL: nur die erste bleibt' );
+gsh_assert_eq( $apps['a']['groups'], array( 'X' ), 'erste der beiden Duplikat-Apps bleibt mit ihren Gruppen' );
+
 /* ---------- app_origin ---------- */
 gsh_assert_eq( gsh_tp_curriculr_app_origin( 'https://Klausurplan.Schule.de/app/' ), 'https://klausurplan.schule.de', 'Origin kleingeschrieben ohne Pfad' );
 gsh_assert_eq( gsh_tp_curriculr_app_origin( 'http://localhost:5174/' ), 'http://localhost:5174', 'Origin mit Port' );
@@ -134,7 +162,7 @@ gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( array( 'x' ), $apps ), null, 'A
 /* ---------- app_for_state ---------- */
 gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n' ), $apps ), 'terminplan', 'alter Transient ohne app → terminplan' );
 gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n', 'app' => 'klausurplan' ), $apps ), 'klausurplan', 'app aus Transient' );
-gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n', 'app' => 'weg' ), $apps ), 'terminplan', 'inzwischen entfernte App → terminplan' );
+gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n', 'app' => 'weg' ), $apps ), null, 'inzwischen entfernte App → null' );
 
 /* ---------- claims_for_app ---------- */
 $iss = 'https://wp.test/wp-json/curriculr/v1';
@@ -163,6 +191,56 @@ gsh_assert_eq( $res->status, 400, 'unbekannte App → 400' );
 gsh_assert_eq( $res->data, array( 'error' => 'unknown_app' ), 'Fehlercode unknown_app' );
 gsh_assert_eq( $GLOBALS['redirects'], array(), 'kein Redirect bei unbekannter App' );
 gsh_assert_eq( $GLOBALS['transients'], array(), 'kein State-Transient bei unbekannter App' );
+
+/* ---------- /auth/login mit bekannter App und ohne App (Redirect + State-Transient) ---------- */
+$GLOBALS['app_filter'] = $with_klausurplan;
+$GLOBALS['transients'] = array();
+$GLOBALS['redirects']  = array();
+try {
+    gsh_tp_curriculr_rest_auth_login( new Gsh_Fake_Login_Req( array( 'app' => 'klausurplan' ) ) );
+    gsh_assert_true( false, 'login mit app=klausurplan muss redirecten (wp_redirect wirft)' );
+} catch ( Gsh_Test_Redirect $e ) {
+    gsh_assert_contains( $e->url, 'https://schule.iserv.de/iserv/auth/auth?', 'Redirect zur IServ-Authorize-URL' );
+}
+gsh_assert_eq( count( $GLOBALS['transients'] ), 1, 'genau ein State-Transient gespeichert' );
+$saved = array_values( $GLOBALS['transients'] )[0];
+gsh_assert_eq( array_keys( $saved ), array( 'nonce', 'app' ), 'Transient-Struktur nonce+app' );
+gsh_assert_eq( $saved['app'], 'klausurplan', 'Transient merkt sich app=klausurplan' );
+
+$GLOBALS['transients'] = array();
+$GLOBALS['redirects']  = array();
+try {
+    gsh_tp_curriculr_rest_auth_login( new Gsh_Fake_Login_Req( array() ) );
+    gsh_assert_true( false, 'login ohne app muss redirecten (wp_redirect wirft)' );
+} catch ( Gsh_Test_Redirect $e ) {
+    gsh_assert_contains( $e->url, 'https://schule.iserv.de/iserv/auth/auth?', 'Redirect zur IServ-Authorize-URL (ohne app)' );
+}
+$saved = array_values( $GLOBALS['transients'] )[0];
+gsh_assert_eq( $saved['app'], 'terminplan', 'Transient ohne app → terminplan' );
+
+/* ---------- /auth/callback: Finding 2 — gültiger State, leerer code (z.B. access_denied) ---------- */
+$GLOBALS['app_filter'] = $with_klausurplan;
+$GLOBALS['transients'] = array( 'gsh_tp_cur_oauth_st-kp' => array( 'nonce' => 'n', 'app' => 'klausurplan' ) );
+$GLOBALS['redirects']  = array();
+try {
+    gsh_tp_curriculr_rest_auth_callback( new Gsh_Fake_Login_Req( array( 'state' => 'st-kp', 'code' => '' ) ) );
+    gsh_assert_true( false, 'callback mit leerem code muss redirecten' );
+} catch ( Gsh_Test_Redirect $e ) {
+    gsh_assert_eq( strpos( $e->url, 'https://klausurplan.schule.de/#auth_error=state' ), 0, 'Redirect zur App-URL mit reason=state (Finding 2)' );
+}
+gsh_assert_eq( isset( $GLOBALS['transients']['gsh_tp_cur_oauth_st-kp'] ), false, 'State-Transient wurde gelöscht (Finding 2)' );
+
+/* ---------- /auth/callback: Finding 3 — State nennt inzwischen entfernte App ---------- */
+$GLOBALS['app_filter'] = $with_klausurplan;
+$GLOBALS['transients'] = array( 'gsh_tp_cur_oauth_st-weg' => array( 'nonce' => 'n', 'app' => 'weg' ) );
+$GLOBALS['redirects']  = array();
+try {
+    gsh_tp_curriculr_rest_auth_callback( new Gsh_Fake_Login_Req( array( 'state' => 'st-weg', 'code' => 'abc' ) ) );
+    gsh_assert_true( false, 'callback mit entfernter App muss redirecten' );
+} catch ( Gsh_Test_Redirect $e ) {
+    gsh_assert_eq( $e->url, 'https://juwagn.github.io/curriculr-planner/#auth_error=unknown_app', 'Redirect zur Terminplan-URL mit reason=unknown_app (Finding 3)' );
+}
+gsh_assert_eq( isset( $GLOBALS['transients']['gsh_tp_cur_oauth_st-weg'] ), false, 'State-Transient wurde gelöscht (Finding 3)' );
 
 /* ---------- guard_validate_for_app (rein, feste Zeit) ---------- */
 $GLOBALS['app_filter'] = $with_klausurplan;

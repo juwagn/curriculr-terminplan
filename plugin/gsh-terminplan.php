@@ -9,7 +9,7 @@
  * Text Domain: gsh-terminplan
  * v4.42.0
  * - [NEU] Login für mehrere Apps: weitere Curricu:lr-Apps (z. B. der Klausurplaner) melden sich über dieselbe IServ-Anmeldung an – mit eigener Adresse und eigenen IServ-Gruppen; der Terminplaner verhält sich unverändert
- * - [SECURITY] Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; Freigaben für fremde Web-Adressen (CORS) nur für registrierte Apps
+ * - [SECURITY] Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; zusätzliche Apps werden für Anfragen aus dem Browser (CORS) nur mit registrierter Adresse berücksichtigt
  * v4.41.0
  * - [NEU] Neuer Einstellungs-Tab „Shortcodes & Hilfe“: alle Shortcodes mit Erklärung, Attributen und Beispielen sowie ein Generator, der Gruppe, Kategorien und Optionen per Auswahl zu einem fertigen Shortcode zum Kopieren zusammenstellt
  * - [NEU] Kategorien in [gsh_termine] und [gsh_monat]: kategorien="…" zeigt nur diese Kategorien, auch_kategorien="…" zeigt Termine dieser Kategorien zusätzlich – auch ohne passende Gruppe (z. B. „Allgemein“ für Eltern)
@@ -907,7 +907,7 @@ function gsh_tp_changelog() {
             'version' => '4.42.0',
             'entries' => array(
                 array( 'tag' => 'NEU', 'text' => 'Login für mehrere Apps: weitere Curricu:lr-Apps (z. B. der Klausurplaner) melden sich über dieselbe IServ-Anmeldung an – mit eigener Adresse und eigenen IServ-Gruppen; der Terminplaner verhält sich unverändert' ),
-                array( 'tag' => 'SECURITY', 'text' => 'Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; Freigaben für fremde Web-Adressen (CORS) nur für registrierte Apps' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; zusätzliche Apps werden für Anfragen aus dem Browser (CORS) nur mit registrierter Adresse berücksichtigt' ),
             ),
         ),
         array(

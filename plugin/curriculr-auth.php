@@ -97,6 +97,15 @@ function gsh_tp_curriculr_normalize_apps( $apps, $config ) {
             'groups' => $config['allowed_groups'],
         ),
     );
+    // Verhindert, dass eine zusätzliche App dieselbe Adresse wie der Terminplan
+    // (oder eine bereits registrierte App) beansprucht — sonst könnten sich
+    // Apps gegenseitig Tokens/Weiterleitungen abgreifen.
+    $taken          = array();
+    $normalized_spa = gsh_tp_curriculr_normalize_app_url( $config['spa_url'] );
+    if ( $normalized_spa !== '' ) {
+        $taken[] = $normalized_spa;
+    }
+    $taken[] = $config['spa_url'];
     if ( ! is_array( $apps ) ) {
         return $out;
     }
@@ -106,9 +115,10 @@ function gsh_tp_curriculr_normalize_apps( $apps, $config ) {
         }
         $url    = gsh_tp_curriculr_normalize_app_url( $app['url'] ?? '' );
         $groups = gsh_tp_curriculr_split_groups( $app['groups'] ?? array() );
-        if ( $url === '' || empty( $groups ) ) {
+        if ( $url === '' || empty( $groups ) || in_array( $url, $taken, true ) ) {
             continue;
         }
+        $taken[]     = $url;
         $out[ $key ] = array( 'url' => $url, 'groups' => $groups );
     }
     return $out;
@@ -163,9 +173,15 @@ function gsh_tp_curriculr_resolve_app_key( $requested, $apps ) {
 }
 
 // Login-Transients von vor 4.42.0 haben kein 'app' → terminplan.
+// Nennt der Transient eine App, die inzwischen nicht mehr registriert ist
+// (Plugin deaktiviert/Filter geändert), liefert die Funktion null — der
+// Callback bricht dann sicher zur Terminplan-URL ab (reason=unknown_app),
+// statt versehentlich ans Terminplan-Konto durchzureichen.
 function gsh_tp_curriculr_app_for_state( $saved, $apps ) {
-    $key = ( is_array( $saved ) && isset( $saved['app'] ) && is_string( $saved['app'] ) ) ? $saved['app'] : 'terminplan';
-    return isset( $apps[ $key ] ) ? $key : 'terminplan';
+    if ( ! is_array( $saved ) || ! isset( $saved['app'] ) || ! is_string( $saved['app'] ) ) {
+        return 'terminplan';
+    }
+    return isset( $apps[ $saved['app'] ] ) ? $saved['app'] : null;
 }
 
 // null = Nutzer gehört keiner Gruppe dieser App an (forbidden).
@@ -440,7 +456,9 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
     $code  = isset( $req['code'] ) ? (string) $req['code'] : '';
     $key   = 'gsh_tp_cur_oauth_' . $state;
     $saved = $state ? get_transient( $key ) : false;
-    if ( ! $saved || $code === '' ) {
+    if ( ! $saved ) {
+        // Transient fehlt/ungültig — wir kennen die App noch nicht, also zur
+        // Terminplan-URL (bisheriges Verhalten, unverändert).
         gsh_tp_curriculr_auth_fail( $config, 'state' );
     }
     delete_transient( $key ); // Single-Use gegen Replay.
@@ -448,7 +466,18 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
     // App aus dem Login-Schritt; Rücksprung-Adressen kommen nur aus der Registry.
     $apps    = gsh_tp_curriculr_apps();
     $app_key = gsh_tp_curriculr_app_for_state( $saved, $apps );
-    $app     = $apps[ $app_key ];
+    if ( $app_key === null ) {
+        // Transient nannte eine inzwischen nicht mehr registrierte App — keine
+        // vertrauenswürdige Rücksprung-Adresse verfügbar.
+        gsh_tp_curriculr_auth_fail( $config, 'unknown_app' );
+    }
+    $app = $apps[ $app_key ];
+
+    if ( $code === '' ) {
+        // z. B. IServ liefert error=access_denied&state=… ohne code: State ist
+        // gültig, die App ist bekannt — also zur APP-URL, nicht zum Terminplan.
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'state' );
+    }
 
     $tokens = gsh_tp_curriculr_oidc_exchange_code( $config, $code );
     if ( is_wp_error( $tokens ) || empty( $tokens['access_token'] ) ) {
