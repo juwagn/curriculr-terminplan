@@ -14,6 +14,7 @@ php -l plugin/curriculr-guard.php
 # Run individual test files
 php tests/curriculr/test-auth.php
 php tests/curriculr/test-guard.php
+php tests/curriculr/test-apps.php
 php tests/curriculr/test-ics.php
 php tests/curriculr/test-stage.php
 php tests/curriculr/test-revisions.php
@@ -73,6 +74,8 @@ Alle Routen außer `/auth/*` und den Token-Feeds; `/health` verlangt ebenfalls B
 | GET | `/feed/{sj}/{token}/{group}.ics` | `gsh_tp_curriculr_rest_feed_group` (token-auth, public, group-filtered) |
 | POST | `/profile-map` | `gsh_tp_curriculr_rest_profile_map_put` (Bearer-auth) |
 | POST | `/auth/token` | (curriculr-auth) app-token exchange |
+
+**Login für mehrere Apps (ab 4.42.0):** `gsh_tp_curriculr_apps()` liefert die App-Registry: `terminplan` (aus `CURRICULR_SPA_URL`/`CURRICULR_ALLOWED_GROUPS`, nicht überschreibbar) plus Einträge anderer Plugins über den Filter `curriculr_apps` (`'<key>' => array( 'url' => 'https://…/', 'groups' => 'GruppeA, GruppeB' )`). `GET /auth/login?app=<key>` wählt die App (ohne `app` = `terminplan`, unbekannt = 400); Token-`aud` und -Gruppen kommen aus dieser App, Rücksprung an ihre URL. Routen anderer Apps prüfen mit `gsh_tp_curriculr_guard_for_app( $req, '<key>' )` (401 falsches/abgelaufenes Token oder fremde `aud`, 403 keine Gruppe der App). `gsh_tp_curriculr_guard_perm()` bleibt für Terminplan-Routen (nur `aud` = Terminplan-URL). CORS spiegelt die Anfrage-Origin nur für registrierte Apps (`gsh_tp_curriculr_cors_origin()`).
 
 **Conflict detection:** PUT compares `base_version` in request envelope with current `version` in DB. Mismatch → 409 with `authorName`/`savedAt` from revisions table.
 
@@ -134,6 +137,8 @@ define('CURRICULR_APP_TOKEN_KEY',       '...'); // 32-byte hex
 define('CURRICULR_SPA_URL',             'https://juwagn.github.io/curriculr-planner/');
 define('CURRICULR_ALLOWED_GROUPS',      'Schulleitung');
 ```
+
+Weitere Apps bringen ihre Konstanten selbst mit, z. B. das Begleit-Plugin „Curricu:lr Klausurplan": `CURRICULR_KLAUSURPLAN_SPA_URL` und `CURRICULR_KLAUSURPLAN_GROUPS`.
 
 These are never echoed, never committed. Tests mock them with `define()` at the top.
 

@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.41.0
+ * Version:     4.42.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.42.0
+ * - [NEU] Login für mehrere Apps: weitere Curricu:lr-Apps (z. B. der Klausurplaner) melden sich über dieselbe IServ-Anmeldung an – mit eigener Adresse und eigenen IServ-Gruppen; der Terminplaner verhält sich unverändert
+ * - [SECURITY] Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; Freigaben für fremde Web-Adressen (CORS) nur für registrierte Apps
  * v4.41.0
  * - [NEU] Neuer Einstellungs-Tab „Shortcodes & Hilfe“: alle Shortcodes mit Erklärung, Attributen und Beispielen sowie ein Generator, der Gruppe, Kategorien und Optionen per Auswahl zu einem fertigen Shortcode zum Kopieren zusammenstellt
  * - [NEU] Kategorien in [gsh_termine] und [gsh_monat]: kategorien="…" zeigt nur diese Kategorien, auch_kategorien="…" zeigt Termine dieser Kategorien zusätzlich – auch ohne passende Gruppe (z. B. „Allgemein“ für Eltern)
@@ -656,7 +659,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.41.0' );
+define( 'GSH_TP_VERSION',       '4.42.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -900,6 +903,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.42.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Login für mehrere Apps: weitere Curricu:lr-Apps (z. B. der Klausurplaner) melden sich über dieselbe IServ-Anmeldung an – mit eigener Adresse und eigenen IServ-Gruppen; der Terminplaner verhält sich unverändert' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; Freigaben für fremde Web-Adressen (CORS) nur für registrierte Apps' ),
+            ),
+        ),
         array(
             'version' => '4.41.0',
             'entries' => array(
