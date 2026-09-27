@@ -64,6 +64,11 @@ gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'javascript:alert(1)' ), '', 
 gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'https://schule.de/app/?x=1' ), '', 'Query abgelehnt' );
 gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'https://schule.de/app/#x' ), '', 'Fragment abgelehnt' );
 gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 42 ), '', 'kein String abgelehnt' );
+gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'https://trusted.example@evil.example/' ), '', 'Userinfo (kein Port) abgelehnt' );
+gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'https://user:pass@evil.example/' ), '', 'Userinfo mit Passwort abgelehnt' );
+gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'https://[::1]:8443/' ), '', 'IPv6-Literal abgelehnt' );
+gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'HTTPS://Example.COM/App' ), 'https://example.com/App/', 'Schema und Host klein, Pfad-Case bleibt' );
+gsh_assert_eq( gsh_tp_curriculr_normalize_app_url( 'http://LOCALHOST:5174' ), 'http://localhost:5174/', 'localhost-Host klein' );
 
 /* ---------- apps(): ohne Filter wie 4.41.0 ---------- */
 $GLOBALS['app_filter'] = null;

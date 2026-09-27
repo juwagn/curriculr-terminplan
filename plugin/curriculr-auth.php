@@ -75,10 +75,19 @@ function gsh_tp_curriculr_normalize_app_url( $url ) {
         return '';
     }
     $url = trim( $url );
-    if ( ! preg_match( '#^(https://[^/\s?\#:]+(:\d{1,5})?|http://localhost(:\d{1,5})?)(/[^\s?\#]*)?$#i', $url ) ) {
+    if ( ! preg_match( '#^(https://[a-z0-9.-]+(:\d{1,5})?|http://localhost(:\d{1,5})?)(/[^\s?\#]*)?$#i', $url ) ) {
         return '';
     }
-    return rtrim( $url, '/' ) . '/';
+    $p = parse_url( $url );
+    if ( ! is_array( $p ) || empty( $p['scheme'] ) || empty( $p['host'] ) ) {
+        return '';
+    }
+    $out = strtolower( $p['scheme'] ) . '://' . strtolower( $p['host'] );
+    if ( isset( $p['port'] ) ) {
+        $out .= ':' . (int) $p['port'];
+    }
+    $out .= $p['path'] ?? '';
+    return rtrim( $out, '/' ) . '/';
 }
 
 function gsh_tp_curriculr_normalize_apps( $apps, $config ) {
