@@ -115,4 +115,46 @@ gsh_assert_eq( gsh_tp_curriculr_cors_origin( 'https://klausurplan.schule.de.evil
 gsh_assert_eq( gsh_tp_curriculr_cors_origin( '', $default, $apps ), $default, 'keine Origin → Standard' );
 gsh_assert_eq( gsh_tp_curriculr_cors_origin( null, $default, $apps ), $default, 'null → Standard' );
 
+/* ---------- resolve_app_key ---------- */
+$GLOBALS['app_filter'] = $with_klausurplan;
+$apps = gsh_tp_curriculr_apps();
+gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( '', $apps ), 'terminplan', 'ohne app → terminplan' );
+gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( null, $apps ), 'terminplan', 'null → terminplan' );
+gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( 'klausurplan', $apps ), 'klausurplan', 'bekannte App' );
+gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( 'gibtsnicht', $apps ), null, 'unbekannte App → null' );
+gsh_assert_eq( gsh_tp_curriculr_resolve_app_key( array( 'x' ), $apps ), null, 'Array → null' );
+
+/* ---------- app_for_state ---------- */
+gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n' ), $apps ), 'terminplan', 'alter Transient ohne app → terminplan' );
+gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n', 'app' => 'klausurplan' ), $apps ), 'klausurplan', 'app aus Transient' );
+gsh_assert_eq( gsh_tp_curriculr_app_for_state( array( 'nonce' => 'n', 'app' => 'weg' ), $apps ), 'terminplan', 'inzwischen entfernte App → terminplan' );
+
+/* ---------- claims_for_app ---------- */
+$iss = 'https://wp.test/wp-json/curriculr/v1';
+$c = gsh_tp_curriculr_claims_for_app( 'sub-1', 'Frau Muster', array( 'Oberstufenleitung', 'Lehrer', 'Schulleitung' ), $apps['klausurplan'], 1000, 1800, $iss );
+gsh_assert_eq( $c['aud'], $KP_URL, 'Token-aud = App-URL' );
+gsh_assert_eq( $c['groups'], array( 'Oberstufenleitung', 'Schulleitung' ), 'nur Gruppen dieser App im Token' );
+gsh_assert_eq( $c['exp'], 2800, 'exp = now + ttl' );
+gsh_assert_eq( gsh_tp_curriculr_claims_for_app( 'sub-2', 'Herr X', array( 'Lehrer' ), $apps['klausurplan'], 1000, 1800, $iss ), null, 'ohne App-Gruppe → null (forbidden)' );
+$t = gsh_tp_curriculr_claims_for_app( 'sub-1', 'Frau Muster', array( 'Oberstufenleitung', 'Schulleitung' ), $apps['terminplan'], 1000, 1800, $iss );
+gsh_assert_eq( $t['groups'], array( 'Schulleitung' ), 'Terminplan-Token enthält keine Klausurplan-Gruppen' );
+gsh_assert_eq( $t['aud'], 'https://juwagn.github.io/curriculr-planner/', 'Terminplan-aud unverändert' );
+
+/* ---------- /auth/login mit unbekannter App ---------- */
+class Gsh_Fake_Login_Req implements ArrayAccess {
+    private $p;
+    public function __construct( $p ) { $this->p = $p; }
+    public function offsetExists( $k ): bool { return isset( $this->p[ $k ] ); }
+    public function offsetGet( $k ): mixed { return $this->p[ $k ] ?? null; }
+    public function offsetSet( $k, $v ): void {}
+    public function offsetUnset( $k ): void {}
+}
+$GLOBALS['transients'] = array();
+$GLOBALS['redirects']  = array();
+$res = gsh_tp_curriculr_rest_auth_login( new Gsh_Fake_Login_Req( array( 'app' => 'gibtsnicht' ) ) );
+gsh_assert_eq( $res->status, 400, 'unbekannte App → 400' );
+gsh_assert_eq( $res->data, array( 'error' => 'unknown_app' ), 'Fehlercode unknown_app' );
+gsh_assert_eq( $GLOBALS['redirects'], array(), 'kein Redirect bei unbekannter App' );
+gsh_assert_eq( $GLOBALS['transients'], array(), 'kein State-Transient bei unbekannter App' );
+
 gsh_test_done();

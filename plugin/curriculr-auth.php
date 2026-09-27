@@ -150,6 +150,36 @@ function gsh_tp_curriculr_cors_origin( $request_origin, $default_origin, $apps )
     return $default_origin;
 }
 
+/* ---------- Pure: App-Wahl beim Login, Claims je App ---------- */
+
+function gsh_tp_curriculr_resolve_app_key( $requested, $apps ) {
+    if ( $requested === null || $requested === '' ) {
+        return 'terminplan';
+    }
+    if ( ! is_string( $requested ) ) {
+        return null;
+    }
+    return isset( $apps[ $requested ] ) ? $requested : null;
+}
+
+// Login-Transients von vor 4.42.0 haben kein 'app' → terminplan.
+function gsh_tp_curriculr_app_for_state( $saved, $apps ) {
+    $key = ( is_array( $saved ) && isset( $saved['app'] ) && is_string( $saved['app'] ) ) ? $saved['app'] : 'terminplan';
+    return isset( $apps[ $key ] ) ? $key : 'terminplan';
+}
+
+// null = Nutzer gehört keiner Gruppe dieser App an (forbidden).
+function gsh_tp_curriculr_claims_for_app( $sub, $name, $user_groups, $app, $now, $ttl, $iss ) {
+    if ( ! gsh_tp_curriculr_group_check( $user_groups, $app['groups'] ) ) {
+        return null;
+    }
+    $allowed = array_flip( $app['groups'] );
+    $groups  = array_values( array_unique( array_filter( (array) $user_groups, function ( $g ) use ( $allowed ) {
+        return is_string( $g ) && isset( $allowed[ $g ] );
+    } ) ) );
+    return gsh_tp_curriculr_make_app_token_claims( $sub, $name, $groups, $now, $ttl, $iss, $app['url'] );
+}
+
 /* ---------- Pure: base64url + HS256 JWT (eigenes App-Token) ---------- */
 
 function gsh_tp_curriculr_b64url_encode( $data ) {
@@ -371,9 +401,13 @@ function gsh_tp_curriculr_spa_redirect_url( $spa_url, $fragment ) {
     return rtrim( $spa_url, '/' ) . '/' . $fragment;
 }
 
-function gsh_tp_curriculr_auth_fail( $config, $reason ) {
-    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $config['spa_url'], '#auth_error=' . rawurlencode( $reason ) ) );
+function gsh_tp_curriculr_auth_fail_to( $url, $reason ) {
+    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $url, '#auth_error=' . rawurlencode( $reason ) ) );
     exit;
+}
+
+function gsh_tp_curriculr_auth_fail( $config, $reason ) {
+    gsh_tp_curriculr_auth_fail_to( $config['spa_url'], $reason );
 }
 
 /* ---------- WP: /auth/login — 302 → IServ ---------- */
@@ -383,10 +417,14 @@ function gsh_tp_curriculr_rest_auth_login( $req ) {
     if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
         return new WP_REST_Response( array( 'error' => 'sso_not_configured' ), 503 );
     }
+    $app_key = gsh_tp_curriculr_resolve_app_key( isset( $req['app'] ) ? $req['app'] : '', gsh_tp_curriculr_apps() );
+    if ( $app_key === null ) {
+        return new WP_REST_Response( array( 'error' => 'unknown_app' ), 400 );
+    }
     $state = wp_generate_password( 40, false, false );
     $nonce = wp_generate_password( 40, false, false );
-    // state→nonce, 10 Min gültig, Single-Use (im Callback gelöscht).
-    set_transient( 'gsh_tp_cur_oauth_' . $state, array( 'nonce' => $nonce ), 600 );
+    // state→{nonce, app}, 10 Min gültig, Single-Use (im Callback gelöscht).
+    set_transient( 'gsh_tp_cur_oauth_' . $state, array( 'nonce' => $nonce, 'app' => $app_key ), 600 );
     wp_redirect( gsh_tp_curriculr_build_authorize_url( $config, $state, $nonce ) );
     exit;
 }
@@ -407,38 +445,34 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
     }
     delete_transient( $key ); // Single-Use gegen Replay.
 
+    // App aus dem Login-Schritt; Rücksprung-Adressen kommen nur aus der Registry.
+    $apps    = gsh_tp_curriculr_apps();
+    $app_key = gsh_tp_curriculr_app_for_state( $saved, $apps );
+    $app     = $apps[ $app_key ];
+
     $tokens = gsh_tp_curriculr_oidc_exchange_code( $config, $code );
     if ( is_wp_error( $tokens ) || empty( $tokens['access_token'] ) ) {
-        gsh_tp_curriculr_auth_fail( $config, 'token' );
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'token' );
     }
 
     // Nonce-Bindung: id_token.nonce muss zur gespeicherten Nonce passen.
     // Pflicht – kein id_token → Fehler (verhindert Bypass ohne PKCE).
     if ( empty( $tokens['id_token'] ) ) {
-        gsh_tp_curriculr_auth_fail( $config, 'nonce' );
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'nonce' );
     }
     $idp = gsh_tp_curriculr_jwt_payload( $tokens['id_token'] );
     if ( ! $idp || ! isset( $idp['nonce'] ) || ! hash_equals( (string) $saved['nonce'], (string) $idp['nonce'] ) ) {
-        gsh_tp_curriculr_auth_fail( $config, 'nonce' );
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'nonce' );
     }
 
     $info = gsh_tp_curriculr_oidc_userinfo( $config, $tokens['access_token'] );
     if ( is_wp_error( $info ) || empty( $info['sub'] ) ) {
-        gsh_tp_curriculr_auth_fail( $config, 'userinfo' );
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'userinfo' );
     }
 
     $raw_groups = isset( $info['iserv:groups'] ) ? $info['iserv:groups']
                 : ( isset( $idp['iserv:groups'] ) ? $idp['iserv:groups'] : array() );
     $groups = gsh_tp_curriculr_extract_groups( $raw_groups );
-    if ( ! gsh_tp_curriculr_group_check( $groups, $config['allowed_groups'] ) ) {
-        gsh_tp_curriculr_auth_fail( $config, 'forbidden' );
-    }
-
-    // Only embed the allowed groups in the token (not every IServ group).
-    $allowed_set = array_flip( $config['allowed_groups'] );
-    $groups      = array_values( array_filter( $groups, function ( $g ) use ( $allowed_set ) {
-        return isset( $allowed_set[ $g ] );
-    } ) );
 
     $name = '';
     foreach ( array( 'name', 'preferred_username', 'nickname' ) as $k ) {
@@ -451,22 +485,26 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
         $name = (string) $info['sub'];
     }
 
-    $claims    = gsh_tp_curriculr_make_app_token_claims(
+    // Nur die Gruppen DIESER App ins Token (nicht jede IServ-Gruppe); aud = App-URL.
+    $claims = gsh_tp_curriculr_claims_for_app(
         $info['sub'],
         $name,
         $groups,
+        $app,
         time(),
         $config['token_ttl'],
-        rest_url( 'curriculr/v1' ),
-        $config['spa_url']
+        rest_url( 'curriculr/v1' )
     );
+    if ( $claims === null ) {
+        gsh_tp_curriculr_auth_fail_to( $app['url'], 'forbidden' );
+    }
     $app_token = gsh_tp_curriculr_jwt_sign( $claims, $config['app_token_key'] );
 
     // Einmal-Handoff: 60 s, Single-Use. Nur DIESES Geheimnis steht im Fragment,
     // nie das App-Token (kein Referer/History-Leak).
     $handoff = wp_generate_password( 48, false, false );
     set_transient( 'gsh_tp_cur_handoff_' . $handoff, $app_token, 60 );
-    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $config['spa_url'], '#auth=' . rawurlencode( $handoff ) ) );
+    wp_redirect( gsh_tp_curriculr_spa_redirect_url( $app['url'], '#auth=' . rawurlencode( $handoff ) ) );
     exit;
 }
 
