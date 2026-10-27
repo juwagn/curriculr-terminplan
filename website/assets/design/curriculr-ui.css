@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Curricu:lr – Basis-Bausteine für PHP- und Vanilla-Projekte
+   React-Projekte nutzen shadcn/ui mit denselben Tokens und Varianten.
+   Voraussetzung: curriculr-tokens.css ist vorher eingebunden.
+   ========================================================================== */
+
+.cl-root {
+  font: var(--cl-text-body);
+  color: var(--cl-ink-900);
+  background: var(--cl-bg);
+  -webkit-font-smoothing: antialiased;
+}
+.cl-root :focus-visible { outline: none; box-shadow: var(--cl-focus-ring); }
+
+/* ---- Button: primär · sekundär · leise · gefährlich ------------------- */
+.cl-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--cl-space-2);
+  min-height: var(--cl-hit-min); padding: 0 var(--cl-space-4);
+  font: var(--cl-text-label); border-radius: var(--cl-radius-md);
+  border: 1px solid var(--cl-marine-800); background: var(--cl-marine-800); color: var(--cl-on-primary);
+  cursor: pointer; transition: background var(--cl-duration) var(--cl-ease);
+}
+.cl-button:hover { background: var(--cl-marine-700); border-color: var(--cl-marine-700); }
+.cl-button--secondary { background: var(--cl-surface); color: var(--cl-marine-800); }
+.cl-button--secondary:hover { background: var(--cl-marine-100); }
+.cl-button--quiet { background: transparent; border-color: transparent; color: var(--cl-marine-800); }
+.cl-button--quiet:hover { background: var(--cl-marine-100); }
+.cl-button--danger { background: var(--cl-danger); border-color: var(--cl-danger); color: #FFFFFF; }
+.cl-button[disabled] { opacity: 0.5; cursor: not-allowed; }
+@media (pointer: coarse) { .cl-button { min-height: var(--cl-hit-touch); } }
+
+/* ---- Eingabefeld ------------------------------------------------------ */
+.cl-field { display: grid; gap: var(--cl-space-1); }
+.cl-field label { font: var(--cl-text-label); }
+.cl-input, .cl-select, .cl-textarea {
+  min-height: var(--cl-hit-min); padding: 0 var(--cl-space-3);
+  font: var(--cl-text-compact); color: var(--cl-ink-900);
+  background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: var(--cl-radius-sm);
+}
+.cl-textarea { padding: var(--cl-space-2) var(--cl-space-3); }
+.cl-field__hint { font: var(--cl-text-small); color: var(--cl-ink-500); }
+.cl-field__error { font: var(--cl-text-small); color: var(--cl-danger); }
+.cl-input[aria-invalid="true"] { border-color: var(--cl-danger); }
+
+/* ---- Karte ------------------------------------------------------------ */
+.cl-card { background: var(--cl-surface); border: 1px solid var(--cl-line); border-radius: var(--cl-radius-md); padding: var(--cl-space-4); }
+.cl-card--highlight { border-color: var(--cl-marine-500); }
+
+/* ---- Chip / Badge: immer Farbe + Text --------------------------------- */
+.cl-chip {
+  display: inline-flex; align-items: center; gap: var(--cl-space-1);
+  padding: 2px var(--cl-space-2); border-radius: var(--cl-radius-pill);
+  font: var(--cl-text-small); font-weight: 500;
+  background: var(--cl-marine-100); color: var(--cl-ink-900);
+}
+.cl-chip__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cl-chip-color, var(--cl-marine-800)); }
+
+/* ---- Reiter: Unterstrich statt Pille ---------------------------------- */
+.cl-tabs { display: flex; gap: var(--cl-space-4); border-bottom: 1px solid var(--cl-line); }
+.cl-tab { padding: var(--cl-space-2) 0; font: var(--cl-text-label); color: var(--cl-ink-500); border-bottom: 2px solid transparent; background: none; border-top: 0; border-left: 0; border-right: 0; cursor: pointer; }
+.cl-tab[aria-selected="true"] { color: var(--cl-marine-800); border-bottom-color: var(--cl-marine-800); }
+
+/* ---- Dialog ----------------------------------------------------------- */
+.cl-dialog { border: 0; border-radius: var(--cl-radius-lg); padding: var(--cl-space-6); background: var(--cl-surface); color: var(--cl-ink-900); box-shadow: var(--cl-shadow-float); max-width: min(560px, calc(100vw - 32px)); }
+.cl-dialog::backdrop { background: rgb(0 31 53 / 0.4); }
+.cl-dialog__title { font: var(--cl-text-heading); margin: 0 0 var(--cl-space-3); }
+.cl-dialog__actions { display: flex; justify-content: flex-end; gap: var(--cl-space-2); margin-top: var(--cl-space-6); }
+
+/* ---- Hinweis (Toast) -------------------------------------------------- */
+.cl-toast { display: flex; gap: var(--cl-space-2); padding: var(--cl-space-3) var(--cl-space-4); border-radius: var(--cl-radius-md); font: var(--cl-text-compact); border: 1px solid var(--cl-line); background: var(--cl-surface); }
+.cl-toast--success { background: var(--cl-success-bg); border-color: var(--cl-success); }
+.cl-toast--warning { background: var(--cl-warning-bg); border-color: var(--cl-warning); }
+.cl-toast--danger  { background: var(--cl-danger-bg);  border-color: var(--cl-danger); }
+
+/* ---- Kopf- und Fußzeile ----------------------------------------------- */
+.cl-header { display: flex; align-items: center; gap: var(--cl-space-3); padding: var(--cl-space-3) var(--cl-space-4); background: var(--cl-surface); border-bottom: 1px solid var(--cl-line); }
+.cl-header__product { font: var(--cl-text-heading); }
+.cl-header__actions { margin-left: auto; display: flex; gap: var(--cl-space-2); align-items: center; }
+.cl-footer { font: var(--cl-text-small); color: var(--cl-ink-500); padding: var(--cl-space-4); text-align: center; }
+
+/* ---- Leerer Zustand --------------------------------------------------- */
+.cl-empty { text-align: center; padding: var(--cl-space-12) var(--cl-space-4); color: var(--cl-ink-500); }
+
+@media (forced-colors: active) {
+  .cl-button, .cl-chip, .cl-tab[aria-selected="true"] { forced-color-adjust: auto; }
+}

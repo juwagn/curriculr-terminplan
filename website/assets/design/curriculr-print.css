@@ -1,0 +1,71 @@
+/* ==========================================================================
+   Curricu:lr – Druck-Stylesheet (Familie)
+   Einbinden NACH dem Produkt-CSS: <link rel="stylesheet" href="curriculr-print.css" media="print">
+   Getestet für Chrome, Edge, Firefox und Safari.
+   Klassen im Produkt:
+     .cl-no-print     → wird nicht gedruckt (Navigation, Buttons, Filter)
+     .cl-print-only   → nur im Druck sichtbar (Druckkopf, Stand-Zeile)
+     .cl-keep         → wird nicht über Seitengrenzen geteilt (Karte, Zeile, Block)
+     .cl-page-break   → neue Seite davor
+     .cl-landscape    → am <body>: Querformat für breite Tabellen
+   ========================================================================== */
+
+@media screen {
+  .cl-print-only { display: none !important; }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 15mm 12mm 18mm; }
+  @page landscape { size: A4 landscape; }
+  body.cl-landscape { page: landscape; }
+
+  :root {
+    color-scheme: light;
+    /* Im Druck immer helle Werte, auch wenn der Bildschirm dunkel ist */
+    --cl-ink-900: #111827; --cl-ink-500: #4B5563;
+    --cl-bg: #FFFFFF; --cl-surface: #FFFFFF; --cl-line: #CBD5E1;
+    --cl-marine-800: #00345C; --cl-marine-100: #E6F4FF;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+    color: var(--cl-ink-900);
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  /* Bedeutungstragende Farben (Kategorien, Ferien-Schraffur) mitdrucken */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .cl-no-print, nav, button, [role="toolbar"], .cl-toast, dialog:not([open]) { display: none !important; }
+  .cl-print-only { display: block !important; }
+
+  /* Nichts zerschneiden – zweite Schreibweise für Safari */
+  .cl-keep, tr, figure, img, .cl-card, li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .cl-page-break { break-before: page; page-break-before: always; }
+  p { orphans: 3; widows: 3; }
+
+  /* Tabellen: Kopf auf jeder Seite wiederholen */
+  table { border-collapse: collapse; width: 100%; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  th, td { border: 0.5pt solid var(--cl-line); padding: 3pt 4pt; }
+
+  /* Keine Schatten, keine Scroll-Container im Druck */
+  * { box-shadow: none !important; }
+  .cl-scroll, [data-scroll] { overflow: visible !important; max-height: none !important; }
+
+  /* Links im Fließtext: Adresse anzeigen */
+  .cl-doc a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: var(--cl-ink-500); }
+
+  /* Druckkopf und Stand-Zeile (Markup im Produkt, siehe README) */
+  .cl-print-header { display: flex; justify-content: space-between; border-bottom: 1pt solid var(--cl-marine-800); margin-bottom: 8pt; padding-bottom: 4pt; }
+  .cl-print-footer { font-size: 8.5pt; color: var(--cl-ink-500); margin-top: 8pt; }
+}
