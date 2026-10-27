@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.42.0
+ * Version:     4.42.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.42.1
+ * - [DESIGN] Oberfläche an das Curricu:lr-Design-Paket angeglichen: Farben, Radien und Schrift kommen aus den Familien-Tokens (--cl-*, neue Datei assets/css/curriculr-tokens.css); keine Ruhe-Schatten, keine Verläufe, keine Großbuchstaben-Sperrung, Statusfarben mit besserem Kontrast (Erfolg #047857)
+ * - [DESIGN] Logo-Dateien nach Paketnamen: curriculr-logo-auf-hell.svg und curriculr-logo-auf-dunkel.svg (bisher vertauscht benannt: curriculr-logo-dark.svg und curriculr-logo.svg); Symbole mit Strichstärke 1,75
+ * - [UX] Keine Emojis mehr in der Oberfläche (Feedback-Formular, Feedback-Log, Statusmeldungen); Anrede einheitlich „Sie“ bzw. ohne Anrede; „Waehle“ im PDF-Hinweis korrigiert
+ * - [INFRA] Plugin-Modus hell/dunkel gilt vor der Systemeinstellung (Pins in design-tokens.css); Einstellungsseite lädt die Tokens und bleibt auch bei dunklem System hell; Startseiten-Register-Farben heißen --cl-product-up-*
  * v4.42.0
  * - [NEU] Login für mehrere Apps: weitere Curricu:lr-Apps (z. B. der Klausurplaner) melden sich über dieselbe IServ-Anmeldung an – mit eigener Adresse und eigenen IServ-Gruppen; der Terminplaner verhält sich unverändert
  * - [SECURITY] Anmelde-Tokens gelten nur für die App, für die sie ausgestellt wurden; zusätzliche Apps werden für Anfragen aus dem Browser (CORS) nur mit registrierter Adresse berücksichtigt
@@ -659,7 +664,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.42.0' );
+define( 'GSH_TP_VERSION',       '4.42.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -881,7 +886,7 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 
     return '<svg class="' . $cls . '" xmlns="http://www.w3.org/2000/svg"'
         . ' width="' . $sz . '" height="' . $sz . '" viewBox="0 0 24 24"'
-        . ' fill="none" stroke="currentColor" stroke-width="2"'
+        . ' fill="none" stroke="currentColor" stroke-width="1.75"'
         . ' stroke-linecap="round" stroke-linejoin="round"'
         . ' aria-hidden="true" focusable="false">'
         . $paths[ $name ]
@@ -903,6 +908,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.42.1',
+            'entries' => array(
+                array( 'tag' => 'DESIGN', 'text' => 'Oberfläche an das Curricu:lr-Design-Paket angeglichen: Farben, Radien und Schrift kommen aus den Familien-Tokens (--cl-*, neue Datei assets/css/curriculr-tokens.css); keine Ruhe-Schatten, keine Verläufe, keine Großbuchstaben-Sperrung, Statusfarben mit besserem Kontrast (Erfolg #047857)' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Logo-Dateien nach Paketnamen: curriculr-logo-auf-hell.svg und curriculr-logo-auf-dunkel.svg (bisher vertauscht benannt: curriculr-logo-dark.svg und curriculr-logo.svg); Symbole mit Strichstärke 1,75' ),
+                array( 'tag' => 'UX', 'text' => 'Keine Emojis mehr in der Oberfläche (Feedback-Formular, Feedback-Log, Statusmeldungen); Anrede einheitlich „Sie“ bzw. ohne Anrede; „Waehle“ im PDF-Hinweis korrigiert' ),
+                array( 'tag' => 'INFRA', 'text' => 'Plugin-Modus hell/dunkel gilt vor der Systemeinstellung (Pins in design-tokens.css); Einstellungsseite lädt die Tokens und bleibt auch bei dunklem System hell; Startseiten-Register-Farben heißen --cl-product-up-*' ),
+            ),
+        ),
         array(
             'version' => '4.42.0',
             'entries' => array(
@@ -2491,7 +2505,7 @@ function gsh_tp_ajax_feedback() {
     $rl_key  = 'gsh_tp_rl_' . substr( $ip_hash, 0, 20 );
     $rl      = (int) get_transient( $rl_key );
     if ( $rl >= 3 ) {
-        wp_send_json_error( array( 'message' => 'Bitte warte einige Minuten bevor du erneut Feedback sendest.' ) );
+        wp_send_json_error( array( 'message' => 'Bitte einige Minuten warten, bevor erneut Feedback gesendet wird.' ) );
     }
 
     // Eingaben bereinigen
@@ -2501,10 +2515,10 @@ function gsh_tp_ajax_feedback() {
 
     // Erlaubte Typen
     $allowed_types = array(
-        'bug'    => '🐛 Fehler melden',
-        'wish'   => '💡 Funktionswunsch',
-        'praise' => '👍 Lob',
-        'other'  => '💬 Sonstiges',
+        'bug'    => 'Fehler melden',
+        'wish'   => 'Funktionswunsch',
+        'praise' => 'Lob',
+        'other'  => 'Sonstiges',
     );
 
     // Validierung
@@ -2566,7 +2580,7 @@ function gsh_tp_ajax_feedback() {
         // Fehlerzähler für SMTP-Diagnose-Warnung
         $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 ) + 1;
         update_option( 'gsh_tp_mail_fail_count', $fail_count );
-        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Dein Feedback wurde aber gespeichert und kann im Admin eingesehen werden.' ) );
+        wp_send_json_error( array( 'message' => 'E-Mail konnte nicht gesendet werden. Das Feedback wurde aber gespeichert und kann im Admin eingesehen werden.' ) );
     }
 }
 
@@ -2730,16 +2744,16 @@ function gsh_tp_render_feedback_log_tab() {
     $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
 
     $type_labels = array(
-        'bug'    => '🐛 Fehler',
-        'wish'   => '💡 Wunsch',
-        'praise' => '👍 Lob',
-        'other'  => '💬 Sonstiges',
+        'bug'    => 'Fehler',
+        'wish'   => 'Wunsch',
+        'praise' => 'Lob',
+        'other'  => 'Sonstiges',
     );
 
     if ( $fail_count >= 3 ) : ?>
     <div class="notice notice-warning inline" style="margin-bottom:16px">
-        <p><strong>⚠ Hinweis:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
-        Bitte prüfe die WordPress-E-Mail-Konfiguration oder installiere ein SMTP-Plugin wie
+        <p><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> Hinweis:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+        Bitte die WordPress-E-Mail-Konfiguration prüfen oder ein SMTP-Plugin installieren, zum Beispiel
         <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP</a>.</p>
     </div>
     <?php endif;
@@ -2767,9 +2781,9 @@ function gsh_tp_render_feedback_log_tab() {
                     <td style="white-space:pre-wrap"><?php echo esc_html( $entry['message'] ?? '' ); ?></td>
                     <td>
                         <?php if ( ( $entry['status'] ?? '' ) === 'sent' ) : ?>
-                            <span style="color:#166534;font-weight:700">✓ gesendet</span>
+                            <span style="color:var(--cl-success);font-weight:700"><?php echo gsh_tp_icon( 'check' ); ?> Gesendet</span>
                         <?php else : ?>
-                            <span style="color:#991b1b;font-weight:700">✗ Fehler</span>
+                            <span style="color:var(--cl-danger);font-weight:700"><?php echo gsh_tp_icon( 'x' ); ?> Fehler</span>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -2787,22 +2801,37 @@ function gsh_tp_render_feedback_log_tab() {
 
 
 /**
- * Bindet das externe Frontend-Stylesheet des Plugins ein.
+ * Bindet die Design-Tokens des Plugins ein: curriculr-tokens.css (Familien-Tokens
+ * --cl-*, Kopie aus curriculr-design) und design-tokens.css (Kompatibilitätsschicht
+ * für die älteren Plugin-Namen). Das Frontend-Stylesheet gsh-terminplan.css lädt
+ * auf allen öffentlichen Seiten; GSH_TP_VERSION sorgt für Cache-Busting.
  *
- * Lädt assets/css/gsh-terminplan.css auf allen öffentlichen Seiten.
- * Die Versionsnummer GSH_TP_VERSION sorgt für automatisches Cache-Busting
- * bei jedem Plugin-Update.
+ * @since 4.42.1
+ * @return void
+ */
+function gsh_tp_enqueue_tokens() {
+    wp_enqueue_style(
+        'gsh-curriculr-tokens',
+        plugin_dir_url( __FILE__ ) . 'assets/css/curriculr-tokens.css',
+        array(),
+        GSH_TP_VERSION
+    );
+    wp_enqueue_style(
+        'gsh-terminplan-tokens',
+        plugin_dir_url( __FILE__ ) . 'assets/css/design-tokens.css',
+        array( 'gsh-curriculr-tokens' ),
+        GSH_TP_VERSION
+    );
+}
+
+/**
+ * Bindet Tokens und Frontend-Stylesheet ein (siehe gsh_tp_enqueue_tokens()).
  *
  * @since 3.7.0
  * @return void
  */
 function gsh_tp_enqueue_frontend_styles() {
-    wp_enqueue_style(
-        'gsh-terminplan-tokens',
-        plugin_dir_url( __FILE__ ) . 'assets/css/design-tokens.css',
-        array(),
-        GSH_TP_VERSION
-    );
+    gsh_tp_enqueue_tokens();
     wp_enqueue_style(
         'gsh-terminplan',
         plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
@@ -2823,12 +2852,17 @@ add_action( 'wp_enqueue_scripts', 'gsh_tp_enqueue_frontend_styles' );
 function gsh_tp_enqueue_admin_delete_warn( $hook ) {
     // Enqueue backup-page CSS on both plugins.php and the backup page itself.
     if ( in_array( $hook, array( 'plugins.php', 'settings_page_gsh-terminplan-backup' ), true ) ) {
+        gsh_tp_enqueue_tokens();
         wp_enqueue_style(
             'gsh-terminplan',
             plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
-            array(),
+            array( 'gsh-terminplan-tokens' ),
             GSH_TP_VERSION
         );
+    }
+    // Einstellungsseite: Tokens für die Farben der Oberfläche (var(--cl-*) in den Inline-Stilen).
+    if ( 'settings_page_' . GSH_TP_SLUG === $hook ) {
+        gsh_tp_enqueue_tokens();
     }
     if ( 'plugins.php' !== $hook ) {
         return;
@@ -3727,7 +3761,7 @@ function gsh_tp_handle_save_extern_feed() {
     $check = gsh_tp_validate_ical_url( $raw_url );
     if ( ! $check['valid'] ) {
         echo '<div class="notice notice-error"><p>Die Adresse wurde nicht &uuml;bernommen: <strong>'
-           . esc_html( $check['error'] ) . '</strong>. In IServ findest du sie unter '
+           . esc_html( $check['error'] ) . '</strong>. In IServ finden Sie sie unter '
            . 'Kalender &rarr; Verwaltung &rarr; Freigabe als Link, der mit <code>https://</code> beginnt.</p></div>';
         return;
     }
@@ -4256,41 +4290,40 @@ function gsh_tp_settings_page() {
              role="dialog" aria-modal="true" aria-label="Vollständiger Changelog"
              style="display:none;position:fixed;inset:0;z-index:100000;
                     background:rgba(0,0,0,.55);overflow-y:auto">
-            <div style="background:#fff;max-width:680px;margin:60px auto;border-radius:8px;
+            <div style="background:var(--cl-surface);max-width:680px;margin:60px auto;border-radius:8px;
                         padding:28px 32px;position:relative;max-height:80vh;overflow-y:auto">
                 <button type="button"
                         onclick="gshAdminChangelogClose()"
                         aria-label="Schließen"
                         style="position:absolute;top:14px;right:16px;border:none;background:none;
                                font-size:22px;cursor:pointer;color:#666;line-height:1">&times;</button>
-                <h2 style="margin-top:0">&#128221; Vollständiger Changelog</h2>
+                <h2 style="margin-top:0">Vollständiger Changelog</h2>
                 <?php
                 $cl_tag_colors = array(
-                    'FEATURE'  => '#16a34a',
-                    'UX'       => '#00467D',
-                    'BUGFIX'   => '#dc2626',
-                    'SECURITY' => '#d97706',
-                    'SEC'      => '#d97706',
-                    'DESIGN'   => '#7C3AED',
-                    'INFRA'    => '#6b7280',
+                    'FEATURE'  => 'var(--cl-success)',
+                    'UX'       => 'var(--cl-marine-700)',
+                    'BUGFIX'   => 'var(--cl-danger)',
+                    'SECURITY' => 'var(--cl-warning)',
+                    'SEC'      => 'var(--cl-warning)',
+                    'DESIGN'   => 'var(--cl-marine-500)',
+                    'INFRA'    => 'var(--cl-ink-500)',
                 );
                 foreach ( gsh_tp_changelog() as $block ) :
                     $version_clean = esc_html( $block['version'] );
                 ?>
                 <div style="margin-bottom:1.5rem">
-                    <strong style="font-size:15px;color:#1d2327">Version <?php echo $version_clean; ?></strong>
+                    <strong style="font-size:15px;color:var(--cl-ink-900)">Version <?php echo $version_clean; ?></strong>
                     <ul style="margin:.4rem 0 0 1rem;padding:0">
                     <?php foreach ( $block['entries'] as $entry ) :
                         $tag   = esc_html( $entry['tag'] );
-                        $color = $cl_tag_colors[ $entry['tag'] ] ?? '#6b7280';
+                        $color = $cl_tag_colors[ $entry['tag'] ] ?? 'var(--cl-ink-500)';
                     ?>
-                        <li style="margin:.3rem 0;font-size:13px;color:#3c434a">
+                        <li style="margin:.3rem 0;font-size:13px;color:var(--cl-ink-900)">
                             <span style="display:inline-block;font-size:10px;font-weight:700;
-                                         text-transform:uppercase;letter-spacing:.04em;
                                          padding:1px 6px;border-radius:3px;margin-right:6px;
-                                         background:<?php echo esc_attr( $color ); ?>22;
+                                         background:color-mix(in srgb, <?php echo esc_attr( $color ); ?> 14%, transparent);
                                          color:<?php echo esc_attr( $color ); ?>;
-                                         border:1px solid <?php echo esc_attr( $color ); ?>44">
+                                         border:1px solid color-mix(in srgb, <?php echo esc_attr( $color ); ?> 30%, transparent)">
                                 <?php echo $tag; ?>
                             </span>
                             <?php echo esc_html( $entry['text'] ); ?>
@@ -4590,7 +4623,7 @@ function gsh_tp_enqueue_admin_help( $hook ) {
     if ( 'settings_page_' . GSH_TP_SLUG !== $hook || '_hilfe' !== sanitize_key( $_GET['tab'] ?? '' ) ) { // phpcs:ignore WordPress.Security.NonceVerification -- read-only tab switch
         return;
     }
-    wp_enqueue_style( 'gsh-terminplan-tokens', plugin_dir_url( __FILE__ ) . 'assets/css/design-tokens.css', array(), GSH_TP_VERSION );
+    gsh_tp_enqueue_tokens();
     wp_enqueue_style( 'gsh-terminplan', plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css', array( 'gsh-terminplan-tokens' ), GSH_TP_VERSION );
     wp_enqueue_script( 'gsh-admin-help', plugin_dir_url( __FILE__ ) . 'assets/js/gsh-admin-help.js', array(), GSH_TP_VERSION, true );
 }
@@ -4625,7 +4658,7 @@ function gsh_tp_render_profile_chooser( $profiles, $sel_profile ) {
             <form method="post" style="margin:0;display:inline">
                 <?php wp_nonce_field( 'gsh_tp_new_profile', 'gsh_tp_np_n' ); ?>
                 <button type="submit" name="gsh_tp_new_profile" value="1" class="button"
-                        style="color:#27ae60;border-color:#27ae60"
+                        style="color:var(--cl-success);border-color:var(--cl-success)"
                         onclick="return confirm('Neues Schuljahr-Profil anlegen?')">
                     + Neues Schuljahr
                 </button>
@@ -4668,7 +4701,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
 
     // Entwurfs-Hinweis
     if ( ! empty( $profile['is_draft'] ) ) {
-        echo '<div style="background:#fef9c3;border:1px solid #eab308;padding:10px 16px;'
+        echo '<div style="background:var(--cl-warning-bg);border:1px solid var(--cl-warning);padding:10px 16px;'
            . 'margin-bottom:16px;border-radius:6px">'
            . '<strong>Entwurf</strong> &ndash; dieser Terminplan ist noch nicht beschlossen '
            . 'und nur f&uuml;r Admins sichtbar.</div>';
@@ -4702,10 +4735,10 @@ function gsh_tp_render_profile_tab( $profile_id ) {
                     if ( ! empty( $profile['ical_url'] ) ) {
                         $saved_check = gsh_tp_validate_ical_url( $profile['ical_url'] );
                         if ( $saved_check['valid'] ) {
-                            echo '<span style="display:block;margin-top:4px;color:#166534;font-size:13px">'
+                            echo '<span style="display:block;margin-top:4px;color:var(--cl-success);font-size:13px">'
                                . gsh_tp_icon( 'check' ) . ' Gespeicherte URL ist g&uuml;ltig</span>';
                         } else {
-                            echo '<span style="display:block;margin-top:4px;color:#991b1b;font-size:13px">'
+                            echo '<span style="display:block;margin-top:4px;color:var(--cl-danger);font-size:13px">'
                                . gsh_tp_icon( 'x' ) . ' Gespeicherte URL ungültig: <strong>'
                                . esc_html( $saved_check['error'] ) . '</strong></span>';
                         }
@@ -4717,33 +4750,33 @@ function gsh_tp_render_profile_tab( $profile_id ) {
                         var inp = document.getElementById('gsh_tp_url_<?php echo esc_js( $pid ); ?>');
                         var fb  = document.getElementById('gsh_tp_url_fb_<?php echo esc_js( $pid ); ?>');
                         if(!inp || !fb) return;
-                        var icoCheck  = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-                        var icoX      = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                        var icoLoader = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>';
+                        var icoCheck  = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+                        var icoX      = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                        var icoLoader = '<svg class="gtp-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>';
                         var timer = null;
                         inp.addEventListener('input', function(){
                             clearTimeout(timer);
                             var val = inp.value.trim();
                             if(!val){ fb.textContent = ''; return; }
-                            fb.innerHTML = '<span style="color:#888">' + icoLoader + ' Wird gepr\u00fcft\u2026</span>';
+                            fb.innerHTML = '<span style="color:var(--cl-ink-500)">' + icoLoader + ' Wird gepr\u00fcft\u2026</span>';
                             timer = setTimeout(function(){
                                 if(val.indexOf('https://') !== 0){
-                                    fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Nur HTTPS erlaubt</span>';
+                                    fb.innerHTML = '<span style="color:var(--cl-danger)">' + icoX + ' Nur HTTPS erlaubt</span>';
                                     return;
                                 }
                                 try{
                                     var u = new URL(val);
                                     if(u.protocol !== 'https:'){
-                                        fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Nur HTTPS erlaubt</span>';
+                                        fb.innerHTML = '<span style="color:var(--cl-danger)">' + icoX + ' Nur HTTPS erlaubt</span>';
                                         return;
                                     }
                                     if(!u.hostname || u.hostname.indexOf('.') === -1){
-                                        fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Ung\u00fcltige URL-Syntax (kein g\u00fcltiger Hostname)</span>';
+                                        fb.innerHTML = '<span style="color:var(--cl-danger)">' + icoX + ' Ung\u00fcltige URL-Syntax (kein g\u00fcltiger Hostname)</span>';
                                         return;
                                     }
-                                    fb.innerHTML = '<span style="color:#166534">' + icoCheck + ' URL-Syntax g\u00fcltig \u2013 wird beim Speichern server-seitig gepr\u00fcft</span>';
+                                    fb.innerHTML = '<span style="color:var(--cl-success)">' + icoCheck + ' URL-Syntax g\u00fcltig \u2013 wird beim Speichern server-seitig gepr\u00fcft</span>';
                                 }catch(e){
-                                    fb.innerHTML = '<span style="color:#991b1b">' + icoX + ' Ung\u00fcltige URL-Syntax</span>';
+                                    fb.innerHTML = '<span style="color:var(--cl-danger)">' + icoX + ' Ung\u00fcltige URL-Syntax</span>';
                                 }
                             }, 1000);
                         });
@@ -4793,7 +4826,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
                         <input type="radio"
                                name="gsh_tp_profile[<?php echo esc_attr( $profile_id ); ?>][is_draft]"
                                value="1" <?php checked( ! empty( $profile['is_draft'] ) ); ?> />
-                        Entwurf <span style="color:#888">(nur f&uuml;r Admins sichtbar)</span>
+                        Entwurf <span style="color:var(--cl-ink-500)">(nur f&uuml;r Admins sichtbar)</span>
                     </label>
                 </td>
             </tr>
@@ -4812,7 +4845,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         <?php wp_nonce_field( 'gsh_tp_activate_profile', 'gsh_tp_ap_n' ); ?>
         <input type="hidden" name="gsh_tp_profile_id" value="<?php echo esc_attr( $profile_id ); ?>" />
         <button type="submit" name="gsh_tp_activate_profile" value="1"
-                class="button" style="color:#1e8449;border-color:#1e8449">
+                class="button" style="color:var(--cl-success);border-color:var(--cl-success)">
             <?php echo gsh_tp_icon( 'play' ); ?> Als aktiv setzen
         </button>
     </form>
@@ -4825,7 +4858,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
         <?php wp_nonce_field( 'gsh_tp_delete_profile', 'gsh_tp_dp_n' ); ?>
         <input type="hidden" name="gsh_tp_profile_id" value="<?php echo esc_attr( $profile_id ); ?>" />
         <button type="submit" name="gsh_tp_delete_profile" value="1"
-                class="button" style="color:#c0392b;border-color:#c0392b"
+                class="button" style="color:var(--cl-danger);border-color:var(--cl-danger)"
                 onclick="return confirm('Wirklich l\u00f6schen? Alle Terminplan-Daten f\u00fcr dieses Schuljahr gehen verloren.')">
             <?php echo gsh_tp_icon( 'x' ); ?> Profil l&ouml;schen
         </button>
@@ -4841,7 +4874,7 @@ function gsh_tp_render_profile_tab( $profile_id ) {
                 <?php if ( $sync_disp ) : ?>
                     <strong><?php echo esc_html( $sync_disp ); ?> Uhr</strong>
                 <?php else : ?>
-                    <em style="color:#888">Noch nicht synchronisiert</em>
+                    <em style="color:var(--cl-ink-500)">Noch nicht synchronisiert</em>
                 <?php endif; ?>
             </td>
         </tr>
@@ -4850,11 +4883,11 @@ function gsh_tp_render_profile_tab( $profile_id ) {
             <td>
                 <?php
                 if ( $has_data && $is_fresh ) {
-                    echo '<span style="color:#1e8449">' . gsh_tp_icon( 'check' ) . ' Daten frisch &ndash; n&auml;chster Hintergrund-Refresh bei Ablauf des Freshness-Timers</span>';
+                    echo '<span style="color:var(--cl-success)">' . gsh_tp_icon( 'check' ) . ' Daten frisch &ndash; n&auml;chster Hintergrund-Refresh bei Ablauf des Freshness-Timers</span>';
                 } elseif ( $has_data ) {
-                    echo '<span style="color:#b7950b">' . gsh_tp_icon( 'clock' ) . ' Daten veraltet &ndash; Hintergrund-Refresh l&auml;uft beim n&auml;chsten Seitenaufruf</span>';
+                    echo '<span style="color:var(--cl-warning)">' . gsh_tp_icon( 'clock' ) . ' Daten veraltet &ndash; Hintergrund-Refresh l&auml;uft beim n&auml;chsten Seitenaufruf</span>';
                 } else {
-                    echo '<span style="color:#888">&#8212; Noch keine Daten &ndash; werden beim n&auml;chsten Seitenaufruf synchron geladen</span>';
+                    echo '<span style="color:var(--cl-ink-500)">&#8212; Noch keine Daten &ndash; werden beim n&auml;chsten Seitenaufruf synchron geladen</span>';
                 }
                 ?>
             </td>
@@ -4919,7 +4952,7 @@ function gsh_tp_render_kategorien_tab() {
     }
     ?>
     <?php if ( ! empty( $planner_docs ) ) : ?>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:4px;flex-wrap:wrap">
         <label for="gsh-cat-import-sj" style="font-weight:600">Aus Planner übernehmen:</label>
         <select id="gsh-cat-import-sj">
             <?php foreach ( $planner_docs as $d ) :
@@ -4932,7 +4965,7 @@ function gsh_tp_render_kategorien_tab() {
             <?php endforeach; ?>
         </select>
         <button type="button" class="button" id="gsh-cat-import-btn">Aus Planner übernehmen</button>
-        <span id="gsh-cat-import-status" style="font-size:12px;color:#646970"></span>
+        <span id="gsh-cat-import-status" style="font-size:12px;color:var(--cl-ink-500)"></span>
     </div>
     <?php else : ?>
     <p class="description" style="margin-bottom:14px">Keine Planner-Schuljahre synchronisiert – „Aus Planner übernehmen" ist noch nicht verfügbar.</p>
@@ -4983,7 +5016,7 @@ function gsh_tp_render_kategorien_tab() {
                         <?php echo esc_html( $cat['label'] ); ?>
                     </span>
                 </td>
-                <td style="font-size:11px;color:#64748b">
+                <td style="font-size:11px;color:var(--cl-ink-500)">
                     <?php echo esc_html( $cat['id'] ?? $cat['slug'] ?? '–' ); ?>
                 </td>
                 <td>
@@ -5095,8 +5128,8 @@ function gsh_tp_render_kategorien_tab() {
                 + '</details>'
                 + '</td>'
                 + '<td><input type="color" class="gsh-cat-color" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
-                + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:#f0f0f0;color:#333">' + ea(cat.label || 'Vorschau') + '</span></td>'
-                + '<td style="font-size:11px;color:#64748b">' + ea(cat.id || '(neu)') + '</td>'
+                + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:var(--cl-bg);color:var(--cl-ink-900)">' + ea(cat.label || 'Vorschau') + '</span></td>'
+                + '<td style="font-size:11px;color:var(--cl-ink-500)">' + ea(cat.id || '(neu)') + '</td>'
                 + '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
         }
 
@@ -5185,14 +5218,14 @@ function gsh_tp_render_kategorien_tab() {
                                 if (slugDisplay) slugDisplay.textContent = cat.slug || '';
                             });
                         }
-                        showStatus(true, '\u2713 Kategorien gespeichert.');
+                        showStatus(true, 'Kategorien gespeichert.');
                     } else {
                         var msg = result.data && result.data.message
                                   ? result.data.message : 'Fehler beim Speichern.';
-                        showStatus(false, '\u2717 ' + msg);
+                        showStatus(false, 'Fehler: ' + msg);
                     }
                 } catch (err) {
-                    showStatus(false, '\u2717 Netzwerkfehler: ' + err.message);
+                    showStatus(false, 'Netzwerkfehler: ' + err.message);
                 } finally {
                     saveBtn.disabled    = false;
                     saveBtn.textContent = origTxt;
@@ -5252,10 +5285,10 @@ function gsh_tp_render_kategorien_tab() {
                         importStatus.textContent = added + ' übernommen, ' + updated + ' aktualisiert – bitte prüfen und speichern.';
                     } else {
                         var msg = result.data && result.data.message ? result.data.message : 'Fehler beim Laden.';
-                        importStatus.textContent = '✗ ' + msg;
+                        importStatus.textContent = 'Fehler: ' + msg;
                     }
                 } catch (err) {
-                    importStatus.textContent = '✗ Netzwerkfehler: ' + err.message;
+                    importStatus.textContent = 'Netzwerkfehler: ' + err.message;
                 } finally {
                     importBtn.disabled    = false;
                     importBtn.textContent = origImportTxt;
@@ -5284,11 +5317,11 @@ function gsh_tp_render_profile_tab_v2() {
             <input type="text" name="gsh_tp_new_sy_label" placeholder="2027/28"
                    class="regular-text" style="width:110px" required />
             <button type="submit" name="gsh_tp_new_schoolyear" value="1"
-                    class="button" style="color:#27ae60;border-color:#27ae60">
+                    class="button" style="color:var(--cl-success);border-color:var(--cl-success)">
                 + Schuljahr anlegen
             </button>
             <details style="display:inline-block">
-                <summary style="color:#aaa;font-size:11px;cursor:pointer;list-style:none">
+                <summary style="color:var(--cl-ink-500);font-size:11px;cursor:pointer;list-style:none">
                     Schlüssel (Erweitert)
                 </summary>
                 <div style="margin-top:4px">
@@ -5304,16 +5337,16 @@ function gsh_tp_render_profile_tab_v2() {
     </div>
 
     <?php if ( empty( $schoolyears ) ) : ?>
-        <p class="description">Noch keine Schuljahre vorhanden. Erstelle das erste Schuljahr oder synchronisiere über den Planner.</p>
+        <p class="description">Noch keine Schuljahre vorhanden. Das erste Schuljahr anlegen oder über den Planner synchronisieren.</p>
     <?php endif; ?>
 
     <?php foreach ( $schoolyears as $sy ) :
         $sy_key = $sy['key'];
         $pid    = sanitize_key( $sy_key );
     ?>
-    <div style="border:1px solid #c3c4c7;border-radius:6px;margin-bottom:20px;overflow:hidden">
+    <div style="border:1px solid var(--cl-line);border-radius:6px;margin-bottom:20px;overflow:hidden">
         <!-- Schuljahr-Header -->
-        <div style="background:<?php echo ! empty( $sy['is_active'] ) ? '#e6f4ea' : '#f6f7f7'; ?>;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="background:<?php echo ! empty( $sy['is_active'] ) ? 'var(--cl-success-bg)' : 'var(--cl-bg)'; ?>;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <form method="post" style="margin:0;display:flex;align-items:center;gap:8px;flex:1">
                 <?php wp_nonce_field( 'gsh_tp_save_schoolyear_' . $pid, 'gsh_tp_ssy_n_' . $pid ); ?>
                 <input type="hidden" name="gsh_tp_ssy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
@@ -5327,7 +5360,7 @@ function gsh_tp_render_profile_tab_v2() {
                 <?php wp_nonce_field( 'gsh_tp_activate_sy_' . $pid, 'gsh_tp_asy_n' ); ?>
                 <input type="hidden" name="gsh_tp_asy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <button type="submit" name="gsh_tp_activate_schoolyear" value="1"
-                        class="button button-small" style="color:#1e8449;border-color:#1e8449">
+                        class="button button-small" style="color:var(--cl-success);border-color:var(--cl-success)">
                     Als aktives Schuljahr setzen
                 </button>
                 <p class="description" style="margin:4px 0 0;font-size:12px">
@@ -5335,11 +5368,11 @@ function gsh_tp_render_profile_tab_v2() {
                 </p>
             </form>
             <?php else : ?>
-                <span style="background:#1e8449;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
+                <span style="background:var(--cl-success);color:var(--cl-on-primary);padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
             <?php endif; ?>
             <details style="display:inline-block">
-                <summary style="color:#aaa;font-size:11px;cursor:pointer;list-style:none">Erweitert</summary>
-                <span style="color:#888;font-size:12px;display:block;margin-top:4px">
+                <summary style="color:var(--cl-ink-500);font-size:11px;cursor:pointer;list-style:none">Erweitert</summary>
+                <span style="color:var(--cl-ink-500);font-size:12px;display:block;margin-top:4px">
                     ID: <code><?php echo esc_html( $sy_key ); ?></code>
                 </span>
             </details>
@@ -5354,30 +5387,30 @@ function gsh_tp_render_profile_tab_v2() {
             'oeffentlich' => 'Öffentlich',
         );
         $stage_colors = array(
-            'entwurf'     => '#d97706',
-            'genehmigt'   => '#00467D',
-            'oeffentlich' => '#16a34a',
+            'entwurf'     => 'var(--cl-warning)',
+            'genehmigt'   => 'var(--cl-marine-700)',
+            'oeffentlich' => 'var(--cl-success)',
         );
         if ( $doc_status ) :
             $s_label = $stage_labels[ $doc_status['stage'] ] ?? esc_html( $doc_status['stage'] );
-            $s_color = $stage_colors[ $doc_status['stage'] ] ?? '#888';
+            $s_color = $stage_colors[ $doc_status['stage'] ] ?? 'var(--cl-ink-500)';
             $s_time  = $doc_status['last_sent']
                 ? date_i18n( 'd.m.Y, H:i', strtotime( $doc_status['last_sent'] ) ) . ' Uhr'
                 : '';
         ?>
-        <div style="padding:6px 16px;background:#f0f0f1;border-bottom:1px solid #c3c4c7;font-size:12px;color:#3c434a">
+        <div style="padding:6px 16px;background:var(--cl-bg);border-bottom:1px solid var(--cl-line);font-size:12px;color:var(--cl-ink-900)">
             Veröffentlichung:
             <span style="display:inline-block;font-weight:600;padding:1px 8px;border-radius:10px;margin-left:4px;
-                         background:<?php echo esc_attr( $s_color ); ?>22;
+                         background:color-mix(in srgb, <?php echo esc_attr( $s_color ); ?> 14%, transparent);
                          color:<?php echo esc_attr( $s_color ); ?>;
-                         border:1px solid <?php echo esc_attr( $s_color ); ?>44">
+                         border:1px solid color-mix(in srgb, <?php echo esc_attr( $s_color ); ?> 30%, transparent)">
                 <?php echo esc_html( $s_label ); ?>
             </span>
             <?php if ( $s_time ) : ?>
-                <span style="color:#888;margin-left:8px">
+                <span style="color:var(--cl-ink-500);margin-left:8px">
                     Zuletzt gesendet: <?php echo esc_html( $s_time ); ?>
                     <?php if ( ! empty( $doc_status['author_name'] ) ) : ?>
-                        von <strong style="color:#3c434a"><?php echo esc_html( $doc_status['author_name'] ); ?></strong>
+                        von <strong style="color:var(--cl-ink-900)"><?php echo esc_html( $doc_status['author_name'] ); ?></strong>
                     <?php endif; ?>
                     · Version <?php echo (int) $doc_status['version']; ?>
                 </span>
@@ -5401,7 +5434,7 @@ function gsh_tp_render_profile_tab_v2() {
             $gsh_missing = array_diff( $gsh_plan_grps, $gsh_cal_grps );
             if ( $gsh_missing ) :
         ?>
-        <div style="padding:6px 16px;background:#fff8e5;border-bottom:1px solid #c3c4c7;font-size:12px;color:#8a6d3b">
+        <div style="padding:6px 16px;background:var(--cl-warning-bg);border-bottom:1px solid var(--cl-line);font-size:12px;color:var(--cl-warning)">
             Gruppen im Plan ohne eigenen Kalender:
             <strong><?php echo esc_html( implode( ', ', $gsh_missing ) ); ?></strong>
             — im Planner unter Einstellungen &rarr; Ver&ouml;ffentlichung anhaken und
@@ -5411,7 +5444,7 @@ function gsh_tp_render_profile_tab_v2() {
         <?php endif; endif; ?>
 
         <!-- Planungsdokument: manueller Upload (SSO-Alternative, 4.28.0) -->
-        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7;background:#fafafa">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);background:var(--cl-bg)">
             <strong style="display:block;margin-bottom:6px">Planungsdokument (manueller Upload)</strong>
             <p class="description" style="margin:0 0 8px">
                 Für Schulen ohne IServ-SSO: Plan im Planer exportieren (Export ↓ → „JSON-Backup") und hier hochladen.
@@ -5446,7 +5479,7 @@ function gsh_tp_render_profile_tab_v2() {
         </div>
 
         <!-- Shared Settings (Quartal etc.) -->
-        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line)">
             <form method="post">
                 <?php wp_nonce_field( 'gsh_tp_save_shared_' . $pid, 'gsh_tp_ssh_n' ); ?>
                 <input type="hidden" name="gsh_tp_ssh_key" value="<?php echo esc_attr( $sy_key ); ?>" />
@@ -5488,7 +5521,7 @@ function gsh_tp_render_profile_tab_v2() {
         $x_pid    = sanitize_key( gsh_tp_calendar_id( $sy_key, null ) );
         $x_last   = get_option( 'gsh_tp_sync_' . $x_pid, '' );
         ?>
-        <div style="padding:12px 16px;border-bottom:1px solid #c3c4c7;border-left:3px solid #0058a0;background:<?php echo $x_extern ? '#f0f6fc' : '#fafafa'; ?>">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);border-left:3px solid var(--cl-marine-500);background:<?php echo $x_extern ? 'var(--cl-marine-100)' : 'var(--cl-bg)'; ?>">
             <strong style="display:block;margin-bottom:6px">IServ-Kalender direkt verbinden</strong>
             <p class="description" style="margin:0 0 8px">
                 Ohne Planer: Adresse eines freigegebenen IServ-Kalenders eintragen (in IServ meist unter
@@ -5507,7 +5540,7 @@ function gsh_tp_render_profile_tab_v2() {
             </form>
             <?php if ( $x_extern ) : ?>
             <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                <span style="font-size:12px;color:#3c434a">
+                <span style="font-size:12px;color:var(--cl-ink-900)">
                     Aktiv &ndash; Planer-&Uuml;bertragungen &uuml;berschreiben diesen Kalender nicht.
                     <?php if ( $x_last ) : ?>
                         Zuletzt abgerufen: <?php echo esc_html( date_i18n( 'd.m.Y, H:i', strtotime( $x_last . ' UTC' ) ) ); ?> Uhr.
@@ -5536,42 +5569,42 @@ function gsh_tp_render_profile_tab_v2() {
             <?php foreach ( $sy['calendars'] as $cal ) :
                 $cal_id  = gsh_tp_calendar_id( $sy_key, $cal['group'] );
                 $is_main = null === $cal['group'];
-                $row_bg  = ! empty( $cal['orphaned'] ) ? '#fff8f0' : '#fff';
+                $row_bg  = ! empty( $cal['orphaned'] ) ? 'var(--cl-warning-bg)' : 'var(--cl-surface)';
             ?>
                 <tr style="background:<?php echo esc_attr( $row_bg ); ?>">
                     <td>
                         <?php if ( $is_main ) : ?>
                             <strong>Alle Termine</strong>
-                            <span style="font-size:11px;color:#888;margin-left:6px">(Haupt-Kalender)</span>
+                            <span style="font-size:11px;color:var(--cl-ink-500);margin-left:6px">(Haupt-Kalender)</span>
                             <?php if ( gsh_tp_cal_is_extern( $cal ) ) : ?>
-                                <span style="font-size:11px;background:#e6f0ff;color:#1a56db;padding:1px 6px;border-radius:10px;margin-left:4px">IServ</span>
+                                <span style="font-size:11px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">IServ</span>
                             <?php endif; ?>
                         <?php else : ?>
                             <?php echo esc_html( $cal['group'] ); ?>
                             <?php if ( ! empty( $cal['managed'] ) ) : ?>
-                                <span style="font-size:11px;background:#e6f0ff;color:#1a56db;padding:1px 6px;border-radius:10px;margin-left:4px">Curriculr</span>
+                                <span style="font-size:11px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">Curriculr</span>
                             <?php endif; ?>
                             <?php if ( ! empty( $cal['orphaned'] ) ) : ?>
-                                <span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:10px;margin-left:4px">verwaist</span>
+                                <span style="font-size:11px;background:var(--cl-warning-bg);color:var(--cl-warning);padding:1px 6px;border-radius:10px;margin-left:4px">verwaist</span>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <br><span style="font-size:11px;color:#aaa">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
+                        <br><span style="font-size:11px;color:var(--cl-ink-500)">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
                     </td>
                     <td>
                         <?php $cal_extern = gsh_tp_cal_is_extern( $cal ); ?>
                         <?php if ( ! empty( $cal['ical_url'] ) ) : ?>
                             <input type="text" readonly value="<?php echo esc_attr( $cal['ical_url'] ); ?>"
-                                   style="width:100%;font-size:12px;border:1px solid #ddd;padding:3px 6px"
+                                   style="width:100%;font-size:12px;border:1px solid var(--cl-line);padding:3px 6px"
                                    onclick="this.select()" title="Klicken zum Auswählen" />
-                            <span style="font-size:11px;color:#666">
+                            <span style="font-size:11px;color:var(--cl-ink-500)">
                                 <?php echo $cal_extern
                                     ? 'Quelle: IServ-Kalender (oben eingetragen)'
                                     : 'Abo-Adresse für IServ und andere Kalender-Apps'; ?>
                             </span>
                         <?php elseif ( $cal_extern ) : ?>
-                            <em style="color:#aaa;font-size:12px">— Adresse oben eintragen —</em>
+                            <em style="color:var(--cl-ink-500);font-size:12px">— Adresse oben eintragen —</em>
                         <?php else : ?>
-                            <em style="color:#aaa;font-size:12px">— wird nach Planner-Speichern gesetzt —</em>
+                            <em style="color:var(--cl-ink-500);font-size:12px">— wird nach Planner-Speichern gesetzt —</em>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -5579,7 +5612,7 @@ function gsh_tp_render_profile_tab_v2() {
                             <?php wp_nonce_field( 'gsh_tp_toggle_draft_' . sanitize_key( $cal_id ), 'gsh_tp_td_n' ); ?>
                             <input type="hidden" name="gsh_tp_td_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
                             <input type="hidden" name="gsh_tp_td_cal" value="<?php echo esc_attr( $cal['group'] ?? '' ); ?>" />
-                            <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:#b7950b">Entwurf</span>' : '<span style="color:#1e8449">Beschlossen</span>'; ?>
+                            <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:var(--cl-warning)">Entwurf</span>' : '<span style="color:var(--cl-success)">Beschlossen</span>'; ?>
                             <button type="submit" name="gsh_tp_toggle_draft" value="1" class="button button-small">
                                 <?php echo ! empty( $cal['is_draft'] ) ? 'Als beschlossen markieren' : 'Als Entwurf markieren'; ?>
                             </button>
@@ -5592,7 +5625,7 @@ function gsh_tp_render_profile_tab_v2() {
                             <input type="hidden" name="gsh_tp_dc_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
                             <input type="hidden" name="gsh_tp_dc_cal" value="<?php echo esc_attr( $cal['group'] ); ?>" />
                             <button type="submit" name="gsh_tp_del_cal" value="1"
-                                    class="button button-small" style="color:#c0392b;border-color:#c0392b"
+                                    class="button button-small" style="color:var(--cl-danger);border-color:var(--cl-danger)"
                                     onclick="return confirm('Kalender «<?php echo esc_js( $cal['group'] ); ?>» wirklich löschen?')">
                                 &times; Löschen
                             </button>
@@ -5605,12 +5638,12 @@ function gsh_tp_render_profile_tab_v2() {
         </table>
 
         <?php if ( empty( $sy['is_active'] ) ) : ?>
-        <details style="padding:10px 16px;border-top:1px solid #c3c4c7">
-            <summary style="cursor:pointer;color:#a93226;font-size:12px;user-select:none;list-style:none;display:flex;align-items:center;gap:6px">
+        <details style="padding:10px 16px;border-top:1px solid var(--cl-line)">
+            <summary style="cursor:pointer;color:var(--cl-danger);font-size:12px;user-select:none;list-style:none;display:flex;align-items:center;gap:6px">
                 <span>&#9656;</span> Schuljahr löschen&hellip;
             </summary>
-            <div style="margin-top:10px;padding:14px 16px;background:#fdf0f0;border:1px solid #e8a0a0;border-radius:4px">
-                <p style="margin:0 0 10px;color:#7b241c;font-size:13px">
+            <div style="margin-top:10px;padding:14px 16px;background:var(--cl-danger-bg);border:1px solid var(--cl-danger);border-radius:4px">
+                <p style="margin:0 0 10px;color:var(--cl-danger);font-size:13px">
                     <strong>Achtung:</strong> Alle Termin-Daten, Revisionen und Kalender für
                     <strong>„<?php echo esc_html( $sy['label'] ); ?>"</strong>
                     werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
@@ -5620,7 +5653,7 @@ function gsh_tp_render_profile_tab_v2() {
                     <input type="hidden" name="gsh_tp_dsy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                     <button type="submit" name="gsh_tp_del_sy" value="1"
                             class="button"
-                            style="background:#c0392b;color:#fff;border-color:#a93226;box-shadow:none">
+                            style="background:var(--cl-danger);color:var(--cl-on-primary);border-color:var(--cl-danger);box-shadow:none">
                         Schuljahr „<?php echo esc_html( $sy['label'] ); ?>" endgültig löschen
                     </button>
                 </form>
@@ -5642,10 +5675,10 @@ function gsh_tp_render_profile_tab_v2() {
 function gsh_tp_render_sync_tab() {
     ?>
     <h2>Curriculr Planner-Sync</h2>
-    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+    <div style="background:var(--cl-marine-100);border:1px solid var(--cl-marine-500);padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist das?</strong><br>
         Erlaubt dem Curriculr-Planner, Terminpl&auml;ne direkt an dieses WordPress zu senden (REST-Schnittstelle <code>curriculr/v1</code>).
-        Trage die Adresse ein, von der aus der Planner ge&ouml;ffnet wird &ndash; nur diese Adresse darf senden (CORS-Schutz).
+        Die Adresse eintragen, von der aus der Planner ge&ouml;ffnet wird &ndash; nur diese Adresse darf senden (CORS-Schutz).
     </div>
     <form method="post" action="">
         <?php wp_nonce_field( 'gsh_tp_save_curriculr', 'gsh_tp_cur_n' ); ?>
@@ -5668,7 +5701,7 @@ function gsh_tp_render_sync_tab() {
                 <td>
                     <?php
                     $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
-                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
+                    echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
                     echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
                     ?>
                 </td>
@@ -5715,7 +5748,7 @@ function gsh_tp_render_sync_tab() {
 function gsh_tp_render_kiosk_tab() {
     ?>
     <h2>Entwurf-Vorschau (Schulleitungsteam)</h2>
-    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+    <div style="background:var(--cl-marine-100);border:1px solid var(--cl-marine-500);padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist die Entwurf-Vorschau?</strong><br>
         Erm&ouml;glicht dem Schulleitungsteam, Entwurfs-Terminpl&auml;ne vorab einzusehen &ndash; ohne WordPress-Login.
         Teilt einfach den generierten Link.
@@ -5739,9 +5772,9 @@ function gsh_tp_render_kiosk_tab() {
                     <?php
                     $cur_draft_token = get_option( 'gsh_tp_draft_kiosk_token', '' );
                     if ( empty( $cur_draft_token ) ) {
-                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Entwurf-Vorschau nicht aktiv.</p>';
+                        echo '<p style="color:var(--cl-danger);margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Entwurf-Vorschau nicht aktiv.</p>';
                     } elseif ( strlen( $cur_draft_token ) < 20 ) {
-                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
+                        echo '<p style="color:var(--cl-warning);margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
                     }
                     ?>
                 </td>
@@ -5762,10 +5795,10 @@ function gsh_tp_render_kiosk_tab() {
                     if ( empty( $draft_pages ) )       { $missing[] = 'Vorschau-Seite (Anleitung unten)'; }
                     if ( empty( $missing ) ) {
                         $draft_url = trailingslashit( get_permalink( $draft_pages[0]->ID ) ) . '?token=' . urlencode( $draft_token );
-                        echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $draft_url ) . '</code>';
+                        echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $draft_url ) . '</code>';
                         echo '<a href="' . esc_url( $draft_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">' . gsh_tp_icon( 'link' ) . ' Vorschau testen</a>';
                     } else {
-                        echo '<p style="color:#888;margin:0 0 6px">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
+                        echo '<p style="color:var(--cl-ink-500);margin:0 0 6px">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
                     }
                     ?>
                 </td>
@@ -5789,7 +5822,7 @@ function gsh_tp_render_kiosk_tab() {
     <hr style="margin:24px 0" />
 
     <h2>IServ-Einbettung (Kiosk-Modus)</h2>
-    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+    <div style="background:var(--cl-marine-100);border:1px solid var(--cl-marine-500);padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Was ist der Kiosk-Modus?</strong><br>
         Eine Ansicht des Terminplans ohne WordPress-Men&uuml; und Passwort.
         Ideal zum Einbetten in IServ als Navigations-Eintrag.
@@ -5802,7 +5835,7 @@ function gsh_tp_render_kiosk_tab() {
         $fail_count = (int) get_option( 'gsh_tp_mail_fail_count', 0 );
         if ( $fail_count >= 3 ) : ?>
         <div class="notice notice-warning inline" style="margin-bottom:16px">
-            <p><strong>⚠ E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
+            <p><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> E-Mail-Diagnose:</strong> Die letzten <?php echo (int) $fail_count; ?> Feedback-E-Mails konnten nicht zugestellt werden.
             Empfehlung: <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=wp+mail+smtp&tab=search&type=term' ) ); ?>">WP Mail SMTP installieren</a>.
             <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system' ) ); ?>">Feedback-Log ansehen</a></p>
         </div>
@@ -5822,9 +5855,9 @@ function gsh_tp_render_kiosk_tab() {
                     <?php
                     $cur_token = get_option( 'gsh_tp_kiosk_token', '' );
                     if ( empty( $cur_token ) ) {
-                        echo '<p style="color:#c0392b;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Kiosk-Seite ist ohne Authentifizierung erreichbar!</p>';
+                        echo '<p style="color:var(--cl-danger);margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Kein Token gesetzt</strong> &ndash; Kiosk-Seite ist ohne Authentifizierung erreichbar!</p>';
                     } elseif ( strlen( $cur_token ) < 20 ) {
-                        echo '<p style="color:#e67e22;margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
+                        echo '<p style="color:var(--cl-warning);margin-top:6px"><strong>' . gsh_tp_icon( 'alert-triangle' ) . ' Token zu kurz</strong> &ndash; mind. 20 Zeichen empfohlen.</p>';
                     }
                     ?>
                 </td>
@@ -5835,9 +5868,9 @@ function gsh_tp_render_kiosk_tab() {
                     <input type="url" id="gsh_tp_iserv_domain" name="gsh_tp_iserv_domain"
                            value="<?php echo esc_attr( get_option( 'gsh_tp_iserv_domain', '' ) ); ?>"
                            class="regular-text" placeholder="https://example-school.de" />
-                    <p class="description">Die vollst&auml;ndige URL eures IServ-Servers (mit https://). Wird ben&ouml;tigt damit nur euer IServ die Seite einbetten darf.</p>
+                    <p class="description">Die vollst&auml;ndige URL Ihres IServ-Servers (mit https://). Wird ben&ouml;tigt, damit nur Ihr IServ die Seite einbetten darf.</p>
                     <?php if ( empty( get_option( 'gsh_tp_iserv_domain', '' ) ) ) : ?>
-                        <p style="color:#e67e22;margin-top:6px"><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> IServ-Domain fehlt</strong> &ndash; ohne diese Einstellung kann jede Website die Kiosk-Seite einbetten.</p>
+                        <p style="color:var(--cl-warning);margin-top:6px"><strong><?php echo gsh_tp_icon( 'alert-triangle' ); ?> IServ-Domain fehlt</strong> &ndash; ohne diese Einstellung kann jede Website die Kiosk-Seite einbetten.</p>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -5872,10 +5905,10 @@ function gsh_tp_render_kiosk_tab() {
                     if ( empty( $kiosk_pages ) ) { $missing[] = 'Seite mit Vorlage <code>page-terminplan-kiosk.php</code>'; }
                     if ( empty( $missing ) ) {
                         $kiosk_url = trailingslashit( get_permalink( $kiosk_pages[0]->ID ) ) . '?token=' . urlencode( $kiosk_token );
-                        echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $kiosk_url ) . '</code>';
+                        echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( $kiosk_url ) . '</code>';
                         echo '<a href="' . esc_url( $kiosk_url ) . '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">' . gsh_tp_icon( 'link' ) . ' Kiosk-Seite testen</a>';
                     } else {
-                        echo '<p style="color:#888;margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
+                        echo '<p style="color:var(--cl-ink-500);margin:0">' . gsh_tp_icon( 'alert-triangle' ) . ' Noch nicht verf&uuml;gbar &ndash; folgendes fehlt: ' . implode( ', ', $missing ) . '.</p>';
                     }
                     ?>
                 </td>
@@ -5950,7 +5983,7 @@ function gsh_tp_render_system_tab() {
         Rechtsgrundlage und Ansprechpartner: siehe schulisches
         Datenschutzkonzept.
     </p>
-    <p style="padding:12px;border-left:4px solid var(--gsh-marine,#00345C);background:#f1f5f9">
+    <p style="padding:12px;border-left:4px solid var(--gsh-marine,var(--cl-marine-800));background:var(--cl-bg)">
         <strong>Hinweis (&bdquo;Vibecoding&ldquo;):</strong> Diese Werkzeuge
         (Planner und WordPress-Plugin) wurden im Wege des &bdquo;Vibecodings&ldquo;
         &mdash; also KI-gest&uuml;tzter Softwareentwicklung &mdash; erstellt. Vor dem
@@ -5975,7 +6008,7 @@ function gsh_tp_render_system_tab() {
     // Curriculr REST-Einstellungen (Origin + Profil-Zuordnung) — ehemals im Curriculr-Sync-Tab
     ?>
     <h2>Curriculr REST-Einstellungen</h2>
-    <div style="background:#eaf2f8;border:1px solid #2874a6;padding:12px 16px;margin-bottom:16px;border-radius:6px;">
+    <div style="background:var(--cl-marine-100);border:1px solid var(--cl-marine-500);padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Erlaubte Planner-Adresse (CORS-Origin):</strong>
         Nur Anfragen von dieser Adresse werden vom REST-Endpunkt <code>curriculr/v1</code> akzeptiert.
     </div>
@@ -6000,7 +6033,7 @@ function gsh_tp_render_system_tab() {
                 <td>
                     <?php
                     $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
-                    echo '<code style="display:block;padding:6px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
+                    echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
                     echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
                     ?>
                 </td>
@@ -6069,11 +6102,11 @@ function gsh_tp_render_sync_log_tab() {
     ?>
     <h3 style="margin-top:1.5rem;margin-bottom:.5rem"><?php echo esc_html( $p['label'] ); ?></h3>
     <?php if ( empty( $logs ) ) : ?>
-        <p style="color:#888"><em>Noch keine Sync-Versuche gespeichert.</em></p>
+        <p style="color:var(--cl-ink-500)"><em>Noch keine Sync-Versuche gespeichert.</em></p>
     <?php else : ?>
     <table class="widefat" style="max-width:960px;margin-bottom:12px;border-collapse:collapse">
         <thead>
-            <tr style="background:#f6f7f7">
+            <tr style="background:var(--cl-bg)">
                 <th style="width:148px;padding:8px 10px">Zeitpunkt</th>
                 <th style="width:72px;padding:8px 10px">Status</th>
                 <th style="width:110px;padding:8px 10px">Fehlertyp</th>
@@ -6085,7 +6118,7 @@ function gsh_tp_render_sync_log_tab() {
         <tbody>
         <?php foreach ( $logs as $entry ) :
             $is_ok  = ( 'success' === ( $entry['status'] ?? '' ) );
-            $row_bg = $is_ok ? '#f0fdf4' : '#fff5f5';
+            $row_bg = $is_ok ? 'var(--cl-success-bg)' : 'var(--cl-danger-bg)';
             $ts_disp = '';
             if ( ! empty( $entry['timestamp'] ) ) {
                 $dt = new DateTime( $entry['timestamp'], new DateTimeZone( 'UTC' ) );
@@ -6093,29 +6126,29 @@ function gsh_tp_render_sync_log_tab() {
                 $ts_disp = $dt->format( 'd.m.Y H:i:s' );
             }
         ?>
-            <tr style="background:<?php echo esc_attr( $row_bg ); ?>;border-top:1px solid #e0e0e0">
+            <tr style="background:<?php echo esc_attr( $row_bg ); ?>;border-top:1px solid var(--cl-line)">
                 <td style="padding:6px 10px;font-size:13px"><?php echo esc_html( $ts_disp ); ?></td>
                 <td style="padding:6px 10px;font-size:13px">
                     <?php if ( $is_ok ) : ?>
-                        <span style="color:#166534;font-weight:600">&#10003; OK</span>
+                        <span style="color:var(--cl-success);font-weight:600"><?php echo gsh_tp_icon( 'check' ); ?> OK</span>
                     <?php else : ?>
-                        <span style="color:#991b1b;font-weight:600">&#10005; Fehler</span>
+                        <span style="color:var(--cl-danger);font-weight:600"><?php echo gsh_tp_icon( 'x' ); ?> Fehler</span>
                     <?php endif; ?>
                 </td>
                 <td style="padding:6px 10px;font-size:13px">
                     <?php if ( ! empty( $entry['error_type'] ) ) : ?>
                         <code style="font-size:12px"><?php echo esc_html( $entry['error_type'] ); ?></code>
                     <?php else : ?>
-                        <span style="color:#888">&ndash;</span>
+                        <span style="color:var(--cl-ink-500)">&ndash;</span>
                     <?php endif; ?>
                 </td>
                 <td style="padding:6px 10px;font-size:13px">
-                    <?php echo $is_ok ? esc_html( $entry['event_count'] ?? 0 ) : '<span style="color:#888">&ndash;</span>'; ?>
+                    <?php echo $is_ok ? esc_html( $entry['event_count'] ?? 0 ) : '<span style="color:var(--cl-ink-500)">&ndash;</span>'; ?>
                 </td>
                 <td style="padding:6px 10px;font-size:13px">
                     <?php echo esc_html( ( $entry['duration_ms'] ?? 0 ) . ' ms' ); ?>
                 </td>
-                <td style="padding:6px 10px;font-size:13px;color:#555">
+                <td style="padding:6px 10px;font-size:13px;color:var(--cl-ink-500)">
                     <?php echo esc_html( $entry['message'] ?? '' ); ?>
                 </td>
             </tr>
@@ -7034,8 +7067,8 @@ function gsh_tp_shortcode( $atts ) {
     // Header – einzeilig: Logo + Suche + Actions
     $o .= '<div class="gtp-hd">';
     $o .= '<div class="gtp-hd-left">';
-    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-dark.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
-    $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Deine Schule</span>';
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-auf-hell.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
+    $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Ihre Schule</span>';
     $o .= '</div>';
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
@@ -7179,8 +7212,8 @@ function gsh_tp_shortcode( $atts ) {
         $o .= '<details class="gtp-ics-help">';
         $o .= '<summary>' . gsh_tp_icon( 'chevron-right', '0.85em', 'gtp-ics-chevron' ) . ' Wie funktioniert das Abo?</summary>';
         $o .= '<div class="gtp-ics-help-body">';
-        $o .= '<p>„Kalender abonnieren" anklicken. Öffnet sich deine Kalender-App? Dann bist du fertig — der Terminplan aktualisiert sich ab jetzt von selbst, sobald sich etwas ändert.</p>';
-        $o .= '<p>Passiert nichts oder wird stattdessen nur eine Datei heruntergeladen? Dann „Feed-URL kopieren" klicken und die Adresse manuell in deiner Kalender-App eintragen:</p>';
+        $o .= '<p>„Kalender abonnieren" anklicken. Öffnet sich Ihre Kalender-App? Dann sind Sie fertig — der Terminplan aktualisiert sich ab jetzt von selbst, sobald sich etwas ändert.</p>';
+        $o .= '<p>Passiert nichts oder wird stattdessen nur eine Datei heruntergeladen? Dann „Feed-URL kopieren" klicken und die Adresse manuell in Ihrer Kalender-App eintragen:</p>';
         $o .= '<ul>';
         $o .= '<li><strong>Outlook:</strong> Kalender hinzufügen &rarr; Aus dem Internet abonnieren &rarr; Adresse einfügen</li>';
         $o .= '<li><strong>Apple Kalender:</strong> Ablage &rarr; Neues Kalenderabo &rarr; Adresse einfügen</li>';
@@ -7207,8 +7240,8 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-popup-card gtp-feedback-card">';
     $o .= '<button type="button" class="gtp-popup-close" onclick="gtpFeedbackClose()"'
         . ' aria-label="Schließen">&times;</button>';
-    $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">&#128172; Feedback geben</h3>';
-    $o .= '<p class="gtp-feedback-intro">Dein Hinweis hilft uns den Terminplan zu verbessern.</p>';
+    $o .= '<h3 class="gtp-popup-title" id="gtp-feedback-title">Feedback geben</h3>';
+    $o .= '<p class="gtp-feedback-intro">Ihr Hinweis hilft, den Terminplan zu verbessern.</p>';
     // Honeypot: verstecktes Anti-Spam-Feld (muss leer bleiben)
     $o .= '<input type="text" name="gsh_tp_hp" id="gtp-feedback-hp" '
         . 'autocomplete="off" tabindex="-1" '
@@ -7217,30 +7250,30 @@ function gsh_tp_shortcode( $atts ) {
     // Typ-Auswahl
     $o .= '<div class="gtp-feedback-types" role="group" aria-label="Feedback-Typ wählen">';
     $types = array(
-        'bug'    => array( 'emoji' => '&#128027;', 'label' => 'Fehler melden' ),
-        'wish'   => array( 'emoji' => '&#128161;', 'label' => 'Funktionswunsch' ),
-        'praise' => array( 'emoji' => '&#128077;', 'label' => 'Lob' ),
-        'other'  => array( 'emoji' => '&#128172;', 'label' => 'Sonstiges' ),
+        'bug'    => array( 'label' => 'Fehler melden' ),
+        'wish'   => array( 'label' => 'Funktionswunsch' ),
+        'praise' => array( 'label' => 'Lob' ),
+        'other'  => array( 'label' => 'Sonstiges' ),
     );
     foreach ( $types as $key => $t ) {
         $o .= '<button type="button" class="gtp-feedback-type" data-type="' . esc_attr( $key ) . '"'
             . ' onclick="gtpFeedbackType(this)">'
-            . $t['emoji'] . ' ' . esc_html( $t['label'] ) . '</button>';
+            . esc_html( $t['label'] ) . '</button>';
     }
     $o .= '</div>';
     // Optionales Absender-Feld
     $o .= '<div class="gtp-feedback-field">';
-    $o .= '<label for="gtp-feedback-sender" class="gtp-feedback-label">Dein Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>';
+    $o .= '<label for="gtp-feedback-sender" class="gtp-feedback-label">Ihr Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>';
     $o .= '<input type="text" id="gtp-feedback-sender" class="gtp-feedback-textarea" '
         . 'style="min-height:auto;resize:none;padding:8px 14px" '
         . 'maxlength="80" placeholder="z. B. Frau Muster" autocomplete="name">';
     $o .= '</div>';
     // Freitextfeld
     $o .= '<div class="gtp-feedback-field">';
-    $o .= '<label for="gtp-feedback-text" class="gtp-feedback-label">Dein Anliegen</label>';
+    $o .= '<label for="gtp-feedback-text" class="gtp-feedback-label">Ihr Anliegen</label>';
     $o .= '<textarea id="gtp-feedback-text" class="gtp-feedback-textarea"'
         . ' rows="4" maxlength="1000"'
-        . ' placeholder="Was ist aufgefallen? Was wünschst du dir?"></textarea>';
+        . ' placeholder="Was ist aufgefallen? Was wünschen Sie sich?"></textarea>';
     $o .= '<div class="gtp-feedback-counter"><span id="gtp-feedback-count">0</span> / 1000</div>';
     $o .= '</div>';
     // Status-Meldung (per JS befüllt)
@@ -7317,7 +7350,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-popup-card gtp-changelog-card">';
     $o .= '<button type="button" class="gtp-popup-close" onclick="gtpChangelogClose()" '
         . 'aria-label="Schließen">&times;</button>';
-    $o .= '<h3 class="gtp-popup-title">&#128221; Was ist neu?</h3>';
+    $o .= '<h3 class="gtp-popup-title">Was ist neu?</h3>';
     foreach ( $cl_frontend as $block ) {
         $o .= '<div class="gtp-cl-version">';
         $o .= '<span class="gtp-cl-vtag">Version ' . esc_html( $block['version'] ) . '</span>';
@@ -7351,9 +7384,9 @@ function gsh_tp_shortcode( $atts ) {
         array( 'icon' => 'search',     'title' => 'Terminsuche',
                'text' => 'Das Suchfeld durchsucht alle Quartale gleichzeitig. Treffer werden sofort hervorgehoben. Die Suche ignoriert Groß-/Kleinschreibung.' ),
         array( 'icon' => 'file-text',  'title' => 'PDF-Export',
-               'text' => 'Mit dem PDF-Button unten rechts kannst du das aktuelle Quartal oder alle vier Quartale als druckbares PDF speichern.' ),
+               'text' => 'Mit dem PDF-Button unten rechts können Sie das aktuelle Quartal oder alle vier Quartale als druckbares PDF speichern.' ),
         array( 'icon' => 'moon',       'title' => 'Dark Mode',
-               'text' => 'Das Zahnrad-Symbol unten rechts öffnet die Anzeigeeinstellungen. Dort kannst du zwischen hellem Design, dunklem Design oder automatischer Anpassung an dein Gerät wählen.' ),
+               'text' => 'Das Zahnrad-Symbol unten rechts öffnet die Anzeigeeinstellungen. Dort können Sie zwischen hellem Design, dunklem Design oder automatischer Anpassung an Ihr Gerät wählen.' ),
         array( 'icon' => 'info',       'title' => 'Farb-Legende',
                'text' => 'Jede Kategorie hat eine eigene Farbe. Termine werden automatisch anhand ihrer Beschreibung zugeordnet. Die Legende entspricht den farbigen Filter-Buttons.' ),
     );
@@ -7368,7 +7401,7 @@ function gsh_tp_shortcode( $atts ) {
     }
     $o .= '</div>'; // .gtp-help-body
     $o .= '<div class="gtp-help-footer">';
-    $o .= '<span class="gtp-help-version">Schul-Terminplan Dashboard v' . GSH_TP_VERSION . ' &middot; Deine Schule</span>';
+    $o .= '<span class="gtp-help-version">Schul-Terminplan Dashboard v' . GSH_TP_VERSION . ' &middot; Ihre Schule</span>';
     $o .= '</div>';
     $o .= '</div>'; // .gtp-help-panel
     $o .= '</div>'; // #gtp-help-overlay
@@ -8624,21 +8657,22 @@ function gsh_tp_css() {
 /* ══════════════════════════════════════════════════════════════
    CSS Custom Properties – alle Farben zentral anpassbar
    ══════════════════════════════════════════════════════════════ */
-:root{
+/* :root,#gtp – Eigenschaften mit var() lösen dort auf, wo sie stehen; nur so folgen sie dem Plugin-Modus am #gtp-Container */
+:root,#gtp{
   /* Primär / Akzent */
-  --gtp-accent:       var(--marine-700, #00467D);
-  --gtp-accent-dark:  var(--marine-800, #00345C);
-  --gtp-accent-light: var(--marine-100, #E6F4FF);
+  --gtp-accent:       var(--marine-700);
+  --gtp-accent-dark:  var(--marine-800);
+  --gtp-accent-light: var(--marine-100);
   /* Oberflächen & Text */
-  --gtp-text:         var(--text-main, #1e293b);
-  --gtp-text-muted:   var(--text-muted, #475569);
-  --gtp-text-faint:   #94a3b8;
-  --gtp-bg:           var(--bg-surface-solid, #ffffff);
-  --gtp-surface:      var(--bg-muted, #f8fafc);
-  --gtp-border:       var(--border-strong, #cbd5e1);
+  --gtp-text:         var(--text-main);
+  --gtp-text-muted:   var(--text-muted);
+  --gtp-text-faint:   var(--cl-ink-500);
+  --gtp-bg:           var(--bg-surface-solid);
+  --gtp-surface:      var(--bg-muted);
+  --gtp-border:       var(--border-strong);
   /* Heute-Akzent */
-  --gtp-today-bg:     #E6F4FF;
-  --gtp-today-bd:     #00467D;
+  --gtp-today-bg:     var(--cl-marine-100);
+  --gtp-today-bd:     var(--cl-marine-700);
   /* Übergänge */
   --gtp-tr:           all 0.3s ease;
   --gtp-tr-fast:      all 0.15s ease;
@@ -8657,7 +8691,7 @@ function gsh_tp_css() {
   --gtp-radius-pill: 50px;
   --gtp-radius-full: 50%;
   /* Kategorie – Standard (Neutral/Pastell) – immer als Fallback vorhanden */
-  --c-st-bg:#f1f5f9; --c-st-bd:#64748b; --c-st-tx:#334155;
+  --c-st-bg:var(--cl-bg); --c-st-bd:var(--cl-ink-500); --c-st-tx:var(--cl-ink-900);
   /* Konfigurierbare Kategorien (dynamisch – via gsh_tp_category_css()) */
   ' . $cat['vars'] . '
 }
@@ -8667,7 +8701,7 @@ function gsh_tp_css() {
   font-family:var(--font-body, -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif);
   max-width:1200px;margin:0 auto;color:var(--gtp-text);
   background:var(--gtp-bg);border-radius:16px;
-  box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
+  box-shadow:none;
   padding:1.75rem 2rem;
 }
 
@@ -8691,7 +8725,7 @@ function gsh_tp_css() {
   transition:var(--gtp-tr-fast);
 }
 .gtp-sj-btn:hover{background:var(--gtp-accent-light)}
-.gtp-sj-btn-on{background:var(--gtp-accent);color:#fff}
+.gtp-sj-btn-on{background:var(--gtp-accent);color:var(--cl-on-primary)}
 .gtp-sj-btn-on:hover{background:var(--gtp-accent-dark)}
 /* Hilfe-Button */
 #gtp-tour-btn{
@@ -8705,9 +8739,9 @@ function gsh_tp_css() {
 /* Entwurfs-Banner */
 .gtp-draft-banner{
   display:flex;align-items:center;gap:.5rem;
-  background:#fef9c3;border:1px solid #eab308;
+  background:var(--cl-warning-bg);border:1px solid var(--cl-warning);
   padding:10px 16px;border-radius:8px;margin-bottom:16px;
-  font-weight:600;color:#92400e;
+  font-weight:600;color:var(--cl-warning);
 }
 
 /* ── Sticky Command Bar (Tabs + Jahresansicht-Toggle) ── */
@@ -8717,7 +8751,7 @@ function gsh_tp_css() {
   background:var(--gtp-bg);
   border-bottom:2px solid var(--gtp-border);
   margin:0 -2rem;padding:0 2rem;
-  box-shadow:0 2px 8px rgba(0,0,0,.05);
+  box-shadow:none;
 }
 .gtp-tab-group{display:flex}
 .gtp-tab-sep{
@@ -8755,7 +8789,6 @@ function gsh_tp_css() {
 }
 .gtp-filt-lbl{
   font-size:.68rem;font-weight:700;color:var(--gtp-text-muted);
-  text-transform:uppercase;letter-spacing:.1em;
 }
 /* Toggle-Button immer sichtbar */
 .gtp-filt-toggle{
@@ -8774,7 +8807,7 @@ function gsh_tp_css() {
 .gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
 .gtp-filt-count{
   font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
-  margin-left:.35em;letter-spacing:.02em;text-transform:none;
+  margin-left:.35em;text-transform:none;
 }
 .gtp-fb{
   padding:5px 14px;border:1.5px solid;border-radius:20px;
@@ -8783,7 +8816,7 @@ function gsh_tp_css() {
   transition:var(--gtp-tr);user-select:none;
 }
 .gtp-fb[data-c="standard"] {border-color:var(--c-st-bd);background:var(--c-st-bg);color:var(--c-st-tx)}
-.gtp-fb:hover{filter:brightness(.9);transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.gtp-fb:hover{filter:brightness(.9);transform:translateY(-1px);box-shadow:none}
 /* Toggle-Zustand: aktiv = volle Farbe, inaktiv = deutlich gedimmt */
 .gtp-fb-on{/* volle Farbe via .gc-* / [data-c] Regeln */}
 .gtp-fb-off{opacity:.28;filter:grayscale(.8);text-decoration:line-through;text-decoration-thickness:1.5px}
@@ -8801,15 +8834,14 @@ function gsh_tp_css() {
 .gtp-qt{
   font-size:.85rem;font-weight:700;color:var(--gtp-text-muted);
   margin:1.25rem 0 .75rem;padding-left:2px;
-  text-transform:uppercase;letter-spacing:.07em;
 }
 
 /* ── Tabelle ── */
 .gt{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem;table-layout:fixed}
 .gt thead th{
-  background:var(--gtp-text);color:#fff;padding:9px 6px;
+  background:var(--gtp-text);color:var(--cl-on-primary);padding:9px 6px;
   text-align:center;font-weight:600;font-size:.74rem;
-  border-right:1px solid rgba(255,255,255,.1);letter-spacing:.04em;
+  border-right:1px solid rgba(255,255,255,.1);
   position:sticky;top:var(--gtp-thead-top,44px);z-index:10;
 }
 .gt thead th:last-child{border-right:none}
@@ -8830,7 +8862,7 @@ function gsh_tp_css() {
 .gt tbody td:first-child{border-left:1px solid var(--gtp-border)}
 .gt tbody tr:first-child td{border-top:1px solid var(--gtp-border)}
 .gs{width:42px;text-align:center;background:var(--gtp-surface);font-size:.8rem;font-weight:700;color:var(--gtp-text-muted)}
-.gh{width:140px;background:#fefdf8}
+.gh{width:140px;background:var(--cl-bg)}
 .gdl{display:block;font-size:.65rem;color:var(--gtp-text-faint);margin-bottom:3px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
 .gnc{font-size:.72rem;color:var(--gtp-text-muted)}
 
@@ -8842,11 +8874,11 @@ function gsh_tp_css() {
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   cursor:pointer;
   transition:var(--gtp-tr);
-  box-shadow:0 1px 2px rgba(0,0,0,.05);
+  box-shadow:none;
 }
 .ge:hover{
   transform:translateY(-1px);
-  box-shadow:0 3px 8px rgba(0,0,0,.12);
+  box-shadow:none;
   filter:brightness(.94);
 }
 .gc-standard {background:var(--c-st-bg);border-color:var(--c-st-bd);color:var(--c-st-tx)}
@@ -8885,10 +8917,10 @@ function gsh_tp_css() {
   animation:gtpTodayPulse 2s ease-in-out infinite;
 }
 @keyframes gtpTodayPulse{
-  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,70,125,.45)}
+  0%,100%{transform:scale(1);box-shadow:none}
   50%{transform:scale(1.5);box-shadow:0 0 0 6px rgba(0,70,125,0)}
 }
-.gt-hol{background:#f8f9fb!important}
+.gt-hol{background:var(--cl-bg)!important}
 
 /* ── Search Focus-Mode: Nicht-Treffer abdimmen ── */
 .ge-focus-dim{
@@ -8908,17 +8940,17 @@ function gsh_tp_css() {
 .gtp-ft-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .gtp-ft-meta{display:flex;align-items:center;gap:8px;color:var(--gtp-text-faint);font-size:.75rem;padding-top:4px}
 .gtp-btn{
-  padding:8px 16px;background:var(--gtp-text);color:#fff;
+  padding:8px 16px;background:var(--gtp-text);color:var(--cl-on-primary);
   border:none;border-radius:8px;
   cursor:pointer;font-size:.8rem;font-weight:600;
   transition:var(--gtp-tr);white-space:nowrap;
-  box-shadow:0 1px 3px rgba(0,0,0,.15);
+  box-shadow:none;
 }
-.gtp-btn:hover{background:#0f172a;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.gtp-btn:hover{background:var(--cl-marine-900);transform:translateY(-1px);box-shadow:none}
 .gtp-btn-pdf{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none}
-.gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15)}
+.gtp-btn-pdf:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:none}
 .gtp-btn-ics{background:var(--gtp-bg);border:1.5px solid var(--gtp-accent);color:var(--gtp-accent);box-shadow:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.gtp-btn-ics:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,70,125,.15);color:var(--gtp-accent)}
+.gtp-btn-ics:hover{background:var(--gtp-accent-light);transform:translateY(-1px);box-shadow:none;color:var(--gtp-accent)}
 .gtp-btn-sec{background:var(--gtp-surface);border:1.5px solid var(--gtp-border);color:var(--gtp-text-muted);box-shadow:none}
 .gtp-btn-sec:hover{background:var(--gtp-bg);border-color:var(--gtp-text-muted);color:var(--gtp-text);transform:translateY(-1px);box-shadow:none}
 .gtp-btn-copied{background:var(--gtp-accent-light);border-color:var(--gtp-accent);color:var(--gtp-accent)}
@@ -8940,14 +8972,14 @@ function gsh_tp_css() {
 .gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
 .gtp-pdf-hint{
-  position:fixed;top:0;left:0;right:0;background:var(--gtp-text);color:#fff;
+  position:fixed;top:0;left:0;right:0;background:var(--gtp-text);color:var(--cl-on-primary);
   padding:12px 20px;font-size:.82rem;text-align:center;z-index:10000;
   animation:gtpSlideDown .3s ease-out;
   display:flex;align-items:center;justify-content:center;gap:12px;
 }
 @keyframes gtpSlideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
 .gtp-pdf-hint-close{
-  background:rgba(255,255,255,.15);border:none;color:#fff;
+  background:rgba(255,255,255,.15);border:none;color:var(--cl-on-primary);
   border-radius:50%;width:24px;height:24px;cursor:pointer;
   font-size:14px;line-height:1;flex-shrink:0;transition:var(--gtp-tr-fast);
 }
@@ -8960,18 +8992,18 @@ function gsh_tp_css() {
 #gtp-heute-btn{
   position:fixed;bottom:28px;right:28px;z-index:9999;
   padding:11px 22px;
-  background:var(--gtp-accent);color:#fff;border:none;
+  background:var(--gtp-accent);color:var(--cl-on-primary);border:none;
   border-radius:50px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:.88rem;font-weight:700;letter-spacing:.01em;
-  box-shadow:0 4px 20px rgba(0,70,125,.35);
+  box-shadow:none;
   cursor:pointer;
   opacity:0;pointer-events:none;
   transition:opacity .3s ease,transform .3s ease,box-shadow .3s ease;
   transform:translateY(10px);
 }
 #gtp-heute-btn.gtp-heute-vis{opacity:1;pointer-events:auto;transform:translateY(0)}
-#gtp-heute-btn:hover{background:var(--gtp-accent-dark);box-shadow:0 6px 24px rgba(0,52,92,.35);transform:translateY(-2px)}
+#gtp-heute-btn:hover{background:var(--gtp-accent-dark);box-shadow:none;transform:translateY(-2px)}
 
 /* ── Suchfeld ── */
 .gtp-search-results{
@@ -8986,26 +9018,25 @@ function gsh_tp_css() {
 }
 .gtp-search-input:focus{
   border-color:var(--gtp-accent);background:var(--gtp-bg);
-  box-shadow:0 0 0 3px rgba(0,70,125,.12);
+  box-shadow:var(--cl-focus-ring);
 }
 .gtp-search-results{
   display:flex;flex-wrap:wrap;gap:4px;align-items:center;
   font-size:.73rem;padding:0 4px;min-height:18px;
 }
 .gtp-sr-count{color:var(--gtp-text-muted);font-weight:600}
-.gtp-sr-none{color:#ef4444;font-weight:600}
+.gtp-sr-none{color:var(--cl-danger);font-weight:600}
 .gtp-sr-q{
   display:inline-block;padding:1px 9px;
   background:var(--gtp-accent-light);color:var(--gtp-accent);border-radius:10px;
   text-decoration:none;font-weight:700;font-size:.71rem;
   transition:var(--gtp-tr-fast);
 }
-.gtp-sr-q:hover{background:var(--gtp-accent);color:#fff}
+.gtp-sr-q:hover{background:var(--gtp-accent);color:var(--cl-on-primary)}
 
 /* ── Treffer-Highlight (Textsuche) ── */
 .ge-hit{
-  outline:2px solid #f59e0b!important;
-  box-shadow:0 0 0 3px rgba(245,158,11,.2)!important;
+  outline:2px solid var(--cl-warning)!important;
   z-index:1;position:relative;
 }
 
@@ -9077,7 +9108,7 @@ function gsh_tp_css() {
     color:var(--gtp-accent);font-weight:600;
     transition:var(--gtp-tr-fast);
   }
-  .gtp-mob-today-btn:active{background:var(--gtp-accent);color:#fff}
+  .gtp-mob-today-btn:active{background:var(--gtp-accent);color:var(--cl-on-primary)}
 
   /* ── Wochenköpfe: iOS-Sektions-Header ── */
   .gtp-mob-wh{
@@ -9088,7 +9119,6 @@ function gsh_tp_css() {
     border-bottom:1px solid var(--gtp-border);
     padding:6px 0;
     font-size:.75rem;font-weight:700;color:var(--gtp-text-muted);
-    text-transform:uppercase;letter-spacing:.07em;
     margin:12px 0 0;
   }
   .admin-bar .gtp-mob-wh{top:124px}
@@ -9138,7 +9168,6 @@ function gsh_tp_css() {
   .gtp-mob-date{flex:0 0 44px;text-align:center;padding-top:2px}
   .gtp-mob-dow{
     font-size:.65rem;font-weight:600;color:var(--gtp-text-muted);
-    text-transform:uppercase;letter-spacing:.06em;
     line-height:1;margin-bottom:4px;
   }
   .gtp-mob-dm{
@@ -9147,7 +9176,7 @@ function gsh_tp_css() {
   }
   .gtp-mob-today .gtp-mob-dow{color:var(--gtp-today-bd)}
   .gtp-mob-today .gtp-mob-dm{
-    background:var(--gtp-today-bd);color:#fff;
+    background:var(--gtp-today-bd);color:var(--cl-on-primary);
     border-radius:50%;width:32px;height:32px;
     display:flex;align-items:center;justify-content:center;
     margin:2px auto 0;font-size:1rem;
@@ -9155,9 +9184,9 @@ function gsh_tp_css() {
   .gtp-mob-hol .gtp-mob-dow,.gtp-mob-hol .gtp-mob-dm{color:var(--gtp-text-faint)}
   /* „HEUTE"-Badge */
   .gtp-mob-badge{
-    font-size:.52rem;background:var(--gtp-today-bd);color:#fff;
+    font-size:.52rem;background:var(--gtp-today-bd);color:var(--cl-on-primary);
     border-radius:4px;padding:1px 4px;margin-top:4px;
-    font-weight:700;display:block;letter-spacing:.04em;text-align:center;
+    font-weight:700;display:block;text-align:center;
   }
 
   /* ── Events-Spalte (rechts) ── */
@@ -9166,7 +9195,7 @@ function gsh_tp_css() {
     font-size:.82rem;padding:6px 10px;
     white-space:normal;overflow:visible;text-overflow:clip;
     border-radius:8px;
-    box-shadow:0 1px 3px rgba(0,0,0,.06);
+    box-shadow:none;
   }
 
   /* ── Floating Heute-Button ── */
@@ -9205,23 +9234,23 @@ function gsh_tp_css() {
 .gtp-changes-item:last-child{border-bottom:none}
 .gtp-changes-badge{
   flex:0 0 auto;padding:1px 7px;border-radius:4px;
-  font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  font-size:.64rem;font-weight:700;
 }
 .gtp-changes-badge-new{background:var(--c-pr-bg);color:var(--c-pr-tx)}
 .gtp-changes-badge-del{background:var(--c-pf-bg);color:var(--c-pf-tx)}
 .gtp-changes-badge-mod{background:var(--c-kf-bg);color:var(--c-kf-tx)}
 /* Hervorhebung geänderter Events */
-.ge-changed{box-shadow:0 0 0 2px #f59e0b,0 0 8px rgba(245,158,11,.25)!important;position:relative}
-.ge-changed::after{content:"\25CF";position:absolute;top:-4px;right:-4px;font-size:8px;color:#f59e0b;line-height:1}
-.ge-new{box-shadow:0 0 0 2px #22c55e,0 0 8px rgba(34,197,94,.25)!important;position:relative}
-.ge-new::after{content:"\2605";position:absolute;top:-4px;right:-4px;font-size:8px;color:#22c55e;line-height:1}
+.ge-changed{box-shadow:0 0 0 2px var(--cl-warning)!important;position:relative}
+.ge-changed::after{content:"\25CF";position:absolute;top:-4px;right:-4px;font-size:8px;color:var(--cl-warning);line-height:1}
+.ge-new{box-shadow:0 0 0 2px var(--cl-success)!important;position:relative}
+.ge-new::after{content:"\2605";position:absolute;top:-4px;right:-4px;font-size:8px;color:var(--cl-success);line-height:1}
 @keyframes gtpPulse{
-  0%,100%{box-shadow:0 0 0 2px #f59e0b}
-  50%{box-shadow:0 0 0 2px #f59e0b,0 0 12px rgba(245,158,11,.45)}
+  0%,100%{box-shadow:0 0 0 2px var(--cl-warning)}
+  50%{box-shadow:0 0 0 3px var(--cl-warning)}
 }
 @keyframes gtpPulseNew{
-  0%,100%{box-shadow:0 0 0 2px #22c55e}
-  50%{box-shadow:0 0 0 2px #22c55e,0 0 12px rgba(34,197,94,.45)}
+  0%,100%{box-shadow:0 0 0 2px var(--cl-success)}
+  50%{box-shadow:0 0 0 3px var(--cl-success)}
 }
 .ge-changed{animation:gtpPulse 2s ease-in-out 3}
 .ge-new{animation:gtpPulseNew 2s ease-in-out 3}
@@ -9244,7 +9273,7 @@ function gsh_tp_css() {
 .gtp-popup-card{
   background:var(--gtp-bg);border-radius:16px;padding:1.6rem 1.75rem;
   max-width:500px;width:calc(100% - 2rem);
-  box-shadow:0 16px 48px rgba(0,0,0,.2),0 2px 8px rgba(0,0,0,.1);
+  box-shadow:var(--cl-shadow-float);
   position:relative;max-height:88vh;overflow-y:auto;
   animation:gtpSlideUp .22s ease;
 }
@@ -9259,8 +9288,7 @@ function gsh_tp_css() {
 }
 .gtp-popup-close:hover{background:var(--gtp-border);color:var(--gtp-text)}
 .gtp-popup-cat{
-  display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.07em;
-  text-transform:uppercase;padding:.2rem .65rem;border-radius:20px;
+  display:inline-block;font-size:.7rem;font-weight:700;padding:.2rem .65rem;border-radius:20px;
   background:var(--gtp-surface);color:var(--gtp-text-muted);margin-bottom:.75rem;
 }
 .gtp-popup-cat.gc-standard {background:var(--c-st-bg);color:var(--c-st-tx)}
@@ -9290,13 +9318,12 @@ function gsh_tp_css() {
 .gtp-feedback-type:hover{border-color:var(--gtp-accent);color:var(--gtp-accent)}
 .gtp-feedback-type-active{
   border-color:var(--gtp-accent);
-  background:var(--gtp-accent-light,#e6f4ff);
+  background:var(--gtp-accent-light,var(--cl-marine-100));
   color:var(--gtp-accent);
 }
 .gtp-feedback-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.875rem}
 .gtp-feedback-label{
   display:block;font-size:.72rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.06em;
   color:var(--gtp-text-muted);
 }
 .gtp-feedback-textarea{
@@ -9316,8 +9343,8 @@ function gsh_tp_css() {
   padding:.6rem .875rem;border-radius:8px;font-size:.84rem;line-height:1.5;
   margin-top:.75rem;
 }
-.gtp-feedback-status-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
-.gtp-feedback-status-err{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.gtp-feedback-status-ok{background:var(--cl-success-bg);color:var(--cl-success);border:1px solid var(--cl-success)}
+.gtp-feedback-status-err{background:var(--cl-danger-bg);color:var(--cl-danger);border:1px solid var(--cl-danger)}
 /* Bottom Sheet auf Mobile */
 @media(max-width:767px){
   .gtp-popup-overlay{align-items:flex-end;background:rgba(0,0,0,.3)}
@@ -9341,15 +9368,15 @@ function gsh_tp_css() {
 }
 /* ── Changelog-Modal (Frontend) ────────────────────────────────────────── */
 .gtp-version-btn{
-  background:var(--gtp-surface,#f8fafc);
-  border:1px solid var(--gtp-border,#e2e8f0);border-radius:4px;
-  padding:3px 9px;font-size:11px;color:var(--gtp-text-muted,#64748b);
+  background:var(--gtp-surface,var(--cl-bg));
+  border:1px solid var(--gtp-border,var(--cl-line));border-radius:4px;
+  padding:3px 9px;font-size:11px;color:var(--gtp-text-muted,var(--cl-ink-500));
   cursor:pointer;transition:background .15s,color .15s,border-color .15s;
   font-family:inherit;
 }
 .gtp-version-btn:hover{
-  background:var(--gtp-accent,#00467D);color:#fff;
-  border-color:var(--gtp-accent,#00467D);
+  background:var(--gtp-accent,var(--cl-marine-700));color:var(--cl-on-primary);
+  border-color:var(--gtp-accent,var(--cl-marine-700));
 }
 .gtp-changelog-card{
   max-width:560px;
@@ -9359,19 +9386,18 @@ function gsh_tp_css() {
 .gtp-cl-version{margin-bottom:1.2rem}
 .gtp-cl-vtag{
   display:inline-block;font-weight:700;font-size:13px;
-  color:var(--gtp-text,#1e293b);margin-bottom:.4rem;
+  color:var(--gtp-text,var(--cl-ink-900));margin-bottom:.4rem;
 }
 .gtp-cl-list{margin:.3rem 0 0 1rem;padding:0;list-style:disc}
-.gtp-cl-list li{font-size:13px;color:var(--gtp-text-muted,#64748b);margin:.25rem 0}
+.gtp-cl-list li{font-size:13px;color:var(--gtp-text-muted,var(--cl-ink-500));margin:.25rem 0}
 .gtp-cl-tag{
-  display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.04em;padding:1px 6px;border-radius:3px;
+  display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;
   margin-right:5px;vertical-align:middle;
 }
-.gtp-cl-tag--feature {background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
-.gtp-cl-tag--ux      {background:#dce8f5;color:#00467D;border:1px solid #b3cfe6}
-.gtp-cl-tag--bugfix  {background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
-.gtp-cl-tag--security{background:#fef3c7;color:#d97706;border:1px solid #fde68a}
+.gtp-cl-tag--feature {background:var(--cl-success-bg);color:var(--cl-success);border:1px solid var(--cl-success)}
+.gtp-cl-tag--ux      {background:var(--cl-marine-100);color:var(--cl-marine-700);border:1px solid var(--cl-marine-500)}
+.gtp-cl-tag--bugfix  {background:var(--cl-danger-bg);color:var(--cl-danger);border:1px solid var(--cl-danger)}
+.gtp-cl-tag--security{background:var(--cl-warning-bg);color:var(--cl-warning);border:1px solid var(--cl-warning)}
 /* ── Dynamische Kategorie-CSS (konfigurierbare Kategorien überschreiben Standard) ── */
 ' . $cat['rules'] . '
 
@@ -9388,7 +9414,7 @@ function gsh_tp_css() {
   background:var(--gtp-bg);border-radius:16px;
   width:100%;max-width:520px;max-height:82vh;
   overflow:hidden;display:flex;flex-direction:column;
-  box-shadow:0 20px 60px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.1);
+  box-shadow:var(--cl-shadow-float);
 }
 .gtp-help-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -10228,7 +10254,7 @@ function gtpPrint(mode,pdfTitle){
     +'</div>';
 
   /* ── Footer: fixed → erscheint auf jeder PDF-Seite ── */
-  var FTR='<div class="pdf-ft">Stand: '+today+'\u2003|\u2003Erstellt \u00fcber das Curriculr-Dashboard</div>';
+  var FTR='<div class="pdf-ft">Stand: '+today+'\u2003|\u2003Erstellt \u00fcber das Curricu:lr-Dashboard</div>';
 
   var body=FTR; /* Footer zuerst (fixed, daher immer gerendert) */
   for(var i=0;i<ids.length;i++){
@@ -10604,7 +10630,7 @@ function gtpChangesInit(){
   if(totalChanged>0) parts.push(totalChanged+" ge\u00e4ndert");
   if(totalRemoved>0) parts.push(totalRemoved+" entfernt");
   var text=total+" \u00c4nderung"+(total>1?"en":"")
-    +" seit deinem letzten Besuch ("+parts.join(", ")+")";
+    +" seit Ihrem letzten Besuch ("+parts.join(", ")+")";
 
   var textEl=document.getElementById("gtpChangesText");
   if(textEl) textEl.textContent=text;
@@ -10725,13 +10751,13 @@ function gtpPdfHint(){
 
   var msg;
   if(isChrome){
-    msg='Waehle im Druckdialog bei \u201eZiel\u201c \u2192 \u201eAls PDF speichern\u201c und klicke \u201eSpeichern\u201c.';
+    msg='Im Druckdialog bei \u201eZiel\u201c \u2192 \u201eAls PDF speichern\u201c w\u00e4hlen und \u201eSpeichern\u201c anklicken.';
   }else if(isSafari){
-    msg='Klicke im Druckdialog unten links auf \u201ePDF\u201c \u2192 \u201eAls PDF sichern\u201c.';
+    msg='Im Druckdialog unten links \u201ePDF\u201c \u2192 \u201eAls PDF sichern\u201c anklicken.';
   }else if(isFirefox){
-    msg='Waehle im Druckdialog bei \u201eDrucker\u201c \u2192 \u201eMicrosoft Print to PDF\u201c oder \u201eAls PDF speichern\u201c.';
+    msg='Im Druckdialog bei \u201eDrucker\u201c \u2192 \u201eMicrosoft Print to PDF\u201c oder \u201eAls PDF speichern\u201c w\u00e4hlen.';
   }else{
-    msg='Waehle im Druckdialog die Option \u201eAls PDF speichern\u201c.';
+    msg='Im Druckdialog die Option \u201eAls PDF speichern\u201c w\u00e4hlen.';
   }
 
   var hint=document.createElement("div");
@@ -10852,7 +10878,7 @@ function gtpPopupOpen(el){
 
   /* Uhrzeit */
   var timeEl=document.getElementById("gtpPopupTime");
-  timeEl.textContent=time?"\u23F0 "+time:"";
+  timeEl.textContent=time?time:"";
 
   /* Ort */
   var locEl=document.getElementById("gtpPopupLoc");
@@ -11158,20 +11184,20 @@ function gtpFeedbackSubmit() {
       st.style.display = 'block';
       if (data.success) {
         st.className   = 'gtp-feedback-status gtp-feedback-status-ok';
-        st.textContent = '\u2713 ' + (data.data.message || 'Feedback gesendet. Danke!');
+        st.textContent = (data.data.message || 'Feedback gesendet. Danke!');
         setTimeout(function() {
           gtpFeedbackClose();
           var fbBtn = document.getElementById('gtp-feedback-btn');
           if (fbBtn) {
             var orig = fbBtn.innerHTML;
-            fbBtn.innerHTML = '&#10003; Danke!';
+            fbBtn.textContent = 'Danke!';
             fbBtn.disabled  = true;
             setTimeout(function() { fbBtn.innerHTML = orig; fbBtn.disabled = false; }, 3000);
           }
         }, 2000);
       } else {
         st.className    = 'gtp-feedback-status gtp-feedback-status-err';
-        st.textContent  = '\u2717 ' + (data.data.message || 'Fehler beim Senden.');
+        st.textContent  = 'Fehler: ' + (data.data.message || 'Fehler beim Senden.');
         sub.disabled    = false;
         sub.textContent = 'Absenden';
       }
@@ -11180,7 +11206,7 @@ function gtpFeedbackSubmit() {
       if (st) {
         st.style.display = 'block';
         st.className     = 'gtp-feedback-status gtp-feedback-status-err';
-        st.textContent   = '\u2717 Verbindungsfehler. Bitte erneut versuchen.';
+        st.textContent   = 'Verbindungsfehler. Bitte erneut versuchen.';
       }
       sub.disabled    = false;
       sub.textContent = 'Absenden';
