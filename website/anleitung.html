@@ -2,409 +2,82 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Installationsanleitung – Terminplan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root {
-  --primary-900: #00345C; --primary-800: #003F6E; --primary-700: #00467D;
-  --primary-600: #005499; --primary-500: #0066B8; --primary-400: #3389CC;
-  --primary-300: #66AADD; --primary-200: #99CAEE; --primary-100: #CCE4F6;
-  --primary-50:  #E6F4FF;
-  --accent-warn: #FFC857; --accent-warn-light: #FFE5A8;
-  --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
-  --slate-600: #475569; --slate-500: #64748b; --slate-400: #94a3b8;
-  --slate-300: #cbd5e1; --slate-200: #e2e8f0; --slate-100: #f1f5f9;
-  --slate-50: #f8fafc;
-  --ink: var(--slate-900); --ink-2: var(--slate-700); --ink-3: var(--slate-500);
-  --line: var(--slate-200); --bg: var(--slate-50); --surface: #ffffff;
-  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
-  --shadow-md: 0 4px 16px rgba(0,52,92,.10), 0 1px 4px rgba(0,52,92,.06);
-  --shadow-sm: 0 2px 8px rgba(0,52,92,.07), 0 1px 2px rgba(0,52,92,.04);
-  --font-display: 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --max-w: 1100px; --gap: 96px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { font-family: var(--font-body); background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
-.container { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; }
-@media (max-width: 640px) { .container { padding: 0 18px; } }
-
-/* nav */
-.nav { position: sticky; top: 0; z-index: 100; background: var(--primary-900); box-shadow: 0 2px 16px rgba(0,52,92,.3); }
-.nav-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.nav-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
-.nav-logo-mark { width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,.25); }
-.nav-logo-mark svg { width: 18px; height: 18px; }
-.nav-logo-text { font-weight: 700; font-size: .95rem; color: #fff; letter-spacing: -.01em; }
-.nav-logo-text span { color: rgba(255,255,255,.6); font-weight: 500; }
-.nav-logo-colon { color: #FFC857; font-weight: 800; }
-.nav-links { display: flex; gap: 28px; list-style: none; }
-.nav-links a { font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.75); text-decoration: none; transition: color .15s; }
-.nav-links a:hover, .nav-links a[aria-current="page"] { color: #fff; }
-.nav-cta { background: var(--accent-warn); color: #fff; font-size: .82rem; font-weight: 700; padding: 9px 20px; border-radius: var(--r-sm); text-decoration: none; transition: opacity .15s, transform .1s; display: flex; align-items: center; gap: 7px; box-shadow: 0 2px 8px rgba(255,200,87,.35); }
-.nav-cta:hover { opacity: .9; transform: translateY(-1px); }
-@media (max-width: 640px) { .nav-links { display: none; } .nav-inner { padding: 0 18px; } }
-
-/* hero */
-.page-hero { background: linear-gradient(160deg, var(--primary-900) 0%, #002847 100%); padding: 48px 0 44px; }
-.breadcrumb { font-size: .78rem; color: rgba(255,255,255,.55); margin-bottom: 12px; }
-.breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
-.breadcrumb a:hover { color: rgba(255,255,255,.85); }
-.breadcrumb span { margin: 0 6px; }
-.page-hero h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.04em; color: #fff; line-height: 1.1; }
-.page-hero p { color: rgba(255,255,255,.7); font-size: 1rem; margin-top: 10px; max-width: 540px; }
-
-/* badges */
-.req-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 36px 0; }
-.req-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--primary-50); border: 1.5px solid var(--primary-200); color: var(--primary-900); font-size: .82rem; font-weight: 700; padding: 7px 14px; border-radius: 100px; }
-.req-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
-
-/* steps */
-.steps-section { padding: 64px 0 0; }
-.steps-section h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: -.03em; margin-bottom: 10px; }
-.steps-section p.lead { font-size: 1rem; color: var(--ink-3); margin-bottom: 48px; }
-
-.step-list { display: flex; flex-direction: column; gap: 0; }
-.step-item { display: flex; gap: 28px; position: relative; padding-bottom: 44px; }
-.step-item:last-child { padding-bottom: 0; }
-.step-item:last-child .step-line { display: none; }
-.step-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-.step-num {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--primary-700); color: #fff;
-  font-size: .9rem; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; z-index: 1;
-  box-shadow: 0 0 0 4px var(--primary-50);
-}
-.step-line { width: 2px; flex: 1; background: var(--primary-200); margin-top: 8px; }
-.step-body { padding-top: 8px; flex: 1; min-width: 0; }
-.step-body h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px; color: var(--ink); }
-.step-body p { font-size: .9rem; color: var(--ink-2); line-height: 1.7; margin-bottom: 10px; }
-.step-body p:last-child { margin-bottom: 0; }
-.step-code { background: var(--slate-900); color: #e2e8f0; font-family: 'Consolas', 'Monaco', monospace; font-size: .82rem; padding: 14px 18px; border-radius: var(--r-sm); margin-top: 10px; overflow-x: auto; line-height: 1.6; }
-.step-code .hlg { color: var(--primary-300); }
-.step-link { display: inline-flex; align-items: center; gap: 6px; color: var(--primary-700); font-size: .88rem; font-weight: 600; text-decoration: none; margin-top: 8px; }
-.step-link:hover { text-decoration: underline; }
-.step-link svg { width: 14px; height: 14px; }
-
-@media (max-width: 640px) {
-  .step-item { gap: 16px; }
-  .step-num { width: 32px; height: 32px; font-size: .8rem; }
-}
-
-/* workflow diagram */
-.flow-section { padding: 64px 0; }
-.flow-section h2 { font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.03em; margin-bottom: 8px; }
-.flow-section p.lead { font-size: .95rem; color: var(--ink-3); margin-bottom: 36px; }
-.flow-track { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; }
-.flow-node { flex: 1; min-width: 130px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 20px 16px; text-align: center; box-shadow: var(--shadow-sm); }
-.flow-node-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--primary-50); border: 1.5px solid var(--primary-100); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-.flow-node-icon svg { width: 20px; height: 20px; color: var(--primary-700); }
-.flow-node-title { font-size: .82rem; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
-.flow-node-sub { font-size: .72rem; color: var(--ink-3); line-height: 1.4; }
-.flow-arrow { display: flex; align-items: center; padding: 0 6px; flex-shrink: 0; color: var(--primary-300); }
-.flow-arrow svg { width: 20px; height: 20px; }
-@media (max-width: 768px) { .flow-track { gap: 6px; } .flow-arrow { padding: 0 2px; } }
-
-/* faq */
-.faq-section { padding: 0 0 96px; }
-.faq-section h2 { font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.03em; margin-bottom: 32px; }
-.faq-list { display: flex; flex-direction: column; }
-details.faq-item { border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--surface); overflow: hidden; }
-details.faq-item + details.faq-item { margin-top: 8px; }
-details.faq-item[open] { border-color: var(--primary-300); }
-summary.faq-q { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 22px; font-size: .95rem; font-weight: 600; color: var(--ink); cursor: pointer; user-select: none; }
-summary.faq-q::-webkit-details-marker { display: none; }
-.faq-chevron { width: 18px; height: 18px; flex-shrink: 0; color: var(--ink-3); transition: transform .2s; }
-details[open] .faq-chevron { transform: rotate(180deg); }
-.faq-body { padding: 0 22px 18px; font-size: .9rem; color: var(--ink-2); line-height: 1.75; }
-.faq-body a { color: var(--primary-700); text-decoration: none; }
-.faq-body a:hover { text-decoration: underline; }
-.faq-body code { background: var(--slate-100); padding: 1px 6px; border-radius: 4px; font-size: .85em; font-family: 'Consolas', monospace; }
-
-/* footer */
-footer { background: var(--primary-900); }
-.footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 40px 32px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
-.footer-logo { font-weight: 800; font-size: 1.1rem; color: #fff; letter-spacing: -.02em; margin-bottom: 6px; }
-.footer-sub { font-size: .8rem; color: rgba(255,255,255,.5); line-height: 1.6; }
-.footer-legal { display: flex; gap: 16px; flex-wrap: wrap; font-size: .78rem; margin-top: 12px; }
-.footer-legal a { color: var(--primary-300); text-decoration: none; transition: color .15s; }
-.footer-legal a:hover { color: #fff; }
-.footer-legal span { color: rgba(255,255,255,.3); }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Installationsanleitung – Curricu:lr Terminplan</title>
+<meta name="description" content="WordPress-Plugin einrichten, iCal-Feed verbinden und Termine auf der Schulwebsite anzeigen.">
+<link rel="icon" href="assets/logo/curriculr-icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/design/curriculr-tokens.css">
+<link rel="stylesheet" href="assets/design/curriculr-ui.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/design/curriculr-print.css" media="print">
 </head>
 <body>
-
-<nav class="nav" aria-label="Hauptnavigation">
-  <div class="nav-inner">
-    <a class="nav-logo" href="index.html" aria-label="Curricu:lr Terminplan Startseite">
-      <div class="nav-logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
-          <circle cx="8" cy="12" r="3.5" fill="#FFC857"/>
-          <circle cx="16" cy="12" r="3.5" fill="#FFC857"/>
-        </svg>
-      </div>
-      <div class="nav-logo-text">Curricu<span class="nav-logo-colon">:</span>lr <span>/ Terminplan</span></div>
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <picture>
+        <source srcset="assets/logo/curriculr-logo-auf-dunkel.svg" media="(prefers-color-scheme: dark)">
+        <img src="assets/logo/curriculr-logo-auf-hell.svg" alt="Curricu:lr" width="118" height="40">
+      </picture>
+      <span class="brand-product">Terminplan</span>
     </a>
-    <ul class="nav-links" role="list">
-      <li><a href="index.html#download">Downloads</a></li>
-      <li><a href="anleitung.html" aria-current="page">Anleitung</a></li>
-      <li><a href="download.html">Plugin</a></li>
-      <li><a href="impressum.html">Impressum</a></li>
-    </ul>
-    <a class="nav-cta" href="download.html">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Herunterladen
-    </a>
+    <nav aria-label="Hauptnavigation">
+      <ul class="nav">
+        <li><a href="index.html#download">Downloads</a></li>
+        <li><a href="anleitung.html" aria-current="page">Anleitung</a></li>
+        <li><a href="download.html">Plugin</a></li>
+        <li><a href="impressum.html">Impressum</a></li>
+      </ul>
+    </nav>
   </div>
-</nav>
+</header>
 
-<div class="page-hero">
-  <div class="container">
-    <div class="breadcrumb"><a href="index.html">Startseite</a><span aria-hidden="true">›</span> Anleitung</div>
+<main id="inhalt" class="cl-doc">
+<div class="wrap doc-layout">
+  <div class="doc-head">
     <h1>Installationsanleitung</h1>
-    <p>WordPress-Plugin einrichten, iCal-Feed verbinden, Termine online stellen — in 7 Schritten.</p>
+    <p>WordPress-Plugin einrichten, iCal-Feed verbinden, Termine online stellen: in sieben Schritten. Der erste Einsatz dauert etwa 30 Minuten.</p>
+    <p>Voraussetzungen: WordPress 6.0 oder höher, PHP 8.0 oder höher, ein iCal-Feed aus IServ (HTTPS) und ein Administrationszugang zu WordPress.</p>
+  </div>
+  <div class="doc-body">
+    <h2 id="schritte-title" class="visually-hidden">Schritt für Schritt</h2>
+    <ol class="steps" aria-labelledby="schritte-title"><li class="step"><div class="step-text"><h3>Plugin herunterladen</h3><p>Öffnen Sie die <a href="download.html">Download-Seite</a>, bestätigen Sie den Haftungshinweis und laden Sie die ZIP-Datei herunter.</p></div></li><li class="step"><div class="step-text"><h3>Plugin in WordPress hochladen</h3><p>Im WordPress-Adminbereich: Plugins, Installieren, Plugin hochladen. Wählen Sie die ZIP-Datei aus und klicken Sie auf „Jetzt installieren“.</p><p>Alternativ kopieren Sie den Ordner <code>gsh-terminplan</code> aus der ZIP-Datei per SFTP nach <code>wp-content/plugins/</code>.</p></div></li><li class="step"><div class="step-text"><h3>Plugin aktivieren</h3><p>Suchen Sie unter Plugins, Installierte Plugins den Eintrag „Schul-Terminplan“ und klicken Sie auf „Aktivieren“. Danach erscheint unter Einstellungen der Menüpunkt „Schul-Terminplan“.</p></div></li><li class="step"><div class="step-text"><h3>iCal-Adresse aus IServ eintragen</h3><p>In IServ geben Sie den Schulkalender für den externen Zugriff frei und kopieren die HTTPS-Adresse des iCal-Feeds (sie endet auf <code>.ics</code>).</p><p>Legen Sie in WordPress unter Einstellungen, Schul-Terminplan ein Schuljahr-Profil an (Tab „Schuljahr anlegen“), tragen Sie die Adresse ein und klicken Sie auf „Cache aufbauen“. Die Cache-Dauer beträgt standardmäßig 60 Minuten.</p><p class="note">Beispieladresse: <code>https://iserv.beispielschule.de/iserv/calendar/pub/xyz123.ics</code></p></div></li><li class="step"><div class="step-text"><h3>Schuljahres-Vorlage erstellen (optional)</h3><p>Wenn Termine noch nicht in IServ stehen, öffnen Sie den ICS-Konverter und tragen im Bereich „Schulwochen-Vorlage generieren“ Schuljahr, Eckdaten und Ferien ein. Der Konverter erstellt daraus die Excel-Vorlage, die Sie anschließend befüllen.</p><p><a href="index.html#download">Konverter und Vorlage auf der Startseite</a></p></div></li><li class="step"><div class="step-text"><h3>Excel-Termine in ICS umwandeln (optional)</h3><p>Laden Sie die ausgefüllte Excel-Datei im Konverter („Excel importieren“), prüfen Sie die Termine („Termine bearbeiten“) und exportieren Sie die ICS-Datei. Importieren Sie diese in IServ.</p><p class="note">Dieser Schritt entfällt, wenn Sie Termine ausschließlich in IServ pflegen.</p></div></li><li class="step"><div class="step-text"><h3>Shortcode auf einer Seite einfügen</h3><p>Erstellen Sie in WordPress eine Seite (zum Beispiel „Terminplan“) und fügen Sie den Shortcode ein:</p><p><code>[gsh_terminplan]</code></p><p>Veröffentlichen Sie die Seite. Der Kalender erscheint mit Quartalsansicht, Kategorie-Filter und Suche. Für die Einbettung in IServ (Kiosk-Modus) konfigurieren Sie die Token-Adresse in den Plugin-Einstellungen.</p></div></li></ol>
   </div>
 </div>
-
-<main>
-  <div class="container">
-
-    <!-- Voraussetzungen -->
-    <div class="req-row" role="list" aria-label="Systemvoraussetzungen">
-      <div class="req-badge" role="listitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        WordPress 6.0 oder höher
-      </div>
-      <div class="req-badge" role="listitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        PHP 8.0 oder höher
-      </div>
-      <div class="req-badge" role="listitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        IServ iCal-Feed (HTTPS)
-      </div>
-      <div class="req-badge" role="listitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        WordPress-Admin-Zugang
-      </div>
-    </div>
-
-    <!-- Steps -->
-    <section class="steps-section" aria-labelledby="steps-title">
-      <h2 id="steps-title">Schritt für Schritt</h2>
-      <p class="lead">Folge den Schritten der Reihe nach. Der erste Einsatz dauert ca. 30 Minuten.</p>
-
-      <ol class="step-list">
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">1</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Plugin herunterladen</h3>
-            <p>Öffne die Download-Seite und stimme dem Haftungsausschluss zu. Der Download startet als ZIP-Datei.</p>
-            <a href="download.html" class="step-link">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Zum Download
-            </a>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">2</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Plugin in WordPress hochladen</h3>
-            <p>Im WordPress-Adminbereich: <strong>Plugins → Installieren → Plugin hochladen</strong>. Die heruntergeladene ZIP-Datei auswählen und auf "Jetzt installieren" klicken.</p>
-            <p>Alternativ: Den Ordner <code>gsh-terminplan</code> aus der ZIP manuell nach <code>wp-content/plugins/</code> kopieren (z.&nbsp;B. per SFTP).</p>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">3</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Plugin aktivieren</h3>
-            <p>Nach dem Upload: <strong>Plugins → Installierte Plugins</strong>. Das Plugin "Schul-Terminplan" in der Liste suchen und auf "Aktivieren" klicken. Danach erscheint unter <strong>Einstellungen</strong> ein neuer Menüpunkt "Schul-Terminplan".</p>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">4</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>iCal-URL aus IServ eintragen</h3>
-            <p>In IServ: <strong>Kalender → Einstellungen → Externen Zugriff einrichten</strong>. Die HTTPS-URL des iCal-Feeds kopieren (endet auf <code>.ics</code>).</p>
-            <p>Im WordPress-Admin unter <strong>Einstellungen → Schul-Terminplan → Profil-Tab</strong>: URL einfügen, Cache-Dauer festlegen, speichern. Das Plugin lädt den Feed beim ersten Speichern automatisch.</p>
-            <div class="step-code">Beispiel-URL:<br><span class="hlg">https://iserv.deine-schule.de/iserv/calendar/pub/xyz123.ics</span></div>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">5</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Schuljahres-Vorlage erstellen (optional)</h3>
-            <p>Falls Termine noch nicht in IServ eingetragen sind: Den <strong>ICS-Konverter</strong> öffnen, im Schritt 2 die Schuljahres-Daten und Ferien eintragen, Vorlage herunterladen. Die Excel-Datei dann in Excel befüllen.</p>
-            <a href="index.html#download" class="step-link">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Konverter auf der Startseite
-            </a>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">6</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Excel-Termine in ICS umwandeln (optional)</h3>
-            <p>Im ICS-Konverter: Excel-Vorlage importieren (Schritt 3), Kategorien prüfen, ICS-Datei exportieren (Schritt 4). Die erzeugte <code>.ics</code>-Datei in IServ oder direkt in WordPress importieren.</p>
-            <p>Dieser Schritt ist nur nötig, wenn Termine über die Excel-Vorlage erfasst wurden. Bei reiner IServ-Nutzung entfällt er.</p>
-          </div>
-        </li>
-
-        <li class="step-item">
-          <div class="step-left" aria-hidden="true"><div class="step-num">7</div><div class="step-line"></div></div>
-          <div class="step-body">
-            <h3>Shortcode auf einer WordPress-Seite einfügen</h3>
-            <p>Eine neue Seite in WordPress erstellen (z.&nbsp;B. "Terminplan") und folgenden Shortcode einfügen:</p>
-            <div class="step-code"><span class="hlg">[gsh_terminplan]</span></div>
-            <p>Seite veröffentlichen. Der Kalender erscheint sofort mit Quartalansicht, Kategorie-Filter und Volltextsuche. Für IServ-Einbettung (Kiosk-Modus) die Token-URL in den Plugin-Einstellungen konfigurieren.</p>
-          </div>
-        </li>
-
-      </ol>
-    </section>
-
-    <!-- Workflow Diagram -->
-    <section class="flow-section" aria-labelledby="flow-title">
-      <h2 id="flow-title">Gesamtablauf</h2>
-      <p class="lead">So hängen die Komponenten zusammen.</p>
-      <div class="flow-track" role="img" aria-label="Ablaufdiagramm: Excel befüllen zu Konverter zu ICS-Datei zu IServ zu WordPress Plugin zu Schulwebsite">
-        <div class="flow-node">
-          <div class="flow-node-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-          </div>
-          <div class="flow-node-title">Excel-Vorlage</div>
-          <div class="flow-node-sub">Termine eintragen</div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="flow-node">
-          <div class="flow-node-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          </div>
-          <div class="flow-node-title">ICS-Konverter</div>
-          <div class="flow-node-sub">Excel importieren</div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="flow-node">
-          <div class="flow-node-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div class="flow-node-title">.ics Datei</div>
-          <div class="flow-node-sub">in IServ laden</div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="flow-node">
-          <div class="flow-node-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </div>
-          <div class="flow-node-title">IServ iCal-Feed</div>
-          <div class="flow-node-sub">HTTPS-URL</div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="flow-node">
-          <div class="flow-node-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div class="flow-node-title">WP Plugin</div>
-          <div class="flow-node-sub">Feed abrufen</div>
-        </div>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="flow-node">
-          <div class="flow-node-icon" style="background: var(--accent-warn-light); border-color: var(--accent-warn);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#C49B00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
-          <div class="flow-node-title">Schulwebsite</div>
-          <div class="flow-node-sub">Terminplan live</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="faq-section" aria-labelledby="faq-title">
-      <h2 id="faq-title">Häufige Fragen</h2>
-      <div class="faq-list">
-
-        <details class="faq-item">
-          <summary class="faq-q">
-            Funktioniert das Plugin auch ohne IServ?
-            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">Ja, mit Einschränkungen. Das Plugin liest jeden gültigen iCal-Feed (HTTPS). Der Konverter erzeugt eine <code>.ics</code>-Datei, die als statische Datei auf einem Webserver gehostet werden kann. Ohne IServ entfällt der automatische Sync — die ICS-Datei muss manuell erneuert und neu verlinkt werden.</div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-q">
-            Wie oft wird der iCal-Feed aktualisiert?
-            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">Die Cache-Dauer ist in den Plugin-Einstellungen konfigurierbar (Standard: 60 Minuten). Das Plugin nutzt WordPress-Cron für Hintergrundaktualisierungen. Änderungen in IServ sind spätestens nach Ablauf des Cache-Intervalls sichtbar.</div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-q">
-            Kann ich eigene Kategorien anlegen?
-            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">Ja. Unter <strong>Einstellungen → Schul-Terminplan → Kategorien</strong> können Kategorien hinzugefügt, umbenannt, eingefärbt und mit Stichwörtern für automatisches Matching ausgestattet werden. Bis zu 20 Kategorien, die Farben frei wählbar.</div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-q">
-            Was passiert bei WordPress-Updates?
-            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">Das Plugin wird nicht automatisch mit WordPress aktualisiert (kein WordPress.org-Verzeichnis). Nach einem WordPress-Major-Update empfiehlt sich ein Test in einer Staging-Umgebung. Bei Kompatibilitätsproblemen bitte ein <a href="https://github.com/juwagn/curriculr-terminplan/issues" target="_blank" rel="noopener noreferrer">GitHub Issue</a> öffnen.</div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-q">
-            Wo melde ich Fehler oder Verbesserungsvorschläge?
-            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="faq-body">Über <a href="https://github.com/juwagn/curriculr-terminplan/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>. Kein Support garantiert — das ist ein Hobbyprojekt. Fehlermeldungen mit WordPress-Version, PHP-Version und konkreter Fehlerbeschreibung werden bevorzugt bearbeitet.</div>
-        </details>
-
-      </div>
-    </section>
-
+<section class="section section--surface" aria-labelledby="ablauf-title">
+  <div class="wrap">
+    <div class="section-head"><h2 id="ablauf-title">Gesamtablauf</h2><p>So hängen die Komponenten zusammen.</p></div>
+    <ol class="flow">
+      <li><strong>1. Excel-Vorlage</strong><span>Termine nach Schulwochen eintragen</span></li>
+      <li><strong>2. ICS Konverter</strong><span>Excel importieren, ICS exportieren</span></li>
+      <li><strong>3. IServ-Kalender</strong><span>ICS-Datei importieren</span></li>
+      <li><strong>4. iCal-Feed</strong><span>HTTPS-Adresse des Kalenders</span></li>
+      <li><strong>5. WordPress-Plugin</strong><span>Feed abrufen und zwischenspeichern</span></li>
+      <li><strong>6. Schulwebsite</strong><span>Terminplan ist online</span></li>
+    </ol>
   </div>
+</section>
+<section class="section" aria-labelledby="faq-title">
+  <div class="wrap">
+    <div class="section-head"><h2 id="faq-title">Häufige Fragen</h2></div>
+    <div class="faq"><details><summary>Funktioniert das Plugin auch ohne IServ?</summary><div class="answer"><p>Mit Einschränkungen. Das Plugin liest jeden gültigen iCal-Feed über HTTPS. Der Konverter erzeugt eine ICS-Datei, die Sie als statische Datei auf einem Webserver bereitstellen können. Ohne IServ entfällt die automatische Synchronisation; Sie müssen die Datei dann selbst erneuern.</p></div></details><details><summary>Wie oft wird der iCal-Feed aktualisiert?</summary><div class="answer"><p>Die Cache-Dauer stellen Sie in den Plugin-Einstellungen ein (Standard 60 Minuten, mindestens 5 Minuten). Das Plugin nutzt den WordPress-Cron für Hintergrundaktualisierungen. Änderungen in IServ sind spätestens nach Ablauf der Cache-Dauer sichtbar.</p></div></details><details><summary>Kann ich eigene Kategorien anlegen?</summary><div class="answer"><p>Im Konverter: ja, bis zu 20 Kategorien mit eigenen Farben und Stichwörtern. Im Plugin sind Beschriftungen, Farben und Stichwörter der Kategorien in den Einstellungen konfigurierbar.</p></div></details><details><summary>Was passiert bei WordPress-Updates?</summary><div class="answer"><p>Das Plugin liegt nicht im WordPress-Verzeichnis und wird deshalb nicht automatisch aktualisiert. Nach einem größeren WordPress-Update empfiehlt sich ein Test in einer Staging-Umgebung. Bei Problemen öffnen Sie bitte ein <a href="https://github.com/juwagn/curriculr-terminplan/issues" target="_blank" rel="noopener noreferrer">Issue auf GitHub</a>.</p></div></details><details><summary>Wo melde ich Fehler oder Verbesserungsvorschläge?</summary><div class="answer"><p>Über <a href="https://github.com/juwagn/curriculr-terminplan/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>. Es gibt keine Supportzusage. Meldungen mit WordPress-Version, PHP-Version und genauer Fehlerbeschreibung lassen sich am besten bearbeiten.</p></div></details></div>
+  </div>
+</section>
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div>
-      <div class="footer-logo">Terminplan</div>
-      <div class="footer-sub">Digitaler Schulkalender · Open Source Schul-Projekt<br>Entwickelt von Julian Wagner · Stand Mai 2026</div>
-      <div class="footer-legal">
-        <a href="impressum.html">Impressum &amp; Datenschutz</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a>
-      </div>
-    </div>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Teil der Curricu:lr-Familie &middot; Website-Stand Oktober 2026 &middot; Privatprojekt von Julian Wagner, GPL v2 oder neuer, ohne Gewährleistung.</p>
+    <ul>
+      <li><a href="impressum.html">Impressum und Datenschutz</a></li>
+      <li><a href="anleitung.html">Hilfe</a></li>
+      <li><a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a></li>
+    </ul>
   </div>
 </footer>
-
-<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  kofiWidgetOverlay.draw('juwagn', {
-    'type': 'floating-chat',
-    'floating-chat.donateButton.text': 'Support me',
-    'floating-chat.donateButton.background-color': '#ffffff',
-    'floating-chat.donateButton.text-color': '#323842'
-  });
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>

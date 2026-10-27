@@ -344,6 +344,11 @@ Bei jedem Release müssen genau diese vier Stellen auf `X.Y.Z` gesetzt werden:
 
 ## Changelog
 
+### Website (Oktober 2026)
+- [DESIGN] Website nach den Curricu:lr-Designregeln neu aufgebaut: Inter lokal statt Google Fonts, Tokens und Logo aus `curriculr-design`, keine Verläufe, Schatten oder Emojis, Schulwochen-Spalte und goldener Doppelpunkt als Erkennungszeichen, Anrede „Sie“, Dunkelmodus, Skip-Link, Druck als PDF ohne zerschnittene Blöcke
+- [FIX] Texte geprüft: Konverter 2.3 (nicht 2.5), Schulwochen-Vorlage 2026/27 mit SW 00 bis SW 41, Hinweis auf SheetJS-Nachladen (kein reiner Offline-Betrieb), Konverter-Schrittnamen, Impressum nach DDG statt TMG
+- [SECURITY] Ko-fi-Overlay-Widget (Skript von storage.ko-fi.com) entfernt; die Website lädt keine Drittanbieter-Ressourcen mehr
+
 ### 4.12.0
 - [FIX] 409-Konfliktantwort enthält jetzt `authorName` und `savedAt` (aus `wp_curriculr_doc_revisions`) — Planner zeigt „Gespeichert von X am TT.MM.JJJJ"
 

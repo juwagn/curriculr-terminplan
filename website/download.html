@@ -2,269 +2,83 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plugin herunterladen – Terminplan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root {
-  --primary-900: #00345C; --primary-800: #003F6E; --primary-700: #00467D;
-  --primary-600: #005499; --primary-500: #0066B8; --primary-400: #3389CC;
-  --primary-300: #66AADD; --primary-200: #99CAEE; --primary-100: #CCE4F6;
-  --primary-50:  #E6F4FF;
-  --accent-warn: #FFC857; --accent-warn-light: #FFE5A8;
-  --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
-  --slate-600: #475569; --slate-500: #64748b; --slate-400: #94a3b8;
-  --slate-300: #cbd5e1; --slate-200: #e2e8f0; --slate-100: #f1f5f9;
-  --slate-50: #f8fafc;
-  --ink: var(--slate-900); --ink-2: var(--slate-700); --ink-3: var(--slate-500);
-  --line: var(--slate-200); --bg: var(--slate-50); --surface: #ffffff;
-  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
-  --shadow-md: 0 4px 16px rgba(0,52,92,.10), 0 1px 4px rgba(0,52,92,.06);
-  --font-display: 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --max-w: 1100px; --gap: 96px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { font-family: var(--font-body); background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
-.container { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; }
-@media (max-width: 640px) { .container { padding: 0 18px; } }
-
-/* nav */
-.nav { position: sticky; top: 0; z-index: 100; background: var(--primary-900); box-shadow: 0 2px 16px rgba(0,52,92,.3); }
-.nav-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.nav-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
-.nav-logo-mark { width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,.25); }
-.nav-logo-mark svg { width: 18px; height: 18px; }
-.nav-logo-text { font-weight: 700; font-size: .95rem; color: #fff; letter-spacing: -.01em; }
-.nav-logo-text span { color: rgba(255,255,255,.6); font-weight: 500; }
-.nav-logo-colon { color: #FFC857; font-weight: 800; }
-.nav-links { display: flex; gap: 28px; list-style: none; }
-.nav-links a { font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.75); text-decoration: none; transition: color .15s; }
-.nav-links a:hover, .nav-links a[aria-current="page"] { color: #fff; }
-.nav-cta { background: var(--accent-warn); color: #fff; font-size: .82rem; font-weight: 700; padding: 9px 20px; border-radius: var(--r-sm); text-decoration: none; transition: opacity .15s, transform .1s; display: flex; align-items: center; gap: 7px; box-shadow: 0 2px 8px rgba(255,200,87,.35); cursor: pointer; }
-.nav-cta:hover { opacity: .9; transform: translateY(-1px); }
-@media (max-width: 640px) { .nav-links { display: none; } .nav-inner { padding: 0 18px; } }
-
-/* hero strip */
-.page-hero { background: linear-gradient(160deg, var(--primary-900) 0%, #002847 100%); padding: 48px 0 44px; }
-.breadcrumb { font-size: .78rem; color: rgba(255,255,255,.55); margin-bottom: 12px; }
-.breadcrumb a { color: rgba(255,255,255,.55); text-decoration: none; }
-.breadcrumb a:hover { color: rgba(255,255,255,.85); }
-.breadcrumb span { margin: 0 6px; }
-.page-hero h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.04em; color: #fff; line-height: 1.1; }
-.page-hero p { color: rgba(255,255,255,.7); font-size: 1rem; margin-top: 10px; }
-
-/* download layout */
-.dl-wrap { max-width: 640px; margin: 0 auto; padding: 64px 0 96px; }
-
-/* warning box */
-.warn-box {
-  background: var(--accent-warn-light);
-  border: 2px solid var(--accent-warn);
-  border-radius: var(--r-md);
-  padding: 24px 28px;
-  margin-bottom: 32px;
-}
-.warn-box-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 14px;
-}
-.warn-box-header svg { width: 20px; height: 20px; color: #C49B00; flex-shrink: 0; }
-.warn-box-header strong { font-size: 1rem; font-weight: 700; color: #78350f; }
-.warn-box p { font-size: .9rem; color: #78350f; line-height: 1.7; margin-bottom: 10px; }
-.warn-box p:last-child { margin-bottom: 0; }
-.warn-box ul { margin: 0 0 10px 18px; }
-.warn-box ul li { font-size: .88rem; color: #92400e; line-height: 1.65; margin-bottom: 3px; }
-
-/* checkbox */
-.cb-wrap {
-  background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 20px 24px;
-  margin-bottom: 28px;
-  transition: border-color .2s;
-}
-.cb-wrap:has(input:checked) { border-color: var(--primary-400); background: var(--primary-50); }
-.cb-label {
-  display: flex; align-items: flex-start; gap: 14px;
-  cursor: pointer;
-}
-.cb-label input[type="checkbox"] {
-  width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;
-  accent-color: var(--primary-700); cursor: pointer;
-}
-.cb-label span { font-size: .9rem; color: var(--ink-2); line-height: 1.65; }
-
-/* download button */
-.dl-btn {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%;
-  background: var(--accent-warn);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 1rem; font-weight: 700;
-  padding: 16px 28px;
-  border-radius: var(--r-md);
-  border: none;
-  cursor: not-allowed;
-  opacity: 0.38;
-  transition: opacity .2s, transform .1s, box-shadow .2s;
-  text-decoration: none;
-  box-shadow: none;
-}
-.dl-btn.active {
-  cursor: pointer;
-  opacity: 1;
-  box-shadow: 0 4px 16px rgba(255,200,87,.4);
-}
-.dl-btn.active:hover { opacity: .9; transform: translateY(-1px); }
-
-.dl-meta { text-align: center; margin-top: 12px; font-size: .78rem; color: var(--ink-3); }
-.dl-meta a { color: var(--primary-700); text-decoration: none; }
-.dl-meta a:hover { text-decoration: underline; }
-
-/* footer */
-footer { background: var(--primary-900); }
-.footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 40px 32px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
-.footer-logo { font-weight: 800; font-size: 1.1rem; color: #fff; letter-spacing: -.02em; margin-bottom: 6px; }
-.footer-sub { font-size: .8rem; color: rgba(255,255,255,.5); line-height: 1.6; }
-.footer-legal { display: flex; gap: 16px; flex-wrap: wrap; font-size: .78rem; margin-top: 12px; }
-.footer-legal a { color: var(--primary-300); text-decoration: none; transition: color .15s; }
-.footer-legal a:hover { color: #fff; }
-.footer-legal span { color: rgba(255,255,255,.3); }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Plugin herunterladen – Curricu:lr Terminplan</title>
+<meta name="description" content="Download des WordPress-Plugins für den Schulterminplan mit Haftungshinweisen.">
+<link rel="icon" href="assets/logo/curriculr-icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/design/curriculr-tokens.css">
+<link rel="stylesheet" href="assets/design/curriculr-ui.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/design/curriculr-print.css" media="print">
 </head>
 <body>
-
-<nav class="nav" aria-label="Hauptnavigation">
-  <div class="nav-inner">
-    <a class="nav-logo" href="index.html" aria-label="Curricu:lr Terminplan Startseite">
-      <div class="nav-logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
-          <circle cx="8" cy="12" r="3.5" fill="#FFC857"/>
-          <circle cx="16" cy="12" r="3.5" fill="#FFC857"/>
-        </svg>
-      </div>
-      <div class="nav-logo-text">Curricu<span class="nav-logo-colon">:</span>lr <span>/ Terminplan</span></div>
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <picture>
+        <source srcset="assets/logo/curriculr-logo-auf-dunkel.svg" media="(prefers-color-scheme: dark)">
+        <img src="assets/logo/curriculr-logo-auf-hell.svg" alt="Curricu:lr" width="118" height="40">
+      </picture>
+      <span class="brand-product">Terminplan</span>
     </a>
-    <ul class="nav-links" role="list">
-      <li><a href="index.html#download">Downloads</a></li>
-      <li><a href="anleitung.html">Anleitung</a></li>
-      <li><a href="download.html" aria-current="page">Plugin</a></li>
-      <li><a href="impressum.html">Impressum</a></li>
-    </ul>
-    <a class="nav-cta" href="download.html" aria-current="page">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Herunterladen
-    </a>
+    <nav aria-label="Hauptnavigation">
+      <ul class="nav">
+        <li><a href="index.html#download">Downloads</a></li>
+        <li><a href="anleitung.html">Anleitung</a></li>
+        <li><a href="download.html" aria-current="page">Plugin</a></li>
+        <li><a href="impressum.html">Impressum</a></li>
+      </ul>
+    </nav>
   </div>
-</nav>
+</header>
 
-<div class="page-hero">
-  <div class="container">
-    <div class="breadcrumb"><a href="index.html">Startseite</a><span aria-hidden="true">›</span> Plugin herunterladen</div>
-    <h1>Plugin herunterladen</h1>
-    <p>Bitte lies die folgenden Hinweise sorgfältig, bevor du das Plugin herunterlädst.</p>
+<main id="inhalt" class="cl-doc">
+<div class="wrap doc-layout">
+<div class="doc-head">
+  <h1>Plugin herunterladen</h1>
+  <p>Das WordPress-Plugin „Schul-Terminplan“ als ZIP-Datei. Lesen Sie vor dem Download die Hinweise und bestätigen Sie sie.</p>
+</div>
+<div class="doc-body">
+  <div class="notice" role="note" aria-labelledby="hinweis-title">
+    <h2 id="hinweis-title">Wichtige Hinweise vor dem Download</h2>
+    <p>Dieses WordPress-Plugin ist ein privates Projekt und wurde ohne professionelle Qualitätssicherung entwickelt. Sicherheitslücken können nicht ausgeschlossen werden.</p>
+    <p>Vor dem Einsatz muss Ihre Schule Folgendes selbst prüfen und verantworten:</p>
+    <ul class="plain-list">
+      <li>Technische Eignung für die vorhandene WordPress- und PHP-Version</li>
+      <li>Datenschutzkonformität (DSGVO) beim Verarbeiten von Termindaten</li>
+      <li>Sicherheitsrisiken beim Einsatz in der Schulinfrastruktur</li>
+      <li>Kompatibilität mit installierten Themes und Plugins</li>
+    </ul>
+    <p>Das Plugin wird ohne jede Gewährleistung bereitgestellt. Der Entwickler übernimmt keine Haftung für Schäden jeder Art. Weitere Angaben finden Sie im <a href="impressum.html">Impressum und Haftungsausschluss</a>.</p>
+  </div>
+  <div class="prose" style="margin-top:var(--cl-space-8)">
+    <label class="check" for="disclaimer-cb">
+      <input type="checkbox" id="disclaimer-cb">
+      <span>Ich habe die Hinweise gelesen und verstanden. Ich lade das Plugin auf eigenes Risiko herunter und stelle sicher, dass meine Schule die Nutzung eigenverantwortlich prüft.</span>
+    </label>
+    <div class="actions">
+      <a id="dl-btn" class="cl-button" href="downloads/gsh-terminplan.zip" download aria-disabled="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Plugin herunterladen (ZIP)</a>
+    </div>
+    <p class="small">ZIP-Datei auf dieser Seite: Version 4.0.0 &middot; GPL v2 oder neuer. Der Entwicklungsstand im Repository ist neuer (4.42.0). <a href="https://github.com/juwagn/curriculr-terminplan/releases" target="_blank" rel="noopener noreferrer">Alle Versionen auf GitHub</a></p>
+    <p class="small">Das Plugin hilft Ihnen? <a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Unterstützen Sie das Projekt auf Ko-fi</a>.</p>
   </div>
 </div>
-
-<main>
-  <div class="container">
-    <div class="dl-wrap">
-
-      <div class="warn-box" role="region" aria-label="Wichtige Hinweise">
-        <div class="warn-box-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <strong>Wichtige Hinweise vor dem Download</strong>
-        </div>
-        <p>Dieses WordPress-Plugin ist ein <strong>privates Hobbyprojekt</strong> und wurde ohne professionelle Qualitätssicherung entwickelt. Sicherheitslücken können nicht ausgeschlossen werden.</p>
-        <p>Vor dem produktiven Einsatz muss die nutzende Schule folgendes selbst prüfen und verantworten:</p>
-        <ul>
-          <li>Technische Eignung für die vorhandene WordPress- und PHP-Version</li>
-          <li>DSGVO-Konformität beim Verarbeiten von Termindaten</li>
-          <li>Sicherheitsrisiken beim Einsatz in der Schulinfrastruktur</li>
-          <li>Kompatibilität mit installierten Themes und Plugins</li>
-        </ul>
-        <p>Das Plugin wird <strong>ohne jede Gewährleistung</strong> bereitgestellt. Der Entwickler übernimmt keine Haftung für Schäden jeglicher Art. Weitere Details im <a href="impressum.html" style="color:#b45309;font-weight:600;">Impressum &amp; Haftungsausschluss</a>.</p>
-      </div>
-
-      <div class="cb-wrap">
-        <label class="cb-label" for="disclaimer-cb">
-          <input type="checkbox" id="disclaimer-cb" aria-describedby="cb-desc">
-          <span id="cb-desc">Ich habe die obigen Hinweise gelesen und verstanden. Ich lade das Plugin auf eigenes Risiko herunter und stelle sicher, dass meine Schule die Nutzung eigenverantwortlich prüft.</span>
-        </label>
-      </div>
-
-      <a id="dl-btn" class="dl-btn" href="#" aria-disabled="true" role="button"
-         tabindex="0" aria-label="Plugin herunterladen (erst nach Zustimmung verfügbar)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Plugin herunterladen (.zip)
-      </a>
-      <p class="dl-meta">
-        Version 4.0.0 · GPL v2 or later ·
-        <a href="https://github.com/juwagn/curriculr-terminplan/releases" target="_blank" rel="noopener noreferrer">Alle Versionen auf GitHub</a>
-      </p>
-      <p class="dl-meta" style="margin-top:20px;">
-        Gefällt dir das Tool? ·
-        <a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Kaffee auf Ko-fi spendieren ☕</a>
-      </p>
-
-    </div>
-  </div>
+</div>
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div>
-      <div class="footer-logo">Terminplan</div>
-      <div class="footer-sub">Digitaler Schulkalender · Open Source Schul-Projekt<br>Entwickelt von Julian Wagner · Stand Mai 2026</div>
-      <div class="footer-legal">
-        <a href="impressum.html">Impressum &amp; Datenschutz</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a>
-      </div>
-    </div>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Teil der Curricu:lr-Familie &middot; Website-Stand Oktober 2026 &middot; Privatprojekt von Julian Wagner, GPL v2 oder neuer, ohne Gewährleistung.</p>
+    <ul>
+      <li><a href="impressum.html">Impressum und Datenschutz</a></li>
+      <li><a href="anleitung.html">Hilfe</a></li>
+      <li><a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a></li>
+    </ul>
   </div>
 </footer>
-
-<script>
-const RELEASE_URL = 'downloads/gsh-terminplan.zip';
-const cb  = document.getElementById('disclaimer-cb');
-const btn = document.getElementById('dl-btn');
-
-cb.addEventListener('change', function () {
-  if (this.checked) {
-    btn.href = RELEASE_URL;
-    btn.removeAttribute('aria-disabled');
-    btn.setAttribute('aria-label', 'Plugin herunterladen');
-    btn.classList.add('active');
-  } else {
-    btn.href = '#';
-    btn.setAttribute('aria-disabled', 'true');
-    btn.setAttribute('aria-label', 'Plugin herunterladen (erst nach Zustimmung verfügbar)');
-    btn.classList.remove('active');
-  }
-});
-
-btn.addEventListener('click', function (e) {
-  if (btn.getAttribute('aria-disabled') === 'true') e.preventDefault();
-});
-</script>
-
-<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  kofiWidgetOverlay.draw('juwagn', {
-    'type': 'floating-chat',
-    'floating-chat.donateButton.text': 'Support me',
-    'floating-chat.donateButton.background-color': '#ffffff',
-    'floating-chat.donateButton.text-color': '#323842'
-  });
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>

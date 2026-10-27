@@ -1,0 +1,267 @@
+/* ==========================================================================
+   Curricu:lr Terminplan – Website
+   Basis: assets/design/curriculr-tokens.css, curriculr-ui.css (Familie, nicht ändern).
+   Seiten-Typografie nach rules/10-design.md: Titel 48/1.05, Überschrift 30/1.2,
+   Text 17/28, Klein 14/20. Fünf Größen, Zeilenlänge 45-75 Zeichen.
+   ========================================================================== */
+
+:root {
+  /* Produktfarben: Terminkategorien (Farbe + Text, Kontrast >= 4,5:1 geprüft) */
+  --cl-product-k56-bg: #FADBD8; --cl-product-k56-fg: #922B21;
+  --cl-product-k78-bg: #D5F5E3; --cl-product-k78-fg: #145A32;
+  --cl-product-k910-bg: #FDE8D3; --cl-product-k910-fg: #873600;
+  --cl-product-ob-bg: #D4E6F1; --cl-product-ob-fg: #1A5276;
+  --cl-product-inkl-bg: #D1F2EB; --cl-product-inkl-fg: #0E6655;
+  --cl-product-fer-bg: #FDEBD0; --cl-product-fer-fg: #784212;
+  --cl-product-konf-bg: #E8DAEF; --cl-product-konf-fg: #6C3483;
+
+  --size-display: 3rem;      /* 48 */
+  --size-heading: 1.875rem;  /* 30 */
+  --size-sub: 1.25rem;       /* 20 */
+  --size-text: 1.0625rem;    /* 17 */
+  --size-small: 0.875rem;    /* 14 */
+  --page-gutter: var(--cl-space-4);
+}
+@media (min-width: 640px)  { :root { --page-gutter: var(--cl-space-6); } }
+@media (min-width: 1024px) { :root { --page-gutter: var(--cl-space-8); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--cl-space-16); }
+body {
+  margin: 0;
+  font-family: var(--cl-font);
+  font-size: var(--size-text);
+  line-height: 1.65;
+  color: var(--cl-ink-900);
+  background: var(--cl-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--cl-marine-800); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--cl-marine-700); text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--cl-marine-500); outline-offset: 3px; border-radius: var(--cl-radius-sm); }
+
+h1, h2, h3 { margin: 0; font-family: var(--cl-font); color: var(--cl-ink-900); text-wrap: balance; }
+h1 { font-size: 2.5rem; line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: var(--size-heading); line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: var(--size-sub); line-height: 1.3; font-weight: 600; }
+@media (min-width: 1024px) { h1 { font-size: var(--size-display); } }
+p { margin: 0; max-width: 62ch; }
+ul, ol { margin: 0; padding: 0; }
+code { overflow-wrap: anywhere; font-family: var(--cl-font-mono); font-size: var(--size-small); background: var(--cl-marine-100); padding: 1px 6px; border-radius: var(--cl-radius-sm); }
+.small { font-size: var(--size-small); line-height: 1.45; color: var(--cl-ink-500); }
+
+.wrap { max-width: 1160px; margin-inline: auto; padding-inline: var(--page-gutter); }
+
+/* ---- Skip-Link --------------------------------------------------------- */
+.skip-link {
+  position: absolute; left: var(--cl-space-4); top: -100px; z-index: 100;
+  background: var(--cl-marine-800); color: var(--cl-on-primary);
+  padding: var(--cl-space-3) var(--cl-space-4); border-radius: var(--cl-radius-md); text-decoration: none;
+}
+.skip-link:focus { top: var(--cl-space-3); }
+
+/* ---- Kopfzeile: Fläche statt Linie ------------------------------------- */
+.site-header { background: var(--cl-surface); }
+.site-header .wrap {
+  display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--cl-space-8); row-gap: var(--cl-space-1);
+  padding-block: var(--cl-space-3);
+}
+.brand { display: inline-flex; align-items: center; gap: var(--cl-space-3); text-decoration: none; color: var(--cl-ink-900); min-height: var(--cl-hit-touch); }
+.brand picture { display: block; flex: none; }
+.brand img { width: 118px; height: 40px; max-width: none; object-fit: none; object-position: -51px 0; } /* Wortmarke hat Leerraum im SVG: Ausschnitt auf die Schrift, Originaldatei unverändert */
+.brand-product { font-weight: 600; font-size: var(--size-text); }
+.nav { display: flex; flex-wrap: wrap; gap: 0 var(--cl-space-6); list-style: none; margin-left: auto; }
+.nav a {
+  display: inline-flex; align-items: center; min-height: var(--cl-hit-touch);
+  color: var(--cl-ink-900); text-decoration: none; font-weight: 500;
+}
+.nav a:hover { color: var(--cl-marine-700); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.nav a[aria-current="page"] { color: var(--cl-marine-800); text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+@media (max-width: 639px) { .nav { margin-left: 0; width: 100%; gap: 0 var(--cl-space-4); } }
+
+/* ---- Buttons (Basis cl-button, hier auf Seitengröße) ------------------- */
+.cl-button { font: 600 var(--size-text)/1.2 var(--cl-font); min-height: var(--cl-hit-touch); padding: 0 var(--cl-space-6); text-decoration: none; border-radius: var(--cl-radius-md); }
+.cl-button:hover { color: var(--cl-on-primary); }
+.cl-button--quiet { background: var(--cl-marine-100); border-color: var(--cl-marine-100); color: var(--cl-marine-800); }
+.cl-button--quiet:hover { color: var(--cl-marine-800); background: var(--cl-marine-100); text-decoration: underline; }
+.cl-button svg { flex: none; }
+.cl-button[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--cl-space-3); }
+
+/* Marker: Gold nur als Highlight mit dunkler Schrift */
+.mark { background: var(--cl-gold-500); color: var(--cl-on-gold); padding: 0 0.18em; border-radius: var(--cl-radius-sm); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+/* ---- Abschnitte -------------------------------------------------------- */
+.section { padding-block: var(--cl-space-12); }
+@media (min-width: 1024px) { .section { padding-block: var(--cl-space-16); } }
+.section--surface { background: var(--cl-surface); }
+.section-head { display: grid; gap: var(--cl-space-3); margin-bottom: var(--cl-space-8); }
+
+/* ---- Hero -------------------------------------------------------------- */
+.hero { padding-block: var(--cl-space-12) var(--cl-space-12); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-8); align-items: center; }
+.hero-copy { display: grid; gap: var(--cl-space-6); justify-items: start; }
+.hero-copy .lead { max-width: 52ch; }
+@media (min-width: 1024px) {
+  .hero { padding-block: var(--cl-space-16); }
+  .hero-grid { grid-template-columns: minmax(0, 11fr) minmax(0, 13fr); gap: var(--cl-space-8); }
+}
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--cl-space-4) var(--cl-space-6); margin: var(--cl-space-12) 0 0; padding: 0; }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font-size: var(--size-small); color: var(--cl-ink-500); }
+.facts dd { margin: 0; font-weight: 600; font-size: var(--size-sub); }
+
+/* ---- Schnittstellen-Ausschnitte (echte Daten, data-ui) ----------------- */
+[data-ui] { background: var(--cl-surface); border-radius: var(--cl-radius-lg); overflow: hidden; }
+.section--surface [data-ui] { background: var(--cl-bg); }
+.fragment { margin: 0; }
+.fragment figcaption { font-size: var(--size-small); line-height: 1.45; color: var(--cl-ink-500); margin-top: var(--cl-space-2); }
+[data-ui] table { width: 100%; border-collapse: collapse; font-size: var(--size-small); line-height: 1.35; }
+[data-ui] caption { text-align: left; font-weight: 600; padding: var(--cl-space-4) var(--cl-space-4) var(--cl-space-2); font-size: var(--size-small); }
+[data-ui] th { text-align: left; font-weight: 600; color: var(--cl-ink-500); padding: var(--cl-space-2) var(--cl-space-3); border-block-end: 1px solid var(--cl-line); background: transparent; white-space: nowrap; }
+[data-ui] td { padding: var(--cl-space-2) var(--cl-space-3); border-block-end: 1px solid var(--cl-line); vertical-align: top; }
+[data-ui] tr:last-child td, [data-ui] tr:last-child th { border-block-end: 0; }
+/* Schulwochen-Spalte: Erkennungszeichen */
+[data-ui] .sw { font-weight: 700; color: var(--cl-marine-800); white-space: nowrap; width: 1%; }
+[data-ui] tr.is-now .sw { background: var(--cl-marine-800); color: var(--cl-on-primary); }
+[data-ui] .date { white-space: nowrap; color: var(--cl-ink-500); }
+[data-ui] .none { color: var(--cl-ink-500); }
+.tag {
+  display: inline-block; padding: 1px var(--cl-space-2); border-radius: var(--cl-radius-pill);
+  font-size: var(--size-small); font-weight: 500; line-height: 1.4; margin: 1px 0;
+  background: var(--cl-product-ob-bg); color: var(--cl-product-ob-fg);
+}
+.tag--k56 { background: var(--cl-product-k56-bg); color: var(--cl-product-k56-fg); }
+.tag--k78 { background: var(--cl-product-k78-bg); color: var(--cl-product-k78-fg); }
+.tag--k910 { background: var(--cl-product-k910-bg); color: var(--cl-product-k910-fg); }
+.tag--ob { background: var(--cl-product-ob-bg); color: var(--cl-product-ob-fg); }
+.tag--inkl { background: var(--cl-product-inkl-bg); color: var(--cl-product-inkl-fg); }
+.tag--fer { background: var(--cl-product-fer-bg); color: var(--cl-product-fer-fg); }
+.tag--konf { background: var(--cl-product-konf-bg); color: var(--cl-product-konf-fg); }
+.scroll-x { overflow-x: auto; }
+.shot img { width: 100%; border-radius: var(--cl-radius-lg); }
+.code-frag { margin: 0; padding: var(--cl-space-4); font-family: var(--cl-font-mono); font-size: var(--size-small); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--cl-ink-900); }
+.code-frag .dim { color: var(--cl-ink-500); }
+
+/* ---- Downloads: gestapelte Zeilen, keine Kartenreihe ------------------- */
+.dl-list { display: grid; gap: var(--cl-space-4); list-style: none; }
+.dl-item { background: var(--cl-bg); border-radius: var(--cl-radius-lg); padding: var(--cl-space-6); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-6); }
+@media (min-width: 1024px) { .dl-item { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--cl-space-12); padding: var(--cl-space-8); } }
+.dl-item header { display: grid; gap: var(--cl-space-2); align-content: start; }
+.dl-meta { font-size: var(--size-small); color: var(--cl-ink-500); }
+.dl-body { display: grid; gap: var(--cl-space-4); align-content: start; }
+.plain-list { list-style: none; display: grid; gap: var(--cl-space-2); }
+.plain-list li { padding-left: var(--cl-space-4); position: relative; max-width: 62ch; }
+.plain-list li::before { content: ""; position: absolute; left: 0; top: 0.8em; width: 6px; height: 6px; border-radius: 50%; background: var(--cl-marine-800); }
+
+/* ---- Ablauf: nummerierte Schritte -------------------------------------- */
+.steps { list-style: none; counter-reset: step; display: grid; gap: var(--cl-space-12); }
+.step { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-4) var(--cl-space-8); counter-increment: step; }
+.step-text { display: grid; gap: var(--cl-space-3); align-content: start; }
+.step h3::before { content: counter(step) ". "; color: var(--cl-marine-800); }
+.step-text .note { background: var(--cl-marine-100); border-radius: var(--cl-radius-md); padding: var(--cl-space-3) var(--cl-space-4); font-size: var(--size-small); line-height: 1.5; max-width: 62ch; }
+@media (min-width: 1024px) { .step--fig { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); align-items: start; } }
+
+/* ---- Funktionen: Definitionsliste in zwei Spalten ---------------------- */
+.defs { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-6) var(--cl-space-12); margin: 0; }
+@media (min-width: 768px) { .defs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.defs div { display: grid; gap: var(--cl-space-1); align-content: start; }
+.defs dt { font-weight: 600; font-size: var(--size-sub); line-height: 1.3; }
+.defs dd { margin: 0; max-width: 56ch; }
+
+/* ---- Kategorien -------------------------------------------------------- */
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-8); }
+@media (min-width: 1024px) { .split { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: var(--cl-space-12); align-items: start; } }
+
+/* ---- FAQ --------------------------------------------------------------- */
+.faq { display: grid; gap: var(--cl-space-2); }
+.faq details { background: var(--cl-bg); border-radius: var(--cl-radius-md); }
+.faq summary { cursor: pointer; padding: var(--cl-space-4) var(--cl-space-6); font-weight: 600; min-height: var(--cl-hit-touch); list-style: none; display: flex; justify-content: space-between; gap: var(--cl-space-4); align-items: baseline; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-weight: 400; font-size: var(--size-sub); flex: none; }
+.faq details[open] summary::after { content: "\2212"; }
+.faq .answer { padding: 0 var(--cl-space-6) var(--cl-space-6); display: grid; gap: var(--cl-space-3); }
+
+/* ---- Hinweisbox (Gold-100 mit Gold-Rahmen, nur für Hinweise) ----------- */
+.notice { background: var(--cl-gold-100); border: 2px solid var(--cl-gold-500); border-radius: var(--cl-radius-md); padding: var(--cl-space-6); display: grid; gap: var(--cl-space-3); color: var(--cl-ink-900); }
+.notice h2 { font-size: var(--size-sub); line-height: 1.3; }
+.check { display: flex; gap: var(--cl-space-3); align-items: flex-start; min-height: var(--cl-hit-touch); cursor: pointer; }
+.check input { width: 24px; height: 24px; flex: none; margin: 2px 0 0; accent-color: var(--cl-marine-800); }
+
+/* ---- Seitenkopf der Unterseiten, Fließtext-Seiten --------------------- */
+.page-head { padding-block: var(--cl-space-12) var(--cl-space-6); display: grid; gap: var(--cl-space-4); }
+.crumbs { font-size: var(--size-small); color: var(--cl-ink-500); }
+.crumbs a { color: var(--cl-ink-500); }
+.prose { display: grid; gap: var(--cl-space-4); max-width: 62ch; }
+.prose h2 { margin-top: var(--cl-space-8); }
+.prose h3 { margin-top: var(--cl-space-4); }
+.prose ul { display: grid; gap: var(--cl-space-2); padding-left: var(--cl-space-6); }
+.prose address { font-style: normal; }
+.flow { list-style: none; display: grid; gap: var(--cl-space-2); counter-reset: flow; }
+@media (min-width: 768px) { .flow { grid-template-columns: repeat(3, 1fr); } }
+.flow li { counter-increment: flow; background: var(--cl-surface); border-radius: var(--cl-radius-md); padding: var(--cl-space-3) var(--cl-space-4); display: grid; }
+.flow li strong { font-weight: 600; }
+.flow li span { font-size: var(--size-small); color: var(--cl-ink-500); }
+.reqs { display: flex; flex-wrap: wrap; gap: var(--cl-space-2); list-style: none; }
+.reqs li { background: var(--cl-marine-100); border-radius: var(--cl-radius-pill); padding: var(--cl-space-1) var(--cl-space-4); font-size: var(--size-small); font-weight: 500; }
+
+/* ---- Fuß --------------------------------------------------------------- */
+.site-footer { background: var(--cl-surface); padding-block: var(--cl-space-8); margin-top: var(--cl-space-12); }
+.site-footer .wrap { display: grid; gap: var(--cl-space-3); }
+.site-footer p { font-size: var(--size-small); line-height: 1.5; color: var(--cl-ink-500); max-width: none; }
+.site-footer ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0 var(--cl-space-6); }
+.site-footer li a { display: inline-flex; align-items: center; min-height: var(--cl-hit-touch); font-size: var(--size-small); }
+
+/* ---- Bewegung ---------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .cl-button { transition: background-color var(--cl-duration) var(--cl-ease); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+@media (forced-colors: active) {
+  .mark { forced-color-adjust: none; }
+  .tag { outline: 1px solid CanvasText; }
+}
+
+/* ---- Druck: nichts zerschneiden, Farben mitdrucken -------------------- */
+@media print {
+  .skip-link, .site-header .nav, .actions, .cl-no-print { display: none !important; }
+  body { font-size: 10.5pt; line-height: 1.45; background: var(--cl-surface); }
+  h1 { font-size: 22pt; } h2 { font-size: 15pt; } h3 { font-size: 12pt; }
+  .section, .hero, .page-head { padding-block: 10pt; }
+  .site-footer { margin-top: 10pt; }
+  .wrap { max-width: none; padding-inline: 0; }
+  .hero-grid, .split, .dl-item, .step--fig { grid-template-columns: 1fr; }
+  .dl-item, .step, .faq details, .notice, .fragment, [data-ui], .defs > div, .flow li, .section-head, .facts div {
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  h1, h2, h3, summary, .section-head { break-after: avoid; page-break-after: avoid; }
+  .faq details > .answer { display: grid !important; }
+  .faq summary::after { content: ""; }
+  .scroll-x { overflow: visible; }
+  .section--surface, .dl-item, .faq details, .site-footer, .site-header { background: var(--cl-surface); }
+  a { text-decoration: underline; color: var(--cl-ink-900); }
+  main a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: var(--cl-ink-500); overflow-wrap: anywhere; }
+}
+
+/* ---- Unterseiten: Kopf links, Inhalt rechts ---------------------------- */
+.doc-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cl-space-8); padding-block: var(--cl-space-12) var(--cl-space-16); }
+.doc-head { display: grid; gap: var(--cl-space-4); align-content: start; }
+.doc-body { display: grid; gap: var(--cl-space-6); align-content: start; min-width: 0; }
+.doc-body .prose { max-width: none; }
+.doc-body .prose > *, .doc-body .step-text p, .doc-body .notice p { max-width: none; }
+@media (min-width: 1024px) {
+  .doc-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--cl-space-12); }
+  .doc-head { position: sticky; top: var(--cl-space-6); }
+}
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media print { .doc-layout { grid-template-columns: 1fr; } .doc-head { position: static; } }
+
+/* Einspaltige Raster dürfen nie breiter als ihr Container werden */
+.section-head, .step-text, .dl-body, .dl-item header, .doc-head, .doc-body, .prose, .notice, .hero-copy, .defs div, .faq, .faq .answer, .page-head, .site-footer .wrap { grid-template-columns: minmax(0, 1fr); }
+.hero-copy { justify-items: start; }
+.doc-head h1 { font-size: 2.5rem; hyphens: auto; }
