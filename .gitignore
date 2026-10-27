@@ -8,7 +8,8 @@ Backup/
 _old/
 
 # Claude Code – interne Dateien
-.claude/
+.claude/settings.local.json
+.claude/worktrees/
 .agents/
 .superpowers/
 claude/
