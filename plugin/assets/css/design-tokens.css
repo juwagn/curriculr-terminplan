@@ -1,102 +1,162 @@
 /*
- * Curricu:lr Design Tokens
- * Einzige Quelle aller CSS Custom Properties.
- * Niemals direkt Hex-Werte in anderen CSS-Dateien verwenden.
+ * Curricu:lr Terminplan – Kompatibilitätsschicht zu den Familien-Tokens.
  *
- * SPIEGEL von curriculr-planner/src/styles/globals.css (@theme).
- * Bei Änderung von Brand-Tokens (Farben/Radien/Schatten) dort mit-aktualisieren.
+ * Die Werte kommen aus curriculr-tokens.css (--cl-*, Kopie aus curriculr-design,
+ * dort nicht ändern). Diese Datei bildet nur die älteren Plugin-Namen
+ * (--primary-*, --text-main, --accent-* …) auf --cl-* ab, damit gsh-terminplan.css
+ * und der Inline-Block gsh_tp_css() unverändert weiterarbeiten. Hex-Werte stehen nur
+ * in den produktspezifischen --cl-product-* und in den Modus-Pins am Dateiende
+ * (Kopie der Paketwerte, nötig weil das Plugin-Modus-Attribut vor dem System gilt).
+ *
+ * Der Selektor ":root, #gtp, body.wp-admin" ist Absicht: var() wird dort aufgelöst, wo die
+ * Eigenschaft steht. Nur so folgen die Namen auch dem Plugin-Modus
+ * (#gtp[data-gtp-theme="light|dark"], siehe gsh-terminplan.css).
  */
-:root {
-  /* Brand Blues */
-  --primary-900: #00345C;
-  --primary-700: #00467D;
-  --primary-500: #0058A0;
-  --primary-100: #E6F4FF;
+:root,
+#gtp,
+body.wp-admin {
+  /* Marine */
+  --primary-900: var(--cl-marine-800);
+  --primary-700: var(--cl-marine-700);
+  --primary-500: var(--cl-marine-500);
+  --primary-100: var(--cl-marine-100);
+  --primary-50:  var(--cl-marine-100);
+  --marine-900: var(--cl-marine-900);
+  --marine-800: var(--cl-marine-800);
+  --marine-700: var(--cl-marine-700);
+  --marine-500: var(--cl-marine-500);
+  --marine-100: var(--cl-marine-100);
 
-  /* Kanonische Marine-Skala (Spiegel der Planner-Namen; gleiche Hex wie primary-*) */
-  --marine-900: #001F35;
-  --marine-800: #00345C; /* = --primary-900 */
-  --marine-700: #00467D; /* = --primary-700 */
-  --marine-500: #0058A0; /* = --primary-500 */
-  --marine-100: #E6F4FF; /* = --primary-100 */
+  /* Status (Gold ist keine Statusfarbe) */
+  --accent-warning: var(--cl-warning);
+  --accent-warning-bg: var(--cl-warning-bg);
+  --accent-success: var(--cl-success);
+  --accent-success-bg: var(--cl-success-bg);
+  --accent-error: var(--cl-danger);
+  --accent-error-bg: var(--cl-danger-bg);
 
-  /* Semantic Colors */
-  --accent-warning: #FFC857;
-  --accent-warning-bg: #FFF8E6;
-  --accent-success: #0E9F6E;
-  --accent-success-bg: #ECFDF5;
-  --accent-error: #E02424;
-  --accent-error-bg: #FEF2F2;
+  /* Flächen */
+  --bg-body: var(--cl-bg);
+  --bg-surface: var(--cl-surface);
+  --bg-surface-solid: var(--cl-surface);
+  --bg-muted: var(--cl-bg);
 
-  /* Backgrounds */
-  --bg-body: #F3F5F9;
-  --bg-surface: #FFFFFF;
-  --bg-surface-solid: #FFFFFF;
-
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.6);
-  --border-strong: #D1D5DB;
-  --border-input: #9CA3AF;
+  /* Rahmen */
+  --border-subtle: var(--cl-line);
+  --border-strong: var(--cl-line);
+  --border-input: var(--cl-border);
 
   /* Text */
-  --text-main: #111827;
-  --text-muted: #4B5563;
-  --text-on-dark: #FFFFFF;
-  --text-on-primary: #FFFFFF;
+  --text-main: var(--cl-ink-900);
+  --text-muted: var(--cl-ink-500);
+  --text-on-dark: var(--cl-on-primary);
+  --text-on-primary: var(--cl-on-primary);
+  --tab-active-fg: var(--cl-marine-800);
+  --text-on-warning-bg: var(--cl-warning);
+  --text-on-success-bg: var(--cl-success);
+  --text-on-error-bg: var(--cl-danger);
+  --text-on-warning-btn: var(--cl-on-primary);
 
-  /* Aktiver Tab/Akzent-Text (dark-aware Override in gsh-terminplan.css) */
-  --tab-active-fg: #00345C;
+  /* Radien: 6 Feld/Badge · 8 Button/Karte */
+  --radius-card: var(--cl-radius-md);
+  --radius-btn: var(--cl-radius-md);
+  --radius-input: var(--cl-radius-sm);
+  --radius-badge: var(--cl-radius-sm);
+  --radius-sm: var(--cl-radius-sm);
 
-  /* Text on colored backgrounds (WCAG AA contrast) */
-  --text-on-warning-bg: #92400E;
-  --text-on-success-bg: #065F46;
-  --text-on-error-bg:   #991B1B;
-  --text-on-warning-btn: #1C1917;
+  /* Flach: Schatten nur für Dialog und Popover, sonst keine Ruhe-Schatten */
+  --shadow-card: none;
+  --shadow-modal: var(--cl-shadow-float);
+  --shadow-btn: none;
+  --shadow-focus: var(--cl-focus-ring);
+  --shadow-sm: none;
 
-  /* Additional backgrounds */
-  --bg-muted: #F9FAFB;
+  /* Abstände */
+  --space-xs: var(--cl-space-1);
+  --space-sm: var(--cl-space-2);
+  --space-md: var(--cl-space-4);
+  --space-lg: var(--cl-space-6);
+  --space-xl: var(--cl-space-8);
 
-  /* Radius */
-  --radius-card: 14px;
-  --radius-btn: 10px;
-  --radius-input: 8px;
-  --radius-badge: 3px;
-  --radius-sm: 6px;
-
-  /* Shadows */
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-modal: 0 18px 40px rgba(15, 23, 42, 0.15);
-  --shadow-btn: 0 2px 8px rgba(0, 70, 125, 0.25);
-  --shadow-focus: 0 0 0 3px rgba(0, 70, 125, 0.25);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-
-  /* Typography */
-  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* Schrift */
+  --font-body: var(--cl-font);
+  --font-mono: var(--cl-font-mono);
   --font-size-base: 15px;
   --line-height-base: 1.6;
 
-  /* Transitions */
+  /* Bewegung */
   --transition: 150ms ease-out;
   --transition-slow: 250ms ease-out;
+}
 
-  /* Homepage-Register ([gsh_termine] auf geshorst.de): Türkis der Schul-Website.
-     --up-accent nur für Linien/Flächen — als Text zu kontrastarm, dafür --up-accent-ink (5,2:1). */
-  --up-accent: #04D2C8;
-  --up-accent-ink: #047A74;
-  --up-accent-soft: #E6FAF9;
-  --up-line: #ECEEF1;
-  --up-ink-3: #5F6368;
-  --up-weekend: #F3F4F6;
-  --up-hol-bg: #F4EFE4;
-  --up-hol-line: #E8DCC0;
-  --up-hol-ink: #6B5A2E;
+/* Homepage-Register ([gsh_termine]): Türkis der Schul-Website. Produktspezifisch,
+   deshalb --cl-product-*. --cl-product-up-accent nur für Linien und Flächen, als Text
+   zu kontrastarm; dafür --cl-product-up-accent-ink (5,2 : 1). */
+:root {
+  --cl-product-up-accent: #04D2C8;
+  --cl-product-up-accent-ink: #047A74;
+  --cl-product-up-accent-soft: #E6FAF9;
+  --cl-product-up-line: #ECEEF1;
+  --cl-product-up-ink-3: #5F6368;
+  --cl-product-up-weekend: #F3F4F6;
+  --cl-product-up-hol-bg: #F4EFE4;
+  --cl-product-up-hol-line: #E8DCC0;
+  --cl-product-up-hol-ink: #6B5A2E;
+}
 
+/* ═══════════════════════════════════════════════════════════════
+   PLUGIN-MODUS HELL/DUNKEL
+   curriculr-tokens.css folgt der Systemeinstellung (prefers-color-scheme). Der Plugin-Modus
+   (data-gtp-theme) gilt vor dem System: "hell" und "dunkel" setzen die
+   --cl-*-Werte am Container selbst (Werte wie in curriculr-tokens.css),
+   "auto" folgt dem System. Die WordPress-Verwaltung (body.wp-admin) hat
+   keinen Dunkelmodus und bleibt immer hell.
+   ═══════════════════════════════════════════════════════════════ */
+
+body.wp-admin,
+#gtp[data-gtp-theme="light"] {
+    --cl-marine-900: #001F35;
+    --cl-marine-800: #00345C;
+    --cl-marine-700: #00467D;
+    --cl-marine-500: #0058A0;
+    --cl-marine-100: #E6F4FF;
+    --cl-gold-500: #FFC857;
+    --cl-gold-100: #FFF8E1;
+    --cl-ink-900: #111827;
+    --cl-ink-500: #4B5563;
+    --cl-line: #E2E8F0;
+    --cl-border: #8A919C;
+    --cl-bg: #F3F5F9;
+    --cl-surface: #FFFFFF;
+    --cl-on-primary: #FFFFFF;
+    --cl-on-gold: #1C1917;
+    --cl-success: #047857;
+    --cl-warning: #B45309;
+    --cl-danger: #B42318;
+    --cl-success-bg: #ECFDF5;
+    --cl-warning-bg: #FFF8E6;
+    --cl-danger-bg: #FEF2F2;
+    color-scheme: light;
+}
+
+#gtp[data-gtp-theme="dark"] {
+    --cl-marine-800: #80A3BE;
+    --cl-marine-700: #9DBAD0;
+    --cl-marine-500: #B5CBDC;
+    --cl-marine-100: #12324A;
+    --cl-gold-100: #3A2F12;
+    --cl-ink-900: #ECEBE8;
+    --cl-ink-500: #AEABA5;
+    --cl-line: #343436;
+    --cl-border: #7A7A80;
+    --cl-bg: #19191A;
+    --cl-surface: #212122;
+    --cl-on-primary: #001F35;
+    --cl-success: #4ACB9B;
+    --cl-warning: #F0A35E;
+    --cl-danger: #F2867A;
+    --cl-success-bg: #12302A;
+    --cl-warning-bg: #3A2A12;
+    --cl-danger-bg: #3A1A18;
+    color-scheme: dark;
 }
