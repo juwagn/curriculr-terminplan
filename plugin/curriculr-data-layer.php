@@ -2104,7 +2104,7 @@ function gsh_tp_curriculr_handle_doc_import() {
 
     $current_row = gsh_tp_curriculr_repo_get( $sy_key );
     if ( $current_row && empty( $_POST['gsh_tp_di_confirm'] ) ) {
-        echo '<div class="notice notice-error"><p>Bitte bestätige, dass der aktuelle Stand überschrieben werden soll.</p></div>';
+        echo '<div class="notice notice-error"><p>Bitte bestätigen Sie, dass der aktuelle Stand überschrieben werden soll.</p></div>';
         return;
     }
 

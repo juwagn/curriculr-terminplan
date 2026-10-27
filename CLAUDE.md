@@ -40,7 +40,7 @@ VER=$(grep "define.*GSH_TP_VERSION" gsh-terminplan.php | grep -oE "[0-9]+\.[0-9]
 zip ../../curriculr-terminplan-$VER.zip gsh-terminplan.php curriculr-data-layer.php curriculr-auth.php curriculr-guard.php page-terminplan-entwurf.php page-terminplan-kiosk.php
 zip -r ../../curriculr-terminplan-$VER.zip assets/
 ```
-ZIP contents: 6 PHP files at root (incl. `page-terminplan-entwurf.php` + `page-terminplan-kiosk.php` page templates, loaded from the plugin dir) + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css`.
+ZIP contents: 6 PHP files at root (incl. `page-terminplan-entwurf.php` + `page-terminplan-kiosk.php` page templates, loaded from the plugin dir) + `assets/css/design-tokens.css` + `assets/css/gsh-terminplan.css` + `assets/css/curriculr-tokens.css` (Kopie aus curriculr-design, nicht ändern) + `assets/img/` (Logos nach Paketnamen: `curriculr-icon.svg`, `curriculr-logo-auf-hell.svg`, `curriculr-logo-auf-dunkel.svg`).
 
 ## Plugin File Architecture
 
