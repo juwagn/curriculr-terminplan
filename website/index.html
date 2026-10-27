@@ -2,1711 +2,289 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terminplan – Digitaler Schulkalender</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* ── DESIGN TOKENS ───────────────────────────────────────── */
-:root {
-  --primary-900: #00345C; --primary-800: #003F6E; --primary-700: #00467D;
-  --primary-600: #005499; --primary-500: #0066B8; --primary-400: #3389CC;
-  --primary-300: #66AADD; --primary-200: #99CAEE; --primary-100: #CCE4F6;
-  --primary-50:  #E6F4FF;
-  --accent-warn: #FFC857; --accent-warn-light: #FFE5A8;
-
-  --emerald-600: #059669;
-  --emerald-500: #10b981;
-  --emerald-400: #34d399;
-  --emerald-100: #d1fae5;
-  --emerald-50:  #ecfdf5;
-
-  --slate-900: #0f172a;
-  --slate-800: #1e293b;
-  --slate-700: #334155;
-  --slate-600: #475569;
-  --slate-500: #64748b;
-  --slate-400: #94a3b8;
-  --slate-300: #cbd5e1;
-  --slate-200: #e2e8f0;
-  --slate-100: #f1f5f9;
-  --slate-50:  #f8fafc;
-
-  /* Kategorie-Farben (unveränderlich) */
-  --cat-k-bg: #fadbd8; --cat-k-fg: #922b21;
-  --cat-p-bg: #d5f5e3; --cat-p-fg: #145a32;
-  --cat-j-bg: #fde8d3; --cat-j-fg: #873600;
-  --cat-f-bg: #d4e6f1; --cat-f-fg: #1a5276;
-  --cat-e-bg: #d1f2eb; --cat-e-fg: #0e6655;
-  --cat-r-bg: #fdebd0; --cat-r-fg: #784212;
-  --cat-s-bg: #e8daef; --cat-s-fg: #6c3483;
-
-  --ink:     var(--slate-900);
-  --ink-2:   var(--slate-700);
-  --ink-3:   var(--slate-500);
-  --ink-4:   var(--slate-400);
-  --line:    var(--slate-200);
-  --bg:      var(--slate-50);
-  --surface: #ffffff;
-
-  --r-sm: 10px;
-  --r-md: 16px;
-  --r-lg: 24px;
-  --r-xl: 32px;
-
-  --shadow-sm: 0 1px 3px rgba(0,52,92,.06), 0 1px 2px rgba(0,52,92,.04);
-  --shadow-md: 0 4px 16px rgba(0,52,92,.10), 0 1px 4px rgba(0,52,92,.06);
-  --shadow-lg: 0 16px 48px rgba(0,52,92,.12), 0 4px 16px rgba(0,52,92,.07);
-
-  --font-display: 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-
-  --max-w: 1100px;
-  --gap:   96px;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-.container {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 0 32px;
-}
-@media (max-width: 640px) { .container { padding: 0 18px; } }
-
-section { padding: var(--gap) 0; }
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--primary-700);
-  margin-bottom: 16px;
-}
-.eyebrow::before {
-  content: '';
-  width: 18px; height: 2px;
-  background: var(--primary-500);
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-h2.section-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
-  font-weight: 800;
-  color: var(--ink);
-  line-height: 1.1;
-  letter-spacing: -.03em;
-}
-
-.section-sub {
-  margin-top: 14px;
-  font-size: 1.05rem;
-  color: var(--ink-3);
-  max-width: 540px;
-  line-height: 1.7;
-}
-
-/* ── NAVIGATION ──────────────────────────────────────────── */
-.nav {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--primary-900);
-  box-shadow: 0 2px 16px rgba(0,52,92,.3);
-}
-.nav-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 0 32px;
-  height: 62px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.nav-logo {
-  display: flex; align-items: center; gap: 11px;
-  text-decoration: none;
-}
-.nav-logo-mark {
-  width: 34px; height: 34px;
-  background: rgba(255,255,255,.15);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid rgba(255,255,255,.25);
-}
-.nav-logo-mark svg { width: 18px; height: 18px; }
-.nav-logo-text {
-  font-weight: 700; font-size: .95rem; color: #fff;
-  letter-spacing: -.01em;
-}
-.nav-logo-text span { color: rgba(255,255,255,.6); font-weight: 500; }
-.nav-logo-colon { color: #FFC857; font-weight: 800; }
-
-.nav-links {
-  display: flex; gap: 28px; list-style: none;
-}
-.nav-links a {
-  font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.75);
-  text-decoration: none; transition: color .15s;
-}
-.nav-links a:hover { color: #fff; }
-
-.nav-cta {
-  background: var(--accent-warn);
-  color: #fff;
-  font-size: .82rem; font-weight: 700;
-  padding: 9px 20px;
-  border-radius: var(--r-sm);
-  text-decoration: none;
-  transition: opacity .15s, transform .1s;
-  display: flex; align-items: center; gap: 7px;
-  box-shadow: 0 2px 8px rgba(255,200,87,.35);
-}
-.nav-cta:hover { opacity: .9; transform: translateY(-1px); }
-
-@media (max-width: 640px) {
-  .nav-links { display: none; }
-  .nav-inner { padding: 0 18px; }
-}
-
-/* ── HERO ────────────────────────────────────────────────── */
-.hero {
-  padding: 88px 0 80px;
-  background: linear-gradient(160deg, var(--primary-900) 0%, #002847 100%);
-  position: relative;
-  overflow: hidden;
-}
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -120px; right: -180px;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle at center,
-    rgba(255,255,255,.08) 0%,
-    transparent 65%);
-  pointer-events: none;
-}
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: -80px; left: -100px;
-  width: 400px; height: 400px;
-  background: radial-gradient(circle at center,
-    rgba(0,70,125,.12) 0%,
-    transparent 60%);
-  pointer-events: none;
-}
-
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.9);
-  font-size: .76rem; font-weight: 600;
-  padding: 5px 14px; border-radius: 100px;
-  margin-bottom: 28px;
-}
-.hero-badge-dot {
-  width: 6px; height: 6px;
-  background: var(--accent-warn);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--accent-warn);
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
-}
-
-.hero h1 {
-  font-family: var(--font-display);
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
-  font-weight: 800;
-  line-height: 1.07;
-  letter-spacing: -.04em;
-  color: #fff;
-  max-width: 760px;
-  margin-bottom: 24px;
-}
-.hero h1 em {
-  font-style: normal;
-  color: var(--accent-warn);
-}
-
-.hero-sub {
-  font-size: 1.1rem;
-  color: rgba(255,255,255,.75);
-  max-width: 520px;
-  line-height: 1.75;
-  margin-bottom: 44px;
-}
-
-.hero-actions {
-  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
-  margin-bottom: 56px;
-}
-
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 9px;
-  background: var(--accent-warn);
-  color: #fff;
-  font-family: var(--font-body); font-size: .92rem; font-weight: 700;
-  padding: 13px 26px;
-  border-radius: var(--r-md);
-  text-decoration: none;
-  transition: opacity .15s, transform .1s, box-shadow .15s;
-  box-shadow: 0 4px 14px rgba(255,200,87,.4);
-  cursor: pointer;
-}
-.btn-primary:hover { opacity: .92; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,200,87,.45); }
-
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: 8px;
-  color: rgba(255,255,255,.85);
-  font-family: var(--font-body); font-size: .92rem; font-weight: 500;
-  padding: 13px 22px;
-  border-radius: var(--r-md);
-  text-decoration: none;
-  border: 1.5px solid rgba(255,255,255,.3);
-  background: rgba(255,255,255,.08);
-  transition: border-color .15s, background .15s;
-  cursor: pointer;
-}
-.btn-ghost:hover { border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.14); }
-
-.hero-stats {
-  display: flex; gap: 0;
-  background: rgba(255,255,255,.1);
-  border: 1.5px solid rgba(255,255,255,.18);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  width: fit-content;
-}
-.hero-stat {
-  padding: 20px 32px;
-  display: flex; flex-direction: column; gap: 3px;
-  position: relative;
-}
-.hero-stat + .hero-stat::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 20%; bottom: 20%;
-  width: 1px;
-  background: rgba(255,255,255,.2);
-}
-.hero-stat strong {
-  font-family: var(--font-display);
-  font-size: 1.6rem; font-weight: 800;
-  color: var(--accent-warn);
-  letter-spacing: -.03em;
-  line-height: 1;
-}
-.hero-stat span { font-size: .78rem; color: rgba(255,255,255,.65); font-weight: 500; }
-@media (max-width: 640px) {
-  .hero-stats { flex-wrap: wrap; width: 100%; }
-  .hero-stat { flex: 1 1 50%; }
-  .hero-stat:nth-child(3)::before,
-  .hero-stat:nth-child(4)::before { top: 0; bottom: auto; width: 100%; height: 1px; left: 0; }
-}
-
-/* ── DOWNLOADS ───────────────────────────────────────────── */
-#download { background: transparent; }
-
-.download-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 52px;
-}
-@media (max-width: 1000px) { .download-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 760px)  { .download-grid { grid-template-columns: 1fr; } }
-
-.dl-card {
-  background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: var(--r-xl);
-  padding: 40px;
-  display: flex; flex-direction: column;
-  box-shadow: var(--shadow-md);
-  transition: box-shadow .25s, transform .25s;
-  position: relative;
-  overflow: hidden;
-  cursor: default;
-}
-.dl-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
-
-.dl-card-accent {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-700), var(--primary-400));
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-}
-.dl-card.amber .dl-card-accent {
-  background: linear-gradient(90deg, var(--accent-warn), var(--accent-warn));
-}
-.dl-card.slate .dl-card-accent {
-  background: linear-gradient(90deg, var(--slate-600), var(--slate-400));
-}
-
-.dl-card-icon {
-  width: 54px; height: 54px;
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 22px;
-  flex-shrink: 0;
-}
-.dl-card-icon.teal  { background: var(--primary-50);  color: var(--primary-700); }
-.dl-card-icon.amber { background: var(--accent-warn-light); color: #b45309; }
-.dl-card-icon.slate { background: var(--slate-100); color: var(--slate-600); }
-.dl-card-icon svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-.dl-card-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: .7rem; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 100px;
-  margin-bottom: 14px;
-  align-self: flex-start;
-}
-.dl-card-badge.teal  { color: var(--primary-900);  background: var(--primary-50);   border: 1px solid var(--primary-100); }
-.dl-card-badge.amber { color: #92400e;           background: var(--accent-warn-light);  border: 1px solid var(--accent-warn-light); }
-.dl-card-badge.slate { color: var(--slate-700);  background: var(--slate-100); border: 1px solid var(--slate-200); }
-
-.dl-card h3 {
-  font-family: var(--font-display);
-  font-size: 1.35rem; font-weight: 800;
-  color: var(--ink); margin-bottom: 10px;
-  letter-spacing: -.02em;
-}
-.dl-card > p {
-  font-size: .9rem; color: var(--ink-3);
-  line-height: 1.7;
-  margin-bottom: 28px;
-}
-
-.dl-features {
-  list-style: none;
-  display: flex; flex-direction: column; gap: 10px;
-  margin-bottom: 36px;
-  flex: 1;
-}
-.dl-features li {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: .875rem; color: var(--ink-2); line-height: 1.5;
-}
-.dl-features li svg {
-  flex-shrink: 0; margin-top: 1px;
-  width: 16px; height: 16px;
-  stroke-width: 2.5;
-}
-.dl-features li svg.teal  { stroke: var(--primary-500);  fill: none; }
-.dl-features li svg.amber { stroke: var(--accent-warn); fill: none; }
-.dl-features li svg.slate { stroke: var(--slate-500); fill: none; }
-
-.btn-dl {
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  padding: 14px;
-  font-family: var(--font-body); font-size: .9rem; font-weight: 700;
-  border-radius: var(--r-md);
-  text-decoration: none;
-  transition: opacity .15s, transform .1s;
-  cursor: pointer;
-  letter-spacing: -.01em;
-}
-.btn-dl.teal  { background: linear-gradient(135deg, var(--primary-900), var(--primary-500));  color: #fff; box-shadow: 0 4px 14px rgba(0,52,92,.3); }
-.btn-dl.amber { background: linear-gradient(135deg, #92400e, var(--accent-warn));         color: #fff; box-shadow: 0 4px 14px rgba(255,200,87,.3); }
-.btn-dl.slate { background: linear-gradient(135deg, var(--slate-700), var(--slate-500)); color: #fff; box-shadow: 0 4px 14px rgba(71,85,105,.3); }
-.btn-dl:hover { opacity: .9; transform: translateY(-2px); }
-.btn-dl svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-
-/* ── ANLEITUNG (vertikale Timeline) ──────────────────────── */
-#anleitung { background: var(--surface); }
-
-.anleitung-wrap {
-  margin-top: 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-}
-.anleitung-wrap::before {
-  content: '';
-  position: absolute;
-  left: 27px; top: 56px; bottom: 56px;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--primary-400), var(--primary-100), transparent);
-  pointer-events: none;
-}
-
-.al-step {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 32px;
-  padding: 40px 0;
-}
-.al-step + .al-step {
-  border-top: 1px solid var(--slate-200);
-}
-
-.al-num {
-  width: 56px; height: 56px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--primary-700);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 1.1rem; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; z-index: 1;
-  box-shadow: 0 0 0 6px var(--surface), 0 4px 14px rgba(0,52,92,.35);
-}
-
-.al-content { padding-top: 8px; }
-.al-content h3 {
-  font-family: var(--font-display);
-  font-size: 1.1rem; font-weight: 800;
-  color: var(--ink); margin-bottom: 8px;
-  letter-spacing: -.02em;
-}
-.al-content > p {
-  font-size: .92rem; color: var(--ink-3);
-  line-height: 1.75;
-  margin-bottom: 20px;
-  max-width: 580px;
-}
-
-.al-tip {
-  display: flex; gap: 10px; align-items: flex-start;
-  background: var(--primary-50);
-  border: 1px solid var(--primary-100);
-  border-radius: var(--r-sm);
-  padding: 12px 16px;
-  margin-top: 16px;
-  font-size: .82rem; color: var(--primary-900);
-  line-height: 1.55;
-  max-width: 560px;
-}
-.al-tip svg {
-  width: 15px; height: 15px;
-  stroke: var(--primary-700); fill: none;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  flex-shrink: 0; margin-top: 1px;
-}
-
-/* Mockup-Fenster Basis */
-.al-mockup {
-  background: var(--slate-50);
-  border: 1.5px solid var(--slate-200);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 4px;
-  box-shadow: 0 2px 12px rgba(15,23,42,.06);
-  max-width: 540px;
-}
-.mock-titlebar {
-  background: var(--slate-100);
-  border-bottom: 1px solid var(--slate-200);
-  padding: 8px 12px;
-  display: flex; align-items: center; gap: 6px;
-}
-.mock-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.mock-dot-r { background: #fc5f57; }
-.mock-dot-y { background: #fdbc2c; }
-.mock-dot-g { background: #33c748; }
-.mock-title {
-  font-size: .68rem; color: var(--slate-500); font-weight: 600;
-  margin-left: 4px; flex: 1;
-}
-.mock-body { padding: 14px 16px; }
-
-/* Excel-Mockup */
-.mock-excel-tabs {
-  display: flex; gap: 2px; padding: 0 10px;
-  background: var(--slate-200);
-  border-bottom: 1px solid var(--slate-300);
-}
-.mock-tab {
-  font-size: .63rem; font-weight: 600;
-  padding: 5px 10px; border-radius: 6px 6px 0 0;
-  color: var(--slate-500);
-  background: var(--slate-300);
-  cursor: default; white-space: nowrap;
-}
-.mock-tab.active {
-  background: #fff;
-  color: var(--slate-800);
-  border: 1px solid var(--slate-300);
-  border-bottom: 1px solid #fff;
-  margin-bottom: -1px;
-}
-.mock-excel-body { padding: 10px 14px; background: #fff; }
-.mock-excel-row {
-  display: grid;
-  grid-template-columns: 50px 56px 1fr 88px 68px;
-  gap: 3px;
-  margin-bottom: 3px;
-  font-size: .62rem;
-}
-.mock-cell {
-  padding: 3px 5px;
-  border-radius: 3px;
-  background: var(--slate-50);
-  border: 1px solid var(--slate-200);
-  color: var(--slate-700);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.mock-cell.sw-header { background: #e0e7ff; color: #3730a3; font-weight: 700; }
-.mock-cell.cat-k { background: #fadbd8; color: #922b21; }
-.mock-cell.cat-p { background: #d5f5e3; color: #145a32; }
-.mock-cell.cat-r { background: #fdebd0; color: #784212; }
-.mock-cell.cat-s { background: #e8daef; color: #6c3483; }
-.mock-cell.header { background: var(--primary-50); color: var(--primary-900); font-weight: 700; border-color: var(--primary-100); }
-
-/* Browser-Mockup */
-.mock-browser-bar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 12px;
-  background: var(--slate-100);
-  border-bottom: 1px solid var(--slate-200);
-}
-.mock-addr {
-  flex: 1;
-  background: #fff;
-  border: 1px solid var(--slate-200);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: .63rem;
-  color: var(--slate-600);
-}
-.mock-browser-body { padding: 14px; background: #fff; }
-.mock-stepper {
-  display: flex; gap: 4px; margin-bottom: 12px;
-}
-.mock-step-pill {
-  flex: 1;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--primary-50);
-  border: 1px solid var(--primary-100);
-  display: flex; align-items: center; justify-content: center;
-  font-size: .58rem; color: var(--primary-700); font-weight: 700;
-  white-space: nowrap;
-}
-.mock-step-pill.active { background: var(--primary-700); color: #fff; border-color: var(--primary-700); }
-
-.mock-dropzone {
-  border: 2px dashed var(--primary-300);
-  border-radius: 8px;
-  padding: 18px 14px;
-  text-align: center;
-  background: var(--primary-50);
-  color: var(--primary-700);
-  font-size: .7rem;
-  font-weight: 600;
-}
-.mock-dropzone svg { display: block; margin: 0 auto 6px; width: 22px; height: 22px; stroke: var(--primary-400); fill: none; stroke-width: 1.5; }
-
-/* Tabellen-Mockup */
-.mock-table { width: 100%; border-collapse: collapse; font-size: .63rem; }
-.mock-table th {
-  background: var(--primary-50); color: var(--primary-900);
-  padding: 5px 8px; text-align: left;
-  font-weight: 700;
-  border-bottom: 1.5px solid var(--primary-100);
-}
-.mock-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--slate-100);
-  color: var(--slate-700);
-}
-.mock-table tr:last-child td { border-bottom: none; }
-.mock-badge {
-  display: inline-block;
-  padding: 2px 7px; border-radius: 100px;
-  font-size: .58rem; font-weight: 700;
-}
-
-/* Download-Button-Mockup */
-.mock-btn-big {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: linear-gradient(135deg, var(--primary-900), var(--primary-500));
-  color: #fff;
-  border-radius: 10px;
-  padding: 14px;
-  font-size: .78rem; font-weight: 700;
-  margin-bottom: 10px;
-}
-.mock-btn-big svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.mock-btn-sm { display: flex; gap: 6px; }
-.mock-btn-sm span {
-  flex: 1; padding: 7px;
-  background: var(--slate-100);
-  border: 1px solid var(--slate-200);
-  border-radius: 7px;
-  text-align: center;
-  font-size: .6rem; color: var(--slate-600); font-weight: 600;
-}
-
-/* IServ-Mockup */
-.mock-iserv-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px;
-  background: #1e3a5f;
-  color: #fff;
-  font-size: .7rem; font-weight: 700;
-}
-.mock-iserv-head svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-.mock-iserv-body { padding: 14px 16px; background: #fff; }
-.mock-iserv-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.mock-iserv-label { font-size: .68rem; color: var(--slate-600); width: 76px; flex-shrink: 0; }
-.mock-iserv-field {
-  flex: 1; background: var(--slate-50);
-  border: 1px solid var(--slate-300);
-  border-radius: 5px;
-  padding: 5px 8px;
-  font-size: .63rem;
-  color: var(--slate-700);
-}
-.mock-iserv-import {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  background: #1e3a5f;
-  color: #fff;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: .68rem; font-weight: 700;
-  margin-top: 10px;
-}
-.mock-iserv-import svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-@media (max-width: 640px) {
-  .anleitung-wrap::before { left: 19px; }
-  .al-step { grid-template-columns: 40px 1fr; gap: 18px; }
-  .al-num { width: 40px; height: 40px; font-size: .9rem; }
-}
-
-/* ── BENTO FEATURES ─────────────────────────────────────── */
-#features { background: transparent; }
-
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 52px;
-}
-@media (max-width: 900px) { .bento-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 600px) { .bento-grid { grid-template-columns: 1fr; } }
-
-.bento-card {
-  background: var(--surface);
-  border: 1.5px solid var(--slate-200);
-  border-radius: var(--r-lg);
-  padding: 28px;
-  display: flex; flex-direction: column; gap: 12px;
-  transition: box-shadow .2s, transform .2s;
-  cursor: default;
-}
-.bento-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.bento-card.wide { grid-column: span 2; }
-@media (max-width: 900px) { .bento-card.wide { grid-column: span 1; } }
-
-.bento-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.bento-icon svg { width: 22px; height: 22px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.bi-teal    { background: var(--primary-50);    } .bi-teal    svg { stroke: var(--primary-700); }
-.bi-emerald { background: var(--emerald-50); } .bi-emerald svg { stroke: var(--emerald-600); }
-.bi-amber   { background: var(--accent-warn-light);   } .bi-amber   svg { stroke: #b45309; }
-.bi-slate   { background: var(--slate-100);  } .bi-slate   svg { stroke: var(--slate-600); }
-.bi-red     { background: #fee2e2;           } .bi-red     svg { stroke: #dc2626; }
-.bi-violet  { background: #ede9fe;           } .bi-violet  svg { stroke: #7c3aed; }
-
-.bento-card h3 {
-  font-family: var(--font-display);
-  font-size: 1rem; font-weight: 700;
-  color: var(--ink); letter-spacing: -.01em;
-  line-height: 1.3;
-}
-.bento-card p { font-size: .875rem; color: var(--ink-3); line-height: 1.65; }
-
-/* ── KATEGORIEN ──────────────────────────────────────────── */
-#kategorien { background: var(--surface); }
-
-.cat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
-  margin-top: 48px;
-}
-.cat-card {
-  border-radius: var(--r-md);
-  padding: 22px 24px;
-  display: flex; flex-direction: column; gap: 7px;
-  border: 1.5px solid transparent;
-  transition: box-shadow .2s, transform .2s;
-  cursor: default;
-}
-.cat-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
-.cat-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.6);
-  margin-bottom: 4px;
-  flex-shrink: 0;
-}
-.cat-icon svg { width: 18px; height: 18px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.cat-name { font-size: .92rem; font-weight: 700; letter-spacing: -.01em; }
-.cat-desc { font-size: .78rem; line-height: 1.55; opacity: .82; }
-.cat-keys { font-size: .68rem; opacity: .55; font-style: italic; margin-top: 2px; }
-
-/* ── FAQ ─────────────────────────────────────────────────── */
-#faq { background: transparent; }
-
-.faq-wrap {
-  max-width: 740px;
-  margin-top: 48px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.faq-item {
-  border: 1.5px solid var(--line);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: var(--surface);
-  transition: border-color .15s, box-shadow .15s;
-}
-.faq-item:hover { border-color: var(--primary-200); box-shadow: var(--shadow-sm); }
-.faq-item.open { border-color: var(--primary-400); }
-.faq-q {
-  width: 100%;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px;
-  padding: 20px 24px;
-  background: none; border: none; cursor: pointer;
-  text-align: left;
-  font-family: var(--font-body); font-size: .95rem; font-weight: 600;
-  color: var(--ink);
-  transition: background .1s;
-}
-.faq-q:hover { background: var(--primary-50); }
-.faq-q:focus-visible { outline: 2px solid var(--primary-500); outline-offset: -2px; }
-.faq-chevron {
-  flex-shrink: 0;
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1.5px solid var(--line);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform .3s cubic-bezier(.4,0,.2,1), background .15s, border-color .15s;
-}
-.faq-chevron svg { width: 14px; height: 14px; stroke: var(--ink-3); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke .15s; }
-.faq-item.open .faq-chevron { transform: rotate(180deg); background: var(--primary-50); border-color: var(--primary-200); }
-.faq-item.open .faq-chevron svg { stroke: var(--primary-700); }
-.faq-a {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height .38s cubic-bezier(.4,0,.2,1);
-}
-.faq-item.open .faq-a { max-height: 500px; }
-.faq-a-inner {
-  padding: 0 24px 22px;
-  font-size: .9rem; color: var(--ink-3); line-height: 1.75;
-}
-.faq-a-inner code {
-  font-family: monospace; font-size: .82em;
-  background: var(--primary-50); color: var(--primary-900);
-  padding: 1px 7px; border-radius: 5px;
-  border: 1px solid var(--primary-100);
-}
-
-/* ── FOOTER ──────────────────────────────────────────────── */
-footer {
-  background: var(--primary-900);
-  color: rgba(255,255,255,.6);
-  padding: 60px 0;
-}
-.footer-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 0 32px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 40px;
-  align-items: center;
-}
-@media (max-width: 640px) { .footer-inner { grid-template-columns: 1fr; padding: 0 18px; } }
-.footer-logo {
-  font-family: var(--font-display);
-  font-size: 1.15rem; font-weight: 800;
-  color: #fff; margin-bottom: 8px;
-  letter-spacing: -.02em;
-}
-.footer-sub { font-size: .82rem; line-height: 1.8; }
-.footer-versions { display: flex; flex-direction: column; gap: 10px; text-align: right; }
-@media (max-width: 640px) { .footer-versions { text-align: left; } }
-.ver-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: .78rem; font-weight: 600;
-  color: rgba(255,255,255,.75);
-}
-.ver-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--primary-400);
-  box-shadow: 0 0 7px var(--primary-400);
-  flex-shrink: 0;
-}
-.footer-legal {
-  display: flex; gap: 16px; flex-wrap: wrap;
-  font-size: .78rem;
-  margin-top: 12px;
-}
-.footer-legal a {
-  color: var(--primary-300);
-  text-decoration: none;
-  transition: color .15s;
-}
-.footer-legal a:hover { color: #fff; }
-.footer-legal span { color: rgba(255,255,255,.3); }
-
-/* ── FÜR ANDERE SCHULEN ──────────────────────────────────── */
-.fuer-schulen {
-  background: var(--primary-900);
-  padding: var(--gap) 0;
-}
-.fuer-schulen .eyebrow { color: var(--primary-300); }
-.fuer-schulen .eyebrow::before { background: var(--primary-400); }
-.fuer-schulen h2.section-title { color: #fff; }
-.fuer-schulen .section-sub { color: rgba(255,255,255,.75); max-width: 520px; }
-
-.fuer-schulen-actions {
-  display: flex; align-items: center; gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 36px;
-}
-.btn-amber {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--accent-warn);
-  color: #fff;
-  font-size: .9rem; font-weight: 700;
-  padding: 13px 26px;
-  border-radius: var(--r-sm);
-  text-decoration: none;
-  transition: opacity .15s, transform .1s;
-  box-shadow: 0 2px 12px rgba(255,200,87,.4);
-  cursor: pointer;
-}
-.btn-amber:hover { opacity: .9; transform: translateY(-1px); }
-
-.btn-outline-white {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent;
-  color: rgba(255,255,255,.9);
-  font-size: .9rem; font-weight: 600;
-  padding: 12px 24px;
-  border-radius: var(--r-sm);
-  border: 1.5px solid rgba(255,255,255,.35);
-  text-decoration: none;
-  transition: border-color .15s, background .15s;
-  cursor: pointer;
-}
-.btn-outline-white:hover {
-  border-color: rgba(255,255,255,.7);
-  background: rgba(255,255,255,.08);
-}
-.fuer-schulen-note {
-  margin-top: 16px;
-  font-size: .78rem;
-  color: rgba(255,255,255,.45);
-}
-
-/* ── ANIMATIONS ──────────────────────────────────────────── */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal {
-    opacity: 0;
-    transform: translateY(22px);
-    transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
-  }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-}
-@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.anim { opacity: 0; animation: fadeUp .6s cubic-bezier(.22,1,.36,1) forwards; }
-.a1 { animation-delay: .06s; }
-.a2 { animation-delay: .14s; }
-.a3 { animation-delay: .22s; }
-.a4 { animation-delay: .30s; }
-.a5 { animation-delay: .38s; }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Curricu:lr Terminplan – Schulkalender aus Excel und IServ</title>
+<meta name="description" content="Schultermine in Excel planen, als ICS nach IServ exportieren und mit dem WordPress-Plugin auf der Schulwebsite anzeigen.">
+<link rel="icon" href="assets/logo/curriculr-icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/design/curriculr-tokens.css">
+<link rel="stylesheet" href="assets/design/curriculr-ui.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/design/curriculr-print.css" media="print">
 </head>
 <body>
-
-<!-- ── NAVIGATION ─────────────────────────────────────────── -->
-<nav class="nav" aria-label="Hauptnavigation">
-  <div class="nav-inner">
-    <a class="nav-logo" href="index.html" aria-label="Curricu:lr Terminplan Startseite">
-      <div class="nav-logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
-          <circle cx="8" cy="12" r="3.5" fill="#FFC857"/>
-          <circle cx="16" cy="12" r="3.5" fill="#FFC857"/>
-        </svg>
-      </div>
-      <div class="nav-logo-text">Curricu<span class="nav-logo-colon">:</span>lr <span>/ Terminplan</span></div>
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <picture>
+        <source srcset="assets/logo/curriculr-logo-auf-dunkel.svg" media="(prefers-color-scheme: dark)">
+        <img src="assets/logo/curriculr-logo-auf-hell.svg" alt="Curricu:lr" width="118" height="40">
+      </picture>
+      <span class="brand-product">Terminplan</span>
     </a>
-    <ul class="nav-links" role="list">
-      <li><a href="#download">Downloads</a></li>
-      <li><a href="anleitung.html">Anleitung</a></li>
-      <li><a href="download.html">Plugin</a></li>
-      <li><a href="impressum.html">Impressum</a></li>
-    </ul>
-    <a class="nav-cta" href="download.html">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Herunterladen
-    </a>
+    <nav aria-label="Hauptnavigation">
+      <ul class="nav">
+        <li><a href="index.html#download" aria-current="page">Downloads</a></li>
+        <li><a href="anleitung.html">Anleitung</a></li>
+        <li><a href="download.html">Plugin</a></li>
+        <li><a href="impressum.html">Impressum</a></li>
+      </ul>
+    </nav>
   </div>
-</nav>
+</header>
 
-<!-- ── HERO ───────────────────────────────────────────────── -->
+<main id="inhalt" class="cl-doc">
+
 <section class="hero" aria-labelledby="hero-title">
-  <div class="container">
-    <div class="hero-badge anim a1" aria-label="Aktiv">
-      <span class="hero-badge-dot" aria-hidden="true"></span>
-      Deine Schule · Digitaler Schulkalender
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title">Termine eintragen, Kalender <span class="mark">online</span>.</h1>
+        <p class="lead">Planen Sie Ihre Schultermine schulwochenweise in Excel, exportieren Sie sie als ICS-Datei und importieren Sie diese in IServ. Das WordPress-Plugin zeigt den Kalender auf der Schulwebsite an.</p>
+        <div class="actions">
+          <a class="cl-button" href="#download"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Downloads ansehen</a>
+          <a class="cl-button cl-button--quiet" href="anleitung.html">Anleitung lesen</a>
+        </div>
+      </div>
+      <figure class="fragment" data-ui>
+        <div class="scroll-x" tabindex="0" role="region" aria-label="Terminplan-Auszug, bei Bedarf horizontal scrollbar">
+        <table>
+          <caption>Terminplan 2026/27, Auszug mit Schulwochen (Beispieldaten)</caption>
+          <thead><tr><th scope="col">Schulwoche</th><th scope="col">Montag</th><th scope="col">Termin</th><th scope="col">Kategorie</th></tr></thead>
+          <tbody><tr><th scope="row" class="sw">SW 00</th><td class="date">24.08.2026</td><td>Dienstbesprechung</td><td><span class="tag tag--konf">Konferenzen/DB</span></td></tr><tr><th scope="row" class="sw">SW 01</th><td class="date">31.08.2026</td><td>Einschulung Jahrgang 5</td><td><span class="tag tag--k56">Jahrgang 5/6</span></td></tr><tr><th scope="row" class="sw">SW 02</th><td class="date">07.09.2026</td><td>Klassenpflegschaft Jahrgang 5/6</td><td><span class="tag tag--k56">Jahrgang 5/6</span></td></tr><tr><th scope="row" class="sw">SW 03</th><td class="date">14.09.2026</td><td>Lehrerkonferenz</td><td><span class="tag tag--konf">Konferenzen/DB</span></td></tr><tr><th scope="row" class="sw">SW 04</th><td class="date">21.09.2026</td><td>Elternabend Jahrgang 5</td><td><span class="tag tag--k56">Jahrgang 5/6</span></td></tr><tr><th scope="row" class="sw">SW 05</th><td class="date">28.09.2026</td><td>Potenzialanalyse Jahrgang 8</td><td><span class="tag tag--k78">Jahrgang 7/8</span></td></tr><tr><th scope="row" class="sw">SW 06</th><td class="date">05.10.2026</td><td>Klausur Q1 GE LK1</td><td><span class="tag tag--ob">Oberstufe</span></td></tr><tr><th scope="row" class="sw">SW 07</th><td class="date">12.10.2026</td><td>Förderplankonferenz</td><td><span class="tag tag--inkl">Inklusion</span></td></tr></tbody>
+        </table>
+        </div>
+      </figure>
     </div>
-    <h1 id="hero-title" class="anim a2">
-      Termine erfassen,<br><em>automatisch</em> online.
-    </h1>
-    <p class="hero-sub anim a3">
-      Schultermine in Excel strukturiert planen, als ICS exportieren und direkt in IServ importieren –
-      vollautomatisch auf der Schulwebsite sichtbar.
-    </p>
-    <div class="hero-actions anim a4">
-      <a class="btn-primary" href="download.html">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Tools herunterladen
-      </a>
-      <a class="btn-ghost" href="anleitung.html">
-        Schritt-für-Schritt-Anleitung
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
-    </div>
-    <div class="hero-stats anim a5" role="list" aria-label="Kennzahlen">
-      <div class="hero-stat" role="listitem">
-        <strong>v2.5</strong>
-        <span>ICS Konverter</span>
-      </div>
-      <div class="hero-stat" role="listitem">
-        <strong>v4.3</strong>
-        <span>WordPress Plugin</span>
-      </div>
-      <div class="hero-stat" role="listitem">
-        <strong>7</strong>
-        <span>Kategorien</span>
-      </div>
-      <div class="hero-stat" role="listitem">
-        <strong>100 %</strong>
-        <span>Browser-basiert</span>
-      </div>
-    </div>
+    <dl class="facts">
+      <div><dt>ICS Konverter</dt><dd>Version 2.3</dd></div>
+      <div><dt>Schulwochen-Vorlage</dt><dd>Schuljahr 2026/27</dd></div>
+      <div><dt>Terminkategorien</dt><dd>7, mit Farbe und Text</dd></div>
+      <div><dt>Konverter</dt><dd>läuft im Browser</dd></div>
+    </dl>
   </div>
 </section>
 
-<!-- ── DOWNLOADS ──────────────────────────────────────────── -->
-<section id="download" aria-labelledby="dl-title">
-  <div class="container">
-    <span class="eyebrow">Downloads</span>
-    <h2 class="section-title" id="dl-title">Alle Tools, aktuell &amp; bereit.</h2>
-    <p class="section-sub">
-      Der Konverter läuft komplett im Browser – keine Installation, keine Server.
-      Das WordPress-Plugin wird einmalig hochgeladen und automatisch aktuell gehalten.
-      Die Schulwochen-Vorlage ermöglicht schulwochenweise Planung direkt in Excel.
-    </p>
-
-    <div class="download-grid">
-
-      <!-- Konverter -->
-      <div class="dl-card reveal">
-        <div class="dl-card-accent" aria-hidden="true"></div>
-        <div class="dl-card-icon teal" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 2v6l2-2 2 2V2"/><path d="M9 13h6M9 17h4"/></svg>
-        </div>
-        <div class="dl-card-badge teal">v2.5 · Mai 2026</div>
-        <h3>ICS Konverter</h3>
-        <p>Excel-Datei hochladen, Termine prüfen, als ICS exportieren. Alles im Browser – kein Server, kein Login. Neu: Kalendervorschau und überarbeitete IServ-Importanleitung.</p>
-        <ul class="dl-features" aria-label="Features">
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>4-Schritt-Workflow-Stepper: Kategorien → Import → Bearbeiten → Exportieren</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Excel-Import per Drag &amp; Drop (SheetJS)</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Schulwochen-Format: automatische Erkennung und Import</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Inline-Editor: Titel, Datum, Zeit, Kategorie</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kalendervorschau: monatliche Übersicht aller Termine</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>RFC-5545-konformer ICS-Export mit VTIMEZONE Europe/Berlin</li>
-          <li><svg class="teal" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Datenverlust-Schutz beim Schließen des Tabs</li>
-        </ul>
-        <a class="btn-dl teal" href="downloads/Terminplan_Konverter.html" download="Terminplan_Konverter_v2.5.html">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Konverter v2.5 herunterladen
-        </a>
-      </div>
-
-      <!-- Plugin -->
-      <div class="dl-card amber reveal">
-        <div class="dl-card-accent" aria-hidden="true"></div>
-        <div class="dl-card-icon amber" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        </div>
-        <div class="dl-card-badge amber">v4.3.4 · Mai 2026</div>
-        <h3>WordPress Plugin</h3>
-        <p>Zeigt den Schulkalender direkt aus dem IServ iCal-Feed auf der Schulwebsite an – automatisch aktuell, ohne manuelle Pflege.</p>
-        <ul class="dl-features" aria-label="Features">
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>iCal-Feed direkt von IServ (keine manuelle Pflege)</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Jahresansicht: Kalenderraster Sep–Jul auf einen Blick</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Stale-While-Revalidate Caching: keine Wartezeiten</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kiosk-Modus für IServ „Eingebettet"-Option mit Token-Auth</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Änderungsbenachrichtigungen: farbig markierte neue Termine</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>PDF-Export mit Lade-Feedback, A4 Querformat professionell</li>
-          <li><svg class="amber" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>7 Kategorien inkl. Inklusion – Mehrere Schuljahres-Profile, Entwurf-Modus</li>
-        </ul>
-        <a class="btn-dl amber" href="download.html">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Plugin herunterladen
-        </a>
-      </div>
-
-      <!-- Schulwochen-Vorlage -->
-      <div class="dl-card slate reveal">
-        <div class="dl-card-accent" aria-hidden="true"></div>
-        <div class="dl-card-icon slate" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-        </div>
-        <div class="dl-card-badge slate">2025/26 · Mai 2026</div>
-        <h3>Schulwochen-Vorlage</h3>
-        <p>Vorgefertigte Excel-Datei für die schulwochenweise Terminplanung – von SW 00 bis SW 40, Ferien bereits eingetragen, mit farblich hervorgehobenen Schulwochen-Trennzeilen.</p>
-        <ul class="dl-features" aria-label="Features">
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>41 Schulwochen (SW 00–40) mit Montags-Datum vorausgefüllt</li>
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ferien bereits eingetragen (Sommer, Herbst, Weihnachten, Oster, Pfingsten)</li>
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Wochentag- und Kategorie-Dropdown für jede Zeile</li>
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>8 Terminzeilen pro Schulwoche</li>
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Automatische Erkennung &amp; Import im Konverter v2.0</li>
-          <li><svg class="slate" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Vollständig lesbare Schritt-für-Schritt-Anleitung im ersten Tab</li>
-        </ul>
-        <a class="btn-dl slate" href="downloads/Terminplan_Schulwochen_Vorlage.xlsx" download>
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Schulwochen-Vorlage herunterladen
-        </a>
-      </div>
-
+<section id="download" class="section section--surface" aria-labelledby="dl-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="dl-title">Drei Werkzeuge für den Schulkalender</h2>
+      <p>Der Konverter läuft im Browser, das WordPress-Plugin wird einmalig hochgeladen, die Schulwochen-Vorlage ermöglicht die Planung nach Schulwochen direkt in Excel.</p>
     </div>
+    <ul class="dl-list">
+      <li class="dl-item">
+        <header>
+          <h3>ICS Konverter</h3>
+          <p class="dl-meta">Version 2.3 &middot; HTML-Datei</p>
+          <p>Excel-Datei laden, Termine prüfen, als ICS exportieren. Die Termine werden lokal im Browser verarbeitet; es wird kein Konto benötigt.</p>
+        </header>
+        <div class="dl-body">
+          <ul class="plain-list">
+            <li>Import per Drag-and-drop, Schulwochen-Format wird automatisch erkannt</li>
+            <li>Bearbeiten von Titel, Datum, Zeit und Kategorie in einer Tabelle</li>
+            <li>Kalenderansicht nach Monaten zur Kontrolle vor dem Export</li>
+            <li>ICS-Export mit Zeitzone Europe/Berlin (VTIMEZONE)</li>
+            <li>Warnung beim Schließen des Tabs, solange Änderungen ungespeichert sind</li>
+          </ul>
+          <div class="actions"><a class="cl-button" href="downloads/Terminplan_Konverter.html" download>Konverter 2.3 herunterladen</a></div>
+        </div>
+      </li>
+      <li class="dl-item">
+        <header>
+          <h3>WordPress-Plugin</h3>
+          <p class="dl-meta">ZIP-Datei auf dieser Seite: Version 4.0.0 &middot; Stand im Repository: 4.42.0</p>
+          <p>Zeigt den Schulkalender aus dem IServ-iCal-Feed auf der Schulwebsite an, ohne manuelle Pflege.</p>
+        </header>
+        <div class="dl-body">
+          <ul class="plain-list">
+            <li>iCal-Feed direkt aus IServ, Cache mit Hintergrundaktualisierung</li>
+            <li>Quartalsansicht, PDF-Export, Kategorie-Filter und Suche</li>
+            <li>Kiosk-Modus für die IServ-Option „Eingebettet“ mit Token-Adresse</li>
+            <li>Hinweis auf neue, geänderte und gelöschte Termine</li>
+            <li>Bis zu fünf Schuljahres-Profile, Entwurf-Modus vor der Freigabe</li>
+          </ul>
+          <p class="small">Neuere Funktionen im Repository, etwa Monatsansicht und Gruppenfilter, sind in der ZIP-Datei auf dieser Seite noch nicht enthalten. Aktuelle Versionen finden Sie auf GitHub.</p>
+          <div class="actions"><a class="cl-button" href="download.html">Zum Plugin-Download</a></div>
+        </div>
+      </li>
+      <li class="dl-item">
+        <header>
+          <h3>Schulwochen-Vorlage</h3>
+          <p class="dl-meta">Schuljahr 2026/27 &middot; Excel-Datei</p>
+          <p>Vorbereitete Excel-Datei für die Terminplanung nach Schulwochen, mit berechneten Montagen und Ferien aus einem eigenen Blatt.</p>
+        </header>
+        <div class="dl-body">
+          <ul class="plain-list">
+            <li>42 Schulwochen (SW 00 bis SW 41) mit berechneten Montagen</li>
+            <li>Ferien und Eckdaten im Blatt „Ferien“, Ferienwochen werden übersprungen</li>
+            <li>Auswahllisten für Wochentag, Kategorie und Ganztägig</li>
+            <li>15 Zeilen je Schulwoche, Blatt „Anleitung“ mit Hinweisen</li>
+          </ul>
+          <div class="actions"><a class="cl-button" href="downloads/Terminplan_Schulwochen_Vorlage.xlsx" download>Vorlage herunterladen</a></div>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
-<!-- ── ANLEITUNG ──────────────────────────────────────────── -->
-<section id="anleitung" aria-labelledby="anl-title">
-  <div class="container">
-    <span class="eyebrow">Schritt für Schritt</span>
-    <h2 class="section-title" id="anl-title">So funktioniert der Terminplan-Workflow</h2>
-    <p class="section-sub">Von der leeren Tabelle bis zum automatisch aktualisierten Kalender auf der Schulwebsite – in 6 einfachen Schritten.</p>
-
-    <div class="anleitung-wrap">
-
-      <!-- Schritt 1 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 1">1</div>
-        <div class="al-content">
-          <h3>Excel-Vorlage herunterladen und öffnen</h3>
-          <p>Die <strong>Schulwochen-Vorlage</strong> oben herunterladen und in Excel öffnen. Sie ist nach Schulwochen strukturiert und enthält ein vollständig lesbares Anleitungsblatt als ersten Tab. Schulwochen-Trennzeilen sind farblich hervorgehoben. Ferien sind bereits voreingetragen, das Montags-Datum wird automatisch berechnet.</p>
-          <div class="al-mockup">
-            <div class="mock-titlebar">
-              <div class="mock-dot mock-dot-r"></div>
-              <div class="mock-dot mock-dot-y"></div>
-              <div class="mock-dot mock-dot-g"></div>
-              <span class="mock-title">Terminplan_Schulwochen_Vorlage.xlsx</span>
-            </div>
-            <div class="mock-excel-tabs">
-              <div class="mock-tab active">Anleitung</div>
-              <div class="mock-tab">Terminplan</div>
-              <div class="mock-tab">Ferien</div>
-              <div class="mock-tab">Kategorien</div>
-            </div>
-            <div class="mock-excel-body">
-              <div class="mock-excel-row">
-                <div class="mock-cell header">SW-Key</div>
-                <div class="mock-cell header">Datum Mo</div>
-                <div class="mock-cell header">Titel</div>
-                <div class="mock-cell header">Kategorie</div>
-                <div class="mock-cell header">Tag</div>
-              </div>
-              <div class="mock-excel-row">
-                <div class="mock-cell sw-header">SW 01</div>
-                <div class="mock-cell sw-header">06.01.25</div>
-                <div class="mock-cell sw-header"></div>
-                <div class="mock-cell sw-header"></div>
-                <div class="mock-cell sw-header"></div>
-              </div>
-              <div class="mock-excel-row">
-                <div class="mock-cell">SW 01</div>
-                <div class="mock-cell">06.01.25</div>
-                <div class="mock-cell">Einschulung Jg 5</div>
-                <div class="mock-cell cat-k">Jahrgang 5/6</div>
-                <div class="mock-cell">Mo</div>
-              </div>
-              <div class="mock-excel-row">
-                <div class="mock-cell">SW 02</div>
-                <div class="mock-cell">13.01.25</div>
-                <div class="mock-cell">Lehrerkonferenz</div>
-                <div class="mock-cell cat-s">Konferenzen</div>
-                <div class="mock-cell">Di</div>
-              </div>
-              <div class="mock-excel-row">
-                <div class="mock-cell">SW 03</div>
-                <div class="mock-cell">20.01.25</div>
-                <div class="mock-cell">Osterferien NRW</div>
-                <div class="mock-cell cat-r">Ferien</div>
-                <div class="mock-cell">Ganze W.</div>
-              </div>
-            </div>
-          </div>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Tipp: Nur die sichtbaren Spalten (Wochentag, Uhrzeit, Titel, Kategorie, Ganztägig, Notiz) müssen ausgefüllt werden. Die technischen Hilfsspalten sind ausgeblendet.</span>
-          </div>
+<section id="ablauf" class="section" aria-labelledby="ablauf-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="ablauf-title">So läuft der Terminplan-Workflow</h2>
+      <p>Von der leeren Tabelle bis zum aktuellen Kalender auf der Schulwebsite in sechs Schritten.</p>
+    </div>
+    <ol class="steps">
+      <li class="step step--fig">
+        <div class="step-text">
+          <h3>Excel-Vorlage öffnen und Ferien eintragen</h3>
+          <p>Öffnen Sie die Schulwochen-Vorlage in Excel. Tragen Sie im Blatt „Ferien“ die Ferienzeiten und die Eckdaten des Schuljahres ein. Die Montage der Schulwochen werden daraus berechnet.</p>
+          <p class="note">Ausfüllen müssen Sie nur die sichtbaren Spalten Wochentag bis Anmerkung. Die technischen Hilfsspalten sind ausgeblendet.</p>
         </div>
-      </div>
-
-      <!-- Schritt 2 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 2">2</div>
-        <div class="al-content">
+        <figure class="fragment" data-ui>
+          <div class="scroll-x" tabindex="0" role="region" aria-label="Auszug der Excel-Vorlage, bei Bedarf horizontal scrollbar">
+          <table>
+            <caption>Blatt „Terminplan“ der Schulwochen-Vorlage (Auszug, Beispieleinträge)</caption>
+            <thead><tr><th scope="col">Schulwoche</th><th scope="col">Zeitraum</th><th scope="col">Wochentag</th><th scope="col">Uhrzeit</th><th scope="col">Titel</th><th scope="col">Kategorie</th></tr></thead>
+            <tbody><tr><th scope="row" class="sw">SW 03</th><td class="date">14.09. bis 18.09.</td><td>Mo</td><td>15:00</td><td>Lehrerkonferenz</td><td><span class="tag tag--konf">Konferenzen/DB</span></td></tr><tr><th scope="row" class="sw">SW 04</th><td class="date">21.09. bis 25.09.</td><td>Di</td><td>19:00</td><td>Elternabend Jg. 5</td><td><span class="tag tag--k56">Jahrgang 5/6</span></td></tr><tr><th scope="row" class="sw">SW 05</th><td class="date">28.09. bis 02.10.</td><td>Mi</td><td>08:00</td><td>Potenzialanalyse Jg. 8</td><td><span class="tag tag--k78">Jahrgang 7/8</span></td></tr><tr><th scope="row" class="sw">SW 06</th><td class="date">05.10. bis 09.10.</td><td>Do</td><td>08:00</td><td>Klausur Q1 GE LK1</td><td><span class="tag tag--ob">Oberstufe</span></td></tr></tbody>
+          </table>
+          </div>
+        </figure>
+      </li>
+      <li class="step">
+        <div class="step-text">
           <h3>Termine schulwochenweise eintragen</h3>
-          <p>Im Tab <strong>Terminplan</strong> Titel, Wochentag (Dropdown: Mo–Fr oder „Ganze Woche") und Kategorie aus dem Dropdown wählen. Bei zeitgenauen Terminen Uhrzeiten eintragen – sonst leer lassen (= ganztägig). Ferien werden als eigenständige Zeilen mit dem Typ „Ferien/Feiertage" importiert.</p>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Tipp: Dropdowns für Wochentag und Kategorie sind bereits eingerichtet – einfach klicken und auswählen. Kein manuelles Tippen nötig.</span>
-          </div>
+          <p>Wählen Sie im Blatt „Terminplan“ je Zeile den Wochentag (Mo bis Fr oder „Ganze Woche“) und die Kategorie aus der Liste. Tragen Sie bei zeitgenauen Terminen die Uhrzeit ein, sonst bleibt das Feld leer.</p>
         </div>
-      </div>
-
-      <!-- Schritt 3 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 3">3</div>
-        <div class="al-content">
-          <h3>Konverter öffnen und Excel hineinziehen</h3>
-          <p>Den <strong>ICS Konverter</strong> (heruntergeladene HTML-Datei) im Browser öffnen – kein Internet nötig. Die gespeicherte <code style="font-family:monospace;font-size:.85em;background:var(--primary-50);color:var(--primary-900);padding:1px 6px;border-radius:4px;border:1px solid var(--primary-100)">.xlsx</code>-Datei per Drag &amp; Drop in die Dropzone ziehen oder über den Dateiauswahl-Dialog öffnen.</p>
-          <div class="al-mockup">
-            <div class="mock-browser-bar">
-              <div class="mock-dot mock-dot-r"></div>
-              <div class="mock-dot mock-dot-y"></div>
-              <div class="mock-dot mock-dot-g"></div>
-              <div class="mock-addr">📄 Terminplan_Konverter_v2.0.html</div>
-            </div>
-            <div class="mock-browser-body">
-              <div class="mock-stepper">
-                <div class="mock-step-pill active">① Kategorien</div>
-                <div class="mock-step-pill">② Import</div>
-                <div class="mock-step-pill">③ Bearbeiten</div>
-                <div class="mock-step-pill">④ Export</div>
-              </div>
-              <div class="mock-dropzone">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Excel-Datei hier ablegen<br>
-                <span style="font-size:.6rem;opacity:.7;font-weight:400">oder klicken zum Auswählen</span>
-              </div>
-            </div>
-          </div>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Tipp: Der Konverter erkennt das Schulwochen-Format automatisch und rechnet Wochentag-Angaben in echte Datumsangaben um.</span>
-          </div>
+      </li>
+      <li class="step">
+        <div class="step-text">
+          <h3>Konverter öffnen und Excel-Datei laden</h3>
+          <p>Öffnen Sie die heruntergeladene HTML-Datei des Konverters im Browser. Ziehen Sie die gespeicherte XLSX-Datei in das Feld oder wählen Sie sie über den Dateidialog aus. Der Konverter erkennt das Schulwochen-Format und rechnet Wochentage in Datumsangaben um.</p>
+          <p class="note">Für den Excel-Import lädt der Konverter die Bibliothek SheetJS aus dem Internet nach.</p>
         </div>
-      </div>
-
-      <!-- Schritt 4 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 4">4</div>
-        <div class="al-content">
-          <h3>Importierte Termine prüfen und ggf. anpassen</h3>
-          <p>Nach dem Import zeigt der Konverter alle erkannten Termine in einer Tabelle. Einzelne Einträge können per Klick auf das Stift-Symbol bearbeitet werden – Titel, Datum, Uhrzeit und Kategorie sind editierbar. Doppelte Einträge werden automatisch übersprungen.</p>
-          <div class="al-mockup">
-            <div class="mock-titlebar">
-              <div class="mock-dot mock-dot-r"></div>
-              <div class="mock-dot mock-dot-y"></div>
-              <div class="mock-dot mock-dot-g"></div>
-              <span class="mock-title">Importierte Termine – 47 Einträge gefunden</span>
-            </div>
-            <div class="mock-body">
-              <table class="mock-table">
-                <thead>
-                  <tr>
-                    <th>Datum</th>
-                    <th>Titel</th>
-                    <th>Kategorie</th>
-                    <th>Zeit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>06.01.2025</td>
-                    <td>Einschulung Jahrgang 5</td>
-                    <td><span class="mock-badge" style="background:#fadbd8;color:#922b21">Jg 5/6</span></td>
-                    <td>09:00</td>
-                  </tr>
-                  <tr>
-                    <td>14.01.2025</td>
-                    <td>Lehrerkonferenz</td>
-                    <td><span class="mock-badge" style="background:#e8daef;color:#6c3483">Konferenz</span></td>
-                    <td>ganztg.</td>
-                  </tr>
-                  <tr>
-                    <td>20.01.2025</td>
-                    <td>Osterferien NRW</td>
-                    <td><span class="mock-badge" style="background:#fdebd0;color:#784212">Ferien</span></td>
-                    <td>ganztg.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Tipp: Mit der Kalendervorschau lassen sich alle Termine nach Monaten sortiert überprüfen – ideal zum Querlesen vor dem Export.</span>
-          </div>
+        <figure class="fragment shot">
+          <img src="assets/konverter-termine.png" width="2456" height="718" alt="Ausschnitt aus dem Konverter: Tabelle „Termine bearbeiten“ mit sieben Beispielterminen in den Spalten Titel, Datum, Uhrzeit, Ganztägig, Kategorie und Bemerkung. Darunter die Zähler je Kategorie.">
+          <figcaption>Ausschnitt aus dem Konverter mit den Beispieldaten des Programms.</figcaption>
+        </figure>
+      </li>
+      <li class="step">
+        <div class="step-text">
+          <h3>Importierte Termine prüfen</h3>
+          <p>Der Konverter listet alle erkannten Termine. Titel, Datum, Uhrzeit und Kategorie lassen sich in der Tabelle ändern. Doppelte Einträge werden übersprungen, unvollständige Zeilen sind markiert. Die Kalenderansicht zeigt die Termine nach Monaten.</p>
         </div>
-      </div>
-
-      <!-- Schritt 5 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 5">5</div>
-        <div class="al-content">
+      </li>
+      <li class="step step--fig">
+        <div class="step-text">
           <h3>ICS-Datei herunterladen</h3>
-          <p>Auf den großen <strong>„ICS exportieren"</strong>-Button klicken. Der Konverter erstellt eine RFC-5545-konforme <code style="font-family:monospace;font-size:.85em;background:var(--primary-50);color:var(--primary-900);padding:1px 6px;border-radius:4px;border:1px solid var(--primary-100)">schuljahresterminplan.ics</code>-Datei mit korrekter Zeitzone Europe/Berlin für Sommer- und Winterzeit.</p>
-          <div class="al-mockup">
-            <div class="mock-titlebar">
-              <div class="mock-dot mock-dot-r"></div>
-              <div class="mock-dot mock-dot-y"></div>
-              <div class="mock-dot mock-dot-g"></div>
-              <span class="mock-title">Schritt 4: Exportieren</span>
-            </div>
-            <div class="mock-body">
-              <div class="mock-btn-big">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                ICS exportieren (47 Termine)
-              </div>
-              <div class="mock-btn-sm">
-                <span>📅 Kalenderansicht</span>
-                <span>⬇ Excel-Vorlage</span>
-                <span>🖨 Drucken</span>
-              </div>
-            </div>
-          </div>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Tipp: Die ICS-Datei dient als Jahresvorlage. Kleinere Änderungen im laufenden Schuljahr können direkt in IServ gepflegt werden – ohne erneuten Export.</span>
-          </div>
+          <p>Klicken Sie auf „ICS-Datei herunterladen“. Der Konverter erzeugt eine Datei nach RFC 5545 mit der Zeitzone Europe/Berlin, sodass Sommer- und Winterzeit stimmen.</p>
+          <p class="note">Die ICS-Datei dient als Jahresvorlage. Kleinere Änderungen im laufenden Schuljahr pflegen Sie direkt in IServ.</p>
         </div>
-      </div>
-
-      <!-- Schritt 6 -->
-      <div class="al-step reveal">
-        <div class="al-num" aria-label="Schritt 6">6</div>
-        <div class="al-content">
+        <figure class="fragment" data-ui>
+          <pre class="code-frag" tabindex="0"><span class="dim">BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Terminplan//Konverter v2.3//DE
+X-WR-TIMEZONE:Europe/Berlin
+BEGIN:VTIMEZONE
+TZID:Europe/Berlin
+...
+END:VTIMEZONE</span>
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Berlin:20250825T093000
+DTEND;TZID=Europe/Berlin:20250825T130000
+SUMMARY:1. Lehrerkonferenz
+CATEGORIES:Konferenzen
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20251013
+DTEND;VALUE=DATE:20251025
+SUMMARY:Herbstferien
+CATEGORIES:Feiertage
+END:VEVENT
+<span class="dim">...
+END:VCALENDAR</span></pre>
+          <figcaption>Auszug einer vom Konverter erzeugten ICS-Datei (Beispieldaten).</figcaption>
+        </figure>
+      </li>
+      <li class="step">
+        <div class="step-text">
           <h3>ICS-Datei in IServ importieren</h3>
-          <p>In IServ: <strong>Kalender → Zahnrad ⚙ → Import → Datei auswählen → Zielkalender wählen → Importieren.</strong> Das WordPress-Plugin liest den iCal-Feed automatisch ab – ab sofort erscheinen alle Termine auf der Schulwebsite. Kein weiterer Schritt nötig.</p>
-          <div class="al-mockup">
-            <div class="mock-iserv-head">
-              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              IServ – Kalender importieren
-            </div>
-            <div class="mock-iserv-body">
-              <div class="mock-iserv-row">
-                <div class="mock-iserv-label">Datei</div>
-                <div class="mock-iserv-field">schuljahresterminplan.ics <span style="color:var(--primary-700);font-weight:700">✓</span></div>
-              </div>
-              <div class="mock-iserv-row">
-                <div class="mock-iserv-label">Zielkalender</div>
-                <div class="mock-iserv-field">Schulterminplan 2025/26 ▾</div>
-              </div>
-              <div class="mock-iserv-import">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Importieren
-              </div>
-            </div>
-          </div>
-          <div class="al-tip">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>WordPress-Hinweis: Das Plugin wurde einmalig von der IT eingerichtet und liest den IServ-iCal-Feed automatisch. Nach dem IServ-Import erscheinen die Termine ohne weitere Schritte auf der Schulwebsite.</span>
-          </div>
+          <p>In IServ: Kalender, Einstellungen (Zahnrad), „Importieren“, Datei auswählen, Zielkalender wählen und bestätigen. Das WordPress-Plugin liest den iCal-Feed dieses Kalenders; danach erscheinen die Termine auf der Schulwebsite.</p>
+          <p class="note">Voraussetzung ist, dass die IT das Plugin einmalig eingerichtet hat. Die Schritte dafür stehen in der <a href="anleitung.html">Installationsanleitung</a>.</p>
         </div>
-      </div>
+      </li>
+    </ol>
+  </div>
+</section>
 
+<section id="funktionen" class="section section--surface" aria-labelledby="feat-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="feat-title">Was das Plugin im Hintergrund leistet</h2>
+      <p>Technik, die ohne Build-System und ohne zusätzliche Dienste auskommt.</p>
+    </div>
+    <dl class="defs">
+      <div><dt>Gespeicherter Stand sofort, Aktualisierung im Hintergrund</dt><dd>Besucherinnen und Besucher sehen den Kalender ohne Wartezeit. Die Aktualisierung läuft per WP-Cron (Stale-While-Revalidate).</dd></div>
+      <div><dt>Änderungserkennung</dt><dd>Neue, geänderte und gelöschte Termine werden erkannt und beim nächsten Besuch in einem Banner angezeigt.</dd></div>
+      <div><dt>PDF-Export</dt><dd>Einzelnes Quartal oder gesamtes Schuljahr als PDF, mit Rückmeldung während des Ladens.</dd></div>
+      <div><dt>Kiosk-Modus für IServ</dt><dd>Der Kalender wird über eine Token-Adresse ohne Theme und ohne WordPress-Anmeldung als IServ-Inhalt eingebettet.</dd></div>
+      <div><dt>Mehrere Schuljahre</dt><dd>Bis zu fünf Profile mit eigener iCal-Adresse. Ein Entwurf bleibt für Administratoren sichtbar, bis er freigegeben wird.</dd></div>
+      <div><dt>Ohne Composer und Build-Schritt</dt><dd>Das Plugin besteht aus PHP-Dateien und einem Stylesheet. Sie laden die ZIP-Datei hoch und aktivieren das Plugin.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="kategorien" class="section" aria-labelledby="cat-title">
+  <div class="wrap split">
+    <div class="section-head">
+      <h2 id="cat-title">Sieben Kategorien, überall gleich</h2>
+      <p>Dasselbe Kategorie- und Farbschema gilt im Konverter, in der Excel-Vorlage und im Plugin. Jede Kategorie ist durch Farbe und Beschriftung erkennbar, nie nur durch Farbe.</p>
+    </div>
+    <figure class="fragment" data-ui>
+      <div class="scroll-x" tabindex="0" role="region" aria-label="Kategorien, bei Bedarf horizontal scrollbar">
+      <table>
+        <caption>Standardkategorien mit Beispielen und Stichwörtern der automatischen Zuordnung</caption>
+        <thead><tr><th scope="col">Kategorie</th><th scope="col">Beispiele</th><th scope="col">Stichwörter</th></tr></thead>
+        <tbody><tr><th scope="row"><span class="tag tag--k56">Jahrgang 5/6</span></th><td>Einschulung, Orientierungsphase, Bücherausgabe</td><td>Jg 5, Jg 6, DST, Einschulung, Neue 5er</td></tr><tr><th scope="row"><span class="tag tag--k78">Jahrgang 7/8</span></th><td>KAoA, Berufsfelderkundung, Potenzialanalyse, WP-Wahl</td><td>Jg 7, Jg 8, KAoA, WPM, Potenzialanalyse</td></tr><tr><th scope="row"><span class="tag tag--k910">Jahrgang 9/10</span></th><td>Betriebspraktikum, ZP 10, Abschlussfahrt, Berufsberatung</td><td>Jg 9, Jg 10, BP, ZP 10, Abschlussfahrt</td></tr><tr><th scope="row"><span class="tag tag--ob">Oberstufe</span></th><td>EF, Q1, Q2, Abitur, Klausuren, Laufbahnkonferenz</td><td>EF, Q1, Q2, Abi, Klausur, Laufbahn</td></tr><tr><th scope="row"><span class="tag tag--inkl">Inklusion</span></th><td>Förderplan, I-Helfer, Beratungsteam, Nachteilsausgleich</td><td>IFÖ, AL SuS, AOSF, Förderplan, Inklusion</td></tr><tr><th scope="row"><span class="tag tag--fer">Feiertage/Ferien</span></th><td>Ferien, Feiertage, bewegliche Ferientage</td><td>Ferien, Feiertag, Weihnachten, Ostern</td></tr><tr><th scope="row"><span class="tag tag--konf">Konferenzen/DB</span></th><td>Dienstbesprechungen, Fachkonferenzen, Studientag</td><td>LK, FaKo, DB, TBS, SchiLF, Studientag</td></tr></tbody>
+      </table>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section id="faq" class="section section--surface" aria-labelledby="faq-title">
+  <div class="wrap">
+    <div class="section-head"><h2 id="faq-title">Häufige Fragen</h2></div>
+    <div class="faq"><details><summary>Was unterscheidet die Schulwochen-Vorlage von der klassischen Vorlage?</summary><div class="answer"><p>Die Schulwochen-Vorlage (<code>Terminplan_Schulwochen_Vorlage.xlsx</code>) ist nach Schulwochen (SW 00 bis SW 41) aufgebaut. Ferien und Eckdaten tragen Sie einmal im Blatt „Ferien“ ein, die Montage der Schulwochen werden berechnet. Termine erfassen Sie mit Wochentag statt mit Datum; der Konverter rechnet sie in echte Datumsangaben um.</p><p>Die klassische Vorlage (im Konverter unter „Leere Vorlage“) ist eine einfache Tabelle mit einem Startdatum je Zeile. Sie eignet sich für einzelne Termine und die Nachbearbeitung.</p></div></details><details><summary>Muss ich den Konverter installieren?</summary><div class="answer"><p>Nein. Der Konverter ist eine einzelne HTML-Datei, die Sie lokal im Browser öffnen. Ihre Termine verlassen Ihren Rechner nicht. Für den Excel-Import lädt die Datei beim Öffnen die Bibliothek SheetJS von cdnjs.cloudflare.com nach; dafür ist eine Internetverbindung nötig.</p></div></details><details><summary>Was passiert, wenn ich in IServ einen Termin ändere?</summary><div class="answer"><p>Das Plugin ruft den iCal-Feed im Hintergrund ab (WP-Cron) und vergleicht ihn mit dem letzten Stand. Beim nächsten Seitenaufruf weist ein Banner auf neue, geänderte und gelöschte Termine hin.</p></div></details><details><summary>Wie binde ich den Kalender in IServ ein?</summary><div class="answer"><p>Das Plugin unterstützt den Kiosk-Modus für die IServ-Option „Eingebettet“. Die WordPress-Seite wird über eine Token-Adresse ohne Theme eingebettet, ohne dass Nutzerinnen und Nutzer WordPress oder eine Anmeldung sehen. Die Token-Adresse konfigurieren Sie in den Plugin-Einstellungen.</p></div></details><details><summary>Welche Datums- und Zeitformate erkennt der Konverter?</summary><div class="answer"><p>TT.MM.JJJJ (zum Beispiel 18.08.2026) und JJJJ-MM-TT sowie Uhrzeiten im Format HH:MM. Leere Zeitfelder ergeben ganztägige Termine.</p></div></details><details><summary>Kann ich eigene Kategorien anlegen?</summary><div class="answer"><p>Ja. Im Konverter unter „Kategorien &amp; Einstellungen“ können Sie Kategorien hinzufügen, umbenennen, einfärben und mit Stichwörtern für die automatische Zuordnung versehen. Es sind höchstens 20 Kategorien möglich.</p></div></details><details><summary>Wie aktuell ist der Kalender auf der Website?</summary><div class="answer"><p>Das Plugin zeigt sofort den gespeicherten Stand und aktualisiert ihn im Hintergrund (Stale-While-Revalidate). Die Cache-Dauer stellen Sie im Plugin ein; sie beträgt standardmäßig 60 Minuten, mindestens 5 Minuten.</p></div></details><details><summary>Wie importiere ich die ICS-Datei erneut, ohne Duplikate?</summary><div class="answer"><p>Beim Excel-Import erkennt der Konverter identische Termine (gleicher Titel und gleiches Startdatum) und überspringt sie. Empfehlenswert ist, die ICS-Datei als Jahresvorlage zu nutzen und Änderungen im laufenden Schuljahr direkt in IServ zu pflegen.</p></div></details></div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="schulen-title">
+  <div class="wrap split">
+    <h2 id="schulen-title">Kostenlos und quelloffen</h2>
+    <div class="section-head">
+      <p>Plugin und Konverter stehen anderen Schulen kostenlos zur Verfügung (GPL v2 oder neuer). Es ist ein privates Projekt ohne Gewährleistung, ohne Supportzusage und ohne kommerzielle Absicht. Vor dem Einsatz prüfen Sie Eignung, Datenschutz und Sicherheit in Ihrer Schule selbst.</p>
+      <div class="actions">
+        <a class="cl-button" href="download.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Plugin herunterladen</a>
+        <a class="cl-button cl-button--quiet" href="anleitung.html">Installationsanleitung</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── BENTO FEATURES ─────────────────────────────────────── -->
-<section id="features" aria-labelledby="feat-title">
-  <div class="container">
-    <span class="eyebrow">Technologie</span>
-    <h2 class="section-title" id="feat-title">Was steckt dahinter?</h2>
-    <p class="section-sub">Robuste Technik, die im Schulalltag zuverlässig funktioniert – ohne IT-Aufwand.</p>
+</main>
 
-    <div class="bento-grid" aria-label="Feature-Übersicht">
-
-      <div class="bento-card wide reveal">
-        <div class="bento-icon bi-teal" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h3>Stale-While-Revalidate Caching</h3>
-        <p>Der gecachte Stand wird sofort angezeigt, im Hintergrund läuft gleichzeitig eine Aktualisierung per WP-Cron. Besucher sehen dadurch nie eine Ladezeit – auch direkt nach Cache-Ablauf immer aktuelle Daten.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-emerald" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <h3>Änderungserkennung</h3>
-        <p>Neue, geänderte und gelöschte Termine werden automatisch erkannt und farbig hervorgehoben – mit optionalem E-Mail-Feedback.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-violet" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-        </div>
-        <h3>PDF-Export</h3>
-        <p>A4 Querformat, Farb-Indikatoren, Fußzeile auf jeder Seite – professionell und druckfertig.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-amber" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <h3>RFC-5545-konformer ICS-Export</h3>
-        <p>Korrekte VTIMEZONE-Komponente für Europe/Berlin – Sommer-/Winterzeit wird automatisch berücksichtigt.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-red" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        </div>
-        <h3>Kiosk-Modus</h3>
-        <p>Der Kalender wird direkt als IServ-Inhalt eingebettet – via Token-URL ohne Theme, ohne WordPress-Login.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-slate" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
-        </div>
-        <h3>Mehrere Schuljahres-Profile</h3>
-        <p>Bis zu 5 Profile parallel, Entwurf-Modus für Planung, Frontend-Umschalter für Besucher.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-teal" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        </div>
-        <h3>WordPress Coding Standards</h3>
-        <p>Kein Build-System, kein Composer. Direkte Integration – eine PHP-Datei, eine CSS-Datei, deployment-ready.</p>
-      </div>
-
-      <div class="bento-card reveal">
-        <div class="bento-icon bi-emerald" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </div>
-        <h3>100 % Browser-basierter Konverter</h3>
-        <p>Die HTML-Datei läuft offline – ohne Server, ohne Internet, ohne Installation. Einfach öffnen und loslegen.</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ── KATEGORIEN ─────────────────────────────────────────── -->
-<section id="kategorien" aria-labelledby="cat-title">
-  <div class="container">
-    <span class="eyebrow">Farbsystem</span>
-    <h2 class="section-title" id="cat-title">7 Kategorien, konsequent durchgezogen</h2>
-    <p class="section-sub">Dasselbe Kategorie- und Farbschema gilt im Konverter, in der Excel-Vorlage, im iCal-Feed und auf der Website.</p>
-
-    <div class="cat-grid">
-
-      <div class="cat-card reveal" style="background:var(--cat-k-bg);color:var(--cat-k-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="cat-name">Jahrgang 5/6</div>
-        <div class="cat-desc">DST, Einschulung, Orientierungsphase, Nicht-Schwimmer, Bücherausgabe</div>
-        <div class="cat-keys">Jg 5, Jg 6, DST, Einschulung, Neue 5er …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-p-bg);color:var(--cat-p-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </div>
-        <div class="cat-name">Jahrgang 7/8</div>
-        <div class="cat-desc">KAoA, Berufsfelderkundung, Potenzialanalyse, WP-Wahl, Sponsorenlauf</div>
-        <div class="cat-keys">Jg 7, Jg 8, KAoA, WPM, Potenzialanalyse …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-j-bg);color:var(--cat-j-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-        </div>
-        <div class="cat-name">Jahrgang 9/10</div>
-        <div class="cat-desc">Betriebspraktikum, ZP 10, mAP 10, ZAA, Abschlussfahrt, Berufsberatung</div>
-        <div class="cat-keys">Jg 9, Jg 10, BP, ZP 10, Abschlussfahrt …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-f-bg);color:var(--cat-f-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </div>
-        <div class="cat-name">Oberstufe</div>
-        <div class="cat-desc">EF, Q1, Q2, Abitur, Klausuren, Laufbahnkonferenz, Kurswahlfahrt</div>
-        <div class="cat-keys">EF, Q1, Q2, Abi, Klausur, Laufbahn …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-e-bg);color:var(--cat-e-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
-        </div>
-        <div class="cat-name">Inklusion</div>
-        <div class="cat-desc">IFÖ, AL SuS, AOSF, Förderplan, I-Helfer, Beratungsteam, Nachteilsausgleich</div>
-        <div class="cat-keys">IFÖ, AL SuS, AOSF, Förderplan, Inklusion …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-r-bg);color:var(--cat-r-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="cat-name">Feiertage / Ferien</div>
-        <div class="cat-desc">Ferien, Feiertage, bewegliche Ferientage, Rosenmontag</div>
-        <div class="cat-keys">Ferien, Feiertag, Weihnachten, Ostern …</div>
-      </div>
-
-      <div class="cat-card reveal" style="background:var(--cat-s-bg);color:var(--cat-s-fg)">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="cat-name">Konferenzen / DB</div>
-        <div class="cat-desc">LK, FaKo, PK, TBS, Dienstbesprechungen, SchiLF, Studientag</div>
-        <div class="cat-keys">LK, FaKo, DB, TBS, SchiLF, Studientag …</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ── FAQ ────────────────────────────────────────────────── -->
-<section id="faq" aria-labelledby="faq-title">
-  <div class="container">
-    <span class="eyebrow">FAQ</span>
-    <h2 class="section-title" id="faq-title">Häufige Fragen</h2>
-
-    <div class="faq-wrap" role="list">
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Was ist der Unterschied zwischen der Schulwochen-Vorlage und der klassischen Vorlage?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Die <strong>Schulwochen-Vorlage</strong> (<code>Terminplan_Schulwochen_Vorlage.xlsx</code>) ist nach Schulwochen (SW 00–40) strukturiert – genau wie die bisherigen Word-Tabellen der Schulleitung. Ferien sind bereits voreingetragen, das Montags-Datum wird automatisch berechnet. Termine werden mit Wochentag eingetragen, nicht mit absolutem Datum. Der Konverter v2.0 erkennt dieses Format automatisch und rechnet die Wochentage in echte Datumsangaben um.<br><br>
-            Die <strong>klassische Flat-Vorlage</strong> (aus dem Konverter unter „Vorlage herunterladen") nutzt eine einfache Tabelle mit absolutem Startdatum pro Zeile – geeignet für gelegentliche Einzeltermine oder die Nachbearbeitung im Konverter.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Muss ich den Konverter installieren?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Nein. Der Konverter ist eine einzelne HTML-Datei, die direkt im Browser läuft. Einfach herunterladen und öffnen – ohne Server, ohne Installation, ohne Internet-Verbindung nach dem Download.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Was passiert, wenn ich in IServ einen Termin ändere?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Das WordPress-Plugin ruft den iCal-Feed von IServ im Hintergrund automatisch ab (WP-Cron). Geänderte, neue und gelöschte Termine werden erkannt. Beim nächsten Seitenaufruf erscheint ein gelber Benachrichtigungsbanner. Neue Termine werden grün hervorgehoben, geänderte Termine orange.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Wie binde ich den Kalender in IServ ein?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Das Plugin unterstützt den IServ-„Eingebettet"-Modus. Die WordPress-Seite wird per Token-URL ohne Theme eingebettet – der Kalender erscheint direkt als IServ-Inhalt, ohne dass der Nutzer WordPress oder ein Login sieht. Die Token-URL ist in den Plugin-Einstellungen konfigurierbar.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Welches Datumsformat erwartet der Konverter?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Der Konverter erkennt automatisch <code>TT.MM.JJJJ</code> (deutsches Format, z.&nbsp;B. <code>18.08.2026</code>) und <code>JJJJ-MM-TT</code> (ISO-Format). Zeitangaben im Format <code>HH:MM</code> (z.&nbsp;B. <code>09:30</code>). Leere Zeitfelder erzeugen ganztägige Termine. Die Schulwochen-Vorlage nutzt Wochentag-Angaben – der Konverter rechnet diese automatisch in Datumsangaben um.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Kann ich eigene Kategorien anlegen?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Ja, ab Konverter v1.2. Im Bereich „Kategorien &amp; Einstellungen" können Kategorien hinzugefügt, umbenannt, mit eigenen Farben versehen und mit Stichwörtern für das automatische Matching beim Excel-Import ausgestattet werden. Maximal 20 Kategorien.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Wie aktuell ist der Kalender auf der Website?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Das Plugin verwendet Stale-While-Revalidate-Caching: Der gecachte Stand wird sofort angezeigt, im Hintergrund läuft gleichzeitig eine Aktualisierung. Nutzer sehen dadurch keine Ladezeit – auch nach Cache-Ablauf. Der WP-Cron aktualisiert den Feed regelmäßig, unabhängig vom Seitenaufruf.
-          </div>
-        </div>
-      </div>
-
-      <div class="faq-item reveal" role="listitem">
-        <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Wie importiere ich die ICS-Datei erneut, ohne Duplikate?
-          <span class="faq-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </button>
-        <div class="faq-a" role="region">
-          <div class="faq-a-inner">
-            Der Konverter erkennt Duplikate beim Excel-Import automatisch (gleicher Titel + gleiches Startdatum) und überspringt sie. Für den IServ-Import empfiehlt sich die hybride Wartungsstrategie: Die ICS-Datei dient als Jahresvorlage; Änderungen im laufenden Schuljahr werden direkt in IServ gepflegt.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ── FÜR ANDERE SCHULEN ────────────────────────────────── -->
-<section class="fuer-schulen" aria-labelledby="schulen-title">
-  <div class="container">
-    <span class="eyebrow">Für andere Schulen im Bezirk</span>
-    <h2 class="section-title" id="schulen-title">Kostenlos. Open Source.<br>Auf eigene Verantwortung.</h2>
-    <p class="section-sub">Das Plugin und der Konverter stehen anderen Schulen im Schulbezirk kostenlos zur Verfügung. Es ist ein privates Hobbyprojekt — ohne Garantien, ohne Support-Pflicht, ohne kommerzielle Absichten.</p>
-    <div class="fuer-schulen-actions">
-      <a href="download.html" class="btn-amber">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Plugin herunterladen
-      </a>
-      <a href="anleitung.html" class="btn-outline-white">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Installationsanleitung
-      </a>
-    </div>
-    <p class="fuer-schulen-note">GPL v2 or later · Privatprojekt von Julian Wagner · Keine Haftung</p>
-  </div>
-</section>
-
-<!-- ── FOOTER ─────────────────────────────────────────────── -->
-<footer>
-  <div class="footer-inner">
-    <div>
-      <div class="footer-logo">Terminplan</div>
-      <div class="footer-sub">
-        Digitaler Schulkalender · Open Source Schul-Projekt<br>
-        Entwickelt von Julian Wagner · Stand Mai 2026
-      </div>
-    </div>
-    <div class="footer-versions" aria-label="Versionen">
-      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> ICS Konverter v2.5</div>
-      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> WordPress Plugin v4.3.4</div>
-      <div class="ver-pill"><span class="ver-dot" aria-hidden="true"></span> Schulwochen-Vorlage 2025/26</div>
-    </div>
-    <div class="footer-legal">
-      <a href="impressum.html">Impressum &amp; Datenschutz</a>
-      <span aria-hidden="true">·</span>
-      <a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a>
-    </div>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Teil der Curricu:lr-Familie &middot; Website-Stand Oktober 2026 &middot; Privatprojekt von Julian Wagner, GPL v2 oder neuer, ohne Gewährleistung.</p>
+    <ul>
+      <li><a href="impressum.html">Impressum und Datenschutz</a></li>
+      <li><a href="anleitung.html">Hilfe</a></li>
+      <li><a href="https://github.com/juwagn/curriculr-terminplan" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://ko-fi.com/juwagn" target="_blank" rel="noopener noreferrer">Ko-fi</a></li>
+    </ul>
   </div>
 </footer>
-
-<script>
-/* ── FAQ Toggle ───────────────────────────────────────────── */
-function toggleFaq(btn) {
-  const item = btn.closest('.faq-item');
-  const isOpen = item.classList.contains('open');
-  document.querySelectorAll('.faq-item.open').forEach(el => {
-    el.classList.remove('open');
-    el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-  });
-  if (!isOpen) {
-    item.classList.add('open');
-    btn.setAttribute('aria-expanded', 'true');
-  }
-}
-
-/* ── Scroll Reveal ────────────────────────────────────────── */
-const revealObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      revealObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.10 });
-
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-</script>
-
-<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  kofiWidgetOverlay.draw('juwagn', {
-    'type': 'floating-chat',
-    'floating-chat.donateButton.text': 'Support me',
-    'floating-chat.donateButton.background-color': '#ffffff',
-    'floating-chat.donateButton.text-color': '#323842'
-  });
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>
