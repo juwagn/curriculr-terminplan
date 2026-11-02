@@ -1227,3 +1227,431 @@
 .gtp-adm-help .gtp-adm-ex{margin:4px 0 0 18px;list-style:disc}
 .gtp-adm-help .gtp-adm-notes{margin:0 0 0 18px;list-style:disc}
 .gtp-adm-help .gtp-adm-notes li{margin-bottom:6px}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGO JE MODUS (4.43.0)
+   Wortmarke für hellen Grund, Wortmarke für dunklen Grund, Bildmarke (nur mobil).
+   "auto" folgt dem System, "light"/"dark" gelten vor dem System.
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-logo-dunkel,
+.gtp-header-icon { display: none; }
+
+@media (prefers-color-scheme: dark) {
+    #gtp:not([data-gtp-theme="light"]) .gtp-logo-hell   { display: none; }
+    #gtp:not([data-gtp-theme="light"]) .gtp-logo-dunkel { display: inline-block; }
+}
+
+#gtp[data-gtp-theme="dark"] .gtp-logo-hell   { display: none; }
+#gtp[data-gtp-theme="dark"] .gtp-logo-dunkel { display: inline-block; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE QUARTALSANSICHT (< 768 px) – Redesign 4.43.2
+   Kompakte Listenansicht. Überschreibt die Inline-Regeln aus gsh_tp_css()
+   über die ID #gtp. Nur Farben und Maße aus --cl-*; Klickflächen ≥ 44 px.
+   Aufbau: Kopf (1 Zeile) · Reiter · Filter (1 Zeile) · Wochenleiste ·
+   Agenda (Tag links, Termine rechts) · Aktionen (2 Spalten).
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+    #gtp {
+        --gtp-m-tabs: 44px;  /* Höhe der Reiterleiste (Sticky-Versatz der Wochenleiste) */
+        --gtp-m-nav: 48px;   /* Höhe der Wochenleiste (Sticky-Versatz der Wochenköpfe) */
+        padding: 0 var(--cl-space-4) var(--cl-space-4);
+        border-radius: 0;
+    }
+    .gtp-kiosk-main { padding: 0; } /* sonst doppelter Seitenrand (Kiosk + Plugin) */
+
+    /* ── Kopf: eine Zeile. Bildmarke, Titel, Stand, Suche, Hilfe ── */
+    #gtp .gtp-hd {
+        position: relative;
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr) 44px 44px;
+        grid-template-areas:
+            "icon title search help"
+            "icon meta  search help";
+        align-items: center;
+        column-gap: var(--cl-space-2);
+        row-gap: 0;
+        padding: var(--cl-space-2) 0;
+    }
+    #gtp .gtp-hd-left,
+    #gtp .gtp-hd-actions { display: contents; }
+    #gtp .gtp-hd img.gtp-header-logo { display: none; }
+    #gtp .gtp-hd .gtp-header-icon { display: block; grid-area: icon; width: 32px; height: 32px; }
+    #gtp .gtp-subtitle {
+        grid-area: title;
+        font: var(--cl-text-body);
+        font-weight: 600;
+        color: var(--gtp-text);
+        letter-spacing: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #gtp .gtp-meta {
+        grid-area: meta;
+        font: var(--cl-text-small);
+        color: var(--gtp-text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #gtp #gtp-tour-btn {
+        grid-area: help;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        justify-content: center;
+        border: 1px solid var(--cl-border);
+        border-radius: 8px;
+        background: var(--gtp-bg);
+        color: var(--gtp-text);
+    }
+    #gtp #gtp-tour-btn svg { width: 20px; height: 20px; }
+    /* Beschriftung nur für Screenreader; das Symbol allein genügt sehend */
+    #gtp #gtp-tour-btn span,
+    #gtp .gtp-view-toggle .gtp-view-toggle-label,
+    #gtp .gtp-qt {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    /* Suche: als Symbol-Knopf; beim Fokus über die ganze Kopfzeile */
+    #gtp .gtp-hd .gtp-search-wrap {
+        grid-area: search;
+        position: relative;
+        width: 44px;
+        height: 44px;
+        max-width: none;
+        display: block;
+    }
+    #gtp .gtp-hd .gtp-search-icon {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        width: 20px;
+        height: 20px;
+        z-index: 1;
+    }
+    #gtp .gtp-hd .gtp-search-icon svg { width: 20px; height: 20px; }
+    #gtp .gtp-search-input {
+        box-sizing: border-box;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid var(--cl-border);
+        border-radius: 8px;
+        background: var(--gtp-bg);
+        color: transparent;
+        caret-color: transparent;
+        font-size: 16px; /* unter 16 px zoomt iOS beim Fokus */
+    }
+    #gtp .gtp-search-input::placeholder { color: transparent; }
+    #gtp .gtp-hd .gtp-search-wrap:focus-within {
+        grid-area: auto; /* sonst bleibt die Rasterzelle die Bezugsfläche */
+        position: absolute;
+        inset: 0;
+        width: auto;
+        height: auto;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        background: var(--gtp-bg);
+    }
+    #gtp .gtp-hd .gtp-search-wrap:focus-within .gtp-search-icon { top: 50%; margin-top: -10px; left: 12px; }
+    #gtp .gtp-hd .gtp-search-wrap:focus-within .gtp-search-input {
+        flex: 1;
+        width: auto;
+        padding: 0 12px 0 40px;
+        color: var(--gtp-text);
+        caret-color: auto;
+    }
+    #gtp .gtp-hd .gtp-search-wrap:focus-within .gtp-search-input::placeholder { color: var(--gtp-text-muted); }
+
+    /* ── Reiter: vier Quartale + Umschalter Jahresansicht ── */
+    #gtp .gtp-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow: visible;
+        min-height: var(--gtp-m-tabs);
+        margin: 0 calc(-1 * var(--cl-space-4));
+        padding: 0 var(--cl-space-2) 0 var(--cl-space-4);
+        border-bottom: 1px solid var(--cl-line);
+    }
+    #gtp .gtp-tab-group { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+    #gtp .gtp-tab-sep { display: none; }
+    #gtp .gtp-tab {
+        min-width: 0;
+        position: relative;
+        white-space: nowrap;
+        min-height: var(--gtp-m-tabs);
+        padding: 0 var(--cl-space-1);
+        font: var(--cl-text-label);
+        text-align: center;
+        background: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+    }
+    #gtp .gtp-tab-on {
+        background: none;
+        color: var(--cl-marine-800);
+        border-bottom-color: var(--cl-marine-800);
+        font-weight: 600;
+    }
+    #gtp .gtp-tab-now { position: absolute; top: 12px; right: var(--cl-space-1); margin: 0; }
+    #gtp #gtp-heatmap-toggle { display: none; } /* Jahresansicht ist mobil immer die Heatmap */
+    #gtp .gtp-view-toggle {
+        flex: none;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        justify-content: center;
+        align-self: center;
+    }
+
+    /* ── Filter: eine schmale Zeile ohne Kasten ── */
+    #gtp .gtp-filt-wrap { margin: 0; padding: 0; border: 0; background: none; border-radius: 0; }
+    #gtp .gtp-filt-header { display: flex; align-items: center; justify-content: flex-start; gap: var(--cl-space-1); min-height: 40px; margin: 0; }
+    #gtp .gtp-filt-lbl { font: var(--cl-text-label); letter-spacing: 0; text-transform: none; }
+    #gtp .gtp-filt-toggle { min-width: 44px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+    #gtp .gtp-filt.gtp-filt-open { padding-bottom: var(--cl-space-3); }
+    #gtp .gtp-fb { min-height: 36px; font-size: 13px; }
+
+    /* ── Wochenleiste ── */
+    #gtp .gtp-mob-nav {
+        top: var(--gtp-m-tabs);
+        height: var(--gtp-m-nav);
+        background: var(--gtp-bg);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border-bottom: 1px solid var(--cl-line);
+        gap: var(--cl-space-1);
+    }
+    .admin-bar #gtp .gtp-mob-nav { top: calc(var(--gtp-m-tabs) + 46px); }
+    #gtp .gtp-mob-prev,
+    #gtp .gtp-mob-next { flex: 0 0 44px; height: 44px; }
+    #gtp .gtp-mob-nav-sw { font: var(--cl-text-compact); font-weight: 600; color: var(--gtp-text); }
+    #gtp .gtp-mob-nav-dates { font: var(--cl-text-small); color: var(--gtp-text-muted); }
+    #gtp .gtp-mob-today-btn {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cl-space-1);
+        padding: 0 var(--cl-space-3);
+        border: 0;
+        border-radius: 8px;
+        background: var(--cl-marine-100);
+        color: var(--cl-marine-800);
+        font: var(--cl-text-label);
+    }
+    #gtp .gtp-mob-today-btn::after { content: "Heute"; }
+    /* Der schwebende Heute-Knopf verdeckt Zeilen; die Wochenleiste hat „Heute“ schon */
+    #gtp #gtp-heute-btn { display: none; }
+    /* Theme-Schalter: Ansicht folgt dem Gerät; der blasse Kreis lag mitten im Inhalt */
+    #gtp #gtp-theme-wrap { display: none; }
+
+    /* ── Wochenköpfe: leise Trenner ── */
+    #gtp .gtp-mob-wh {
+        top: calc(var(--gtp-m-tabs) + var(--gtp-m-nav));
+        background: var(--gtp-bg);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        padding: var(--cl-space-4) 0 var(--cl-space-2);
+        margin: 0;
+        font: var(--cl-text-compact);
+        font-weight: 600;
+        color: var(--gtp-text);
+        text-transform: none;
+        letter-spacing: 0;
+        border-bottom: 1px solid var(--cl-line);
+    }
+    .admin-bar #gtp .gtp-mob-wh { top: calc(var(--gtp-m-tabs) + var(--gtp-m-nav) + 46px); }
+    #gtp .gtp-mob-wh-sub { font: var(--cl-text-small); color: var(--gtp-text-muted); }
+    #gtp .gtp-mob-today-week .gtp-mob-wh { background: var(--gtp-bg); color: var(--gtp-text); }
+    #gtp .gtp-mob-today-week .gtp-mob-wh::before { display: none; animation: none; }
+    #gtp .gtp-mob-today-week .gtp-mob-wh > span:first-child::after {
+        content: "Aktuelle Woche";
+        margin-left: var(--cl-space-2);
+        padding: 1px var(--cl-space-2);
+        border-radius: 999px;
+        background: var(--cl-marine-100);
+        color: var(--cl-marine-800);
+        font: var(--cl-text-small);
+        font-weight: 500;
+        vertical-align: 1px;
+    }
+    #gtp .gtp-mob-today-week .gtp-mob-wh-sub { color: var(--gtp-text-muted); opacity: 1; }
+
+    /* Anmerkung aus dem Planner: Hinweisbox (Gold-Fläche mit Gold-Rahmen laut Design-Regel) */
+    #gtp .gtp-mob-annotation {
+        font: var(--cl-text-compact);
+        font-style: normal;
+        color: var(--gtp-text);
+        background: var(--cl-gold-100);
+        border: 1px solid var(--cl-gold-500);
+        border-radius: 8px;
+        padding: var(--cl-space-2) var(--cl-space-3);
+        margin: var(--cl-space-2) 0 0;
+    }
+
+    /* ── Tage: Datum links, Termine rechts, feine Linie dazwischen ── */
+    #gtp .gtp-mob-day,
+    #gtp .gtp-mob-day.gtp-mob-today {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: var(--cl-space-2);
+        padding: var(--cl-space-2) 0;
+        margin: 0;
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        border-bottom: 1px solid var(--cl-line);
+    }
+    #gtp .gtp-mob-day:last-child { border-bottom: 0; }
+    #gtp .gtp-mob-date { flex: none; padding: var(--cl-space-1) 0 0; text-align: left; }
+    #gtp .gtp-mob-dow { font: var(--cl-text-small); font-weight: 500; color: var(--gtp-text-muted); margin: 0; }
+    #gtp .gtp-mob-dm {
+        font: var(--cl-text-compact);
+        font-weight: 700;
+        color: var(--gtp-text);
+        font-variant-numeric: tabular-nums;
+    }
+    #gtp .gtp-mob-today .gtp-mob-dow,
+    #gtp .gtp-mob-today .gtp-mob-dm { color: var(--cl-marine-800); }
+    #gtp .gtp-mob-today .gtp-mob-dm {
+        background: none;
+        border-radius: 0;
+        width: auto;
+        height: auto;
+        display: block;
+        margin: 0;
+        font-size: inherit;
+    }
+    #gtp .gtp-mob-badge {
+        display: inline-block;
+        margin-top: 2px;
+        padding: 0 var(--cl-space-2);
+        border-radius: 6px;
+        background: var(--cl-marine-100);
+        color: var(--cl-marine-800);
+        font: var(--cl-text-small);
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    /* ── Termine: Zeilen statt gefüllter Karten. Kategorie = Punkt + Wort ── */
+    #gtp .gtp-mob-events { gap: var(--cl-space-1); align-self: start; }
+    #gtp .gtp-mob .ge {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        align-content: center;
+        column-gap: var(--cl-space-3);
+        row-gap: 0;
+        box-sizing: border-box;
+        min-height: 44px;
+        margin: 0;
+        padding: var(--cl-space-1) 0;
+        background: transparent;
+        border-width: 0;       /* Farbe bleibt von .gc-* erhalten; sie speist den Kategorie-Punkt */
+        border-radius: 8px;
+        color: var(--gtp-text);
+        font: var(--cl-text-compact);
+    }
+    #gtp .gtp-mob .ge:active { background: var(--cl-bg); }
+    /* Titel nie abschneiden: auf dem Handy gibt es keinen Tooltip */
+    #gtp .gtp-mob .ge-title {
+        order: 1;
+        flex: 1 0 100%;
+        font: var(--cl-text-body);
+        font-weight: 500;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+    }
+    #gtp .gtp-mob .ge-time { order: 2; display: block; margin: 0; font: var(--cl-text-small); color: var(--gtp-text-muted); }
+    #gtp .gtp-mob .ge-cat {
+        order: 3;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        border: 0 solid;
+        border-color: inherit;
+        background: none;
+        font: var(--cl-text-small);
+        font-weight: 500;
+        color: var(--gtp-text-muted);
+    }
+    #gtp .gtp-mob .ge-cat::before {
+        content: "";
+        flex: none;
+        box-sizing: content-box;
+        width: 0;
+        height: 0;
+        border: 4px solid;
+        border-color: inherit;
+        border-radius: 50%;
+    }
+
+    /* ── Leere Zustände: ein Satz statt einer leeren Zeile ── */
+    #gtp .gtp-mob-today .gtp-mob-events:empty::before {
+        content: "Heute keine Termine";
+        display: block;
+        padding-top: var(--cl-space-1);
+        font: var(--cl-text-compact);
+        color: var(--gtp-text-muted);
+    }
+    #gtp .gtp-mob-week:not(:has(.gtp-mob-day))::after {
+        content: "Keine Termine in dieser Woche";
+        display: block;
+        padding: var(--cl-space-2) 0;
+        font: var(--cl-text-compact);
+        color: var(--gtp-text-muted);
+    }
+
+    /* ── Aktionen: zwei Spalten, alle gleich leise (Marine bleibt der Auswahl vorbehalten) ── */
+    #gtp .gtp-ft { margin-top: var(--cl-space-4); padding-top: var(--cl-space-4); border-top: 1px solid var(--cl-line); }
+    #gtp .gtp-ft-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-space-2); }
+    /* PDF: Drucken funktioniert in der IServ-App nicht. Knöpfe aus, Hinweis auf den Computer. */
+    #gtp .gtp-ft-actions .gtp-btn.gtp-btn-pdf { display: none; } /* höhere Spezifität als die Aktionsknöpfe unten */
+    #gtp .gtp-ft-actions::before {
+        content: "PDF-Export gibt es in der Ansicht am Computer.";
+        grid-column: 1 / -1;
+        font: var(--cl-text-small);
+        color: var(--gtp-text-muted);
+    }
+    #gtp .gtp-ics-group { display: contents; }
+    #gtp .gtp-ics-help { grid-column: 1 / -1; }
+    #gtp .gtp-ft-actions .gtp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 44px;
+        padding: 0 var(--cl-space-3);
+        background: var(--gtp-bg);
+        color: var(--gtp-text);
+        border: 1px solid var(--cl-border);
+        border-radius: 8px;
+        font: var(--cl-text-label);
+        white-space: normal;
+        text-align: center;
+    }
+    #gtp .gtp-ft-meta { margin-top: var(--cl-space-3); }
+    /* Versions-Chip bleibt klein, die Tippfläche wird unsichtbar auf 44 px vergrößert */
+    #gtp .gtp-version-btn { position: relative; }
+    #gtp .gtp-version-btn::after { content: ""; position: absolute; inset: -11px -8px; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    #gtp .gtp-mob-today-week .gtp-mob-wh::before { animation: none; }
+}

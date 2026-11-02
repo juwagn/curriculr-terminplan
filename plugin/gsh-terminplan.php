@@ -3,10 +3,24 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.42.1
+ * Version:     4.43.4
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.43.4
+ * - [UX] Mobil: Die PDF-Knöpfe sind auf dem Handy ausgeblendet, weil das Drucken in der IServ-App nicht funktioniert; ein Hinweis verweist auf die Ansicht am Computer
+ * v4.43.2
+ * - [UX] Mobile Quartalsansicht als kompakte Liste: Kopf in einer Zeile, Suche als Symbol (klappt beim Antippen auf), Filter als schmale Zeile, Termine als Zeilen mit Kategorie als Punkt und Wort statt farbiger Kästen, Aktionen im Zweispaltenraster
+ * - [UX] Mobil: Anmerkungen aus dem Planner als Hinweisbox, Quartalstitel nur noch für Screenreader (die Reiter nennen das Quartal), Suchfeld mit Beschriftung für Screenreader
+ * v4.43.1
+ * - [FIX] Quartalstitel stimmt jetzt mit den Quartalsgrenzen aus dem Planner überein („Quartal 1 – August bis November“ statt fest „August bis Oktober“)
+ * - [FIX] Mobil: Der Umschalter zur Jahresansicht blieb bei schmalen Geräten außerhalb des Bildes; die vier Quartals-Reiter passen sich jetzt der Breite an
+ * - [UX] Mobil: Doppelter Seitenrand entfernt, Filter eingeklappt als schmale Zeile, Hilfe-Knopf mit sichtbarem Rahmen, Feedback-Knopf nicht mehr schwarz
+ * - [UX] Mobil: Leere Zustände mit Text („Heute keine Termine“, „Keine Termine in dieser Woche“); Anmerkungen aus dem Planner als gut lesbarer Hinweis; blasser Theme-Kreis mitten im Inhalt entfernt
+ * v4.43.0
+ * - [UX] Mobile Quartalsansicht neu gestaltet: Kopf in einer Zeile, vier Quartals-Reiter ohne Scrollen, Wochenleiste mit „Heute“, Terminkarten mit Kategorie-Text, Filter zunächst eingeklappt
+ * - [FIX] Dunkelmodus auf dem Handy: Wochenleiste und Wochenköpfe nutzen Farb-Tokens statt fester Weißtöne, Datum der heutigen Karte ist lesbar, das Logo wechselt je Modus
+ * - [UX] Termintitel werden auf dem Handy nicht mehr abgeschnitten; Klickflächen mindestens 44 px; Emoji in der Wochenleiste entfernt; schwebender Heute-Knopf auf dem Handy entfällt
  * v4.42.1
  * - [DESIGN] Oberfläche an das Curricu:lr-Design-Paket angeglichen: Farben, Radien und Schrift kommen aus den Familien-Tokens (--cl-*, neue Datei assets/css/curriculr-tokens.css); keine Ruhe-Schatten, keine Verläufe, keine Großbuchstaben-Sperrung, Statusfarben mit besserem Kontrast (Erfolg #047857)
  * - [DESIGN] Logo-Dateien nach Paketnamen: curriculr-logo-auf-hell.svg und curriculr-logo-auf-dunkel.svg (bisher vertauscht benannt: curriculr-logo-dark.svg und curriculr-logo.svg); Symbole mit Strichstärke 1,75
@@ -664,7 +678,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.42.1' );
+define( 'GSH_TP_VERSION',       '4.43.4' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -908,6 +922,36 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.43.4',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Mobil: Die PDF-Knöpfe sind auf dem Handy ausgeblendet, weil das Drucken in der IServ-App nicht funktioniert; ein Hinweis verweist auf die Ansicht am Computer' ),
+            ),
+        ),
+        array(
+            'version' => '4.43.2',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Mobile Quartalsansicht als kompakte Liste: Kopf in einer Zeile, Suche als Symbol (klappt beim Antippen auf), Filter als schmale Zeile, Termine als Zeilen mit Kategorie als Punkt und Wort statt farbiger Kästen, Aktionen im Zweispaltenraster' ),
+                array( 'tag' => 'UX', 'text' => 'Mobil: Anmerkungen aus dem Planner als Hinweisbox, Quartalstitel nur noch für Screenreader (die Reiter nennen das Quartal), Suchfeld mit Beschriftung für Screenreader' ),
+            ),
+        ),
+        array(
+            'version' => '4.43.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Quartalstitel stimmt jetzt mit den Quartalsgrenzen aus dem Planner überein („Quartal 1 – August bis November“ statt fest „August bis Oktober“)' ),
+                array( 'tag' => 'FIX', 'text' => 'Mobil: Der Umschalter zur Jahresansicht blieb bei schmalen Geräten außerhalb des Bildes; die vier Quartals-Reiter passen sich jetzt der Breite an' ),
+                array( 'tag' => 'UX', 'text' => 'Mobil: Doppelter Seitenrand entfernt, Filter eingeklappt als schmale Zeile, Hilfe-Knopf mit sichtbarem Rahmen, Feedback-Knopf nicht mehr schwarz' ),
+                array( 'tag' => 'UX', 'text' => 'Mobil: Leere Zustände mit Text („Heute keine Termine“, „Keine Termine in dieser Woche“); Anmerkungen aus dem Planner als gut lesbarer Hinweis; blasser Theme-Kreis mitten im Inhalt entfernt' ),
+            ),
+        ),
+        array(
+            'version' => '4.43.0',
+            'entries' => array(
+                array( 'tag' => 'UX', 'text' => 'Mobile Quartalsansicht neu gestaltet: Kopf in einer Zeile, vier Quartals-Reiter ohne Scrollen, Wochenleiste mit „Heute“, Terminkarten mit Kategorie-Text, Filter zunächst eingeklappt' ),
+                array( 'tag' => 'FIX', 'text' => 'Dunkelmodus auf dem Handy: Wochenleiste und Wochenköpfe nutzen Farb-Tokens statt fester Weißtöne, Datum der heutigen Karte ist lesbar, das Logo wechselt je Modus' ),
+                array( 'tag' => 'UX', 'text' => 'Termintitel werden auf dem Handy nicht mehr abgeschnitten; Klickflächen mindestens 44 px; Emoji in der Wochenleiste entfernt; schwebender Heute-Knopf auf dem Handy entfällt' ),
+            ),
+        ),
         array(
             'version' => '4.42.1',
             'entries' => array(
@@ -6858,6 +6902,29 @@ function gsh_tp_quartale( $profile_id = '' ) {
     return $r;
 }
 
+/**
+ * Titel eines Quartals aus den tatsächlichen Grenzen (Planner-Dokument oder Einstellung).
+ * Der frühere feste Text „Quartal 1 – August bis Oktober“ stimmte nicht, sobald das
+ * Quartal anders endet (z. B. Mitte November).
+ *
+ * @since 4.43.1
+ * @param int    $q        Quartalsnummer 1–4.
+ * @param array  $qd       Array mit 'start' und 'end' (Y-m-d).
+ * @param string $fallback Titel, falls die Daten nicht lesbar sind.
+ * @return string          Titel mit HTML-Entity für den Gedankenstrich.
+ */
+function gsh_tp_quartal_label( $q, $qd, $fallback = '' ) {
+    $months = array( 1 => 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember' );
+    $s = isset( $qd['start'] ) ? strtotime( (string) $qd['start'] ) : false;
+    $e = isset( $qd['end'] ) ? strtotime( (string) $qd['end'] ) : false;
+    if ( false === $s || false === $e ) {
+        return $fallback;
+    }
+    $ms = $months[ (int) gmdate( 'n', $s ) ];
+    $me = $months[ (int) gmdate( 'n', $e ) ];
+    return 'Quartal ' . (int) $q . ' &ndash; ' . ( $ms === $me ? $ms : $ms . ' bis ' . $me );
+}
+
 /* ================================================================
    4. KATEGORIE-ERKENNUNG (Wortgrenzen-Matching)
    ================================================================ */
@@ -7001,6 +7068,9 @@ function gsh_tp_shortcode( $atts ) {
         3 => 'Quartal 3 &ndash; Februar bis April',
         4 => 'Quartal 4 &ndash; Mai bis Juli',
     );
+    foreach ( $qlbl as $qi => $fallback_lbl ) {
+        $qlbl[ $qi ] = gsh_tp_quartal_label( $qi, $grenzen[ $qi - 1 ] ?? array(), $fallback_lbl );
+    }
 
     // Letzte Sync-Zeit ermitteln (profil-spezifisch)
     $last_sync = gsh_tp_opt( 'last_sync', '', $profile_id );
@@ -7067,13 +7137,16 @@ function gsh_tp_shortcode( $atts ) {
     // Header – einzeilig: Logo + Suche + Actions
     $o .= '<div class="gtp-hd">';
     $o .= '<div class="gtp-hd-left">';
-    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-auf-hell.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo" width="160" height="28" loading="lazy">';
+    // Wortmarke je Modus (CSS blendet die nicht passende aus), Bildmarke für Mobil.
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-auf-hell.svg' ) . '" alt="Curricu:lr" class="gtp-header-logo gtp-logo-hell" width="160" height="28" loading="lazy">';
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-logo-auf-dunkel.svg' ) . '" alt="" class="gtp-header-logo gtp-logo-dunkel" width="160" height="28" loading="lazy" aria-hidden="true">';
+    $o .= '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/img/curriculr-icon.svg' ) . '" alt="" class="gtp-header-icon" width="32" height="32" loading="lazy" aria-hidden="true">';
     $o .= '<span class="gtp-subtitle">' . esc_html( $profile['label'] ) . ' &mdash; Ihre Schule</span>';
     $o .= '</div>';
     $o .= '<div class="gtp-search-wrap">';
     $o .= gsh_tp_icon( 'search', '1rem', 'gtp-search-icon' );
     $o .= '<input type="search" id="gtp-search-input" class="gtp-search-input"'
-        . ' placeholder="Termin suchen…" autocomplete="off"'
+        . ' placeholder="Termin suchen…" aria-label="Termin suchen" autocomplete="off"'
         . ' oninput="gtpSearchInput(this.value)" />';
     $o .= '</div>';
     $o .= '<div class="gtp-hd-actions">';
@@ -8445,7 +8518,7 @@ function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
             $h .= '<div class="gtp-mob-dow">' . esc_html( $dow_labels[ $d ] ) . '</div>';
             $h .= '<div class="gtp-mob-dm">' . esc_html( $dy->format( 'd.m.' ) ) . '</div>';
             if ( $is_today ) {
-                $h .= '<div class="gtp-mob-badge">HEUTE</div>';
+                $h .= '<div class="gtp-mob-badge">Heute</div>';
             }
             $h .= '</div>'; // .gtp-mob-date
 
@@ -8458,13 +8531,16 @@ function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
                 $data_cats = esc_attr( implode( ',', $cat_ids ) );
                 $lbl       = gsh_tp_event_time_label( $ev );
                 $time_html = $lbl['time'] ? '<span class="ge-time">' . esc_html( $lbl['time'] ) . '</span>' : '';
+                // Kategorie als Text neben der Farbe (Information nie nur über Farbe).
+                $cat_label = isset( $cat_ids[0], $cat_map_mob[ $cat_ids[0] ] ) ? (string) ( $cat_map_mob[ $cat_ids[0] ]['label'] ?? '' ) : '';
+                $cat_html  = '' !== $cat_label ? '<span class="ge-cat">' . esc_html( $cat_label ) . '</span>' : '';
                 $h .= '<div class="ge gc-' . esc_attr( $cc )
                     . '" data-c="' . esc_attr( $cc )
                     . '" data-categories="' . $data_cats
                     . '" title="' . esc_attr( $ev['summary'] ) . '"'
                     . ' onclick="gtpPopupOpen(this)"'
                     . gsh_tp_event_data_attrs( $ev ) . '>'
-                    . $time_html . '<span class="ge-title">' . esc_html( $lbl['summary'] ) . '</span></div>';
+                    . $time_html . '<span class="ge-title">' . esc_html( $lbl['summary'] ) . '</span>' . $cat_html . '</div>';
             }
             $h .= '</div>'; // .gtp-mob-events
 
@@ -10060,6 +10136,11 @@ window.addEventListener("resize",gtpUpdateHeuteBtn,{passive:true});
 document.addEventListener("DOMContentLoaded",function(){
   gtpChangesInit();
   gtpHmPaintTiles();
+  /* Mobil: Filter zunächst eingeklappt, damit der erste Termin auf dem ersten Bildschirm steht */
+  if(window.matchMedia("(max-width:767px)").matches){
+    var fb0=document.getElementById("gtp-filt-body");
+    if(fb0&&fb0.classList.contains("gtp-filt-open")) gtpFilterToggle();
+  }
   /* Filter-Zustand aus localStorage wiederherstellen */
   try{
     var saved = localStorage.getItem("gtp_filters");
@@ -10356,19 +10437,11 @@ function gtpMobTodayIndicator(container,mob,start,visible){
   var swEl=mob.querySelector(".gtp-mob-nav-sw");
   if(!swEl) return;
   var inWindow=(todayIdx>=start&&todayIdx<start+visible);
-  /* Kleinen "Heute"-Hinweis voranstellen wenn die heutige Woche sichtbar ist */
+  /* Hinweis „Aktuelle Woche“ per Attribut (CSS zeigt den Text), kein Emoji im Inhalt */
   if(inWindow){
     swEl.setAttribute("data-gtp-had-today","1");
-    if(swEl.firstChild&&swEl.firstChild.nodeType===Node.TEXT_NODE){
-      /* Prefix nur einmal hinzufügen */
-      if(swEl.textContent.indexOf("\ud83d\udc49")===0) return;
-      swEl.textContent="\ud83d\udc49\u00a0"+swEl.textContent;
-    }
   } else {
-    /* Heute nicht im Fenster → Prefix entfernen falls vorhanden */
-    if(swEl.textContent.indexOf("\ud83d\udc49")===0){
-      swEl.textContent=swEl.textContent.replace(/^\ud83d\udc49\u00a0/,"");
-    }
+    swEl.removeAttribute("data-gtp-had-today");
   }
 }
 
