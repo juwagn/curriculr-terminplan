@@ -3,10 +3,13 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.45.1
+ * Version:     4.45.2
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.45.2
+ * - [FIX] Jahr: „Heute“ wechselt bei Fensterbreiten von 768 bis 1023 px im sichtbaren Monatskalender zum aktuellen Monat
+ *
  * v4.45.1
  * - [FIX] Jahr: der Wandplaner passt immer in die Seitenbreite (der Juli war abgeschnitten); unter 1024 px erscheint der Monatskalender
  * - [FIX] Jahreskalender drucken: das Schuljahr wird zuverlässig auf eine Seite A4 quer eingepasst (vorher mehrere Seiten)
@@ -699,7 +702,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.45.1' );
+define( 'GSH_TP_VERSION',       '4.45.2' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -949,6 +952,12 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.45.2',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Jahr: „Heute“ wechselt bei Fensterbreiten von 768 bis 1023 px im sichtbaren Monatskalender zum aktuellen Monat.' ),
+            ),
+        ),
         array(
             'version' => '4.45.1',
             'entries' => array(
@@ -10072,7 +10081,7 @@ function gtpToday(){
     var c=document.querySelector(".gtp-cal-td");
     if(!c) return;
     var ds=c.getAttribute("data-d")||"";
-    if(window.innerWidth<768){
+    if(window.innerWidth<1024){
       gtpYearMonth(ds.slice(0,7));
       var mb=document.querySelector('.gtp-yc-d[data-d="'+ds+'"]');
       if(mb) gtpYearSelect(mb);

@@ -6,6 +6,11 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.45.2] – 2026-11-03
+
+### Behoben
+- In der Jahresansicht wechselte **Heute** bei Fensterbreiten von 768 bis 1023 Pixel nicht zum aktuellen Monat. Jetzt springt der sichtbare Monatskalender zum heutigen Tag.
+
 ## [4.45.1] – 2026-11-03
 
 ### Behoben
