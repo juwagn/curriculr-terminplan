@@ -6,6 +6,21 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.45.0] – 2026-11-03
+
+### Neu
+- **Jahr** zeigt einen Wandplaner: zwölf Monate als Spalten, die Tage 1 bis 31 als Zeilen. Jede Zelle nennt Wochentag, Datum und alle Termine des Tages, farbig nach Kategorie. Die Schulwoche steht am Montag. Ein Klick öffnet die Termine des Tages.
+- **Exportieren → Jahreskalender drucken** druckt das Schuljahr mit allen Terminen auf eine Seite A4 quer. Im Druckdialog lässt es sich auf A3 skalieren.
+- Die Quartalsübersicht in der Seitenleiste zeigt Montag bis Sonntag. Jeder Tag ist wählbar und springt zum Tag in Liste oder Raster. Samstag und Sonntag springen zur Anmerkung der Woche.
+
+### Behoben
+- Im Raster ragten Termintitel aus der Kachel. Sie brechen jetzt um.
+- Im Quartal-Reiter lag „aktuell“ auf einem verzerrten blauen Oval. Es erscheint jetzt als Pille.
+- PDF-Kopf und Dateiname nannten fest das Schuljahr 2025/26. Das Schuljahr kommt jetzt aus den Daten, die Quelle heißt „Curricu:lr Planer“.
+
+### Geändert
+- Die bisherige Matrix „Monate × Tage“ in der Jahresansicht entfällt.
+
 ## [4.44.0] – 2026-11-03
 
 ### Neu
