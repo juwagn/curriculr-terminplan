@@ -3,10 +3,14 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.45.0
+ * Version:     4.45.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.45.1
+ * - [FIX] Jahr: der Wandplaner passt immer in die Seitenbreite (der Juli war abgeschnitten); unter 1024 px erscheint der Monatskalender
+ * - [FIX] Jahreskalender drucken: das Schuljahr wird zuverlässig auf eine Seite A4 quer eingepasst (vorher mehrere Seiten)
+ *
  * v4.45.0
  * - [NEU] Jahreskalender als Wandplaner: zwölf Monate als Spalten, die Tage 1–31 als Zeilen mit Wochentag, Datum, allen Terminen des Tages und der Schulwoche am Montag; Wochenende und Ferien sind markiert, ein Klick öffnet die Termine des Tages (ersetzt die Monate-×-Tage-Matrix)
  * - [NEU] Jahreskalender drucken: Menü „Exportieren“ → „Jahreskalender drucken“, eine Seite A4 quer, im Druckdialog auf A3 skalierbar
@@ -695,7 +699,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.45.0' );
+define( 'GSH_TP_VERSION',       '4.45.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -945,6 +949,13 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.45.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Jahr: Der Wandplaner passt immer in die Seitenbreite, der Juli war abgeschnitten. Unter 1024 px erscheint der Monatskalender.' ),
+                array( 'tag' => 'FIX', 'text' => 'Jahreskalender drucken: Das Schuljahr wird zuverlässig auf eine Seite A4 quer eingepasst, vorher liefen die Zeilen auf mehrere Seiten.' ),
+            ),
+        ),
         array(
             'version' => '4.45.0',
             'entries' => array(
@@ -10150,7 +10161,7 @@ function gtpYearClose(){
 function gtpYearSelect(btn){
   var ds=btn.getAttribute("data-d");
   if(!ds) return;
-  if(window.innerWidth<768){
+  if(window.innerWidth<1024){
     document.querySelectorAll(".gtp-yc-d.gtp-yc-sel").forEach(function(e){e.classList.remove("gtp-yc-sel");});
     btn.classList.add("gtp-yc-sel");
     var day=document.getElementById("gtp-yc-day");
@@ -10789,9 +10800,14 @@ function gtpPrint(mode,pdfTitle){
   function fitYear(d){
     var c=d.querySelector(".gtp-cal");
     if(!c||mode!=="year") return;
-    var avail=186*96/25.4, total=d.body.scrollHeight, ch=c.getBoundingClientRect().height;
-    var z=(avail-(total-ch))/ch;
-    if(z<1&&z>0.3){ z*=0.98; c.style.zoom=String(z); }
+    var avail=186*96/25.4, z=1;
+    for(var i=0;i<3;i++){
+      var over=d.body.scrollHeight-avail;
+      if(over<=0) break;
+      var ch=c.getBoundingClientRect().height;
+      z*=Math.max(0.3,(ch-over)/ch*0.97);
+      c.style.zoom=String(z);
+    }
   }
 
   /* Touch-Geräte (iPad/Handy): Hidden-iframe-Druck wird von iOS Safari
@@ -10825,6 +10841,8 @@ function gtpPrint(mode,pdfTitle){
     frame.style.cssText="position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:none";
     document.body.appendChild(frame);
   }
+  /* Jahreskalender: Rahmen in Seitengröße (A4 quer, Rand 10 mm), sonst misst fitYear in einem 0 px breiten Dokument. */
+  frame.style.width=(mode==="year"?"277mm":"0"); frame.style.height=(mode==="year"?"186mm":"0");
 
   var doc=frame.contentDocument || frame.contentWindow.document;
   doc.open();

@@ -190,6 +190,11 @@ gsh_assert_true( (bool) preg_match( '/#gtp \.gtp-tab-now\s*\{[^}]*width:\s*auto[
 $main_src = (string) file_get_contents( __DIR__ . '/../../plugin/gsh-terminplan.php' );
 gsh_assert_true( false === strpos( $main_src, 'Curriculr 2025-26' ), 'PDF-Dateititel enthalten kein festes Schuljahr' );
 gsh_assert_true( false === strpos( $main_src, '2025\\u202f/\\u202f26' ), 'PDF-Kopf enthält kein festes Schuljahr' );
+gsh_assert_true( (bool) preg_match( '/\.gtp-cal\s*\{[^}]*repeat\(12, minmax\(0, 1fr\)\)/', $css ), 'Jahreskalender: zwölf Spalten passen in die Breite (kein Abschneiden des Juli)' );
+gsh_assert_true( false === (bool) preg_match( '/\.gtp-cal\s*\{[^}]*overflow-x:\s*auto/', $css ), 'Jahreskalender: kein verstecktes seitliches Scrollen' );
+gsh_assert_true( (bool) preg_match( '/@media \(max-width: 1023px\)\s*\{\s*\/\*[^*]*\*\/\s*#gtp \.gtp-year-wrap/', $css ), 'Jahr unter 1024 px: Monatskalender statt Wandplaner' );
+gsh_assert_contains( $main_src, 'frame.style.width=(mode==="year"?"277mm":"0")', 'Druckrahmen hat Seitengröße, damit die Einpassung richtig misst' );
+gsh_assert_true( (bool) preg_match( '/function gtpYearSelect\(btn\)\{\s*var ds=[^;]*;\s*if\(!ds\) return;\s*if\(window\.innerWidth<1024\)/', $main_src ), 'Tag-Auswahl im Jahr folgt der 1024-px-Grenze' );
 gsh_assert_contains( $main_src, 'function gtpPdfYear(', 'Jahreskalender-Druck vorhanden' );
 gsh_assert_contains( $main_src, 'onclick="gtpPdfYear(this)"', 'Export-Menü bietet Jahreskalender drucken' );
 gsh_assert_contains( $main_src, 'data-sj="', 'Schuljahr steht als Datenattribut am Container' );
