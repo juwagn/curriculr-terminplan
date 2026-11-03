@@ -32,7 +32,7 @@ Das Jahr zeigt einen Wandplaner. Jeder Monat ist eine Spalte, jede Zeile ein Tag
 
 Wochenenden sind grau, Ferien schraffiert. Der heutige Tag hat einen dunklen Rahmen.
 
-Auf dem Handy wählen Sie oben einen Monat und tippen dann auf einen Tag.
+Auf dem Handy und in Fenstern unter 1024 Pixel wählen Sie oben einen Monat und tippen dann auf einen Tag.
 
 ## Jahreskalender drucken
 1. Wählen Sie **Exportieren → Jahreskalender drucken**.
@@ -53,7 +53,7 @@ Am Computer öffnet **Exportieren** das Menü mit PDF, Jahreskalender, Kalender-
 ## Häufige Probleme
 **Raster fehlt.** Das Fenster ist schmaler als 1024 Pixel. Nutzen Sie die Liste.
 
-**Das Jahr lässt sich seitlich verschieben.** Das Fenster ist für zwölf Spalten zu schmal. Verbreitern Sie es oder drucken Sie den Jahreskalender.
+**Das Jahr zeigt nur einen Monat.** Das Fenster ist schmaler als 1024 Pixel. Verbreitern Sie es oder drucken Sie den Jahreskalender.
 
 **Ein Termin fehlt.** Prüfen Sie unter **Filter**, ob die Kategorie aktiv ist.
 

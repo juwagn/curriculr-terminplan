@@ -6,6 +6,12 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.45.1] – 2026-11-03
+
+### Behoben
+- In der Jahresansicht war der Juli abgeschnitten. Der Wandplaner passt jetzt immer in die Seitenbreite. Unter 1024 px erscheint der Monatskalender.
+- Der Jahreskalender lief beim Drucken auf mehrere Seiten. Er wird jetzt zuverlässig auf eine Seite A4 quer eingepasst.
+
 ## [4.45.0] – 2026-11-03
 
 ### Neu
