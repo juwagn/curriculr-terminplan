@@ -3,10 +3,18 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.44.0
+ * Version:     4.45.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.45.0
+ * - [NEU] Jahreskalender als Wandplaner: zwölf Monate als Spalten, die Tage 1–31 als Zeilen mit Wochentag, Datum, allen Terminen des Tages und der Schulwoche am Montag; Wochenende und Ferien sind markiert, ein Klick öffnet die Termine des Tages (ersetzt die Monate-×-Tage-Matrix)
+ * - [NEU] Jahreskalender drucken: Menü „Exportieren“ → „Jahreskalender drucken“, eine Seite A4 quer, im Druckdialog auf A3 skalierbar
+ * - [NEU] Quartalsübersicht in der Seitenleiste: Mo bis So, jeder Tag ist wählbar und springt in Liste oder Raster zum Tag; Samstag und Sonntag springen zur Anmerkung der Woche
+ * - [FIX] Raster: Termintitel ragten aus der Kachel; sie brechen jetzt um und werden bei langen Wörtern getrennt
+ * - [FIX] Quartal-Reiter: „aktuell“ lag auf einem verzerrten blauen Oval (Altregel für den Punkt); jetzt eine Pille wie bei „Aktuelle Woche“, auch am geöffneten Quartal
+ * - [FIX] PDF-Kopf und Dateititel nannten fest das Schuljahr 2025/26; das Schuljahr kommt jetzt aus den Quartalsgrenzen. Als Quelle steht „Curricu:lr Planer“ statt „IServ-Kalender“
+ * - [INFRA] Neue Tests: Kette Planner-Dokument → ICS → Ansichten, Jahreskalender, Quartalsübersicht, Schuljahr im Druck und vollständiger ZIP-Inhalt (Datei curriculr-year-calendar.php)
  * v4.44.0
  * - [NEU] Desktop mit drei Darstellungen und Umschalter: Liste (Standard), Raster (Tabelle) und Jahr; die Wahl bleibt im Browser gespeichert
  * - [NEU] Liste mit Seitenleiste: Quartalsübersicht mit Sprung zur Woche, Kategorien als Liste mit Anzahl, Gruppen
@@ -687,7 +695,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.44.0' );
+define( 'GSH_TP_VERSION',       '4.45.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -698,6 +706,7 @@ define( 'GSH_TP_FRESH_KEY', 'gsh_tp_ical_freshness' ); // Transient (Ablaufsteue
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-auth.php';
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-guard.php';
 require_once plugin_dir_path( __FILE__ ) . 'curriculr-data-layer.php';
+require_once plugin_dir_path( __FILE__ ) . 'curriculr-year-calendar.php';
 
 /**
  * Standard-Kategorien des Schul-Terminplans.
@@ -936,6 +945,18 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.45.0',
+            'entries' => array(
+                array( 'tag' => 'NEU', 'text' => 'Jahreskalender als Wandplaner: zwölf Monate als Spalten, die Tage 1–31 als Zeilen mit Wochentag, Datum, allen Terminen des Tages und der Schulwoche am Montag; Wochenende und Ferien sind markiert, ein Klick öffnet die Termine des Tages (ersetzt die Monate-×-Tage-Matrix)' ),
+                array( 'tag' => 'NEU', 'text' => 'Jahreskalender drucken: Menü „Exportieren“ → „Jahreskalender drucken“, eine Seite A4 quer, im Druckdialog auf A3 skalierbar' ),
+                array( 'tag' => 'NEU', 'text' => 'Quartalsübersicht in der Seitenleiste: Mo bis So, jeder Tag ist wählbar und springt in Liste oder Raster zum Tag; Samstag und Sonntag springen zur Anmerkung der Woche' ),
+                array( 'tag' => 'FIX', 'text' => 'Raster: Termintitel ragten aus der Kachel; sie brechen jetzt um und werden bei langen Wörtern getrennt' ),
+                array( 'tag' => 'FIX', 'text' => 'Quartal-Reiter: „aktuell“ lag auf einem verzerrten blauen Oval (Altregel für den Punkt); jetzt eine Pille wie bei „Aktuelle Woche“, auch am geöffneten Quartal' ),
+                array( 'tag' => 'FIX', 'text' => 'PDF-Kopf und Dateititel nannten fest das Schuljahr 2025/26; das Schuljahr kommt jetzt aus den Quartalsgrenzen. Als Quelle steht „Curricu:lr Planer“ statt „IServ-Kalender“' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Tests: Kette Planner-Dokument → ICS → Ansichten, Jahreskalender, Quartalsübersicht, Schuljahr im Druck und vollständiger ZIP-Inhalt (Datei curriculr-year-calendar.php)' ),
+            ),
+        ),
         array(
             'version' => '4.44.0',
             'entries' => array(
@@ -7154,7 +7175,12 @@ function gsh_tp_shortcode( $atts ) {
 
     $school_name = esc_attr( get_option( 'gsh_tp_school_name', 'Gesamtschule Horst' ) );
 
-    $o .= '<div class="gtp" id="gtp" data-view="liste" data-q="' . (int) $aq . '" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '" data-school="' . $school_name . '">';
+    // Schuljahr („2026/27“) für Druckkopf und PDF-Dateititel aus den Quartalsgrenzen.
+    $sj_first_d = $grenzen[0]['start'] ?? '';
+    $sj_last_d  = $grenzen[3]['end'] ?? '';
+    $sj_data    = ( $sj_first_d && $sj_last_d ) ? substr( $sj_first_d, 0, 4 ) . '/' . substr( $sj_last_d, 2, 2 ) : '';
+
+    $o .= '<div class="gtp" id="gtp" data-view="liste" data-q="' . (int) $aq . '" data-changes="' . $changes_json . '" data-categories="' . $cats_json . '" data-school="' . $school_name . '" data-sj="' . esc_attr( $sj_data ) . '" data-ver="' . esc_attr( GSH_TP_VERSION ) . '">';
 
     // Entwurfs-Banner — nicht im Kiosk-Template (dort steht bereits ein Banner).
     if ( ! empty( $profile['is_draft'] ) && ! gsh_tp_draft_kiosk_context() ) {
@@ -7222,6 +7248,7 @@ function gsh_tp_shortcode( $atts ) {
     $o      = '';
     $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdf(this)">' . gsh_tp_icon( 'file-text' ) . ' Quartal PDF</button>';
     $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfAll(this)">' . gsh_tp_icon( 'file-text' ) . ' Alle PDF</button>';
+    $o .= '<button type="button" class="gtp-btn gtp-btn-pdf" onclick="gtpPdfYear(this)">' . gsh_tp_icon( 'calendar' ) . ' Jahreskalender drucken</button>';
     $o .= '<button type="button" class="gtp-btn gtp-btn-feedback" id="gtp-feedback-btn"'
         . ' onclick="gtpFeedbackOpen()" aria-label="Feedback geben">'
         . gsh_tp_icon( 'message-circle' ) . ' Feedback</button>';
@@ -7288,11 +7315,11 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-tab-group" role="tablist" aria-label="Quartal">';
     for ( $i = 1; $i <= 4; $i++ ) {
         $on  = $i === $aq ? ' gtp-tab-on' : '';
-        $now = ( $i === $current_q ) ? '<span class="gtp-tab-now">aktuell</span>' : '';
+        $now = ( $i === $current_q ) ? '<span class="gtp-tab-now">aktuell</span>' : '';  // Pille im Titel, nicht in der Datumszeile
         $o  .= '<button type="button" class="gtp-tab' . $on . '" data-q="' . $i
             . '" role="tab" aria-selected="' . ( $i === $aq ? 'true' : 'false' )
-            . '" onclick="gtpTab(' . $i . ')"><span class="gtp-tab-t">Quartal ' . $i . '</span>'
-            . '<span class="gtp-tab-sub">' . esc_html( gsh_tp_fmt_range( $grenzen[ $i - 1 ] ?? array() ) ) . $now . '</span></button>';
+            . '" onclick="gtpTab(' . $i . ')"><span class="gtp-tab-t">Quartal ' . $i . $now . '</span>'
+            . '<span class="gtp-tab-sub">' . esc_html( gsh_tp_fmt_range( $grenzen[ $i - 1 ] ?? array() ) ) . '</span></button>';
     }
     $o .= '</div>'; // .gtp-tab-group
     $o .= '<div class="gtp-yearlabel"><b>Schuljahr ' . esc_html( $sj_label ) . '</b><small>' . esc_html( $sj_range ) . '</small></div>';
@@ -7335,7 +7362,7 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '</div>'; // .gtp-quarters-wrap
 
     // Jahresansicht
-    $o .= gsh_tp_yearview( $date_index, $grenzen, $profile_id );
+    $o .= gsh_tp_yearview( $date_index, $grenzen, $profile_id, $sjs );
 
     $o .= '</div>'; // .gtp-main
     $o .= '<aside class="gtp-side" aria-label="Übersicht und Filter">';
@@ -7387,7 +7414,8 @@ function gsh_tp_shortcode( $atts ) {
     $o .= '<div class="gtp-ft-actions">' . $actions_html . '</div>';
     $privacy_url = function_exists( 'get_privacy_policy_url' ) ? (string) get_privacy_policy_url() : '';
     $o .= '<div class="gtp-ft-meta">';
-    $o .= '<span class="gtp-src">Quelle: IServ-Kalender</span>';
+    $src_planner = ! empty( $profile['managed'] ) && 'extern' !== ( $profile['source'] ?? '' );
+    $o .= '<span class="gtp-src">Quelle: ' . ( $src_planner ? 'Curricu:lr Planer' : 'IServ-Kalender' ) . '</span>';
     $o .= '<span class="gtp-family">Teil der Curricu:lr-Familie &middot; '
         . '<button type="button" class="gtp-version-btn" onclick="gtpChangelogOpen()" aria-label="Changelog anzeigen">Version ' . esc_html( GSH_TP_VERSION ) . '</button> &middot; '
         . ( '' !== $privacy_url ? '<a href="' . esc_url( $privacy_url ) . '" target="_blank" rel="noopener">Datenschutz</a>' : 'Datenschutz' )
@@ -8294,7 +8322,7 @@ function gsh_tp_table( $index, $qd, $sjs, $annotation_map = array() ) {
                 $cl .= ' gt-hol';
             }
 
-            $h .= '<td class="' . esc_attr( $cl ) . '" data-label="' . esc_attr( $day_labels[ $d ] ) . '">';
+            $h .= '<td class="' . esc_attr( $cl ) . '" data-label="' . esc_attr( $day_labels[ $d ] ) . '" data-d="' . esc_attr( $ds ) . '">';
             $h .= '<span class="gdl">' . esc_html( $dy->format( 'd.m.' ) ) . '</span>';
 
             // Kategorie-Map einmalig aufbauen (gecacht via gsh_tp_get_categories())
@@ -8442,8 +8470,8 @@ function gsh_tp_fmt_range( $qd ) {
 }
 
 /**
- * Quartalsübersicht für die Seitenleiste: je Schulwoche eine Zeile mit fünf Tageszellen.
- * Punkt = Termin (Farbe der Kategorie), Schraffur = Ferien, Rahmen = heute.
+ * Quartalsübersicht für die Seitenleiste: je Schulwoche eine Zeile mit sieben Tageszellen (Mo–So).
+ * Jede Zelle ist ein Knopf (gtpMiniDay). Punkt = Termin (Farbe der Kategorie), Schraffur = Ferien, Rahmen = heute.
  *
  * @since 4.44.0
  * @param array  $index Datum → Events-Index.
@@ -8462,10 +8490,11 @@ function gsh_tp_minimap( $index, $qd, $sjs, $q ) {
     }
     $cm     = array_column( gsh_tp_get_categories(), null, 'id' );
     $colors = gsh_tp_cat_color_map();
+    $names  = array( 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So' );
 
     $h  = '<div class="gtp-mini" data-q="' . (int) $q . '" role="group" aria-label="Quartalsübersicht, Quartal ' . (int) $q . '">';
     $h .= '<span class="gtp-mini-h"></span>';
-    foreach ( array( 'Mo', 'Di', 'Mi', 'Do', 'Fr' ) as $n ) {
+    foreach ( $names as $n ) {
         $h .= '<span class="gtp-mini-h">' . $n . '</span>';
     }
     $c   = clone $qs;
@@ -8475,11 +8504,13 @@ function gsh_tp_minimap( $index, $qd, $sjs, $q ) {
         $label = $sw >= 0 ? sprintf( '%02d', $sw ) : '–';
         $h    .= '<button type="button" class="gtp-mini-w" onclick="gtpMiniGo(' . (int) $q . ',' . (int) $sw . ')"'
                . ' aria-label="Schulwoche ' . esc_attr( $label ) . ' anzeigen">' . esc_html( $label ) . '</button>';
-        for ( $d = 0; $d < 5; $d++ ) {
-            $ds   = ( clone $c )->modify( "+{$d} days" )->format( 'Y-m-d' );
+        for ( $d = 0; $d < 7; $d++ ) {
+            $day  = ( clone $c )->modify( "+{$d} days" );
+            $ds   = $day->format( 'Y-m-d' );
+            $evs  = gsh_tp_day_events( $index, $ds );
             $hol  = false;
             $slug = '';
-            foreach ( gsh_tp_day_events( $index, $ds ) as $ev ) {
+            foreach ( $evs as $ev ) {
                 $cats = (array) ( $ev['categories'] ?? array() );
                 if ( in_array( 'feiertage', $cats, true ) ) {
                     $hol = true;
@@ -8488,11 +8519,15 @@ function gsh_tp_minimap( $index, $qd, $sjs, $q ) {
                     $slug = gsh_tp_primary_slug( $cats, $cm );
                 }
             }
-            $cls = 'gtp-mini-c' . ( $hol ? ' gtp-mini-f' : '' ) . ( $ds === $td ? ' gtp-mini-now' : '' );
+            $cls = 'gtp-mini-c' . ( $d >= 5 ? ' gtp-mini-we' : '' ) . ( $hol ? ' gtp-mini-f' : '' ) . ( $ds === $td ? ' gtp-mini-now' : '' );
             $dot = ( '' !== $slug && ! $hol )
                 ? '<i data-c="' . esc_attr( $slug ) . '"' . ( ! empty( $colors[ $slug ] ) ? ' style="--cat:' . esc_attr( $colors[ $slug ] ) . '"' : '' ) . '></i>'
                 : '';
-            $h  .= '<span class="' . esc_attr( $cls ) . '">' . $dot . '</span>';
+            $cnt   = count( $evs );
+            $count = 0 === $cnt ? 'keine Termine' : $cnt . ( 1 === $cnt ? ' Termin' : ' Termine' );
+            $h    .= '<button type="button" class="' . esc_attr( $cls ) . '" data-d="' . esc_attr( $ds ) . '" data-sw="' . (int) $sw . '"'
+                   . ' aria-label="' . esc_attr( $names[ $d ] . ', ' . $day->format( 'd.m.' ) . ', ' . $count ) . '"'
+                   . ' onclick="gtpMiniDay(this)"><span class="gtp-mini-n">' . (int) $day->format( 'j' ) . '</span>' . $dot . '</button>';
         }
         $c->modify( '+7 days' );
     }
@@ -8801,9 +8836,10 @@ function gsh_tp_mobile( $index, $qd, $sjs, $annotation_map = array() ) {
  * @param array  $index    Date-Index aus gsh_tp_build_date_index().
  * @param array  $quartale Array mit 4 Quartalsgrenzen [['start'=>'Y-m-d','end'=>'Y-m-d'], …].
  * @param string $pid      Profil-ID (für zukünftige Erweiterungen, derzeit unused).
+ * @param string $sjs      Erster Montag des Schuljahres (für die Schulwochen-Spalte des Jahreskalenders).
  * @return string HTML-String des Jahresrasters.
  */
-function gsh_tp_yearview( $index, $quartale, $pid ) {
+function gsh_tp_yearview( $index, $quartale, $pid, $sjs = '' ) {
     if ( empty( $quartale ) || empty( $index ) ) {
         return '';
     }
@@ -8870,40 +8906,12 @@ function gsh_tp_yearview( $index, $quartale, $pid ) {
     $o .= '<div class="gtp-year-leg" aria-hidden="true">'
         . '<span class="gtp-leg-i"><span class="gtp-leg-fer"></span>Ferien</span>'
         . '<span class="gtp-leg-i"><span class="gtp-leg-today"></span>Heute</span>'
-        . '<span class="gtp-leg-i"><span class="gtp-leg-we"></span>Wochenende</span></div>';
+        . '<span class="gtp-leg-i"><span class="gtp-leg-we"></span>Wochenende</span>'
+        . '<span class="gtp-leg-i">Zahl rechts am Montag: Schulwoche</span></div>';
 
-    // ── Desktop: Matrix Monate × Tage 1–31 ──
-    $o .= '<div class="gtp-ym" role="group" aria-label="Jahresraster">';
-    $o .= '<div class="gtp-ym-hd gtp-ym-hd0"></div>';
-    for ( $d = 1; $d <= 31; $d++ ) {
-        $o .= '<div class="gtp-ym-hd">' . $d . '</div>';
-    }
-    foreach ( $months as $ym ) {
-        $dim = (int) gmdate( 't', gmmktime( 0, 0, 0, $ym[1], 1, $ym[0] ) );
-        $o  .= '<div class="gtp-ym-mo">' . esc_html( $month_short[ $ym[1] ] . ' ' . substr( (string) $ym[0], 2 ) ) . '</div>';
-        for ( $d = 1; $d <= 31; $d++ ) {
-            if ( $d > $dim ) {
-                $o .= '<div class="gtp-ym-c gtp-ym-x"></div>';
-                continue;
-            }
-            $ds  = sprintf( '%04d-%02d-%02d', $ym[0], $ym[1], $d );
-            $we  = (int) gmdate( 'N', gmmktime( 0, 0, 0, $ym[1], $d, $ym[0] ) ) >= 6;
-            $inf = $info[ $ds ] ?? null;
-            $cls = 'gtp-ym-c' . ( $we ? ' gtp-ym-we' : '' ) . ( $ds === $td ? ' gtp-ym-td' : '' )
-                 . ( $inf && $inf['hol'] ? ' gtp-ym-f' : '' ) . ( $inf && ! $inf['hol'] ? ' gtp-ym-ev' : '' );
-            if ( $inf ) {
-                $first_slug = $inf['slugs'][0] ?? '';
-                $o .= '<button type="button" class="' . esc_attr( $cls ) . '" data-d="' . esc_attr( $ds ) . '"'
-                    . ( ! empty( $col[ $first_slug ] ) ? ' style="--cat:' . esc_attr( $col[ $first_slug ] ) . '"' : '' )
-                    . ' aria-label="' . esc_attr( $d . '. ' . $month_names[ $ym[1] ] . ' ' . $ym[0] . ', ' . count( $days[ $ds ] ) . ' Termine' ) . '"'
-                    . ' onclick="gtpYearSelect(this)"><span class="gtp-yds">' . $dots( $inf['slugs'] ) . '</span></button>';
-            } else {
-                $o .= '<div class="' . esc_attr( $cls ) . '" data-d="' . esc_attr( $ds ) . '"></div>';
-            }
-        }
-    }
-    $o .= '</div>'; // .gtp-ym
-    $o .= '<div class="gtp-ym-pop" id="gtp-ym-pop" role="dialog" aria-label="Termine des Tages" hidden></div>';
+    // ── Desktop: Jahreskalender, zwölf Monate Mo–So mit Schulwochen ──
+    $o .= gsh_tp_year_calendar_html( $months, $info, $days, $col, $td, (string) $sjs );
+    $o .= '<div class="gtp-cal-pop" id="gtp-cal-pop" role="dialog" aria-label="Termine des Tages" hidden></div>';
 
     // ── Handy: Monatskalender mit Monatsleiste und Tagesliste ──
     $sel_month = sprintf( '%04d-%02d', (int) substr( $td, 0, 4 ), (int) substr( $td, 5, 2 ) );
@@ -9961,8 +9969,8 @@ function gtpViewInit(){
   document.addEventListener("click",function(e){
     var ex=document.querySelector(".gtp-export[open]");
     if(ex&&(!ex.contains(e.target)||(e.target.closest(".gtp-export-menu")&&e.target.closest("button,a")))) ex.removeAttribute("open");
-    var pop=document.getElementById("gtp-ym-pop");
-    if(pop&&!pop.hidden&&!pop.contains(e.target)&&!e.target.closest(".gtp-ym-c")) gtpYearClose();
+    var pop=document.getElementById("gtp-cal-pop");
+    if(pop&&!pop.hidden&&!pop.contains(e.target)&&!e.target.closest(".gtp-cal-d")) gtpYearClose();
   });
   document.addEventListener("keydown",function(e){
     if(e.key!=="Escape") return;
@@ -10010,18 +10018,39 @@ function gtpPastOpen(panel){
   gtpPastLabel(panel,true);
 }
 
-/* ── Quartalsübersicht: Sprung zur Woche ── */
-function gtpMiniGo(q,sw){
+/* ── Quartalsübersicht: Sprung zur Woche oder zum Tag ── */
+function gtpMiniWeek(q,sw){
   var w=document.getElementById("gtp");
   if(w&&w.dataset.view==="jahr") gtpSetView("liste");
   gtpSwitchTab(q);
   var panel=document.getElementById("gtp-q"+q);
-  if(!panel) return;
+  if(!panel) return null;
   var raster=w&&w.dataset.view==="raster";
   var el=raster?panel.querySelector('tr[data-sw="'+sw+'"]'):panel.querySelector('.gtp-mob-week[data-sw="'+sw+'"]');
-  if(!el) return;
+  if(!el) return null;
   if(el.classList.contains("gtp-mob-week--past")||el.classList.contains("gtp-past")) gtpPastOpen(panel);
-  setTimeout(function(){gtpScrollTo(el);},40);
+  return el;
+}
+function gtpMiniGo(q,sw){
+  var el=gtpMiniWeek(q,sw);
+  if(el) setTimeout(function(){gtpScrollTo(el);},40);
+}
+/** Springt zu einem Tag der Übersicht: Mo–Fr zur Tageszeile, Sa/So und leere Tage zur Woche. */
+function gtpMiniDay(btn){
+  var mini=btn.closest(".gtp-mini");
+  if(!mini) return;
+  document.querySelectorAll(".gtp-mini-sel").forEach(function(e){e.classList.remove("gtp-mini-sel");});
+  btn.classList.add("gtp-mini-sel");
+  var ds=btn.getAttribute("data-d");
+  var wk=gtpMiniWeek(parseInt(mini.getAttribute("data-q"),10),parseInt(btn.getAttribute("data-sw"),10));
+  if(!wk) return;
+  var t=wk.querySelector('[data-d="'+ds+'"]');
+  if(!t&&btn.classList.contains("gtp-mini-we")) t=wk.querySelector(".gn-annotation, .gtp-mob-annotation");
+  if(!t) t=wk;
+  document.querySelectorAll(".gtp-hl").forEach(function(e){e.classList.remove("gtp-hl");});
+  t.classList.add("gtp-hl");
+  setTimeout(function(){t.classList.remove("gtp-hl");},2500);
+  setTimeout(function(){gtpScrollTo(wk.tagName==="TR"?wk:t);},40);
 }
 
 /* ── Heute (Werkzeugleiste) ── */
@@ -10029,14 +10058,14 @@ function gtpToday(){
   var w=document.getElementById("gtp");
   var v=w?w.dataset.view:"liste";
   if(v==="jahr"){
-    var c=document.querySelector(".gtp-ym-td");
+    var c=document.querySelector(".gtp-cal-td");
     if(!c) return;
     var ds=c.getAttribute("data-d")||"";
     if(window.innerWidth<768){
       gtpYearMonth(ds.slice(0,7));
       var mb=document.querySelector('.gtp-yc-d[data-d="'+ds+'"]');
       if(mb) gtpYearSelect(mb);
-    }else if(c.tagName==="BUTTON"){gtpYearSelect(c);}
+    }else if(c.tagName==="BUTTON"){gtpYearSelect(c);}else{gtpScrollTo(c);}
     return;
   }
   var tod=document.querySelector(".gt-today");
@@ -10114,9 +10143,9 @@ function gtpYearFill(box,ds){
   box.appendChild(a);
 }
 function gtpYearClose(){
-  var pop=document.getElementById("gtp-ym-pop");
+  var pop=document.getElementById("gtp-cal-pop");
   if(pop) pop.hidden=true;
-  document.querySelectorAll(".gtp-ym-sel").forEach(function(e){e.classList.remove("gtp-ym-sel");});
+  document.querySelectorAll(".gtp-cal-sel").forEach(function(e){e.classList.remove("gtp-cal-sel");});
 }
 function gtpYearSelect(btn){
   var ds=btn.getAttribute("data-d");
@@ -10128,10 +10157,10 @@ function gtpYearSelect(btn){
     if(day) gtpYearFill(day,ds);
     return;
   }
-  var pop=document.getElementById("gtp-ym-pop"), wrap=document.querySelector(".gtp-year-wrap");
+  var pop=document.getElementById("gtp-cal-pop"), wrap=document.querySelector(".gtp-year-wrap");
   if(!pop||!wrap) return;
   gtpYearClose();
-  btn.classList.add("gtp-ym-sel");
+  btn.classList.add("gtp-cal-sel");
   gtpYearFill(pop,ds);
   pop.hidden=false;
   var r=btn.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
@@ -10167,10 +10196,8 @@ function gtpYearApplyFilter(){
   document.querySelectorAll(".gtp-yd[data-c], .gtp-mini i[data-c]").forEach(function(el){
     el.style.display=gtpSel[el.getAttribute("data-c")]?"none":"";
   });
-  document.querySelectorAll(".gtp-ym-ev").forEach(function(c){
-    var vis=false;
-    c.querySelectorAll(".gtp-yd").forEach(function(d){if(!gtpSel[d.getAttribute("data-c")]) vis=true;});
-    c.classList.toggle("gtp-ym-ev-off",!vis);
+  document.querySelectorAll(".gtp-cal-e[data-c]").forEach(function(el){
+    el.style.display=gtpSel[el.getAttribute("data-c")]?"none":"";
   });
 }
 
@@ -10554,6 +10581,11 @@ setTimeout(function(){
  * @param {string} s
  * @return {string}
  */
+/** Schuljahr aus dem Datenattribut, z. B. "2026/27" (leer, wenn unbekannt). */
+function gtpSj(){
+  var e=document.getElementById("gtp");
+  return (e&&e.dataset.sj)||"";
+}
 function gtpEsc(s){
   return String(s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
@@ -10577,6 +10609,8 @@ function gtpPrint(mode,pdfTitle){
   var ids;
   if(mode==="all"){
     ids=[1,2,3,4];
+  }else if(mode==="year"){
+    ids=[];
   }else{
     var at=document.querySelector(".gtp-tab-on");
     ids=[at ? parseInt(at.getAttribute("data-q")) : 1];
@@ -10664,6 +10698,24 @@ function gtpPrint(mode,pdfTitle){
     "@media print{body{padding:0}}"
   ].join("\n");
 
+  /* Jahreskalender-CSS (mm/pt: skaliert verlustfrei auf A3). Termintag = fett + unterstrichen, damit er in Graustufen erkennbar bleibt. */
+  var YCSS=[
+    ".gtp-cal{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:6mm repeat(31,minmax(4.8mm,auto));grid-auto-flow:column;border-left:0.3pt solid #999;margin-top:2mm}",
+    ".gtp-cal-m{display:contents}",
+    ".gtp-cal-t{display:flex;align-items:center;justify-content:center;font-size:7.5pt;font-weight:700;background:#ddd;border-bottom:0.3pt solid #999;border-right:0.3pt solid #999}",
+    ".gtp-cal-x{border-bottom:0.2pt solid #bbb;border-right:0.3pt solid #999;background:#f4f4f4}",
+    ".gtp-cal-d{box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:baseline;gap:.2mm .6mm;padding:.4mm .8mm;border:0;border-bottom:0.2pt solid #bbb;border-right:0.3pt solid #999;background:none;font-family:inherit;color:#111;text-align:left;break-inside:avoid;page-break-inside:avoid}",
+    ".gtp-cal-wd{flex:none;width:3.4mm;font-size:4.8pt;color:#555}",
+    ".gtp-cal-n{flex:none;width:3mm;font-size:7pt;font-weight:700;text-align:right}",
+    ".gtp-cal-es{order:3;flex:1 0 100%;min-width:0;display:flex;flex-direction:column;gap:.3mm}",
+    ".gtp-cal-e{display:block;padding:0 .6mm;font-size:5pt;line-height:1.2;overflow-wrap:break-word;background:#f1f1f1;box-shadow:inset .7mm 0 0 var(--cat,#555)}",
+    ".gtp-cal-sw{order:2;flex:none;margin-left:auto;font-size:5pt;color:#777}",
+    ".gtp-cal-we{background:#e6e6e6}",
+    ".gtp-cal-f,.ld-f{background:repeating-linear-gradient(45deg,#bbb 0 .8mm,#f4f4f4 .8mm 1.6mm)}",
+    ".ld-we{background:#e6e6e6;border-radius:0;border:0.3pt solid #bbb}",
+    ".gtp-cal-d,.gtp-cal-e,.gtp-cal-t,.gtp-cal-x,.ld-f,.ld-we{-webkit-print-color-adjust:exact;print-color-adjust:exact}"
+  ].join("\n");
+
   /* ── Kategorien dynamisch aus data-categories ── */
   var gtpEl=document.getElementById("gtp");
   var cats=[];
@@ -10698,8 +10750,8 @@ function gtpPrint(mode,pdfTitle){
     +'<span class="hdr-logo-name">'+schoolHtml+'</span>'
     +'</div>'
     +'<div class="hdr-title">'
-    +'<div class="hdr-main">Schuljahresterminplan\u00a02025\u202f/\u202f26</div>'
-    +'<div class="hdr-sub">Quelle: IServ-Kalender</div>'
+    +'<div class="hdr-main">'+(mode==="year"?"Jahreskalender":"Schuljahresterminplan")+(gtpSj()?"\u00a0"+gtpEsc(gtpSj().replace("/","\u202f/\u202f")):"")+'</div>'
+    +'<div class="hdr-sub">Quelle: Curricu:lr Planer</div>'
     +'</div>'
     +'</div>';
 
@@ -10720,6 +10772,28 @@ function gtpPrint(mode,pdfTitle){
     body+=LEG;
   }
 
+  /* Jahreskalender: zwölf Monate auf einer Seite (A4 quer, im Druckdialog auf A3 skalierbar) */
+  if(mode==="year"){
+    var cal=document.querySelector(".gtp-cal");
+    if(cal){
+      body='<div class="pdf-ft">Stand: '+today+' \u00b7 Curricu:lr Terminplan'+(gtpEl&&gtpEl.dataset.ver?" "+gtpEsc(gtpEl.dataset.ver):"")+'</div>'
+        +HDR+cal.outerHTML.replace(/ onclick="[^"]*"/g,"")
+        +LEG.replace("</div>",'<span class="leg-item"><span class="ld ld-f"></span>Ferien</span>'
+          +'<span class="leg-item"><span class="ld ld-we"></span>Wochenende</span>'
+          +'<span class="leg-item"><b>12</b>\u00a0Zahl rechts: Schulwoche (am Montag)</span></div>');
+      CSS+="\n"+YCSS;
+    }
+  }
+
+  /* Jahreskalender auf eine Seite einpassen: Zeilen wachsen mit den Terminen, daher bei Bedarf verkleinern (A4 quer, Rand 8/16 mm). */
+  function fitYear(d){
+    var c=d.querySelector(".gtp-cal");
+    if(!c||mode!=="year") return;
+    var avail=186*96/25.4, total=d.body.scrollHeight, ch=c.getBoundingClientRect().height;
+    var z=(avail-(total-ch))/ch;
+    if(z<1&&z>0.3){ z*=0.98; c.style.zoom=String(z); }
+  }
+
   /* Touch-Geräte (iPad/Handy): Hidden-iframe-Druck wird von iOS Safari
      verstümmelt (ignoriert @page landscape). Stattdessen das fertige
      A4-Querformat-Dokument in einem echten Tab öffnen – zoombar, und der
@@ -10738,6 +10812,7 @@ function gtpPrint(mode,pdfTitle){
       win.document.open();
       win.document.write(fullDoc);
       win.document.close();
+      fitYear(win.document);
       return;
     }
     /* Popup blockiert → unten auf den iframe-Pfad zurückfallen */
@@ -10759,6 +10834,7 @@ function gtpPrint(mode,pdfTitle){
     '<style>'+CSS+'</style>','</head>','<body>',body,'</body>','</html>'
   ].join(''));
   doc.close();
+  fitYear(doc);
 
   var printed=false;
   function doPrint(){
@@ -11233,8 +11309,8 @@ function gtpPdf(btn){
   var panel=document.getElementById("gtp-q"+q);
   var qtEl=panel ? panel.querySelector(".gtp-qt") : null;
   var title=qtEl
-    ? "Terminplan Curriculr 2025-26 - "+qtEl.textContent
-    : "Terminplan Curriculr 2025-26";
+    ? gtpTitle()+" - "+qtEl.textContent
+    : gtpTitle();
   gtpPdfBtnState(btn,true);
   gtpPdfHint();
   gtpPrint("single",title);
@@ -11247,7 +11323,20 @@ function gtpPdf(btn){
 function gtpPdfAll(btn){
   gtpPdfBtnState(btn,true);
   gtpPdfHint();
-  gtpPrint("all","Terminplan Curriculr 2025-26 - Komplett");
+  gtpPrint("all",gtpTitle()+" - Komplett");
+  setTimeout(function(){gtpPdfBtnState(btn,false);},3500);
+}
+
+/** Dokumenttitel (= Vorschlag für den PDF-Dateinamen), z. B. "Terminplan Curriculr 2026-27". */
+function gtpTitle(){
+  return "Terminplan Curriculr"+(gtpSj()?" "+gtpSj().replace("/","-"):"");
+}
+
+/** Druckt den Jahreskalender (zwölf Monate, eine Seite A4 quer). */
+function gtpPdfYear(btn){
+  gtpPdfBtnState(btn,true);
+  gtpPdfHint();
+  gtpPrint("year","Jahreskalender Curriculr"+(gtpSj()?" "+gtpSj().replace("/","-"):""));
   setTimeout(function(){gtpPdfBtnState(btn,false);},3500);
 }
 
