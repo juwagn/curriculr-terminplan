@@ -106,8 +106,9 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     if ( ! empty( $e['notes'] ) ) {
         $desc_parts[] = $e['notes'];
     }
-    if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
-        $desc_parts[] = 'Gruppen: ' . implode( ', ', array_filter( $e['groups'], 'is_scalar' ) );
+    $desc_groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? array_filter( $e['groups'], 'is_scalar' ) : array();
+    if ( $desc_groups ) {
+        $desc_parts[] = 'Gruppen: ' . implode( ', ', $desc_groups );
     }
     if ( $desc_parts ) {
         $lines[] = 'DESCRIPTION:' . gsh_tp_curriculr_ics_escape( implode( "\n", $desc_parts ) );
@@ -549,7 +550,7 @@ function gsh_tp_curriculr_norm_group( $v ) {
         return '';
     }
     $v = trim( $v );
-    return function_exists( 'mb_strtolower' ) ? mb_strtolower( $v, 'UTF-8' ) : strtolower( $v );
+    return mb_strtolower( $v, 'UTF-8' );
 }
 
 /**
@@ -1262,12 +1263,22 @@ function gsh_tp_curriculr_rest_feed( $req ) {
     exit;
 }
 
+/** Group name from the feed path; '' if blank after decoding, sanitizing and normalizing. */
+function gsh_tp_curriculr_feed_group_name( $raw ) {
+    $group = sanitize_text_field( urldecode( (string) $raw ) );
+    return '' === gsh_tp_curriculr_norm_group( $group ) ? '' : $group;
+}
+
 function gsh_tp_curriculr_rest_feed_group( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
     if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
-    $group = sanitize_text_field( urldecode( $req['group'] ) );
+    $group = gsh_tp_curriculr_feed_group_name( $req['group'] );
+    if ( '' === $group ) {
+        // A blank group would mean "no restriction" and leak the full feed.
+        return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
+    }
     $doc   = json_decode( $row['json'], true );
     $ics   = gsh_tp_curriculr_build_ics( $doc, $group );
 

@@ -89,4 +89,37 @@ foreach ( $doc['events'] as $e ) {
     gsh_assert_eq( $has, in_array( $e['id'], $yes, true ), 'group ICS ' . $e['id'] . ( $has ? ' present' : ' absent' ) );
 }
 
+
+// ---------- Fix round 1 ----------
+// Umlaut groups: groups ['Ärzte'] vs gruppe=' ärzte' (agenda, month, ICS).
+$doc_u = array(
+    'categories' => $cats,
+    'events'     => array(
+        $ev( 'u-yes', array( 'groups' => array( 'Ärzte' ) ) ),
+        $ev( 'u-no', array( 'groups' => array( 'Aerzte' ) ) ),
+    ),
+);
+gsh_assert_eq( $agenda_ids( gsh_tp_curriculr_agenda( $doc_u, '2026-09-21', ' ärzte' ) ), array( 'u-yes' ), 'agenda: umlaut group matches case-insensitively' );
+gsh_assert_eq( $month_ids( gsh_tp_curriculr_month( $doc_u, '2026-09', '2026-09-21', ' ärzte' ) ), array( 'u-yes' ), 'month: umlaut group matches case-insensitively' );
+$u_ics = gsh_tp_curriculr_build_ics( $doc_u, ' ärzte' );
+gsh_assert_true( false !== strpos( $u_ics, 'UID:u-yes@' ) && false === strpos( $u_ics, 'UID:u-no@' ), 'ICS: umlaut group matches case-insensitively' );
+
+// Feed path: URL built by feed_url_group, decoded like the router, must find the event.
+function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
+function sanitize_text_field( $str ) { return trim( strip_tags( (string) $str ) ); }
+$url = gsh_tp_curriculr_feed_url_group( 'sj_2026_27', 'tok', 'Ärzte Team' );
+$seg = substr( basename( $url ), 0, -4 );
+$grp = gsh_tp_curriculr_feed_group_name( rawurldecode( $seg ) );
+gsh_assert_eq( $grp, 'Ärzte Team', 'feed URL round trip keeps umlaut and space' );
+$doc_t = array( 'categories' => $cats, 'events' => array( $ev( 't-yes', array( 'groups' => array( 'ärzte team' ) ) ) ) );
+gsh_assert_true( false !== strpos( gsh_tp_curriculr_build_ics( $doc_t, $grp ), 'UID:t-yes@' ), 'feed group from URL finds event' );
+gsh_assert_eq( gsh_tp_curriculr_feed_group_name( '%20' ), '', 'blank feed group name is empty' );
+gsh_assert_eq( gsh_tp_curriculr_feed_group_name( '   ' ), '', 'whitespace feed group name is empty' );
+
+// DESCRIPTION: no empty "Gruppen: " line when no usable group entry remains.
+$d_ics = gsh_tp_curriculr_build_ics( array( 'categories' => $cats, 'events' => array( $ev( 'd1', array( 'groups' => array( array( 'x' ), null ) ) ) ) ) );
+gsh_assert_true( false === strpos( $d_ics, 'Gruppen:' ), 'no empty Gruppen line for non-scalar group entries' );
+$d_ics2 = gsh_tp_curriculr_build_ics( array( 'categories' => $cats, 'events' => array( $ev( 'd2', array( 'groups' => array( 'Eltern', array( 'x' ) ) ) ) ) ) );
+gsh_assert_contains( $d_ics2, 'Gruppen: Eltern', 'Gruppen line lists scalar entries only' );
+
 gsh_test_done();
