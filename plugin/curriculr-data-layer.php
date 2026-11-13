@@ -92,14 +92,21 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
         $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $start );
         $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
     } else {
-        $st      = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
-        $et      = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
-        // Planner erlaubt endTime < startTime am selben Tag: DTEND nie vor DTSTART ausgeben.
-        if ( $end === $start && $et < $st ) {
-            $et = $st;
+        $st = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
+        $et = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
+        if ( ! gsh_tp_curriculr_is_hhmm( $st ) || ! gsh_tp_curriculr_is_hhmm( $et ) ) {
+            // Altdaten mit ungueltiger Uhrzeit: als ganztaegig ausgeben statt kaputtes DTSTART/DTEND (Datum ist gueltig).
+            $end_exclusive = ( new DateTime( $end ) )->modify( '+1 day' )->format( 'Ymd' );
+            $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $start );
+            $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
+        } else {
+            // Planner erlaubt endTime < startTime am selben Tag: DTEND nie vor DTSTART ausgeben.
+            if ( $end === $start && $et < $st ) {
+                $et = $st;
+            }
+            $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
+            $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
         }
-        $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
-        $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
     }
 
     if ( ! empty( $e['location'] ) && is_string( $e['location'] ) ) {
@@ -1061,7 +1068,7 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
     $author_name = $guard ? (string) ( $guard['name'] ?? '' ) : '';
     if ( ! gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name ) ) {
         // Doc ist gespeichert (keine Transaktion); fehlender Snapshot wird nur protokolliert.
-        error_log( 'curriculr: revision insert failed for ' . $sj . ' v' . $new_version );
+        error_log( 'curriculr: revision insert failed (v' . $new_version . '): ' . $wpdb->last_error );
     }
     gsh_tp_curriculr_prune_revisions( $sj );
 
@@ -1077,7 +1084,7 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
 function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str, $author_sub = '', $author_name = '' ) {
     global $wpdb;
     $table = gsh_tp_curriculr_revisions_table();
-    $wpdb->insert(
+    $ok = $wpdb->insert(
         $table,
         array(
             'schoolyear'  => sanitize_key( $sj ),
@@ -1088,7 +1095,8 @@ function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str, $author_
             'author_name' => (string) $author_name,
         )
     );
-    return (int) $wpdb->insert_id;
+    // wpdb::insert() gibt bei Fehler false zurueck; insert_id bliebe sonst auf dem alten Wert.
+    return false !== $ok && 0 !== $ok ? (int) $wpdb->insert_id : false;
 }
 
 function gsh_tp_curriculr_prune_revisions( $sj ) {

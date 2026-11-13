@@ -21,6 +21,7 @@ class Gsh_Fake_Wpdb_Rev {
     public $last_error  = "";
     public $fail_update = false;
     public $fail_insert = false;
+    public $fail_rev_insert = false;
     public $prefix    = 'wp_';
     public $docs      = array();
     public $revs      = array();
@@ -57,6 +58,10 @@ class Gsh_Fake_Wpdb_Rev {
     }
     public function insert( $table, $data ) {
         if ( strpos( $table, 'revisions' ) !== false ) {
+            if ( $this->fail_rev_insert ) {
+                $this->last_error = 'revision insert failed (secret db detail)';
+                return false;
+            }
             $data['id']      = $this->next_id;
             $this->insert_id = $this->next_id;
             $this->revs[ $this->next_id ] = $data;
@@ -136,6 +141,10 @@ function sanitize_text_field( $str ) { return trim( strip_tags( (string) $str ) 
 function gsh_tp_cal_is_extern( $cal ) { return 'extern' === ( $cal['source'] ?? 'planner' ); }
 function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
 function set_transient( $k, $v, $ttl = 0 ) { $GLOBALS['options'][ $k ] = $v; }
+function wp_unslash( $v ) { return $v; }
+function wp_verify_nonce( $n, $a ) { return true; }
+function esc_html( $s ) { return htmlspecialchars( (string) $s ); }
+function wp_get_current_user() { return (object) array( 'display_name' => 'Muster' ); }
 function add_action() {}
 function add_filter() {}
 function register_activation_hook() {}
@@ -237,7 +246,24 @@ $legacy = array(
 $ics = '';
 try { $ics = gsh_tp_curriculr_build_ics( $legacy ); } catch ( \Throwable $t ) { $ics = 'EXC:' . $t->getMessage(); }
 gsh_assert_contains( $ics, 'BEGIN:VCALENDAR', 'build_ics mit Altdaten wirft nicht' );
+gsh_assert_contains( $ics, 'SUMMARY:Gut', 'build_ics mit Altdaten behaelt den gueltigen Termin' );
+gsh_assert_eq( strpos( $ics, 'Array' ) === false, true, 'build_ics mit Altdaten: "Array" kommt nirgends vor' );
 gsh_assert_eq( strpos( $ics, 'SUMMARY:Kaputt' ) === false && strpos( $ics, 'SUMMARY:Newline' ) === false, true, 'build_ics ueberspringt Termine mit ungueltigem Datum' );
+
+/* Lesen: ungueltige Zeiten in Altdaten -> Termin ganztaegig, kein ungueltiges DTSTART, kein rohes LF. */
+foreach ( array( '25:99', "10:00\n", array( '10:00' ), 1000, '9:00' ) as $bad_t ) {
+    $lt  = array( 'id' => 'lt', 'title' => 'AltZeit', 'allDay' => false, 'start' => '2026-09-01', 'end' => '2026-09-01', 'startTime' => $bad_t, 'endTime' => '11:00' );
+    $ics = gsh_tp_curriculr_build_ics( array( 'meta' => array( 'name' => 'x' ), 'events' => array( $lt ) ) );
+    $lbl = 'Altdaten startTime ' . json_encode( $bad_t );
+    gsh_assert_contains( $ics, 'SUMMARY:AltZeit', "$lbl: Termin bleibt erhalten" );
+    gsh_assert_contains( $ics, 'DTSTART;VALUE=DATE:20260901', "$lbl: als ganztaegig ausgegeben" );
+    gsh_assert_contains( $ics, 'DTEND;VALUE=DATE:20260902', "$lbl: ganztaegiges DTEND" );
+    gsh_assert_eq( substr_count( $ics, "\n" ) === substr_count( $ics, "\r\n" ), true, "$lbl: kein rohes LF in der ICS-Ausgabe" );
+    gsh_assert_eq( strpos( $ics, 'DTSTART:' ) === false, true, "$lbl: kein DTSTART mit Uhrzeit" );
+}
+$lt = array( 'id' => 'lt2', 'title' => 'AltEnd', 'allDay' => false, 'start' => '2026-09-01', 'end' => '2026-09-01', 'startTime' => '09:00', 'endTime' => "11:00\n" );
+$ics = gsh_tp_curriculr_build_ics( array( 'meta' => array( 'name' => 'x' ), 'events' => array( $lt ) ) );
+gsh_assert_contains( $ics, 'DTSTART;VALUE=DATE:20260901', 'Altdaten endTime mit Newline: ganztaegig' );
 
 /* Endzeit vor Startzeit am selben Tag: gueltige ICS-Ausgabe, DTEND nie vor DTSTART. */
 $rev = array( 'id' => 'r1', 'title' => 'Rueck', 'allDay' => false, 'start' => '2026-09-01', 'end' => '2026-09-01', 'startTime' => '10:00', 'endTime' => '09:00' );
@@ -291,8 +317,10 @@ gsh_assert_eq( $ok->data['version'], 2, 'gueltiger PUT zaehlt Version hoch' );
 /* ---------- PHP-06: DB-Fehler ist kein 409 ---------- */
 $wpdb = $fresh_wpdb();
 gsh_tp_curriculr_repo_put( 'sj_2026_27', $good, 0 );
+$docs_pre = $wpdb->docs;
 $wpdb->fail_update = true;
 $resp = $put( $good, 1 );
+gsh_assert_eq( $wpdb->docs, $docs_pre, 'DB-Fehler UPDATE: docs-Zeile (Version, json) unveraendert' );
 gsh_assert_eq( $resp->status, 500, 'DB-Fehler beim UPDATE -> 500 (nicht 409)' );
 gsh_assert_eq( $resp->data['error'], 'server_error', 'DB-Fehler: generischer Fehlercode' );
 gsh_assert_eq( strpos( json_encode( $resp->data ), 'secret db detail' ) === false, true, 'DB-Fehler: keine DB-Details im Body' );
@@ -318,5 +346,39 @@ $GLOBALS['gsh_force_json_fail'] = false;
 gsh_assert_eq( $res['status'], 'error', 'json-Encode-Fehler -> status error' );
 gsh_assert_eq( $wpdb->docs, array(), 'json-Encode-Fehler: nichts geschrieben' );
 gsh_assert_eq( count( $wpdb->revs ), 0, 'json-Encode-Fehler: keine Revision' );
+
+/* Revisions-INSERT schlaegt nach erfolgreichem Doc-UPDATE fehl: Erfolg, Version erhoeht, loggen. */
+$wpdb = $fresh_wpdb();
+gsh_tp_curriculr_repo_put( 'sj_2026_27', $good, 0 );
+$wpdb->fail_rev_insert = true;
+$resp = $put( $good, 1 );
+gsh_assert_eq( $resp->status, 200, 'Revisions-Fehler: PUT meldet Erfolg (Doc ist gespeichert)' );
+gsh_assert_eq( $resp->data['version'], 2, 'Revisions-Fehler: Version erhoeht' );
+gsh_assert_eq( (int) $wpdb->docs['sj_2026_27']['version'], 2, 'Revisions-Fehler: Version in DB erhoeht' );
+gsh_assert_eq( count( $wpdb->revs ), 1, 'Revisions-Fehler: keine Revision fuer v2' );
+$stale = $put( $good, 1 );
+gsh_assert_eq( $stale->status, 409, 'Konflikt nach Revisions-Fehler -> 409' );
+gsh_assert_eq( $stale->data['authorName'], '', 'Konflikt ohne Revision: leerer authorName' );
+gsh_assert_eq( $stale->data['serverVersion'], 2, 'Konflikt ohne Revision: serverVersion 2' );
+// insert_id darf nicht als Erfolg gelten: bei Fehler bleibt die alte id stehen.
+gsh_assert_eq( gsh_tp_curriculr_repo_save_revision( 'sj_2026_27', 3, '{}' ), false, 'save_revision liefert false bei fehlgeschlagenem INSERT' );
+
+/* Datei-Import: status=error -> generische Meldung, kein Konflikt-Text. */
+$wpdb = $fresh_wpdb();
+gsh_tp_curriculr_repo_put( 'sj_2026_27', $good, 0 );
+$GLOBALS['schoolyears'] = array( array( 'key' => 'sj_2026_27' ) );
+$tmp = tempnam( sys_get_temp_dir(), 'gshdoc' );
+file_put_contents( $tmp, json_encode( $good ) );
+$_POST  = array( 'gsh_tp_di_sy' => 'sj_2026_27', 'gsh_tp_di_confirm' => '1' );
+$_FILES = array( 'gsh_tp_di_file' => array( 'tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'size' => filesize( $tmp ) ) );
+$wpdb->fail_update = true;
+ob_start();
+gsh_tp_curriculr_handle_doc_import();
+$out = ob_get_clean();
+gsh_assert_contains( $out, 'notice-error', 'Import bei DB-Fehler: Fehlermeldung' );
+gsh_assert_contains( $out, 'Bitte versuchen Sie es später erneut', 'Import bei DB-Fehler: generische Meldung (Sie)' );
+gsh_assert_eq( strpos( $out, 'zwischenzeitlich' ) === false, true, 'Import bei DB-Fehler: kein Konflikt-Text' );
+gsh_assert_eq( strpos( $out, 'secret db detail' ) === false, true, 'Import bei DB-Fehler: keine DB-Details' );
+unlink( $tmp );
 
 gsh_test_done();
