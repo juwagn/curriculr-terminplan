@@ -4503,9 +4503,7 @@ function gsh_tp_settings_page() {
  */
 function gsh_tp_shortcode_reference() {
     $common = array(
-        'gruppe'          => array( 'Planner-Gruppe, z. B. „Eltern“. Leer = alle Termine. Termine ohne Gruppe sind immer sichtbar.', 'leer' ),
-        'kategorien'      => array( 'Nur Termine dieser Kategorien zeigen (Name oder Slug, kommagetrennt).', 'leer = alle' ),
-        'auch_kategorien' => array( 'Termine dieser Kategorien zusätzlich zeigen – auch wenn sie nicht zur Gruppe gehören (z. B. „Allgemein“ für Eltern).', 'leer' ),
+        'gruppe'          => array( 'Planner-Gruppe, z. B. „Eltern“. Leer = alle Termine. Mit Gruppe erscheinen nur Termine, bei denen diese Gruppe im Planner eingetragen ist (Groß-/Kleinschreibung egal). Termine ohne Gruppe erscheinen dann nicht.', 'leer' ),
         'abo'             => array( '„ja“ zeigt den Button „Kalender abonnieren“ für den (Gruppen-)ICS-Feed. Achtung: macht die Feed-Adresse öffentlich.', 'aus' ),
         'titel'           => array( 'Eigene Überschrift über der Ansicht.', 'keine' ),
         'schuljahr'       => array( 'Profil-ID eines bestimmten Schuljahres.', 'aktives Schuljahr' ),
@@ -4517,8 +4515,6 @@ function gsh_tp_shortcode_reference() {
             'where'    => 'Startseite, Bereich „Aktuelle Termine“ – in einem WPBakery-Text-Block (nicht „Raw HTML“).',
             'attrs'    => array(
                 'gruppe'          => $common['gruppe'],
-                'kategorien'      => $common['kategorien'],
-                'auch_kategorien' => $common['auch_kategorien'],
                 'wochen'          => array( 'Anzahl Wochen ab der aktuellen (1–6).', '2' ),
                 'max'             => array( 'Anzahl Termine, bevor der Rest unter „weitere Termine“ eingeklappt wird. 0 = alle.', '8' ),
                 'link'            => array( 'Adresse der vollständigen Terminseite, erzeugt den Button „Alle Termine“.', 'kein Button' ),
@@ -4530,7 +4526,7 @@ function gsh_tp_shortcode_reference() {
             ),
             'examples' => array(
                 '[gsh_termine gruppe="Eltern" link="/termine/"]',
-                '[gsh_termine gruppe="Eltern" auch_kategorien="Allgemein" max="6"]',
+                '[gsh_termine gruppe="Eltern" max="6"]',
             ),
         ),
         'gsh_monat'      => array(
@@ -4539,8 +4535,6 @@ function gsh_tp_shortcode_reference() {
             'where'    => 'Eigene Seite, z. B. „Termine für Eltern“.',
             'attrs'    => array(
                 'gruppe'          => $common['gruppe'],
-                'kategorien'      => $common['kategorien'],
-                'auch_kategorien' => $common['auch_kategorien'],
                 'abo'             => $common['abo'],
                 'titel'           => $common['titel'],
                 'ebene'           => array( 'Überschriften-Ebene 2–6 für den Monatsnamen.', '3' ),
@@ -4548,7 +4542,7 @@ function gsh_tp_shortcode_reference() {
             ),
             'examples' => array(
                 '[gsh_monat gruppe="Eltern"]',
-                '[gsh_monat gruppe="Eltern" auch_kategorien="Allgemein" abo="ja"]',
+                '[gsh_monat gruppe="Eltern" abo="ja"]',
             ),
         ),
         'gsh_terminplan' => array(
@@ -4568,7 +4562,7 @@ function gsh_tp_shortcode_reference() {
 }
 
 /**
- * Tab „Shortcodes & Hilfe": Generator (Gruppe/Kategorien per Auswahl) und
+ * Tab „Shortcodes & Hilfe": Generator (Gruppe per Auswahl) und
  * Referenz aller Shortcodes mit Attributen und Beispielen.
  *
  * @since 4.41.0
@@ -4576,15 +4570,9 @@ function gsh_tp_shortcode_reference() {
  */
 function gsh_tp_render_help_tab() {
     $source     = gsh_tp_public_curriculr_source( '', 'Hilfe' );
-    $categories = array();
     $groups     = array();
     if ( $source['src'] ) {
         $doc = $source['src']['doc'];
-        foreach ( (array) ( $doc['categories'] ?? array() ) as $c ) {
-            if ( is_array( $c ) && ! empty( $c['label'] ) ) {
-                $categories[] = array( 'label' => (string) $c['label'], 'color' => preg_match( '/^#[0-9a-fA-F]{6}$/', (string) ( $c['color'] ?? '' ) ) ? $c['color'] : '#94A3B8' );
-            }
-        }
         foreach ( (array) ( $doc['availableGroups'] ?? array() ) as $g ) {
             $groups[ (string) $g ] = true;
         }
@@ -4626,27 +4614,7 @@ function gsh_tp_render_help_tab() {
                             <option value="<?php echo esc_attr( $g ); ?>" <?php selected( 'Eltern', $g ); ?>><?php echo esc_html( $g ); ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-
-                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
-                    <span class="gtp-adm-label">Kategorien</span>
-                    <?php if ( $categories ) : ?>
-                        <table class="gtp-adm-cats">
-                            <thead><tr><th scope="col">Kategorie</th><th scope="col">nur diese</th><th scope="col">zusätzlich zeigen<br><small>(auch ohne Gruppe)</small></th></tr></thead>
-                            <tbody>
-                            <?php foreach ( $categories as $cat ) : ?>
-                                <tr>
-                                    <th scope="row"><i class="gtp-adm-dot" style="--dot:<?php echo esc_attr( $cat['color'] ); ?>"></i><?php echo esc_html( $cat['label'] ); ?></th>
-                                    <td><input type="checkbox" data-cat="only" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( 'Nur ' . $cat['label'] ); ?>"></td>
-                                    <td><input type="checkbox" data-cat="also" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( $cat['label'] . ' zusätzlich zeigen' ); ?>"></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <p class="description">„nur diese“ leer lassen = alle Kategorien. „zusätzlich“ z. B. für „Allgemein“, damit allgemeine Schultermine auch ohne Gruppe „Eltern“ erscheinen.</p>
-                    <?php else : ?>
-                        <p class="description">Noch kein Curricu:lr-Plan im aktiven Schuljahr – Kategorien können trotzdem von Hand eingetragen werden (Attribut <code>kategorien</code>).</p>
-                    <?php endif; ?>
+                    <p class="description">Mit Gruppe erscheinen nur Termine, bei denen diese Gruppe im Planner eingetragen ist. Termine ohne Gruppe erscheinen dann nicht.</p>
                 </div>
 
                 <div class="gtp-adm-row" data-for="gsh_termine">
@@ -4713,7 +4681,7 @@ function gsh_tp_render_help_tab() {
         <section class="gtp-adm-card" aria-labelledby="gtp-adm-notes">
             <h2 id="gtp-adm-notes">Gut zu wissen</h2>
             <ul class="gtp-adm-notes">
-                <li><strong>Gruppen und Kategorien</strong> kommen aus dem Curricu:lr Planner. Ein Termin ohne Gruppe gilt für alle und erscheint in jeder Gruppenansicht.</li>
+                <li><strong>Gruppen und Kategorien</strong> kommen aus dem Curricu:lr Planner. Eine Gruppenansicht (Attribut <code>gruppe</code>) zeigt nur Termine, bei denen diese Gruppe im Planner eingetragen ist; Termine ohne Gruppe erscheinen dort nicht. Ohne <code>gruppe</code> erscheinen alle Termine.</li>
                 <li><strong>Wochenend-Termine</strong> (z. B. Tag der offenen Tür) im Planner in der Spalte „Sa/So“ anlegen. Sie erscheinen im Eltern-Kalender (ICS), in <code>[gsh_termine]</code>, <code>[gsh_monat]</code> und in der Anmerkungen-Spalte von <code>[gsh_terminplan]</code>.</li>
                 <li><strong>Anmerkungen</strong> aus dem Planner erscheinen nur in der Anmerkungen-Spalte des Terminplans – nicht im ICS-Feed und nicht in Vorschau/Monatsansicht.</li>
                 <li><strong>Kiosk-Ansicht</strong> für IServ: Seite mit der Vorlage „Terminplan Kiosk“ anlegen, Token im Tab „System &amp; Logs“ erzeugen.</li>
@@ -7670,11 +7638,10 @@ function gsh_tp_up_range( $from, $to ) {
  * gsh-termine.js korrigiert nur „Heute/Morgen" bei gecachter Seite.
  *
  * Attribute:
- *   gruppe    Planner-Gruppe, z. B. "Eltern" (leer = alle). Termine ohne Gruppe
- *             sind immer sichtbar — gleiche Regel wie der Gruppen-ICS-Feed.
- *   kategorien       Nur diese Planner-Kategorien (kommagetrennt, Name oder Slug).
- *   auch_kategorien  Diese Kategorien zusätzlich zeigen, auch ohne passende Gruppe
- *                    (z. B. "Allgemein" für Eltern).
+ *   gruppe    Planner-Gruppe, z. B. "Eltern" (leer = alle). Nur Termine, bei denen
+ *             die Gruppe explizit eingetragen ist (trim, Groß-/Kleinschreibung egal);
+ *             Termine ohne Gruppe erscheinen nicht — gleiche Regel wie der Gruppen-ICS-Feed.
+ *   kategorien, auch_kategorien  Veraltet: werden akzeptiert, aber nicht ausgewertet.
  *   wochen    Anzahl Wochen ab der aktuellen (1–6, Standard 2; am Wochenende +1).
  *   schuljahr Profil-ID (leer = aktives Profil).
  *   titel     Optionale Überschrift (leer = keine, die Seite hat meist eine eigene).
@@ -7724,7 +7691,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
     $now      = current_datetime();
     $today    = $now->format( 'Y-m-d' );
     $tomorrow = $now->modify( '+1 day' )->format( 'Y-m-d' );
-    $data     = gsh_tp_curriculr_agenda( $src['doc'], $today, $group, (int) $atts['wochen'], gsh_tp_public_category_filter( $atts ) );
+    $data     = gsh_tp_curriculr_agenda( $src['doc'], $today, $group, (int) $atts['wochen'] );
     $uid      = 'gtp-up-' . ( ++$instance );
     $level    = max( 2, min( 6, (int) $atts['ebene'] ) );
     $max      = max( 0, (int) $atts['max'] );
@@ -7986,21 +7953,6 @@ function gsh_tp_public_abo_button( $src, $group, $abo ) {
         . '<p class="gtp-up-note">Für Handy, Outlook &amp; Co. — aktualisiert sich automatisch.</p>';
 }
 
-/**
- * Kategorienfilter aus Shortcode-Attributen: kategorien = nur diese,
- * auch_kategorien = zusätzlich zeigen, auch ohne passende Gruppe.
- *
- * @since 4.41.0
- * @param  array $atts Shortcode-Attribute.
- * @return array{only: string[], also: string[]}
- */
-function gsh_tp_public_category_filter( $atts ) {
-    return array(
-        'only' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['kategorien'] ?? '' ) ),
-        'also' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['auch_kategorien'] ?? '' ) ),
-    );
-}
-
 /* ================================================================
    5a2. SHORTCODE [gsh_monat] — Monatsansicht im Startseiten-Look
    ================================================================ */
@@ -8011,7 +7963,7 @@ function gsh_tp_public_category_filter( $atts ) {
  * Blättern per Link (?gtp_monat=YYYY-MM), ohne JavaScript. Schmale Blöcke
  * (Handy) zeigen statt des Rasters eine Tagesliste nur mit Terminen.
  *
- * Attribute: gruppe, kategorien, auch_kategorien, schuljahr, titel, ebene (Standard 3), abo — wie [gsh_termine].
+ * Attribute: gruppe, schuljahr, titel, ebene (Standard 3), abo — wie [gsh_termine]. kategorien/auch_kategorien sind veraltet (akzeptiert, nicht ausgewertet).
  *
  * @since 4.40.0
  * @param  array $atts Shortcode-Attribute.
@@ -8048,7 +8000,7 @@ function gsh_tp_month_shortcode( $atts ) {
     $group     = sanitize_text_field( $atts['gruppe'] );
     $today     = current_datetime()->format( 'Y-m-d' );
     $requested = isset( $_GET['gtp_monat'] ) ? sanitize_text_field( wp_unslash( $_GET['gtp_monat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- read-only navigation
-    $data      = gsh_tp_curriculr_month( $src['doc'], $requested, $today, $group, gsh_tp_public_category_filter( $atts ) );
+    $data      = gsh_tp_curriculr_month( $src['doc'], $requested, $today, $group );
     $uid       = 'gtp-mo-' . ( ++$instance );
     $level     = max( 2, min( 6, (int) $atts['ebene'] ) );
     $dow_short = array( 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So' );

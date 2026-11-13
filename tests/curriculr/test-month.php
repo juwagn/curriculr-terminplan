@@ -7,10 +7,10 @@ $doc = array(
     'schoolyear' => array( 'holidays' => array( array( 'label' => 'Herbstferien', 'start' => '2026-10-12', 'end' => '2026-10-24' ) ) ),
     'events'     => array(
         array( 'id' => 'tdot', 'title' => 'Tag der offenen Tür', 'start' => '2026-11-28', 'end' => '2026-11-28', 'allDay' => false, 'startTime' => '10:00', 'endTime' => '14:00', 'categoryId' => 'va', 'location' => 'Aula', 'groups' => array( 'Eltern' ) ),
-        array( 'id' => 'prak', 'title' => 'Praktikum', 'start' => '2026-11-12', 'end' => '2026-11-18', 'allDay' => true, 'categoryId' => 'va', 'groups' => array() ),
+        array( 'id' => 'prak', 'title' => 'Praktikum', 'start' => '2026-11-12', 'end' => '2026-11-18', 'allDay' => true, 'categoryId' => 'va', 'groups' => array( 'Eltern' ) ),
         array( 'id' => 'staff', 'title' => 'Konferenz', 'start' => '2026-11-10', 'end' => '2026-11-10', 'allDay' => false, 'startTime' => '15:00', 'categoryId' => 'va', 'groups' => array( 'Kollegium' ) ),
-        array( 'id' => 'early', 'title' => 'Frühdienst', 'start' => '2026-11-10', 'end' => '2026-11-10', 'allDay' => false, 'startTime' => '07:30', 'categoryId' => 'va', 'groups' => array() ),
-        array( 'id' => 'oct', 'title' => 'Oktober-Termin', 'start' => '2026-10-30', 'end' => '2026-11-02', 'allDay' => true, 'categoryId' => 'va', 'groups' => array() ),
+        array( 'id' => 'early', 'title' => 'Frühdienst', 'start' => '2026-11-10', 'end' => '2026-11-10', 'allDay' => false, 'startTime' => '07:30', 'categoryId' => 'va', 'groups' => array( 'Eltern' ) ),
+        array( 'id' => 'oct', 'title' => 'Oktober-Termin', 'start' => '2026-10-30', 'end' => '2026-11-02', 'allDay' => true, 'categoryId' => 'va', 'groups' => array( 'Eltern' ) ),
     ),
 );
 

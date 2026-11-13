@@ -106,8 +106,8 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     if ( ! empty( $e['notes'] ) ) {
         $desc_parts[] = $e['notes'];
     }
-    if ( ! empty( $e['groups'] ) ) {
-        $desc_parts[] = 'Gruppen: ' . implode( ', ', $e['groups'] );
+    if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
+        $desc_parts[] = 'Gruppen: ' . implode( ', ', array_filter( $e['groups'], 'is_scalar' ) );
     }
     if ( $desc_parts ) {
         $lines[] = 'DESCRIPTION:' . gsh_tp_curriculr_ics_escape( implode( "\n", $desc_parts ) );
@@ -120,7 +120,7 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
         $groups = array();
         foreach ( $e['groups'] as $g ) {
-            $g = trim( (string) $g );
+            $g = is_scalar( $g ) ? trim( (string) $g ) : '';
             if ( '' !== $g ) {
                 $groups[] = gsh_tp_curriculr_ics_escape( $g );
             }
@@ -153,12 +153,9 @@ function gsh_tp_curriculr_build_ics( $doc, $target_group = null ) {
     );
     if ( ! empty( $doc['events'] ) ) {
         foreach ( $doc['events'] as $e ) {
-            if ( null !== $target_group ) {
-                // Missing or non-array groups key → treat as no restriction (same as groups: []).
-                $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
-                if ( ! empty( $groups ) && ! in_array( $target_group, $groups, true ) ) {
-                    continue;
-                }
+            // Group feed: only events that explicitly carry the group (same rule as the shortcodes).
+            if ( null !== $target_group && ! gsh_tp_curriculr_event_in_group( $e, $target_group ) ) {
+                continue;
             }
             $lines = array_merge( $lines, gsh_tp_curriculr_build_event( $e, $cats_by_id ) );
         }
@@ -546,45 +543,32 @@ function gsh_tp_curriculr_display_notes( $doc ) {
     return $map;
 }
 
-/** "Allgemein, elternarbeit" → ['allgemein', 'elternarbeit'] (getrimmt, klein, ohne Leere). */
-function gsh_tp_curriculr_parse_list( $str ) {
-    $out = array();
-    foreach ( explode( ',', (string) $str ) as $part ) {
-        $part = trim( $part );
-        if ( '' !== $part ) {
-            $out[] = function_exists( 'mb_strtolower' ) ? mb_strtolower( $part, 'UTF-8' ) : strtolower( $part );
-        }
+/** Normal form for group names: trim + lower case; non-strings become ''. */
+function gsh_tp_curriculr_norm_group( $v ) {
+    if ( ! is_string( $v ) ) {
+        return '';
     }
-    return array_values( array_unique( $out ) );
+    $v = trim( $v );
+    return function_exists( 'mb_strtolower' ) ? mb_strtolower( $v, 'UTF-8' ) : strtolower( $v );
 }
 
 /**
- * Sichtbarkeit eines Termins in den öffentlichen Ansichten.
- * - filter['only']: nur diese Kategorien (Label oder Slug, Groß-/Kleinschreibung egal).
- * - filter['also']: diese Kategorien zusätzlich zeigen, auch wenn der Termin nicht zur
- *   Gruppe gehört (z. B. „Allgemein“ für Eltern).
+ * Group filter (shortcodes and group ICS feed). Empty $group = no restriction.
+ * Otherwise an event matches only if its groups array explicitly contains the
+ * group (trim + case-insensitive). Empty, missing or non-array groups never match.
  */
-function gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter = array() ) {
-    $only = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['only'] ?? array() ) ) );
-    $also = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['also'] ?? array() ) ) );
-    $cat  = isset( $e['categoryId'] ) && isset( $cats[ $e['categoryId'] ] ) ? $cats[ $e['categoryId'] ] : null;
-    $keys = $cat ? gsh_tp_curriculr_parse_list( ( $cat['label'] ?? '' ) . ',' . ( $cat['slug'] ?? '' ) ) : array();
-    if ( $only && ! array_intersect( $keys, $only ) ) {
-        return false;
-    }
-    if ( gsh_tp_curriculr_event_in_group( $e, $group ) ) {
-        return true;
-    }
-    return $also && array_intersect( $keys, $also );
-}
-
-/** Gruppenfilter mit derselben Semantik wie der Gruppen-ICS-Feed: ohne Gruppen = für alle. */
 function gsh_tp_curriculr_event_in_group( $e, $group ) {
-    if ( '' === $group ) {
+    $want = gsh_tp_curriculr_norm_group( $group );
+    if ( '' === $want ) {
         return true;
     }
-    $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
-    return ! $groups || in_array( $group, $groups, true );
+    $groups = ( is_array( $e ) && isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
+    foreach ( $groups as $g ) {
+        if ( gsh_tp_curriculr_norm_group( $g ) === $want ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -600,7 +584,7 @@ function gsh_tp_curriculr_event_in_group( $e, $group ) {
  *
  * @return array{from: string, to: string, strip: array, entries: array, categories: array, next: ?array}
  */
-function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter = array() ) {
+function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2 ) {
     $empty = array( 'from' => '', 'to' => '', 'strip' => array(), 'entries' => array(), 'categories' => array(), 'next' => null );
     if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
         return $empty;
@@ -625,7 +609,7 @@ function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter
     $next   = null;
     foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
         $span = gsh_tp_curriculr_event_span( $e );
-        if ( null === $span || $span['end'] < $today || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+        if ( null === $span || $span['end'] < $today || ! gsh_tp_curriculr_event_in_group( $e, $group ) ) {
             continue;
         }
         if ( $span['start'] > $to ) {
@@ -743,7 +727,7 @@ function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter
  * @param string $ym    'YYYY-MM'; ungültig → Monat von $today.
  * @return array{ym: string, label: string, prev: string, next: string, weeks: array, categories: array}
  */
-function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '', $filter = array() ) {
+function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '' ) {
     static $months = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' );
     if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
         $today = gmdate( 'Y-m-d' );
@@ -767,7 +751,7 @@ function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '', $filter = array
     $events = array();
     foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
         $span = gsh_tp_curriculr_event_span( $e );
-        if ( null === $span || $span['end'] < $ym . '-01' || $span['start'] > $last || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+        if ( null === $span || $span['end'] < $ym . '-01' || $span['start'] > $last || ! gsh_tp_curriculr_event_in_group( $e, $group ) ) {
             continue;
         }
         list( $st, $et ) = gsh_tp_curriculr_event_times( $e );

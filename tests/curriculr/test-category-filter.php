@@ -16,8 +16,6 @@ $doc = array(
     ),
 );
 
-gsh_assert_eq( gsh_tp_curriculr_parse_list( ' Allgemein, elternarbeit ,,' ), array( 'allgemein', 'elternarbeit' ), 'list parsing trims, lowercases, drops empties' );
-
 $titles = function( $ag ) {
     $out = array();
     foreach ( $ag['entries'] as $e ) {
@@ -30,29 +28,14 @@ $titles = function( $ag ) {
     return $out;
 };
 
-gsh_assert_eq( $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', 'Eltern' ) ), array( 'Elternabend', 'Info-Abend' ), 'group only: Eltern events' );
+gsh_assert_eq( $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', 'Eltern' ) ), array( 'Elternabend', 'Info-Abend' ), 'group only: Eltern events, category Allgemein does not leak in' );
 gsh_assert_eq(
-    $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', 'Eltern', 2, array( 'also' => array( 'allgemein' ) ) ) ),
-    array( 'Schulfest', 'Elternabend', 'Info-Abend' ),
-    'auch_kategorien adds Allgemein events outside the group'
-);
-gsh_assert_eq(
-    $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', 'Eltern', 2, array( 'only' => array( 'elternarbeit' ) ) ) ),
-    array( 'Elternabend' ),
-    'kategorien restricts to listed categories'
-);
-gsh_assert_eq(
-    $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', '', 2, array( 'only' => array( 'konferenzen' ) ) ) ),
-    array( 'Lehrerkonferenz' ),
-    'kategorien by slug without group'
-);
-gsh_assert_eq(
-    $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', 'Eltern', 2, array( 'only' => array( 'allgemein' ), 'also' => array( 'allgemein' ) ) ) ),
-    array( 'Schulfest', 'Info-Abend' ),
-    'only + also combined'
+    $titles( gsh_tp_curriculr_agenda( $doc, '2026-09-21', '' ) ),
+    array( 'Schulfest', 'Elternabend', 'Lehrerkonferenz', 'Info-Abend' ),
+    'no group: all events regardless of category'
 );
 
-$m = gsh_tp_curriculr_month( $doc, '2026-09', '2026-09-21', 'Eltern', array( 'also' => array( 'Allgemein' ) ) );
+$m = gsh_tp_curriculr_month( $doc, '2026-09', '2026-09-21', 'Eltern' );
 $mt = array();
 foreach ( $m['weeks'] as $row ) {
     foreach ( $row as $c ) {
@@ -61,6 +44,7 @@ foreach ( $m['weeks'] as $row ) {
         }
     }
 }
-gsh_assert_eq( $mt, array( 'Schulfest', 'Elternabend', 'Info-Abend' ), 'month view honours category filter (case-insensitive)' );
+gsh_assert_eq( $mt, array( 'Elternabend', 'Info-Abend' ), 'month view filters by group only' );
+gsh_assert_eq( array_column( $m['categories'], 'label' ), array( 'Elternarbeit', 'Allgemein' ), 'legend still lists categories of shown events' );
 
 gsh_test_done();

@@ -319,8 +319,8 @@ gsh_assert_contains( $ics_p_all, 'UID:nm1@curriculr-planner', 'n:m catch-all: nm
 gsh_assert_contains( $ics_p_all, 'UID:nm2@curriculr-planner', 'n:m catch-all: nm2 (Schulleitung) present' );
 gsh_assert_contains( $ics_p_all, 'UID:nm3@curriculr-planner', 'n:m catch-all: nm3 (Kollegium) present' );
 
-// Schulleitung profile: nm1 (no group) + nm2 (Schulleitung) but not nm3 (Kollegium).
-gsh_assert_contains( $ics_p_sl, 'UID:nm1@curriculr-planner', 'n:m SL filter: nm1 (no group) present' );
+// Schulleitung profile: only nm2 (Schulleitung); nm1 (no group) and nm3 (Kollegium) are excluded.
+gsh_assert_true( strpos( $ics_p_sl, 'UID:nm1@curriculr-planner' ) === false, 'n:m SL filter: nm1 (no group) excluded' );
 gsh_assert_contains( $ics_p_sl, 'UID:nm2@curriculr-planner', 'n:m SL filter: nm2 (Schulleitung) present' );
 gsh_assert_true( strpos( $ics_p_sl, 'UID:nm3@curriculr-planner' ) === false, 'n:m SL filter: nm3 (Kollegium) excluded' );
 
