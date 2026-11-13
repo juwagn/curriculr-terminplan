@@ -3,10 +3,18 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.45.2
+ * Version:     4.46.0
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.46.0
+ * - [FIX] Eltern-Filter: gruppe="…" in [gsh_termine], [gsh_monat], im Gruppen-Kalender-Abo und in den Gruppen-Kalendern zeigt nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist (Groß-/Kleinschreibung und Leerzeichen egal). Termine ohne Gruppe erscheinen dort nicht mehr. Die Attribute kategorien= und auch_kategorien= (seit 4.41.0) filtern nicht mehr; sie werden ohne Fehler ignoriert, Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Feed ohne Gruppennamen liefert 404
+ * - [FIX] Dunkelmodus: eingebettete Kalender ([gsh_termine], [gsh_monat]) bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist
+ * - [NEU] Attribut design="hell|auto|dunkel" für [gsh_termine] und [gsh_monat] (Standard hell); „auto“ und „dunkel“ nur für Websites mit eigenem Dunkelmodus
+ * - [FIX] Speichern aus dem Planer: Termine mit ungültigem Datum, ungültiger Uhrzeit oder falschen Feldtypen werden abgelehnt, statt Kalender-Abo und Anzeige zu beschädigen; Alttermine mit ungültiger Uhrzeit erscheinen ganztägig; Datenbankfehler werden nicht mehr als Bearbeitungskonflikt gemeldet
+ * - [UX] Filterknöpfe sind mindestens 36 px hoch, auf Touch-Geräten 44 px
+ * - [DESIGN] Mindestschriftgröße 12 px in Terminplan und Einbettungen
+ * - [INFRA] Neue Tests: Gruppenfilter, Einbettungs-Design und Termin-Validierung
  * v4.45.2
  * - [FIX] Jahr: „Heute“ wechselt bei Fensterbreiten von 768 bis 1023 px im sichtbaren Monatskalender zum aktuellen Monat
  *
@@ -702,7 +710,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.45.2' );
+define( 'GSH_TP_VERSION',       '4.46.0' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -952,6 +960,18 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.46.0',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Eltern-Filter: gruppe="…" in [gsh_termine], [gsh_monat], im Gruppen-Kalender-Abo und in den Gruppen-Kalendern zeigt nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist (Groß-/Kleinschreibung und Leerzeichen egal). Termine ohne Gruppe erscheinen dort nicht mehr. Die Attribute kategorien= und auch_kategorien= (seit 4.41.0) filtern nicht mehr; sie werden ohne Fehler ignoriert, Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Feed ohne Gruppennamen liefert 404.' ),
+                array( 'tag' => 'FIX', 'text' => 'Dunkelmodus: eingebettete Kalender ([gsh_termine], [gsh_monat]) bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist.' ),
+                array( 'tag' => 'NEU', 'text' => 'Attribut design="hell|auto|dunkel" für [gsh_termine] und [gsh_monat] (Standard hell); „auto“ und „dunkel“ nur für Websites mit eigenem Dunkelmodus.' ),
+                array( 'tag' => 'FIX', 'text' => 'Speichern aus dem Planer: Termine mit ungültigem Datum, ungültiger Uhrzeit oder falschen Feldtypen werden abgelehnt, statt Kalender-Abo und Anzeige zu beschädigen; Alttermine mit ungültiger Uhrzeit erscheinen ganztägig; Datenbankfehler werden nicht mehr als Bearbeitungskonflikt gemeldet.' ),
+                array( 'tag' => 'UX', 'text' => 'Filterknöpfe sind mindestens 36 px hoch, auf Touch-Geräten 44 px.' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Mindestschriftgröße 12 px in Terminplan und Einbettungen.' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Tests: Gruppenfilter, Einbettungs-Design und Termin-Validierung.' ),
+            ),
+        ),
         array(
             'version' => '4.45.2',
             'entries' => array(

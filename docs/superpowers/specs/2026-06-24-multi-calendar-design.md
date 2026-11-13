@@ -109,7 +109,7 @@ New section added **below** the existing "Verknüpfung" block, separated by `bor
 
 **Explanation box** (info card with muted background):
 
-> Der Haupt-Feed (oben) enthält alle Termine. Zusätzlich kannst du separate Feeds je Gruppe einrichten — z.B. einen Feed nur für Schulleitung-Termine. Termine ohne Gruppe erscheinen in allen Gruppen-Feeds.
+> Der Haupt-Feed (oben) enthält alle Termine. Zusätzlich kannst du separate Feeds je Gruppe einrichten — z.B. einen Feed nur für Schulleitung-Termine. Termine ohne Gruppe erscheinen in keinem Gruppen-Feed (ab Plugin 4.46.0); ein Gruppen-Feed enthält nur Termine mit dieser Gruppe.
 
 **Mapping table:** One row per `CalendarMapping`. Each row:
 - `<select>` populated from `doc.availableGroups`

@@ -6,6 +6,30 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.46.0] – 2026-11-13
+
+### Was Sie beim Update tun müssen
+1. **Shortcodes auf den Seiten prüfen.** Entfernen Sie `kategorien="…"` und `auch_kategorien="…"`. Diese Attribute filtern nicht mehr. Sie werden ohne Fehler ignoriert.
+   - Vorher: `[gsh_termine gruppe="Eltern" auch_kategorien="Allgemein" max="6"]`
+   - Nachher: `[gsh_termine gruppe="Eltern" max="6"]`
+   - Vorher: `[gsh_monat gruppe="Eltern" auch_kategorien="Allgemein" abo="ja"]`
+   - Nachher: `[gsh_monat gruppe="Eltern" abo="ja"]`
+2. **Im Planer die Gruppe „Eltern“ vergeben.** Versehen Sie alle Termine, die Eltern sehen sollen, mit der Gruppe „Eltern“ und veröffentlichen Sie neu. Termine ohne Gruppe erscheinen in Eltern-Ansichten und im Eltern-Kalender-Abo nicht mehr.
+3. **Seiten-Cache leeren**, damit die Seiten die neuen Ansichten zeigen.
+
+### Neu
+- Neues Attribut `design="hell|auto|dunkel"` für `[gsh_termine]` und `[gsh_monat]`. Standard ist `hell`. Nutzen Sie `auto` oder `dunkel` nur, wenn Ihre Website selbst einen Dunkelmodus hat.
+
+### Behoben
+- Der Eltern-Filter `gruppe="…"` zeigt in `[gsh_termine]`, `[gsh_monat]`, im Gruppen-Kalender-Abo und in den Gruppen-Kalendern nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist. Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle. Termine ohne Gruppe erscheinen dort nicht mehr. Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Kalender-Abo ohne Gruppennamen liefert „nicht gefunden“ (404).
+- Eingebettete Kalender bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist.
+- Beim Speichern aus dem Planer werden Termine mit ungültigem Datum, ungültiger Uhrzeit oder falschen Feldtypen abgelehnt. Sie beschädigen Kalender-Abo und Anzeige nicht mehr. Alttermine mit ungültiger Uhrzeit erscheinen ganztägig. Datenbankfehler werden nicht mehr als Bearbeitungskonflikt gemeldet.
+
+### Geändert
+- Die Mindestschriftgröße beträgt 12 px in Terminplan und Einbettungen.
+- Filterknöpfe sind mindestens 36 px hoch, auf Touch-Geräten 44 px.
+- Die Attribute `kategorien` und `auch_kategorien` (eingeführt in 4.41.0) filtern nicht mehr.
+
 ## [4.45.2] – 2026-11-03
 
 ### Behoben

@@ -1076,7 +1076,7 @@ Inside the `return (...)`, immediately after the closing `</div>` of the `{doc &
               Der Haupt-Feed (oben) enthält alle Termine. Zusätzlich kannst du separate Feeds je Gruppe einrichten — z.B. einen Feed nur für Schulleitung-Termine.
             </p>
             <p className="text-[12px] text-[var(--color-ink-600)]">
-              Termine <strong>ohne Gruppe</strong> erscheinen in allen Gruppen-Feeds.
+              Termine <strong>ohne Gruppe</strong> erscheinen in keinem Gruppen-Feed (ab Plugin 4.46.0).
             </p>
           </div>
           {calMappings.map((m, i) => (
