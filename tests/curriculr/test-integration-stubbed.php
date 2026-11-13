@@ -183,12 +183,13 @@ foreach ( gsh_tp_get_schoolyears() as $sy_check ) {
 }
 gsh_assert_true( null !== $auto_sy, 'unmapped PUT auto-provisions the schoolyear' );
 gsh_assert_true( empty( $auto_sy['is_active'] ), 'auto-provisioned schoolyear stays inactive (Live-Schutz)' );
-$auto_ics = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', sanitize_key( gsh_tp_calendar_id( 'sj_2026_27', null ) ) ) ] ?? '';
-gsh_assert_contains( $auto_ics, 'BEGIN:VCALENDAR', 'auto-provisioned main calendar gets ICS cache' );
+$auto_ck  = gsh_tp_ck( 'gsh_tp_ical_', sanitize_key( gsh_tp_calendar_id( 'sj_2026_27', null ) ) );
+gsh_assert_true( empty( $GLOBALS['options'][ $auto_ck ] ), 'entwurf PUT: auto-provisioned calendar gets no public ICS cache' );
 
 // Ohne explizites Profil-Mapping bleibt das aktive Profil auch für oeffentlich unberührt.
 $pub = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 4, 'stage' => 'oeffentlich' ), array( 'sj' => 'sj_2026_27' ) ) );
 gsh_assert_eq( $pub->data['stage'], 'oeffentlich', 'stage carried through to oeffentlich' );
+gsh_assert_contains( $GLOBALS['options'][ $auto_ck ] ?? '', 'BEGIN:VCALENDAR', 'oeffentlich PUT: auto-provisioned main calendar gets ICS cache' );
 gsh_assert_true( empty( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ), 'oeffentlich PUT without profile mapping leaves active profile untouched' );
 
 // Auto-Provision inkl. Gruppen-Kalender aus availableGroups (Spec 2026-07-15)
@@ -263,11 +264,16 @@ $pub2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'base
 $ical_cache = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ?? '';
 gsh_assert_true( strpos( $ical_cache, 'BEGIN:VCALENDAR' ) !== false, 'mapped oeffentlich PUT writes ICS to profile cache directly' );
 
-// Entwurf-PUT mit Mapping schreibt ebenfalls in den Cache (Entwurf-Vorschau soll aktuelle Daten zeigen).
-unset( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] );
+// Entwurf-PUT mit Mapping laesst den oeffentlichen Profil-Cache unveraendert.
+$GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] = 'OLD';
 $entwurf2 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 6, 'stage' => 'entwurf' ), array( 'sj' => 'sj_2026_27' ) ) );
-$ical_entwurf = $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ] ?? '';
-gsh_assert_true( strpos( $ical_entwurf, 'BEGIN:VCALENDAR' ) !== false, 'mapped entwurf PUT writes ICS to profile cache directly' );
+gsh_assert_eq( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ], 'OLD', 'mapped entwurf PUT leaves public profile cache untouched' );
+
+// Entwurf-Vorschau (legacy): Profil mit is_draft bekommt den Entwurf weiterhin in den Cache.
+$GLOBALS['options']['gsh_tp_profiles'] = array( array( 'id' => 'p1', 'is_draft' => true ) );
+$entwurf3 = gsh_tp_curriculr_rest_put( new Gsh_Fake_Req( array( 'doc' => $doc, 'baseVersion' => 7, 'stage' => 'entwurf' ), array( 'sj' => 'sj_2026_27' ) ) );
+gsh_assert_contains( $GLOBALS['options'][ gsh_tp_ck( 'gsh_tp_ical_', 'p1' ) ], 'BEGIN:VCALENDAR', 'mapped entwurf PUT refreshes draft-preview profile cache' );
+unset( $GLOBALS['options']['gsh_tp_profiles'] );
 
 /* ---------- 409 + Author-Attribution ---------- */
 $GLOBALS['gsh_tp_curriculr_current_claims'] = array( 'sub' => 'u1', 'name' => 'Max Mustermann' );

@@ -4572,10 +4572,13 @@ function gsh_tp_shortcode_reference() {
  * @return void
  */
 function gsh_tp_render_help_tab() {
-    $source     = gsh_tp_public_curriculr_source( '', 'Hilfe' );
+    // Admin view: groups come from the doc regardless of its stage.
+    $help_pid   = gsh_tp_active_profile_id();
+    $help_prof  = $help_pid ? gsh_tp_get_profile( $help_pid ) : null;
+    $help_src   = $help_prof ? gsh_tp_profile_curriculr_doc( $help_pid, $help_prof ) : null;
     $groups     = array();
-    if ( $source['src'] ) {
-        $doc = $source['src']['doc'];
+    if ( $help_src ) {
+        $doc = $help_src['doc'];
         foreach ( (array) ( $doc['availableGroups'] ?? array() ) as $g ) {
             $groups[ (string) $g ] = true;
         }
@@ -5522,6 +5525,9 @@ function gsh_tp_render_profile_tab_v2() {
                     <?php endif; ?>
                     · Version <?php echo (int) $doc_status['version']; ?>
                 </span>
+            <?php endif; ?>
+            <?php if ( 'oeffentlich' !== $doc_status['stage'] ) : ?>
+                <br><?php echo esc_html( 'Dieser Plan ist noch nicht öffentlich. Er erscheint erst auf der Website und im Kalender-Abo, wenn Sie ihn im Planer als „Öffentlich“ veröffentlichen.' ); ?>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -7082,6 +7088,17 @@ function gsh_tp_shortcode( $atts ) {
              . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
     }
 
+    // Curricu:lr doc not yet "oeffentlich": hidden outside the protected draft preview.
+    // Admin-managed external calendars stay visible, only the draft annotations are dropped.
+    $ann_src = gsh_tp_profile_curriculr_doc( $profile_id, $profile );
+    if ( $ann_src && 'entwurf' !== $atts['schuljahr'] && ! gsh_tp_curriculr_doc_is_public( $ann_src['sj'] ) ) {
+        if ( 'extern' !== ( $profile['source'] ?? 'planner' ) ) {
+            return '<div class="gtp-msg gtp-msg--info">'
+                 . gsh_tp_icon( 'lock' ) . ' Dieser Terminplan ist noch nicht freigegeben.</div>';
+        }
+        $ann_src = null;
+    }
+
     $data = gsh_tp_fetch_ical( $profile_id );
     if ( ! $data ) {
         return '<div class="gtp-msg gtp-msg--error">'
@@ -7117,7 +7134,6 @@ function gsh_tp_shortcode( $atts ) {
     // hinter vollständigen Ferienwochen mit dem Planner synchron. Wochenend-
     // Termine landen ebenfalls hier, weil die Tabelle nur Mo–Fr zeigt.
     $annotation_map = array();
-    $ann_src        = gsh_tp_profile_curriculr_doc( $profile_id, $profile );
     if ( $ann_src ) {
         $annotation_map = gsh_tp_curriculr_display_notes( $ann_src['doc'] );
     }
@@ -7961,6 +7977,9 @@ function gsh_tp_public_curriculr_source( $schuljahr, $label ) {
     $src = gsh_tp_profile_curriculr_doc( $profile_id, $profile );
     if ( ! $src ) {
         return $fail( 'Für dieses Schuljahr liegt noch kein Curricu:lr-Plan vor.' );
+    }
+    if ( ! gsh_tp_curriculr_doc_is_public( $src['sj'] ) ) {
+        return $fail( 'Der Curricu:lr-Plan für dieses Schuljahr ist noch nicht öffentlich.' );
     }
     return array( 'src' => $src, 'html' => '' );
 }

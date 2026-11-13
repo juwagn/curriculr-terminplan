@@ -19,7 +19,7 @@
 
 4. **Planner → neues Schuljahr per Wizard anlegen** → Termine eingeben.
 
-5. **Stage → Öffentlich schalten**: WP-Profil erhält automatisch die Feed-URL.
+5. **Stage → Öffentlich schalten**: Erst jetzt erhält das WP-Profil die Feed-URL und den Kalender-Cache. Website-Anzeige und Feed liefern den Plan erst ab dieser Stufe.
 
 6. **IServ**: Neues Kalender-Abo mit der neuen Feed-URL anlegen.
    Die neue Feed-URL steht im Planner → Einstellungen → WordPress-Tab → Feed-URL.
@@ -29,16 +29,25 @@
 ## Unterjährige Änderung
 
 1. Termin im Planner ändern.
-2. Automatischer debounced Sync (alle 2–5 s nach letzter Änderung, falls Stage = Öffentlich).
-3. WP-Anzeige aktualisiert sich automatisch. IServ beim nächsten Pull-Intervall.
+2. Im Planner **Meinen Stand senden** wählen. Der Planner überträgt nur auf Klick, es gibt keinen automatischen Sync. Gesendet wird die zuletzt gewählte Stufe.
+3. Ist die Stufe „Öffentlich“, aktualisiert sich die WP-Anzeige sofort. IServ folgt beim nächsten Pull-Intervall.
 
 ## Stage-Workflow
 
+Ablauf im Planner: Entwurf → Intern (Genehmigt) → Öffentlich. Eine Rückstufung gibt es nicht. Der Server prüft die Stufe bei jedem öffentlichen Zugriff.
+
 | Stage | Bedeutung | Wer sieht es |
 |---|---|---|
-| Entwurf | Lokal + WP gespeichert, aber nicht angezeigt | Nur Schulleitung (via Planner) |
-| Genehmigt | Intern geprüft, noch nicht öffentlich | Schulleitungsteam via Entwurf-Kiosk-Link |
-| Öffentlich | Anzeige + IServ-Feed aktiv | Alle |
+| Entwurf | Lokal + WP gespeichert, aber nicht angezeigt | Schulleitung via Planner; WP-Admin (Stufen-Hinweis) |
+| Genehmigt (Intern) | Gespeichert, noch nicht öffentlich | wie Entwurf; Entwurf-Kiosk-Link nur, wenn ein Kalender in WP als „Entwurf“ markiert ist |
+| Öffentlich | Website-Anzeige + Feed aktiv | Alle |
+
+Was bei Entwurf und Intern gilt:
+- Feed und Gruppen-Feed antworten mit 404 (wie bei falschem Token).
+- `[gsh_termine]` und `[gsh_monat]` bleiben für Besucher leer, `[gsh_terminplan]` und der Kiosk zeigen „Dieser Terminplan ist noch nicht freigegeben.“
+- Der zuletzt veröffentlichte Kalender-Cache bleibt unverändert, wird aber nicht angezeigt, solange das Dokument nicht öffentlich ist.
+- Kalender, die in WP als „Entwurf“ markiert sind, erhalten den neuen Stand weiterhin für die Entwurf-Vorschau (Entwurf-Kiosk-Link).
+- Kalender mit externer Quelle (IServ-Feed) bleiben sichtbar; nur die Anmerkungen aus dem Planner entfallen.
 
 ## Troubleshooting
 

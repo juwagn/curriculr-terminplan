@@ -982,6 +982,15 @@ function gsh_tp_curriculr_repo_get( $sj ) {
     return $row ? $row : null;
 }
 
+/**
+ * Whether the stored doc may reach public readers (feeds, ICS cache, shortcodes).
+ * Only stage "oeffentlich" is public; unknown schoolyear -> false.
+ */
+function gsh_tp_curriculr_doc_is_public( $sj ) {
+    $row = gsh_tp_curriculr_repo_get( $sj );
+    return $row && 'oeffentlich' === ( $row['stage'] ?? '' );
+}
+
 function gsh_tp_curriculr_repo_put_conflict( $sj, $current, $existing ) {
     global $wpdb;
     $rev_table = gsh_tp_curriculr_revisions_table();
@@ -1296,7 +1305,7 @@ function gsh_tp_curriculr_rest_put( $req ) {
         );
     }
 
-    // Feed-Reuse-Refresh für alle Stages — auch Entwurf-Vorschau (token-geschützt) soll aktuelle Daten zeigen.
+    // Runs for every stage (categories, provisioning, draft preview); public caches only refresh for "oeffentlich".
     gsh_tp_curriculr_after_put( $req['sj'], $res['feed_token'] );
 
     return new WP_REST_Response(
@@ -1315,7 +1324,8 @@ function gsh_tp_curriculr_rest_put( $req ) {
 
 function gsh_tp_curriculr_rest_feed( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
-    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+    // Non-public docs answer exactly like a wrong token (no hint that a draft exists).
+    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) || ! gsh_tp_curriculr_doc_is_public( $req['sj'] ) ) {
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
     $doc = json_decode( $row['json'], true );
@@ -1338,7 +1348,8 @@ function gsh_tp_curriculr_feed_group_name( $raw ) {
 
 function gsh_tp_curriculr_rest_feed_group( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
-    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+    // Non-public docs answer exactly like a wrong token (no hint that a draft exists).
+    if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) || ! gsh_tp_curriculr_doc_is_public( $req['sj'] ) ) {
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
     $group = gsh_tp_curriculr_feed_group_name( $req['group'] );
@@ -1844,6 +1855,7 @@ function gsh_tp_curriculr_after_put_nested( &$schoolyears, $sy_idx, $sj, $token 
     if ( '' !== $grenzen )  { $sy['shared']['quartal_grenzen'] = $grenzen; }
     if ( '' !== $sj_start ) { $sy['shared']['schuljahr_start'] = $sj_start; }
 
+    $public = gsh_tp_curriculr_doc_is_public( $sj );
     foreach ( $sy['calendars'] as &$cal ) {
         if ( ! empty( $cal['orphaned'] ) ) {
             continue;
@@ -1851,6 +1863,11 @@ function gsh_tp_curriculr_after_put_nested( &$schoolyears, $sy_idx, $sj, $token 
         // 4.36.0: Kalender mit externer Quelle (IServ-Feed) gehoeren dem Admin,
         // nicht dem Planner. Weder Feed-URL noch ICS-Cache ueberschreiben.
         if ( gsh_tp_cal_is_extern( $cal ) ) {
+            continue;
+        }
+        // Non-public stage: keep the public cache as it is; only draft-preview
+        // calendars (is_draft, hidden from visitors) receive the new state.
+        if ( ! $public && empty( $cal['is_draft'] ) ) {
             continue;
         }
         $group    = $cal['group'];
@@ -1896,10 +1913,17 @@ function gsh_tp_curriculr_after_put_legacy( $sj, $token ) {
     $profiles = get_option( 'gsh_tp_profiles', array() );
     $profiles = is_array( $profiles ) ? $profiles : array();
     $changed  = false;
+    $public   = gsh_tp_curriculr_doc_is_public( $sj );
+    $drafts   = array();
+    foreach ( $profiles as $p ) {
+        if ( ! empty( $p['is_draft'] ) && isset( $p['id'] ) ) { $drafts[ $p['id'] ] = true; }
+    }
 
     foreach ( $mappings as $mapping ) {
         if ( empty( $mapping['profileId'] ) ) { continue; }
         $pid      = $mapping['profileId'];
+        // Same rule as the nested path: non-public stage only feeds draft-preview profiles.
+        if ( ! $public && empty( $drafts[ $pid ] ) ) { continue; }
         $group    = isset( $mapping['group'] ) && is_string( $mapping['group'] ) ? $mapping['group'] : null;
         $feed_url = ( null === $group )
             ? gsh_tp_curriculr_feed_url( $sj, $token )
