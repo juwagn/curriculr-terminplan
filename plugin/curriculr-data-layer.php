@@ -94,6 +94,10 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
     } else {
         $st      = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
         $et      = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
+        // Planner erlaubt endTime < startTime am selben Tag: DTEND nie vor DTSTART ausgeben.
+        if ( $end === $start && $et < $st ) {
+            $et = $st;
+        }
         $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
         $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
     }
@@ -309,9 +313,6 @@ function gsh_tp_curriculr_validate_event( $e ) {
     }
     // Ende nicht vor Beginn (ISO-Daten vergleichen lexikografisch korrekt).
     if ( $e['end'] < $e['start'] ) {
-        return false;
-    }
-    if ( $e['end'] === $e['start'] && isset( $e['startTime'], $e['endTime'] ) && $e['endTime'] < $e['startTime'] ) {
         return false;
     }
     return true;
@@ -2185,6 +2186,10 @@ function gsh_tp_curriculr_handle_doc_import() {
     $author       = array( 'sub' => 'manual:' . get_current_user_id(), 'name' => (string) $user->display_name );
 
     $res = gsh_tp_curriculr_repo_put( $sy_key, $parsed['doc'], $base_version, $stage, $author );
+    if ( 'error' === $res['status'] ) {
+        echo '<div class="notice notice-error"><p>Hochladen fehlgeschlagen. Das Dokument konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut oder wenden Sie sich an die Administration.</p></div>';
+        return;
+    }
     if ( $res['status'] !== 'ok' ) {
         echo '<div class="notice notice-error"><p>Hochladen fehlgeschlagen — der Stand hat sich zwischenzeitlich geändert. Bitte erneut versuchen.</p></div>';
         return;

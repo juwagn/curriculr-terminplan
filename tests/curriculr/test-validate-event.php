@@ -182,6 +182,7 @@ $timed = array( 'allDay' => false, 'startTime' => '09:00', 'endTime' => '10:30' 
 $accept = array(
     'ganztaegig'                      => $base,
     'mit Zeiten'                      => $with( $timed ),
+    'Endzeit vor Startzeit (Zod erlaubt es)' => $with( array( 'allDay' => false, 'startTime' => '10:00', 'endTime' => '09:00' ) ),
     'Endzeit == Startzeit'            => $with( array( 'allDay' => false, 'startTime' => '09:00', 'endTime' => '09:00' ) ),
     '00:00 und 23:59'                 => $with( array( 'allDay' => false, 'startTime' => '00:00', 'endTime' => '23:59' ) ),
     'mehrtaegig (Zeiten uebergreifend)' => $with( array( 'end' => '2026-09-03', 'allDay' => false, 'startTime' => '14:00', 'endTime' => '08:00' ) ),
@@ -219,7 +220,6 @@ $reject = array(
     'Zeit mit Newline'      => $with( array( 'allDay' => false, 'startTime' => "10:00\n", 'endTime' => '11:00' ) ),
     'endTime mit Newline'   => $with( array( 'allDay' => false, 'startTime' => '10:00', 'endTime' => "11:00\n" ) ),
     'end vor start'         => $with( array( 'start' => '2026-09-02', 'end' => '2026-09-01' ) ),
-    'Endzeit vor Startzeit' => $with( array( 'allDay' => false, 'startTime' => '10:00', 'endTime' => '09:00' ) ),
 );
 foreach ( $reject as $name => $e ) {
     gsh_assert_eq( gsh_tp_curriculr_validate_event( $e ), false, "validate_event lehnt ab: $name" );
@@ -238,6 +238,15 @@ $ics = '';
 try { $ics = gsh_tp_curriculr_build_ics( $legacy ); } catch ( \Throwable $t ) { $ics = 'EXC:' . $t->getMessage(); }
 gsh_assert_contains( $ics, 'BEGIN:VCALENDAR', 'build_ics mit Altdaten wirft nicht' );
 gsh_assert_eq( strpos( $ics, 'SUMMARY:Kaputt' ) === false && strpos( $ics, 'SUMMARY:Newline' ) === false, true, 'build_ics ueberspringt Termine mit ungueltigem Datum' );
+
+/* Endzeit vor Startzeit am selben Tag: gueltige ICS-Ausgabe, DTEND nie vor DTSTART. */
+$rev = array( 'id' => 'r1', 'title' => 'Rueck', 'allDay' => false, 'start' => '2026-09-01', 'end' => '2026-09-01', 'startTime' => '10:00', 'endTime' => '09:00' );
+$ics = gsh_tp_curriculr_build_ics( array( 'meta' => array( 'name' => 'x' ), 'events' => array( $rev ) ) );
+gsh_assert_contains( $ics, 'DTSTART:20260901T100000', 'Endzeit<Startzeit: DTSTART unveraendert' );
+gsh_assert_contains( $ics, 'DTEND:20260901T100000', 'Endzeit<Startzeit: DTEND auf DTSTART begrenzt' );
+$rev['start'] = '2026-09-01'; $rev['end'] = '2026-09-02';
+$ics = gsh_tp_curriculr_build_ics( array( 'meta' => array( 'name' => 'x' ), 'events' => array( $rev ) ) );
+gsh_assert_contains( $ics, 'DTEND:20260902T090000', 'mehrtaegig: Endzeit bleibt unveraendert' );
 
 /* ---------- Nachzuegler: leere Gruppen nicht in DESCRIPTION ---------- */
 $ge  = array( 'id' => 'g1', 'title' => 'T', 'allDay' => true, 'start' => '2026-09-01', 'end' => '2026-09-01', 'groups' => array( '', ' ' ) );
