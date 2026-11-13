@@ -7641,7 +7641,7 @@ function gsh_tp_up_range( $from, $to ) {
  * Maps the design attribute of the embedded blocks to the data-gtp-theme value.
  * "hell", empty and anything unknown give 'light'; trimmed, case-insensitive.
  *
- * @since 4.45.3
+ * @since 4.46.0
  * @param  mixed $value Attribute value.
  * @return string 'light' | 'auto' | 'dark'
  */
@@ -9047,7 +9047,7 @@ function gsh_tp_css() {
 .gtp-search-icon{position:absolute;left:14px;pointer-events:none;display:flex;align-items:center;color:var(--gtp-text-muted);flex-shrink:0}
 .gtp-t{font-size:1.6rem;font-weight:800;color:var(--gtp-text);margin:0;letter-spacing:-.03em;line-height:1.15}
 .gtp-subtitle{font-size:.8rem;color:var(--gtp-text-muted);font-weight:400;letter-spacing:.01em}
-.gtp-meta{font-size:.72rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gtp-meta{font-size:.75rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
 /* Schuljahr-Umschalter */
 .gtp-sj-switch{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .gtp-sj-btn{
@@ -9119,7 +9119,7 @@ function gsh_tp_css() {
   display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem;
 }
 .gtp-filt-lbl{
-  font-size:.68rem;font-weight:700;color:var(--gtp-text-muted);
+  font-size:.75rem;font-weight:700;color:var(--gtp-text-muted);
 }
 /* Toggle-Button immer sichtbar */
 .gtp-filt-toggle{
@@ -9137,7 +9137,7 @@ function gsh_tp_css() {
 }
 .gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
 .gtp-filt-count{
-  font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
+  font-size:.75rem;font-weight:500;color:var(--gtp-text-muted);
   margin-left:.35em;text-transform:none;
 }
 .gtp-fb{
@@ -9171,7 +9171,7 @@ function gsh_tp_css() {
 .gt{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem;table-layout:fixed}
 .gt thead th{
   background:var(--gtp-text);color:var(--cl-on-primary);padding:9px 6px;
-  text-align:center;font-weight:600;font-size:.74rem;
+  text-align:center;font-weight:600;font-size:.75rem;
   border-right:1px solid rgba(255,255,255,.1);
   position:sticky;top:var(--gtp-thead-top,44px);z-index:10;
 }
@@ -9194,8 +9194,8 @@ function gsh_tp_css() {
 .gt tbody tr:first-child td{border-top:1px solid var(--gtp-border)}
 .gs{width:42px;text-align:center;background:var(--gtp-surface);font-size:.8rem;font-weight:700;color:var(--gtp-text-muted)}
 .gh{width:140px;background:var(--cl-bg)}
-.gdl{display:block;font-size:.65rem;color:var(--gtp-text-faint);margin-bottom:3px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
-.gnc{font-size:.72rem;color:var(--gtp-text-muted)}
+.gdl{display:block;font-size:.75rem;color:var(--gtp-text-faint);margin-bottom:3px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.gnc{font-size:.75rem;color:var(--gtp-text-muted)}
 
 /* ── Event-Cards (Tagesspalten) ── */
 .ge{
@@ -9222,7 +9222,7 @@ function gsh_tp_css() {
   font-weight:500;transition:var(--gtp-tr);
 }
 .gn-range{
-  display:block;font-size:.63rem;opacity:.65;font-style:normal;
+  display:block;font-size:.75rem;font-style:normal;
   margin-bottom:1px;font-variant-numeric:tabular-nums;
 }
 
@@ -9300,7 +9300,7 @@ function gsh_tp_css() {
 .gtp-ics-help-body ul{margin:4px 0 0;padding-left:18px}
 .gtp-ics-help-body li{margin-bottom:4px}
 .gtp-pdf-loading{opacity:.55;pointer-events:none;cursor:default}
-.gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
+.gtp-src{font-size:.75rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
 .gtp-pdf-hint{
   position:fixed;top:0;left:0;right:0;background:var(--gtp-text);color:var(--cl-on-primary);
@@ -9353,14 +9353,14 @@ function gsh_tp_css() {
 }
 .gtp-search-results{
   display:flex;flex-wrap:wrap;gap:4px;align-items:center;
-  font-size:.73rem;padding:0 4px;min-height:18px;
+  font-size:.75rem;padding:0 4px;min-height:18px;
 }
 .gtp-sr-count{color:var(--gtp-text-muted);font-weight:600}
 .gtp-sr-none{color:var(--cl-danger);font-weight:600}
 .gtp-sr-q{
   display:inline-block;padding:1px 9px;
   background:var(--gtp-accent-light);color:var(--gtp-accent);border-radius:10px;
-  text-decoration:none;font-weight:700;font-size:.71rem;
+  text-decoration:none;font-weight:700;font-size:.75rem;
   transition:var(--gtp-tr-fast);
 }
 .gtp-sr-q:hover{background:var(--gtp-accent);color:var(--cl-on-primary)}
@@ -9394,7 +9394,7 @@ function gsh_tp_css() {
   .gtp-tab-sep{display:none}
   .gtp-view-toggle{font-size:.76rem;padding:.25em .6em}
   .gtp-filt-wrap{padding:.625rem .875rem}
-  .gtp-fb{white-space:nowrap;font-size:.72rem;padding:4px 10px}
+  .gtp-fb{white-space:nowrap;font-size:.75rem;padding:4px 10px}
   .gtp-tabs{margin:0 -1rem;padding:0 1rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
   .gtp-tabs::-webkit-scrollbar{display:none}
   .gtp-tab{padding:.5rem 1rem;font-size:.82rem;white-space:nowrap;flex-shrink:0}
@@ -9428,7 +9428,7 @@ function gsh_tp_css() {
   /* Mitte: Schulwoche + Datumsbereich */
   .gtp-mob-nav-info{flex:1;text-align:center;line-height:1.3;overflow:hidden;padding:0 4px}
   .gtp-mob-nav-sw{font-size:.87rem;font-weight:700;color:var(--gtp-text)}
-  .gtp-mob-nav-dates{font-size:.67rem;color:var(--gtp-text-muted)}
+  .gtp-mob-nav-dates{font-size:.75rem;color:var(--gtp-text-muted)}
 
   /* 📍 Heute-Button */
   .gtp-mob-today-btn{
@@ -9453,7 +9453,7 @@ function gsh_tp_css() {
     margin:12px 0 0;
   }
   .admin-bar .gtp-mob-wh{top:124px}
-  .gtp-mob-wh-sub{font-weight:400;color:var(--gtp-text-faint);font-size:.7rem;text-transform:none;letter-spacing:0}
+  .gtp-mob-wh-sub{font-weight:400;color:var(--gtp-text-faint);font-size:.75rem;text-transform:none;letter-spacing:0}
 
   /* ── Heutige Woche: pulsierender Punkt + hervorgehobener Header ── v3.6.3 */
   @keyframes gtpMobPulse{
@@ -9474,7 +9474,7 @@ function gsh_tp_css() {
   .gtp-mob-today-week .gtp-mob-wh-sub{color:var(--gtp-today-bd);opacity:.7}
 
   /* Vergrößerter „HEUTE"-Badge (v3.6.3) */
-  .gtp-mob-badge{font-size:.62rem;padding:2px 6px;border-radius:5px}
+  .gtp-mob-badge{font-size:.75rem;padding:2px 6px;border-radius:5px}
 
   /* ── Tag-Zeile (Feed-Karte) ── */
   .gtp-mob-day{
@@ -9498,7 +9498,7 @@ function gsh_tp_css() {
   /* ── Datumsspalte (iOS-Stil: Wochentag + Kreis-Zahl) ── */
   .gtp-mob-date{flex:0 0 44px;text-align:center;padding-top:2px}
   .gtp-mob-dow{
-    font-size:.65rem;font-weight:600;color:var(--gtp-text-muted);
+    font-size:.75rem;font-weight:600;color:var(--gtp-text-muted);
     line-height:1;margin-bottom:4px;
   }
   .gtp-mob-dm{
@@ -9515,7 +9515,7 @@ function gsh_tp_css() {
   .gtp-mob-hol .gtp-mob-dow,.gtp-mob-hol .gtp-mob-dm{color:var(--gtp-text-faint)}
   /* „HEUTE"-Badge */
   .gtp-mob-badge{
-    font-size:.52rem;background:var(--gtp-today-bd);color:var(--cl-on-primary);
+    font-size:.75rem;background:var(--gtp-today-bd);color:var(--cl-on-primary);
     border-radius:4px;padding:1px 4px;margin-top:4px;
     font-weight:700;display:block;text-align:center;
   }
@@ -9551,7 +9551,7 @@ function gsh_tp_css() {
 .gtp-changes-text{flex:1;font-size:.84rem;color:var(--c-fs-tx);font-weight:600}
 .gtp-changes-show{
   padding:4px 12px;background:var(--c-fs-bg);border:1.5px solid var(--c-fs-bd);border-radius:6px;
-  font-size:.74rem;font-weight:600;color:var(--c-fs-tx);cursor:pointer;white-space:nowrap;
+  font-size:.75rem;font-weight:600;color:var(--c-fs-tx);cursor:pointer;white-space:nowrap;
   transition:var(--gtp-tr-fast);
 }
 .gtp-changes-show:hover{filter:brightness(.9)}
@@ -9565,7 +9565,7 @@ function gsh_tp_css() {
 .gtp-changes-item:last-child{border-bottom:none}
 .gtp-changes-badge{
   flex:0 0 auto;padding:1px 7px;border-radius:4px;
-  font-size:.64rem;font-weight:700;
+  font-size:.75rem;font-weight:700;
 }
 .gtp-changes-badge-new{background:var(--c-pr-bg);color:var(--c-pr-tx)}
 .gtp-changes-badge-del{background:var(--c-pf-bg);color:var(--c-pf-tx)}
@@ -9619,7 +9619,7 @@ function gsh_tp_css() {
 }
 .gtp-popup-close:hover{background:var(--gtp-border);color:var(--gtp-text)}
 .gtp-popup-cat{
-  display:inline-block;font-size:.7rem;font-weight:700;padding:.2rem .65rem;border-radius:20px;
+  display:inline-block;font-size:.75rem;font-weight:700;padding:.2rem .65rem;border-radius:20px;
   background:var(--gtp-surface);color:var(--gtp-text-muted);margin-bottom:.75rem;
 }
 .gtp-popup-cat.gc-standard {background:var(--c-st-bg);color:var(--c-st-tx)}
@@ -9654,7 +9654,7 @@ function gsh_tp_css() {
 }
 .gtp-feedback-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.875rem}
 .gtp-feedback-label{
-  display:block;font-size:.72rem;font-weight:700;
+  display:block;font-size:.75rem;font-weight:700;
   color:var(--gtp-text-muted);
 }
 .gtp-feedback-textarea{
@@ -9667,7 +9667,7 @@ function gsh_tp_css() {
   resize:vertical;line-height:1.5;
 }
 .gtp-feedback-textarea:focus{outline:none;border-color:var(--gtp-accent)}
-.gtp-feedback-counter{font-size:.72rem;color:var(--gtp-text-faint);text-align:right}
+.gtp-feedback-counter{font-size:.75rem;color:var(--gtp-text-faint);text-align:right}
 .gtp-feedback-actions{display:flex;gap:.625rem;margin-top:1.1rem}
 .gtp-feedback-actions .gtp-btn{flex:1;justify-content:center;text-align:center}
 .gtp-feedback-status{
@@ -9701,7 +9701,7 @@ function gsh_tp_css() {
 .gtp-version-btn{
   background:var(--gtp-surface,var(--cl-bg));
   border:1px solid var(--gtp-border,var(--cl-line));border-radius:4px;
-  padding:3px 9px;font-size:11px;color:var(--gtp-text-muted,var(--cl-ink-500));
+  padding:3px 9px;font-size:12px;color:var(--gtp-text-muted,var(--cl-ink-500));
   cursor:pointer;transition:background .15s,color .15s,border-color .15s;
   font-family:inherit;
 }
@@ -9722,7 +9722,7 @@ function gsh_tp_css() {
 .gtp-cl-list{margin:.3rem 0 0 1rem;padding:0;list-style:disc}
 .gtp-cl-list li{font-size:13px;color:var(--gtp-text-muted,var(--cl-ink-500));margin:.25rem 0}
 .gtp-cl-tag{
-  display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;
+  display:inline-block;font-size:12px;font-weight:700;padding:1px 6px;border-radius:3px;
   margin-right:5px;vertical-align:middle;
 }
 .gtp-cl-tag--feature {background:var(--cl-success-bg);color:var(--cl-success);border:1px solid var(--cl-success)}
@@ -9783,7 +9783,7 @@ function gsh_tp_css() {
   border-top:1px solid var(--gtp-border);
   background:var(--gtp-surface);border-radius:0 0 16px 16px;flex-shrink:0;
 }
-.gtp-help-version{font-size:.72rem;color:var(--gtp-text-faint)}
+.gtp-help-version{font-size:.75rem;color:var(--gtp-text-faint)}
 </style>';
 }
 

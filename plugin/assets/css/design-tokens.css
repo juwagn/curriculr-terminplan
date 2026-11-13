@@ -8,7 +8,7 @@
  * in den produktspezifischen --cl-product-* und in den Modus-Pins am Dateiende
  * (Kopie der Paketwerte, nötig weil das Plugin-Modus-Attribut vor dem System gilt).
  *
- * Der Selektor ":root, #gtp, body.wp-admin" ist Absicht: var() wird dort aufgelöst, wo die
+ * Der Selektor ":root, #gtp, .gtp-up, body.wp-admin" ist Absicht: var() wird dort aufgelöst, wo die
  * Eigenschaft steht. Nur so folgen die Namen auch dem Plugin-Modus
  * (#gtp[data-gtp-theme="light|dark"], siehe gsh-terminplan.css).
  */
@@ -208,6 +208,8 @@ body.wp-admin,
     color-scheme: light;
 }
 
+/* Keep these dark values in sync with the #gtp[data-gtp-theme="dark"] block above and with
+   the prefers-color-scheme block below (three copies of the same palette). */
 .gtp-up[data-gtp-theme="dark"] {
     --cl-marine-800: #80A3BE;
     --cl-marine-700: #9DBAD0;
@@ -240,6 +242,8 @@ body.wp-admin,
     color-scheme: dark;
 }
 
+/* Must stay AFTER the light pin (.gtp-up:not([data-gtp-theme="dark"])) above: same specificity,
+   so source order decides. Values: see the dark block above. */
 @media (prefers-color-scheme: dark) {
     .gtp-up[data-gtp-theme="auto"] {
         --cl-marine-800: #80A3BE;
@@ -271,5 +275,45 @@ body.wp-admin,
         --cl-product-up-hol-ink: #E8D49A;
         --cl-product-up-on-accent: #001F35;
         color-scheme: dark;
+    }
+}
+
+/* Print: dark and auto-dark embeds get the light tokens (dark text on paper). Placed last, same
+   specificity as the dark blocks, so order wins. Light values: see the light pin above. */
+@media print {
+    .gtp-up[data-gtp-theme="dark"],
+    .gtp-up[data-gtp-theme="auto"] {
+        --cl-marine-900: #001F35;
+        --cl-marine-800: #00345C;
+        --cl-marine-700: #00467D;
+        --cl-marine-500: #0058A0;
+        --cl-marine-100: #E6F4FF;
+        --cl-gold-500: #FFC857;
+        --cl-gold-100: #FFF8E1;
+        --cl-ink-900: #111827;
+        --cl-ink-500: #4B5563;
+        --cl-line: #E2E8F0;
+        --cl-border: #8A919C;
+        --cl-bg: #F3F5F9;
+        --cl-surface: #FFFFFF;
+        --cl-on-primary: #FFFFFF;
+        --cl-on-gold: #1C1917;
+        --cl-success: #047857;
+        --cl-warning: #B45309;
+        --cl-danger: #B42318;
+        --cl-success-bg: #ECFDF5;
+        --cl-warning-bg: #FFF8E6;
+        --cl-danger-bg: #FEF2F2;
+        --cl-product-up-accent: #04D2C8;
+        --cl-product-up-accent-ink: #047A74;
+        --cl-product-up-accent-soft: #E6FAF9;
+        --cl-product-up-line: #ECEEF1;
+        --cl-product-up-ink-3: #5F6368;
+        --cl-product-up-weekend: #F3F4F6;
+        --cl-product-up-hol-bg: #F4EFE4;
+        --cl-product-up-hol-line: #E8DCC0;
+        --cl-product-up-hol-ink: #6B5A2E;
+        --cl-product-up-on-accent: #111827;
+        color-scheme: light;
     }
 }
