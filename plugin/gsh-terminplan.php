@@ -2896,7 +2896,7 @@ function gsh_tp_render_feedback_log_tab() {
         <p>Noch kein Feedback eingegangen.</p>
     <?php else : ?>
         <p><?php echo count( $log ); ?> Einträge (neueste zuerst, max. 200 gespeichert)</p>
-        <div class="gsh-adm-scroll" style="max-width:1000px">
+        <div class="gsh-adm-scroll gsh-adm-scroll--w1000">
         <table class="widefat striped">
             <thead>
                 <tr>
@@ -4423,7 +4423,7 @@ function gsh_tp_settings_page() {
                     onclick="gshAdminChangelogOpen()"
                     style="font-size:13px;font-weight:400;margin-left:10px;vertical-align:middle;
                            cursor:pointer;border:1px solid #c3c4c7;border-radius:4px;
-                           padding:2px 10px;background:#f6f7f7;color:#3c434a;min-height:36px">
+                           padding:2px 10px;background:#f6f7f7;color:#3c434a">
                 v<?php echo esc_html( GSH_TP_VERSION ); ?> &#x25BE; Changelog
             </button>
         </h1>
@@ -4440,8 +4440,7 @@ function gsh_tp_settings_page() {
                         onclick="gshAdminChangelogClose()"
                         aria-label="Schließen"
                         style="position:absolute;top:6px;right:8px;border:none;background:none;
-                               font-size:22px;cursor:pointer;color:var(--cl-ink-900);line-height:1;
-                               min-width:36px;min-height:36px">&times;</button>
+                               font-size:22px;cursor:pointer;color:var(--cl-ink-900);line-height:1">&times;</button>
                 <h2 style="margin-top:0">Vollständiger Changelog</h2>
                 <?php
                 $cl_tag_colors = array(
@@ -5275,6 +5274,7 @@ function gsh_tp_render_kategorien_tab() {
 
         // HTML für neue Zeile generieren
         function buildRowHtml(cat) {
+            var nm = cat.label || '';
             var svgX = '<?php echo addslashes( gsh_tp_icon( 'x', '0.9em' ) ); ?>';
             function ea(s) {
                 return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -5289,14 +5289,14 @@ function gsh_tp_render_kategorien_tab() {
                 + '<span class="gsh-cat-slug-preview">Slug: <code class="gsh-cat-slug-display">' + ea(cat.slug || '') + '</code></span>'
                 + '<details class="gsh-cat-keywords-wrap">'
                 + '<summary>Stichwörter <span class="gsh-cat-kw-count">(' + kwCnt + ' Stichwörter)</span></summary>'
-                + '<textarea class="gsh-cat-keywords" rows="3" aria-label="Stichw\u00f6rter der Kategorie ' + ea(cat.label || '') + '" placeholder="klasse 5, jg 5, 5a, 5b, ...">' + ea(kwStr) + '</textarea>'
+                + '<textarea class="gsh-cat-keywords" rows="3" aria-label="' + (nm ? 'Stichw\u00f6rter der Kategorie ' + ea(nm) : 'Stichw\u00f6rter der neuen Kategorie') + '" placeholder="klasse 5, jg 5, 5a, 5b, ...">' + ea(kwStr) + '</textarea>'
                 + '<p class="gsh-cat-keywords-hint">Kommagetrennte Begriffe. Gro\u00df-/Kleinschreibung wird ignoriert.</p>'
                 + '</details>'
                 + '</td>'
-                + '<td><input type="color" class="gsh-cat-color" aria-label="Farbe der Kategorie ' + ea(cat.label || '') + '" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
+                + '<td><input type="color" class="gsh-cat-color" aria-label="' + (nm ? 'Farbe der Kategorie ' + ea(nm) : 'Farbe der neuen Kategorie') + '" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
                 + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:var(--cl-bg);color:var(--cl-ink-900)">' + ea(cat.label || 'Vorschau') + '</span></td>'
                 + '<td style="font-size:12px;color:var(--cl-ink-500)">' + ea(cat.id || '(neu)') + '</td>'
-                + '<td><button type="button" class="button gsh-cat-del" aria-label="Kategorie l\u00f6schen: ' + ea(cat.label || '') + '" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
+                + '<td><button type="button" class="button gsh-cat-del" aria-label="' + (nm ? 'Kategorie l\u00f6schen: ' + ea(nm) : 'Neue Kategorie l\u00f6schen') + '" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
         }
 
         // ── Event-Listener ──────────────────────────────────────────────
@@ -5508,9 +5508,10 @@ function gsh_tp_render_profile_tab_v2() {
         <p class="description">Noch keine Schuljahre vorhanden. Das erste Schuljahr anlegen oder über den Planner synchronisieren.</p>
     <?php endif; ?>
 
-    <?php foreach ( $schoolyears as $sy ) :
+    <?php foreach ( $schoolyears as $sy_idx => $sy ) :
         $sy_key = $sy['key'];
         $pid    = sanitize_key( $sy_key );
+        $uid    = sanitize_key( $sy_idx . '-' . $pid ); // unique DOM-ID suffix even if two keys sanitize to the same value
     ?>
     <div style="border:1px solid var(--cl-line);border-radius:6px;margin-bottom:20px;overflow:hidden">
         <!-- Schuljahr-Header -->
@@ -5519,8 +5520,8 @@ function gsh_tp_render_profile_tab_v2() {
             <form method="post" style="margin:0;display:flex;align-items:center;gap:8px;flex:1">
                 <?php wp_nonce_field( 'gsh_tp_save_schoolyear_' . $pid, 'gsh_tp_ssy_n_' . $pid ); ?>
                 <input type="hidden" name="gsh_tp_ssy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
-                <label for="gsh-sy-label-<?php echo esc_attr( $pid ); ?>" style="min-width:60px;font-weight:700">Schuljahr:</label>
-                <input type="text" id="gsh-sy-label-<?php echo esc_attr( $pid ); ?>" name="gsh_tp_ssy_label" value="<?php echo esc_attr( $sy['label'] ); ?>"
+                <label for="gsh-sy-label-<?php echo esc_attr( $uid ); ?>" style="min-width:60px;font-weight:700">Schuljahr:</label>
+                <input type="text" id="gsh-sy-label-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssy_label" value="<?php echo esc_attr( $sy['label'] ); ?>"
                        class="regular-text" style="width:140px" />
                 <button type="submit" name="gsh_tp_save_schoolyear" value="1" class="button">Speichern</button>
             </form>
@@ -5614,7 +5615,7 @@ function gsh_tp_render_profile_tab_v2() {
 
         <!-- Planungsdokument: manueller Upload (SSO-Alternative, 4.28.0) -->
         <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);background:var(--cl-bg)">
-            <h3 style="display:block;margin:0 0 6px;font-size:inherit;font-weight:700;line-height:inherit">Planungsdokument (manueller Upload)</h3>
+            <h3 class="gsh-adm-h3">Planungsdokument (manueller Upload)</h3>
             <p class="description" style="margin:0 0 8px">
                 Für Schulen ohne IServ-SSO: Plan im Planer exportieren (Export ↓ → „JSON-Backup") und hier hochladen.
             </p>
@@ -5655,22 +5656,22 @@ function gsh_tp_render_profile_tab_v2() {
                 <input type="hidden" name="gsh_tp_ssh_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <table class="form-table" style="margin:0">
                     <tr>
-                        <th style="padding:4px 10px 4px 0;width:200px"><label for="gsh-sy-start-<?php echo esc_attr( $pid ); ?>">Start Schulwoche 01</label></th>
+                        <th style="padding:4px 10px 4px 0;width:200px"><label for="gsh-sy-start-<?php echo esc_attr( $uid ); ?>">Start Schulwoche 01</label></th>
                         <td style="padding:4px 0">
-                            <input type="date" id="gsh-sy-start-<?php echo esc_attr( $pid ); ?>" name="gsh_tp_ssh_start" value="<?php echo esc_attr( $sy['shared']['schuljahr_start'] ?? '' ); ?>" />
+                            <input type="date" id="gsh-sy-start-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_start" value="<?php echo esc_attr( $sy['shared']['schuljahr_start'] ?? '' ); ?>" />
                         </td>
                     </tr>
                     <tr>
-                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-cache-<?php echo esc_attr( $pid ); ?>">Cache-Dauer (Sek.)</label></th>
+                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-cache-<?php echo esc_attr( $uid ); ?>">Cache-Dauer (Sek.)</label></th>
                         <td style="padding:4px 0">
-                            <input type="number" id="gsh-sy-cache-<?php echo esc_attr( $pid ); ?>" name="gsh_tp_ssh_cache" min="300" max="86400"
+                            <input type="number" id="gsh-sy-cache-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_cache" min="300" max="86400"
                                    value="<?php echo esc_attr( $sy['shared']['cache_duration'] ?? 3600 ); ?>" style="width:100px" />
                         </td>
                     </tr>
                     <tr>
-                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-quartal-<?php echo esc_attr( $pid ); ?>">Quartalsgrenzen</label></th>
+                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-quartal-<?php echo esc_attr( $uid ); ?>">Quartalsgrenzen</label></th>
                         <td style="padding:4px 0">
-                            <textarea id="gsh-sy-quartal-<?php echo esc_attr( $pid ); ?>" name="gsh_tp_ssh_quartal" rows="4" class="large-text"
+                            <textarea id="gsh-sy-quartal-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_quartal" rows="4" class="large-text"
                             ><?php echo esc_textarea( $sy['shared']['quartal_grenzen'] ?? '' ); ?></textarea>
                             <p class="description" style="margin:2px 0 0">Pro Zeile: Startdatum|Enddatum (JJJJ-MM-TT).</p>
                         </td>
@@ -5692,7 +5693,7 @@ function gsh_tp_render_profile_tab_v2() {
         $x_last   = get_option( 'gsh_tp_sync_' . $x_pid, '' );
         ?>
         <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);border-left:3px solid var(--cl-marine-500);background:<?php echo $x_extern ? 'var(--cl-marine-100)' : 'var(--cl-bg)'; ?>">
-            <h3 style="display:block;margin:0 0 6px;font-size:inherit;font-weight:700;line-height:inherit">IServ-Kalender direkt verbinden</h3>
+            <h3 class="gsh-adm-h3">IServ-Kalender direkt verbinden</h3>
             <p class="description" style="margin:0 0 8px">
                 Ohne Planer: Adresse eines freigegebenen IServ-Kalenders eintragen (in IServ meist unter
                 Kalender &rarr; Verwaltung &rarr; Freigabe als Link). Das Plugin holt die Termine dann selbst ab
@@ -6119,7 +6120,7 @@ function gsh_tp_render_system_tab() {
             ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
             : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
     </p>
-    <div class="gsh-adm-scroll" style="max-width:640px">
+    <div class="gsh-adm-scroll gsh-adm-scroll--w640">
     <table class="widefat">
         <thead><tr><th>Konstante (in wp-config.php)</th><th>Status</th></tr></thead>
         <tbody>
@@ -6280,7 +6281,7 @@ function gsh_tp_render_sync_log_tab() {
     <?php if ( empty( $logs ) ) : ?>
         <p style="color:var(--cl-ink-500)"><em>Noch keine Sync-Versuche gespeichert.</em></p>
     <?php else : ?>
-    <div class="gsh-adm-scroll" style="max-width:960px;margin-bottom:12px">
+    <div class="gsh-adm-scroll gsh-adm-scroll--sync">
     <table class="widefat" style="border-collapse:collapse">
         <thead>
             <tr style="background:var(--cl-bg)">

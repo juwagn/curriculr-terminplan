@@ -78,6 +78,10 @@ $GLOBALS['_wp_options'] = array(
         array( 'key' => 'sj_2025_26', 'label' => '2025/26', 'is_active' => false, 'created' => '2025-06-01',
             'shared' => array( 'cache_duration' => 3600, 'schuljahr_start' => '2025-08-25', 'quartal_grenzen' => '' ),
             'calendars' => array( array( 'group' => null, 'label' => 'Gesamtkalender', 'ical_url' => '', 'is_draft' => false, 'managed' => false, 'orphaned' => false, 'source' => 'extern' ) ) ),
+        // Keys with special characters; the last two sanitize to the same value.
+        array( 'key' => 'sj_2027/28', 'label' => '2027/28', 'is_active' => false, 'created' => '2026-06-01', 'shared' => array(), 'calendars' => array() ),
+        array( 'key' => 'sj_202728', 'label' => '2027/28 (Kopie)', 'is_active' => false, 'created' => '2026-06-01', 'shared' => array(), 'calendars' => array() ),
+        array( 'key' => 'SJ 2028/29 ä', 'label' => '2028/29', 'is_active' => false, 'created' => '2026-06-01', 'shared' => array(), 'calendars' => array() ),
     ),
     'gsh_tp_school_name' => 'Muster-Gesamtschule',
     'gsh_tp_kiosk_token' => 'DEMO',
@@ -143,6 +147,12 @@ gsh_assert_eq( trim( $x->query( '//nav//a[@aria-current="page"]' )->item( 0 )->t
 
 $x = gsh_dom( $pages['Schuljahre'] );
 gsh_assert_eq( trim( $x->query( '//a[@aria-current="page"]' )->item( 0 )->textContent ), 'Schuljahre', 'Default tab is Schuljahre and marked current' );
+$bad_ids = array();
+foreach ( $x->query( '//*[starts-with(@id,"gsh-sy-")]' ) as $el ) {
+    if ( ! preg_match( '/^[a-z][a-z0-9_\-]*$/', $el->getAttribute( 'id' ) ) ) { $bad_ids[] = $el->getAttribute( 'id' ); }
+}
+gsh_assert_eq( $bad_ids, array(), 'School-year field IDs stay valid for keys with special characters' );
+gsh_assert_eq( $x->query( '//*[starts-with(@id,"gsh-sy-label-")]' )->length, 5, 'Each of the five school-year cards has its own label field ID' );
 gsh_assert_eq( $x->query( '//button[contains(@class,"button-small")]' )->length, 0, 'No button-small (11 px, 24 px target) on the school-year page' );
 gsh_assert_contains( $pages['Schuljahre'], '>Aktiv</span>', 'Active badge is written in sentence case' );
 gsh_assert_eq( strpos( $pages['Schuljahre'], 'AKTIV' ), false, 'No capitals-only badge' );

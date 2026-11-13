@@ -699,10 +699,17 @@
 .wrap.gsh-adm summary { line-height: 36px; }
 .wrap.gsh-adm input[type=file] { min-height: 36px; }
 .wrap.gsh-adm .gsh-cat-del { min-width: 36px; }
+.wrap.gsh-adm #gsh-admin-cl-btn,
+.wrap.gsh-adm #gshAdminChangelogCloseBtn { min-width: 36px; min-height: 36px; }
+.wrap.gsh-adm .gsh-adm-h3 { display: block; margin: 0 0 6px; font-size: inherit; font-weight: 700; line-height: inherit; }
+.gsh-adm-scroll--w1000 { max-width: 1000px; }
+.gsh-adm-scroll--w640 { max-width: 640px; }
+.gsh-adm-scroll--sync { max-width: 960px; margin-bottom: 12px; }
 .wrap.gsh-adm .nav-tab { padding-top: 6px; padding-bottom: 6px; }
 .gtp-adm-help .gtp-adm-row select { max-width: 100%; }
 @media (min-width: 783px) {
-    .wrap.gsh-adm .button { min-height: 36px; line-height: 34px; }
+    .wrap.gsh-adm .button,
+    .wrap.gsh-backup-wrap .button { min-height: 36px; line-height: 34px; }
 }
 
 /* ---------- Plugin-Listenzeile: Datensicherung-Link ---------- */
@@ -950,11 +957,14 @@
     #gtp:not([data-gtp-theme="light"]) { --gtp-tint: 24%; }
 }
 #gtp[data-gtp-theme="dark"] { --gtp-tint: 24%; }
-/* Dunkel: Kategorie-Label auf der getönten Terminfläche (Feiertage lag mit ink-500 bei 4,39:1) */
-@media (prefers-color-scheme: dark) {
+/* Dunkel, ab 768 px (Liste und Raster): Kategorie-Label auf der getönten Terminfläche
+   (Feiertage lag mit ink-500 bei 4,39:1). Die mobile Liste behält ihre Farbe. */
+@media (min-width: 768px) and (prefers-color-scheme: dark) {
     #gtp:not([data-gtp-theme="light"]) .ge .ge-cat { color: var(--cl-ink-900); }
 }
-#gtp[data-gtp-theme="dark"] .ge .ge-cat { color: var(--cl-ink-900); }
+@media (min-width: 768px) {
+    #gtp[data-gtp-theme="dark"] .ge .ge-cat { color: var(--cl-ink-900); }
+}
 
 /* Sichtbarkeit der Darstellungen */
 #gtp:not([data-view="jahr"]) .gtp-year-wrap     { display: none; }
@@ -1323,9 +1333,14 @@
     #gtp .gtp-subtitle-school { display: none; }
     #gtp .gtp-hd .gtp-search-wrap { width: 160px; }
 }
+/* Werkzeugleiste: bis etwa 850 px reicht die Breite nicht für Reiter und Werkzeuge in einer Zeile.
+   Die Werkzeuge stehen dann in einer zweiten Zeile; deren Oberlinie ist die Linie unter dem aktiven Reiter. */
+@media (min-width: 768px) and (max-width: 899px) {
+    #gtp .gtp-tabs { flex-wrap: wrap; height: auto; row-gap: 0; }
+    #gtp .gtp-tool-r { flex: 1 0 100%; justify-content: flex-end; padding: var(--cl-space-2) 0; border-top: 1px solid var(--cl-line); }
+}
 @media (min-width: 768px) and (max-width: 1023px) {
     #gtp .gtp-tab-sub { display: none; }
-    #gtp .gtp-tabs { flex-wrap: wrap; height: auto; row-gap: 0; padding-bottom: var(--cl-space-2); } /* Werkzeuge rutschen in eine zweite Zeile statt über den Rand */
     #gtp .gtp-seg-b[data-view="raster"] { display: none; }
     #gtp .gtp-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "side" "main"; gap: var(--cl-space-3); }
     #gtp .gtp-side { position: static; display: flex; flex-wrap: wrap; align-items: center; gap: var(--cl-space-1) var(--cl-space-4); background: none; border: 0; border-radius: 0; }
@@ -1506,5 +1521,5 @@
     #gtp .gtp-search-input,
     #gtp .gtp-export-menu .gtp-btn { min-height: 44px; }
     #gtp #gtp-tour-btn { width: 44px; height: 44px; min-height: 44px; }
-    #gtp .gtp-ft-meta a::after, #gtp .gtp-link-btn::after, #gtp .gtp-version-btn::after { inset: -14px -6px; }
+    #gtp .gtp-ft-meta a::after, #gtp .gtp-link-btn::after, #gtp .gtp-version-btn::after { inset: -14px -8px; }
 }
