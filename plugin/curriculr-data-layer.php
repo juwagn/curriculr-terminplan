@@ -98,38 +98,38 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
         $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
     }
 
-    if ( ! empty( $e['location'] ) ) {
+    if ( ! empty( $e['location'] ) && is_string( $e['location'] ) ) {
         $lines[] = 'LOCATION:' . gsh_tp_curriculr_ics_escape( $e['location'] );
     }
 
     $desc_parts = array();
-    if ( ! empty( $e['notes'] ) ) {
+    if ( ! empty( $e['notes'] ) && is_string( $e['notes'] ) ) {
         $desc_parts[] = $e['notes'];
     }
-    $desc_groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? array_filter( $e['groups'], 'is_scalar' ) : array();
-    if ( $desc_groups ) {
-        $desc_parts[] = 'Gruppen: ' . implode( ', ', $desc_groups );
+    // Bereinigte Gruppenliste (getrimmt, Leere verworfen) fuer DESCRIPTION und X-GSH-GROUPS.
+    $clean_groups = array();
+    if ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) {
+        foreach ( $e['groups'] as $g ) {
+            $g = is_scalar( $g ) ? trim( (string) $g ) : '';
+            if ( '' !== $g ) {
+                $clean_groups[] = $g;
+            }
+        }
+    }
+    if ( $clean_groups ) {
+        $desc_parts[] = 'Gruppen: ' . implode( ', ', $clean_groups );
     }
     if ( $desc_parts ) {
         $lines[] = 'DESCRIPTION:' . gsh_tp_curriculr_ics_escape( implode( "\n", $desc_parts ) );
     }
 
-    if ( isset( $e['categoryId'] ) && isset( $cats_by_id[ $e['categoryId'] ] ) ) {
+    if ( isset( $e['categoryId'] ) && is_string( $e['categoryId'] ) && isset( $cats_by_id[ $e['categoryId'] ] ) ) {
         $lines[] = 'CATEGORIES:' . gsh_tp_curriculr_ics_escape( $cats_by_id[ $e['categoryId'] ] );
     }
 
-    if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
-        $groups = array();
-        foreach ( $e['groups'] as $g ) {
-            $g = is_scalar( $g ) ? trim( (string) $g ) : '';
-            if ( '' !== $g ) {
-                $groups[] = gsh_tp_curriculr_ics_escape( $g );
-            }
-        }
-        if ( $groups ) {
-            // Multi-Value wie CATEGORIES: Werte einzeln escaped, Separator-Komma roh.
-            $lines[] = 'X-GSH-GROUPS:' . implode( ',', $groups );
-        }
+    if ( $clean_groups ) {
+        // Multi-Value wie CATEGORIES: Werte einzeln escaped, Separator-Komma roh.
+        $lines[] = 'X-GSH-GROUPS:' . implode( ',', array_map( 'gsh_tp_curriculr_ics_escape', $clean_groups ) );
     }
 
     $lines[] = 'END:VEVENT';
@@ -276,16 +276,42 @@ function gsh_tp_curriculr_validate_event( $e ) {
         return false;
     }
     if ( array_key_exists( 'startTime', $e ) && $e['startTime'] !== null ) {
-        if ( ! is_string( $e['startTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['startTime'] ) !== 1 ) {
+        if ( ! gsh_tp_curriculr_is_hhmm( $e['startTime'] ) ) {
             return false;
         }
     }
     if ( array_key_exists( 'endTime', $e ) && $e['endTime'] !== null ) {
-        if ( ! is_string( $e['endTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['endTime'] ) !== 1 ) {
+        if ( ! gsh_tp_curriculr_is_hhmm( $e['endTime'] ) ) {
             return false;
         }
     }
     if ( array_key_exists( 'allDay', $e ) && ! is_bool( $e['allDay'] ) ) {
+        return false;
+    }
+    // Typen der Felder, die in DESCRIPTION/LOCATION/CATEGORIES/X-GSH-GROUPS fliessen.
+    if ( array_key_exists( 'groups', $e ) ) {
+        if ( ! is_array( $e['groups'] ) ) {
+            return false;
+        }
+        foreach ( $e['groups'] as $g ) {
+            if ( ! is_string( $g ) ) {
+                return false;
+            }
+        }
+    }
+    foreach ( array( 'notes', 'location' ) as $k ) {
+        if ( array_key_exists( $k, $e ) && ! is_string( $e[ $k ] ) ) {
+            return false;
+        }
+    }
+    if ( array_key_exists( 'categoryId', $e ) && null !== $e['categoryId'] && ! is_string( $e['categoryId'] ) ) {
+        return false;
+    }
+    // Ende nicht vor Beginn (ISO-Daten vergleichen lexikografisch korrekt).
+    if ( $e['end'] < $e['start'] ) {
+        return false;
+    }
+    if ( $e['end'] === $e['start'] && isset( $e['startTime'], $e['endTime'] ) && $e['endTime'] < $e['startTime'] ) {
         return false;
     }
     return true;
@@ -320,7 +346,16 @@ function gsh_tp_curriculr_normalize_stage( $stage ) {
 // schoolweeks.ts getQuarterRange: Grenzen auf Freitag der ISO-Woche snappen.
 
 function gsh_tp_curriculr_is_iso_date( $d ) {
-    return is_string( $d ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $d ) === 1;
+    // \z (nicht $): "$" liesse ein angehaengtes "\n" durch (ICS-Zeilen-Injection).
+    // checkdate(): "2026-13-45" / "2026-02-30" wuerden sonst new DateTime() zum Absturz bringen.
+    return is_string( $d )
+        && preg_match( '/^(\d{4})-(\d{2})-(\d{2})\z/', $d, $m ) === 1
+        && checkdate( (int) $m[2], (int) $m[3], (int) $m[1] );
+}
+
+// HH:MM im Bereich 00:00-23:59, ohne angehaengtes Newline.
+function gsh_tp_curriculr_is_hhmm( $t ) {
+    return is_string( $t ) && preg_match( '/^([01]\d|2[0-3]):[0-5]\d\z/', $t ) === 1;
 }
 
 function gsh_tp_curriculr_snap_friday( $iso ) {
@@ -972,6 +1007,11 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         : wp_generate_password( 32, false, false );
 
     $json_str = wp_json_encode( $doc );
+    if ( false === $json_str || '' === $json_str ) {
+        // Nie ein leeres json in die DB schreiben (Datenverlust).
+        error_log( 'curriculr: wp_json_encode failed for ' . $sj );
+        return array( 'status' => 'error', 'code' => 'encode_error' );
+    }
     $data = array(
         'schoolyear' => $sj,
         'json'       => $json_str,
@@ -988,6 +1028,11 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         // Write 0 Zeilen, hat ein paralleler Request denselben baseVersion bereits
         // committet -> frisches repo_get, Conflict wie im Schnellpfad.
         $affected = $wpdb->update( $table, $data, array( 'schoolyear' => $sj, 'version' => $current ) );
+        if ( false === $affected ) {
+            // wpdb::update() gibt nur bei DB-Fehlern false zurueck (0 = kein Treffer = Konflikt).
+            error_log( 'curriculr: DB update failed: ' . $wpdb->last_error );
+            return array( 'status' => 'error', 'code' => 'db_error' );
+        }
         if ( ! $affected ) {
             $fresh = gsh_tp_curriculr_repo_get( $sj );
             return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
@@ -998,7 +1043,12 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         $ok = $wpdb->insert( $table, $data );
         if ( ! $ok ) {
             $fresh = gsh_tp_curriculr_repo_get( $sj );
-            return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
+            if ( ! $fresh ) {
+                // Kein Doc vorhanden: kein Race, sondern ein echter DB-Fehler.
+                error_log( 'curriculr: DB insert failed: ' . $wpdb->last_error );
+                return array( 'status' => 'error', 'code' => 'db_error' );
+            }
+            return gsh_tp_curriculr_repo_put_conflict( $sj, (int) $fresh['version'], $fresh );
         }
     }
 
@@ -1008,7 +1058,10 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         : ( function_exists( 'gsh_tp_curriculr_guard_current_claims' ) ? gsh_tp_curriculr_guard_current_claims() : null );
     $author_sub  = $guard ? (string) ( $guard['sub'] ?? '' ) : '';
     $author_name = $guard ? (string) ( $guard['name'] ?? '' ) : '';
-    gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name );
+    if ( ! gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name ) ) {
+        // Doc ist gespeichert (keine Transaktion); fehlender Snapshot wird nur protokolliert.
+        error_log( 'curriculr: revision insert failed for ' . $sj . ' v' . $new_version );
+    }
     gsh_tp_curriculr_prune_revisions( $sj );
 
     return array(
@@ -1216,12 +1269,17 @@ function gsh_tp_curriculr_rest_put( $req ) {
     $stage = gsh_tp_curriculr_normalize_stage( isset( $body['stage'] ) ? $body['stage'] : 'entwurf' );
     $res   = gsh_tp_curriculr_repo_put( $req['sj'], $body['doc'], (int) $body['baseVersion'], $stage );
 
+    if ( $res['status'] === 'error' ) {
+        // Generisch: keine DB-Details an den Client (Details stehen im error_log).
+        return new WP_REST_Response( array( 'error' => 'server_error', 'message' => 'Speichern fehlgeschlagen.' ), 500 );
+    }
+
     if ( $res['status'] === 'conflict' ) {
         return new WP_REST_Response(
             array(
                 'error'         => 'conflict',
-                'serverVersion' => (int) $res['current']['version'],
-                'doc'           => json_decode( $res['current']['json'], true ),
+                'serverVersion' => (int) ( $res['current']['version'] ?? 0 ),
+                'doc'           => isset( $res['current']['json'] ) ? json_decode( $res['current']['json'], true ) : null,
                 'authorName'    => (string) ( $res['authorName'] ?? '' ),
                 'savedAt'       => (string) ( $res['savedAt']    ?? '' ),
             ),
