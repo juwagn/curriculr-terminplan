@@ -4507,6 +4507,7 @@ function gsh_tp_shortcode_reference() {
         'abo'             => array( '„ja“ zeigt den Button „Kalender abonnieren“ für den (Gruppen-)ICS-Feed. Achtung: macht die Feed-Adresse öffentlich.', 'aus' ),
         'titel'           => array( 'Eigene Überschrift über der Ansicht.', 'keine' ),
         'schuljahr'       => array( 'Profil-ID eines bestimmten Schuljahres.', 'aktives Schuljahr' ),
+        'design'          => array( '„hell“, „auto“ (folgt dem Dunkelmodus des Browsers) oder „dunkel“. „auto“ und „dunkel“ nur verwenden, wenn die Website selbst einen Dunkelmodus hat.', 'hell' ),
     );
     return array(
         'gsh_termine'    => array(
@@ -4523,6 +4524,7 @@ function gsh_tp_shortcode_reference() {
                 'titel'           => $common['titel'],
                 'ebene'           => array( 'Überschriften-Ebene 2–6 für Titel und Wochenüberschriften.', '5' ),
                 'schuljahr'       => $common['schuljahr'],
+                'design'          => $common['design'],
             ),
             'examples' => array(
                 '[gsh_termine gruppe="Eltern" link="/termine/"]',
@@ -4539,6 +4541,7 @@ function gsh_tp_shortcode_reference() {
                 'titel'           => $common['titel'],
                 'ebene'           => array( 'Überschriften-Ebene 2–6 für den Monatsnamen.', '3' ),
                 'schuljahr'       => $common['schuljahr'],
+                'design'          => $common['design'],
             ),
             'examples' => array(
                 '[gsh_monat gruppe="Eltern"]',
@@ -4635,6 +4638,15 @@ function gsh_tp_render_help_tab() {
                 </div>
                 <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
                     <label><input type="checkbox" data-attr="abo" data-value="ja"> Button „Kalender abonnieren“ zeigen</label>
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <label for="gtp-gen-design">Design</label>
+                    <select id="gtp-gen-design" data-attr="design" data-default="hell">
+                        <option value="hell">hell (Standard)</option>
+                        <option value="auto">automatisch (folgt dem Dunkelmodus des Browsers)</option>
+                        <option value="dunkel">dunkel</option>
+                    </select>
+                    <p class="description">„Automatisch“ und „dunkel“ nur verwenden, wenn die Website selbst einen Dunkelmodus hat.</p>
                 </div>
                 <div class="gtp-adm-row" data-for="gsh_terminplan">
                     <label for="gtp-gen-quartal">Quartal</label>
@@ -7626,6 +7638,22 @@ function gsh_tp_up_range( $from, $to ) {
 }
 
 /**
+ * Maps the design attribute of the embedded blocks to the data-gtp-theme value.
+ * "hell", empty and anything unknown give 'light'; trimmed, case-insensitive.
+ *
+ * @since 4.45.3
+ * @param  mixed $value Attribute value.
+ * @return string 'light' | 'auto' | 'dark'
+ */
+function gsh_tp_embed_theme( $value ): string {
+    $v = is_string( $value ) ? strtolower( trim( $value ) ) : '';
+    if ( 'auto' === $v ) {
+        return 'auto';
+    }
+    return 'dunkel' === $v ? 'dark' : 'light';
+}
+
+/**
  * Shortcode-Handler [gsh_termine]: Terminvorschau für die Startseite.
  *
  * Aufbau (Ergebnis Experten-Review UI/UX/Webdesign, 4.39.0):
@@ -7650,6 +7678,7 @@ function gsh_tp_up_range( $from, $to ) {
  *   link      Optionale URL zur vollständigen Terminübersicht.
  *   link_text Beschriftung des Links (Standard "Alle Termine").
  *   abo       "ja" = Abo-Link für den (Gruppen-)ICS-Feed anzeigen.
+ *   design    "hell" (Standard), "auto" (folgt dem Dunkelmodus des Browsers) oder "dunkel"; Unbekanntes = hell.
  *
  * @since 4.38.0
  * @param  array $atts Shortcode-Attribute.
@@ -7671,6 +7700,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
         'link'      => '',
         'link_text' => 'Alle Termine',
         'abo'       => '',
+        'design'    => 'hell',
     ), $atts, 'gsh_termine' );
 
     $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Terminvorschau' );
@@ -7704,7 +7734,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
         return $dow_long[ (int) $d->format( 'N' ) ] . ', ' . $d->format( 'j' ) . '. ' . $mon_long[ (int) $d->format( 'n' ) ];
     };
 
-    $o = '<section class="gtp-up" id="' . $uid . '" data-today="' . esc_attr( $today ) . '"';
+    $o = '<section class="gtp-up" id="' . $uid . '" data-gtp-theme="' . esc_attr( gsh_tp_embed_theme( $atts['design'] ) ) . '" data-today="' . esc_attr( $today ) . '"';
     if ( '' !== $atts['titel'] ) {
         $o .= ' aria-labelledby="' . $uid . '-t"><h' . $level . ' class="gtp-up-title" id="' . $uid . '-t">' . esc_html( $atts['titel'] ) . '</h' . $level . '>';
         $level = min( 6, $level + 1 );
@@ -7963,7 +7993,7 @@ function gsh_tp_public_abo_button( $src, $group, $abo ) {
  * Blättern per Link (?gtp_monat=YYYY-MM), ohne JavaScript. Schmale Blöcke
  * (Handy) zeigen statt des Rasters eine Tagesliste nur mit Terminen.
  *
- * Attribute: gruppe, schuljahr, titel, ebene (Standard 3), abo — wie [gsh_termine]. kategorien/auch_kategorien sind veraltet (akzeptiert, nicht ausgewertet).
+ * Attribute: gruppe, schuljahr, titel, ebene (Standard 3), abo, design — wie [gsh_termine]. kategorien/auch_kategorien sind veraltet (akzeptiert, nicht ausgewertet).
  *
  * @since 4.40.0
  * @param  array $atts Shortcode-Attribute.
@@ -7981,6 +8011,7 @@ function gsh_tp_month_shortcode( $atts ) {
         'titel'     => '',
         'ebene'     => '3',
         'abo'       => '',
+        'design'    => 'hell',
     ), $atts, 'gsh_monat' );
 
     $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Monatsansicht' );
@@ -8011,7 +8042,7 @@ function gsh_tp_month_shortcode( $atts ) {
         return gsh_tp_curriculr_month( array(), $ym, $ym . '-01' )['label'];
     };
 
-    $o  = '<section class="gtp-up gtp-mo" id="' . $uid . '" data-today="' . esc_attr( $today ) . '" aria-label="' . esc_attr( '' !== $atts['titel'] ? $atts['titel'] : 'Terminkalender' ) . '">';
+    $o  = '<section class="gtp-up gtp-mo" id="' . $uid . '" data-gtp-theme="' . esc_attr( gsh_tp_embed_theme( $atts['design'] ) ) . '" data-today="' . esc_attr( $today ) . '" aria-label="' . esc_attr( '' !== $atts['titel'] ? $atts['titel'] : 'Terminkalender' ) . '">';
     if ( '' !== $atts['titel'] ) {
         $o .= '<p class="gtp-up-span">' . esc_html( $atts['titel'] ) . '</p>';
     }

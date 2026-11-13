@@ -1,6 +1,6 @@
 /*
  * Shortcode-Generator auf dem Tab „Shortcodes & Hilfe“ (Einstellungen → Schul-Terminplan).
- * Baut aus Ansicht, Gruppe, Kategorien und Optionen den fertigen Shortcode.
+ * Baut aus Ansicht, Gruppe und Optionen den fertigen Shortcode.
  */
 ( function () {
 	'use strict';
@@ -42,20 +42,6 @@
 			}
 			parts.push( el.getAttribute( 'data-attr' ) + '="' + value + '"' );
 		} );
-
-		if ( tag !== 'gsh_terminplan' ) {
-			[ [ 'only', 'kategorien' ], [ 'also', 'auch_kategorien' ] ].forEach( function ( pair ) {
-				var values = Array.prototype.map.call(
-					form.querySelectorAll( 'input[data-cat="' + pair[ 0 ] + '"]:checked' ),
-					function ( cb ) {
-						return clean( cb.value ).replace( /,/g, ' ' );
-					}
-				);
-				if ( values.length ) {
-					parts.push( pair[ 1 ] + '="' + values.join( ',' ) + '"' );
-				}
-			} );
-		}
 
 		out.value = '[' + parts.join( ' ' ) + ']';
 		status.textContent = '';

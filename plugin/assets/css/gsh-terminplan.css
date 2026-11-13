@@ -741,7 +741,7 @@
 .gtp-up .gtp-up-cell.is-we .gtp-up-cin{background:var(--cl-product-up-weekend)}
 .gtp-up .gtp-up-cell.is-hol .gtp-up-cin{background:var(--cl-product-up-hol-bg);border-color:var(--cl-product-up-hol-line)}
 .gtp-up .gtp-up-cell.is-past .gtp-up-cin{opacity:.45}
-.gtp-up .gtp-up-cell.is-today .gtp-up-cin{background:var(--cl-product-up-accent);border-color:var(--cl-product-up-accent);opacity:1}
+.gtp-up .gtp-up-cell.is-today .gtp-up-cin{background:var(--cl-product-up-accent);border-color:var(--cl-product-up-accent);color:var(--cl-product-up-on-accent);opacity:1}
 .gtp-up .gtp-up-cell.is-today .gtp-up-cnum{font-weight:700}
 .gtp-up a.gtp-up-cin{transition:border-color var(--transition),box-shadow var(--transition)}
 .gtp-up a.gtp-up-cin:hover{border-color:var(--cl-product-up-accent-ink)}
@@ -762,7 +762,7 @@
 .gtp-up .gtp-up-dow{font-size:12px;font-weight:600;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-up-dnum{display:grid;place-items:center;width:38px;height:38px;margin-top:2px;border-radius:50%;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-main)}
 .gtp-up .gtp-up-rel{font-size:11px;font-weight:700;color:var(--cl-product-up-accent-ink)}
-.gtp-up .gtp-up-day.is-today .gtp-up-dnum{background:var(--cl-product-up-accent);font-size:20px}
+.gtp-up .gtp-up-day.is-today .gtp-up-dnum{background:var(--cl-product-up-accent);color:var(--cl-product-up-on-accent);font-size:20px}
 .gtp-up .gtp-up-evs{grid-area:evs;display:flex;flex-direction:column;gap:14px;min-width:0;padding-top:4px}
 .gtp-up .gtp-up-ev{display:grid;grid-template-columns:5.5rem 3px minmax(0,1fr);grid-template-areas:"when bar body";column-gap:12px}
 .gtp-up .gtp-up-when{grid-area:when;font-size:14px;font-weight:700;line-height:1.35;font-variant-numeric:tabular-nums;color:var(--text-main)}
@@ -815,6 +815,13 @@
     .gtp-up .gtp-up-day{break-inside:avoid}
 }
 
+/* Dunkel nur auf Wunsch (design="dunkel", design="auto" im Dunkelmodus): eigene Fläche,
+   sonst läge die Überschrift mit hellem Text auf dem hellen Theme. Hell: keine eigene Fläche. */
+.gtp-up[data-gtp-theme="dark"]{padding:var(--cl-space-4);border-radius:12px;background:var(--cl-bg)}
+@media (prefers-color-scheme: dark){
+    .gtp-up[data-gtp-theme="auto"]{padding:var(--cl-space-4);border-radius:12px;background:var(--cl-bg)}
+}
+
 /* ================================================================
    [gsh_monat] — Monatsraster im Startseiten-Look (seit 4.40.0)
    Teilt Tokens, Legende und Buttons mit [gsh_termine] (.gtp-up).
@@ -841,11 +848,11 @@
 .gtp-up .gtp-mo-dh{display:flex;align-items:center;gap:6px;min-height:28px;min-width:0}
 .gtp-up .gtp-mo-dnum{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-main)}
 .gtp-up .gtp-mo-cell.is-past .gtp-mo-dnum{color:var(--cl-product-up-ink-3)}
-.gtp-up .gtp-mo-cell.is-today .gtp-mo-dnum{background:var(--cl-product-up-accent);font-weight:700;color:var(--text-main)}
+.gtp-up .gtp-mo-cell.is-today .gtp-mo-dnum{background:var(--cl-product-up-accent);font-weight:700;color:var(--cl-product-up-on-accent)}
 .gtp-up .gtp-mo-dfull{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
 .gtp-up .gtp-mo-hol{min-width:0;overflow:hidden;font-size:11px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;color:var(--cl-product-up-hol-ink)}
 .gtp-up .gtp-mo-evs{display:flex;flex-direction:column;gap:3px;margin:0;padding:0;list-style:none;min-width:0}
-.gtp-up .gtp-mo-ev{display:block;padding:3px 6px 4px;border-left:3px solid var(--ev-c);border-radius:4px;background:var(--bg-surface);background:color-mix(in srgb,var(--ev-c) 12%,#fff);font-size:12px;line-height:1.3;min-width:0}
+.gtp-up .gtp-mo-ev{display:block;padding:3px 6px 4px;border-left:3px solid var(--ev-c);border-radius:4px;background:var(--bg-surface);background:color-mix(in srgb,var(--ev-c) 12%,var(--cl-surface));font-size:12px;line-height:1.3;min-width:0}
 .gtp-up .gtp-mo-time{display:block;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-mo-ev.is-cont .gtp-mo-time{font-weight:600;font-style:italic}
 .gtp-up .gtp-mo-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-weight:600;color:var(--text-main);overflow-wrap:anywhere}
@@ -887,10 +894,6 @@
 .gtp-adm-help .gtp-adm-row{margin:0 0 14px}
 .gtp-adm-help .gtp-adm-row[hidden]{display:none}
 .gtp-adm-help .gtp-adm-row input[type=text]{width:100%;max-width:420px}
-.gtp-adm-help .gtp-adm-cats{border-collapse:collapse;margin:0 0 6px}
-.gtp-adm-help .gtp-adm-cats th,.gtp-adm-help .gtp-adm-cats td{padding:6px 14px 6px 0;text-align:left;font-weight:400;vertical-align:middle}
-.gtp-adm-help .gtp-adm-cats thead th{font-weight:600;font-size:12px;color:var(--text-muted)}
-.gtp-adm-help .gtp-adm-cats td{text-align:center}
 .gtp-adm-help .gtp-adm-dot{display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;background:var(--dot);vertical-align:middle}
 .gtp-adm-help .gtp-adm-out{margin-top:18px;padding-top:16px;border-top:1px solid var(--border-strong)}
 .gtp-adm-help .gtp-adm-out-row{display:flex;gap:8px;max-width:720px}
