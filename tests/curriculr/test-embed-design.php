@@ -52,7 +52,7 @@ $GLOBALS['wpdb'] = new class( $muster_doc ) {
     private $doc;
     public function __construct( $doc ) { $this->doc = $doc; }
     public function prepare( $q ) { return $q; }
-    public function get_row() { return array( 'json' => json_encode( $this->doc ), 'feed_token' => '', 'stage' => 'oeffentlich' ); }
+    public function get_row() { return array( 'json' => json_encode( $this->doc ), 'feed_token' => '' ); }
 };
 
 require __DIR__ . '/../../plugin/gsh-terminplan.php';
