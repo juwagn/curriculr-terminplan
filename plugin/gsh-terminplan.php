@@ -3,10 +3,18 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.46.0
+ * Version:     4.46.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.46.1
+ * - [FIX] Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten
+ * - [FIX] Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten
+ * - [UX] Einstellungsseiten sind auf schmalen Bildschirmen bedienbar; Tabellen lassen sich seitlich schieben
+ * - [UX] Alle Eingabefelder der Einstellungsseiten sind beschriftet und mit der Tastatur erreichbar; das Changelog-Fenster lässt sich mit der Tastatur bedienen und mit Esc schließen
+ * - [UX] Vor dem Import einer Datensicherung fragt das Plugin nach
+ * - [UX] Größere Schaltflächen und mindestens 12 px Schrift auf den Einstellungsseiten
+ * - [DESIGN] Besser lesbare Feiertage im Dunkelmodus
  * v4.46.0
  * - [FIX] Eltern-Filter: gruppe="…" in [gsh_termine], [gsh_monat], im Gruppen-Kalender-Abo und in den Gruppen-Kalendern zeigt nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist (Groß-/Kleinschreibung und Leerzeichen egal). Termine ohne Gruppe erscheinen dort nicht mehr. Die Attribute kategorien= und auch_kategorien= (seit 4.41.0) filtern nicht mehr; sie werden ohne Fehler ignoriert, Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Feed ohne Gruppennamen liefert 404
  * - [FIX] Dunkelmodus: eingebettete Kalender ([gsh_termine], [gsh_monat]) bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist
@@ -710,7 +718,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.46.0' );
+define( 'GSH_TP_VERSION',       '4.46.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -960,6 +968,18 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.46.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten.' ),
+                array( 'tag' => 'FIX', 'text' => 'Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten.' ),
+                array( 'tag' => 'UX', 'text' => 'Einstellungsseiten sind auf schmalen Bildschirmen bedienbar; Tabellen lassen sich seitlich schieben.' ),
+                array( 'tag' => 'UX', 'text' => 'Alle Eingabefelder der Einstellungsseiten sind beschriftet und mit der Tastatur erreichbar; das Changelog-Fenster lässt sich mit der Tastatur bedienen und mit Esc schließen.' ),
+                array( 'tag' => 'UX', 'text' => 'Vor dem Import einer Datensicherung fragt das Plugin nach.' ),
+                array( 'tag' => 'UX', 'text' => 'Größere Schaltflächen und mindestens 12 px Schrift auf den Einstellungsseiten.' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Besser lesbare Feiertage im Dunkelmodus.' ),
+            ),
+        ),
         array(
             'version' => '4.46.0',
             'entries' => array(

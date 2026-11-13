@@ -6,6 +6,19 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.46.1] – 2026-11-13
+
+### Behoben
+- Die Terminplan-Ansicht für das Kollegium wird bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten.
+- Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten.
+
+### Geändert
+- Die Einstellungsseiten sind auf schmalen Bildschirmen bedienbar. Tabellen lassen sich seitlich schieben.
+- Alle Eingabefelder der Einstellungsseiten sind beschriftet und mit der Tastatur erreichbar. Das Changelog-Fenster lässt sich mit der Tastatur bedienen und mit Esc schließen.
+- Vor dem Import einer Datensicherung fragt das Plugin nach.
+- Schaltflächen auf den Einstellungsseiten sind größer, die Schrift beträgt mindestens 12 px.
+- Feiertage sind im Dunkelmodus besser lesbar.
+
 ## [4.46.0] – 2026-11-13
 
 ### Was Sie beim Update tun müssen
