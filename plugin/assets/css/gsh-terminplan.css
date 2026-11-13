@@ -611,7 +611,8 @@
    ACCESSIBILITY
    ═══════════════════════════════════════════════════════════════ */
 
-:focus-visible {
+/* Frontend: every element. WP admin: only the plugin's own areas (specificity of :where() is 0). */
+:where(body:not(.wp-admin), #gtp, .gtp-adm-help, .gsh-backup-wrap) :focus-visible {
     outline: 2px solid var(--primary-700);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
@@ -691,6 +692,18 @@
 .gsh-backup-section h2 { margin-top: 0; font-size: 1rem; }
 .gsh-backup-section p  { margin-top: 0; color: var(--cl-ink-500); }
 .gsh-backup-file-input { display: block; margin-bottom: 12px; }
+.gsh-backup-file-input { min-height: 36px; }
+
+/* ---------- Einstellungsseiten (WP Admin): scrollbare Tabellen, Klickflächen ---------- */
+.gsh-adm-scroll { max-width: 100%; overflow-x: auto; }
+.wrap.gsh-adm summary { line-height: 36px; }
+.wrap.gsh-adm input[type=file] { min-height: 36px; }
+.wrap.gsh-adm .gsh-cat-del { min-width: 36px; }
+.wrap.gsh-adm .nav-tab { padding-top: 6px; padding-bottom: 6px; }
+.gtp-adm-help .gtp-adm-row select { max-width: 100%; }
+@media (min-width: 783px) {
+    .wrap.gsh-adm .button { min-height: 36px; line-height: 34px; }
+}
 
 /* ---------- Plugin-Listenzeile: Datensicherung-Link ---------- */
 .gsh-plugin-backup-link { color: var(--cl-danger); font-weight: 600; }
