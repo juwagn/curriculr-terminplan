@@ -950,6 +950,11 @@
     #gtp:not([data-gtp-theme="light"]) { --gtp-tint: 24%; }
 }
 #gtp[data-gtp-theme="dark"] { --gtp-tint: 24%; }
+/* Dunkel: Kategorie-Label auf der getönten Terminfläche (Feiertage lag mit ink-500 bei 4,39:1) */
+@media (prefers-color-scheme: dark) {
+    #gtp:not([data-gtp-theme="light"]) .ge .ge-cat { color: var(--cl-ink-900); }
+}
+#gtp[data-gtp-theme="dark"] .ge .ge-cat { color: var(--cl-ink-900); }
 
 /* Sichtbarkeit der Darstellungen */
 #gtp:not([data-view="jahr"]) .gtp-year-wrap     { display: none; }
@@ -1222,6 +1227,8 @@
     #gtp .gtp-mob-dow { font: var(--cl-text-compact); font-size: 13px; font-weight: 500; color: var(--cl-ink-500); margin: 0; }
     #gtp .gtp-mob-dm { font: var(--cl-text-body); font-weight: 600; color: var(--cl-ink-900); font-variant-numeric: tabular-nums; }
     #gtp .gtp-mob-today .gtp-mob-dow, #gtp .gtp-mob-today .gtp-mob-dm { color: var(--cl-marine-800); }
+    #gtp .gtp-mob-day.gtp-mob-today { background: var(--cl-marine-100); border-radius: 8px; padding-left: var(--cl-space-2); padding-right: var(--cl-space-2); }
+    #gtp .gtp-mob-today .gtp-mob-badge { background: var(--cl-surface); }
     #gtp .gtp-mob-badge { display: inline-block; margin-top: 2px; padding: 0 var(--cl-space-2); border-radius: 999px; background: var(--cl-marine-100); color: var(--cl-marine-800); font: var(--cl-text-small); font-weight: 500; }
     #gtp .gtp-mob-events { display: flex; flex-direction: column; gap: var(--cl-space-1); }
     #gtp .gtp-mob .ge {
@@ -1229,7 +1236,7 @@
         min-height: 44px; margin: 0; padding: var(--cl-space-1) var(--cl-space-3); font: var(--cl-text-body);
     }
     #gtp .gtp-mob .ge-time { grid-column: 1; font: var(--cl-text-compact); font-weight: 700; font-variant-numeric: tabular-nums; margin: 0; }
-    #gtp .gtp-mob .ge-title { grid-column: 2; display: block; font: var(--cl-text-body); font-weight: 500; }
+    #gtp .gtp-mob .ge-title { grid-column: 2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow: hidden; overflow-wrap: anywhere; font: var(--cl-text-body); font-weight: 500; }
     #gtp .gtp-mob .ge-cat { grid-column: 3; display: block; font: var(--cl-text-compact); font-size: 13px; font-weight: 500; color: var(--cl-ink-500); white-space: nowrap; margin: 0; padding: 0; border: 0; background: none; }
     #gtp .gtp-mob .ge:not(:has(.ge-time))::before { content: "ganztägig"; grid-column: 1; font: var(--cl-text-compact); color: var(--cl-ink-500); }
     #gtp .gtp-mob .gtp-mob-long { margin-bottom: var(--cl-space-2); }
@@ -1304,7 +1311,6 @@
    Unter 1024 px entfällt das Raster; die Seitenleiste wird zur Leiste über der Liste.
    ═══════════════════════════════════════════════════════════════ */
 @media (min-width: 768px) and (max-width: 1180px) {
-    #gtp .gtp-tab-sub { display: none; }
     #gtp .gtp-tab { min-width: 0; padding: 0 var(--cl-space-3); }
     #gtp .gtp-export-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     #gtp .gtp-export-btn { padding: 0 var(--cl-space-3); }
@@ -1318,6 +1324,8 @@
     #gtp .gtp-hd .gtp-search-wrap { width: 160px; }
 }
 @media (min-width: 768px) and (max-width: 1023px) {
+    #gtp .gtp-tab-sub { display: none; }
+    #gtp .gtp-tabs { flex-wrap: wrap; height: auto; row-gap: 0; padding-bottom: var(--cl-space-2); } /* Werkzeuge rutschen in eine zweite Zeile statt über den Rand */
     #gtp .gtp-seg-b[data-view="raster"] { display: none; }
     #gtp .gtp-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "side" "main"; gap: var(--cl-space-3); }
     #gtp .gtp-side { position: static; display: flex; flex-wrap: wrap; align-items: center; gap: var(--cl-space-1) var(--cl-space-4); background: none; border: 0; border-radius: 0; }
@@ -1489,5 +1497,14 @@
     #gtp .gtp-fb,
     #gtp .gtp-mob-today-btn,
     #gtp .gtp-yc-chip,
-    #gtp .gtp-yp-open { min-height: 44px; }
+    #gtp .gtp-yp-open,
+    #gtp .gtp-seg-b,
+    #gtp .gtp-today-btn,
+    #gtp .gtp-export-btn,
+    #gtp .gtp-btn,
+    #gtp .gtp-filt-toggle,
+    #gtp .gtp-search-input,
+    #gtp .gtp-export-menu .gtp-btn { min-height: 44px; }
+    #gtp #gtp-tour-btn { width: 44px; height: 44px; min-height: 44px; }
+    #gtp .gtp-ft-meta a::after, #gtp .gtp-link-btn::after, #gtp .gtp-version-btn::after { inset: -14px -6px; }
 }
