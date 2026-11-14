@@ -15,7 +15,7 @@ Der Betreiber hat bestätigt: Daten nur bei gesetztem Löschhaken entfernen, Sta
 - [x] Datenschutz und Sicherheits-Meldeweg mit belegten Aufbewahrungsregeln dokumentieren.
 - [x] Version 4.46.2 und Update-Hinweise ergänzen.
 - [x] Gesamte PHP-Testreihe, Syntaxprüfung und Planer-Kompatibilität prüfen; Änderungen unabhängig durchsehen.
-- [ ] Pull Request mit Ergebnissen, Sicherheitsrisiken und offenen Betriebsprüfungen erstellen.
+- [x] Pull Request mit Ergebnissen, Sicherheitsrisiken und offenen Betriebsprüfungen erstellen: [Entwurf #17](https://github.com/juwagn/curriculr-terminplan/pull/17).
 
 ## Betriebsschutz
 
