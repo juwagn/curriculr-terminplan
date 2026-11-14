@@ -589,7 +589,7 @@
 
     .gt td::before {
         content: attr(data-label);
-        font-size: 0.72rem;
+        font-size: .75rem;
         font-weight: 700;
         color: var(--text-muted);
         display: block;
@@ -611,7 +611,8 @@
    ACCESSIBILITY
    ═══════════════════════════════════════════════════════════════ */
 
-:focus-visible {
+/* Frontend: every element. WP admin: only the plugin's own areas (specificity of :where() is 0). */
+:where(body:not(.wp-admin), #gtp, .gtp-adm-help, .gsh-backup-wrap) :focus-visible {
     outline: 2px solid var(--primary-700);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
@@ -637,7 +638,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .gn-annotation {
-    font-size: .72rem;
+    font-size: .75rem;
     color: var(--gtp-text-muted, var(--cl-ink-500));
     font-style: italic;
     padding: 2px 3px 2px 6px;
@@ -664,9 +665,8 @@
 
 .ge-time {
     display: block;
-    font-size: .62rem;
+    font-size: .75rem;
     font-weight: 600;
-    opacity: .7;
     line-height: 1.3;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -692,6 +692,25 @@
 .gsh-backup-section h2 { margin-top: 0; font-size: 1rem; }
 .gsh-backup-section p  { margin-top: 0; color: var(--cl-ink-500); }
 .gsh-backup-file-input { display: block; margin-bottom: 12px; }
+.gsh-backup-file-input { min-height: 36px; }
+
+/* ---------- Einstellungsseiten (WP Admin): scrollbare Tabellen, Klickflächen ---------- */
+.gsh-adm-scroll { max-width: 100%; overflow-x: auto; }
+.wrap.gsh-adm summary { line-height: 36px; }
+.wrap.gsh-adm input[type=file] { min-height: 36px; }
+.wrap.gsh-adm .gsh-cat-del { min-width: 36px; }
+.wrap.gsh-adm #gsh-admin-cl-btn,
+.wrap.gsh-adm #gshAdminChangelogCloseBtn { min-width: 36px; min-height: 36px; }
+.wrap.gsh-adm .gsh-adm-h3 { display: block; margin: 0 0 6px; font-size: inherit; font-weight: 700; line-height: inherit; }
+.gsh-adm-scroll--w1000 { max-width: 1000px; }
+.gsh-adm-scroll--w640 { max-width: 640px; }
+.gsh-adm-scroll--sync { max-width: 960px; margin-bottom: 12px; }
+.wrap.gsh-adm .nav-tab { padding-top: 6px; padding-bottom: 6px; }
+.gtp-adm-help .gtp-adm-row select { max-width: 100%; }
+@media (min-width: 783px) {
+    .wrap.gsh-adm .button,
+    .wrap.gsh-backup-wrap .button { min-height: 36px; line-height: 34px; }
+}
 
 /* ---------- Plugin-Listenzeile: Datensicherung-Link ---------- */
 .gsh-plugin-backup-link { color: var(--cl-danger); font-weight: 600; }
@@ -732,16 +751,16 @@
 .gtp-up .gtp-up-span{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-up-strip-hd,.gtp-up .gtp-up-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .gtp-up .gtp-up-strip-hd{margin-bottom:6px}
-.gtp-up .gtp-up-strip-hd span{font-size:11px;font-weight:600;text-align:center;color:var(--cl-product-up-ink-3)}
+.gtp-up .gtp-up-strip-hd span{font-size:12px;font-weight:600;text-align:center;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-up-cin{display:flex;flex-direction:column;align-items:center;gap:4px;height:46px;padding:7px 0 0;border:1px solid var(--cl-product-up-line);border-radius:6px;background:var(--bg-surface);color:var(--text-main);text-decoration:none;line-height:1}
 .gtp-up .gtp-up-cnum{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .gtp-up .gtp-up-dots{display:flex;align-items:center;gap:3px;height:6px}
 .gtp-up .gtp-up-dots i{display:block;width:6px;height:6px;border-radius:50%;background:var(--dot)}
-.gtp-up .gtp-up-dots b{font-size:10px;font-weight:700;line-height:6px;color:var(--cl-product-up-ink-3)}
+.gtp-up .gtp-up-dots b{font-size:12px;font-weight:700;line-height:6px;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-up-cell.is-we .gtp-up-cin{background:var(--cl-product-up-weekend)}
 .gtp-up .gtp-up-cell.is-hol .gtp-up-cin{background:var(--cl-product-up-hol-bg);border-color:var(--cl-product-up-hol-line)}
 .gtp-up .gtp-up-cell.is-past .gtp-up-cin{opacity:.45}
-.gtp-up .gtp-up-cell.is-today .gtp-up-cin{background:var(--cl-product-up-accent);border-color:var(--cl-product-up-accent);opacity:1}
+.gtp-up .gtp-up-cell.is-today .gtp-up-cin{background:var(--cl-product-up-accent);border-color:var(--cl-product-up-accent);color:var(--cl-product-up-on-accent);opacity:1}
 .gtp-up .gtp-up-cell.is-today .gtp-up-cnum{font-weight:700}
 .gtp-up a.gtp-up-cin{transition:border-color var(--transition),box-shadow var(--transition)}
 .gtp-up a.gtp-up-cin:hover{border-color:var(--cl-product-up-accent-ink)}
@@ -761,8 +780,8 @@
 .gtp-up .gtp-up-date{grid-area:date;display:flex;flex-direction:column;align-items:center;align-self:start;line-height:1.1;text-align:center}
 .gtp-up .gtp-up-dow{font-size:12px;font-weight:600;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-up-dnum{display:grid;place-items:center;width:38px;height:38px;margin-top:2px;border-radius:50%;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-main)}
-.gtp-up .gtp-up-rel{font-size:11px;font-weight:700;color:var(--cl-product-up-accent-ink)}
-.gtp-up .gtp-up-day.is-today .gtp-up-dnum{background:var(--cl-product-up-accent);font-size:20px}
+.gtp-up .gtp-up-rel{font-size:12px;font-weight:700;color:var(--cl-product-up-accent-ink)}
+.gtp-up .gtp-up-day.is-today .gtp-up-dnum{background:var(--cl-product-up-accent);color:var(--cl-product-up-on-accent);font-size:20px}
 .gtp-up .gtp-up-evs{grid-area:evs;display:flex;flex-direction:column;gap:14px;min-width:0;padding-top:4px}
 .gtp-up .gtp-up-ev{display:grid;grid-template-columns:5.5rem 3px minmax(0,1fr);grid-template-areas:"when bar body";column-gap:12px}
 .gtp-up .gtp-up-when{grid-area:when;font-size:14px;font-weight:700;line-height:1.35;font-variant-numeric:tabular-nums;color:var(--text-main)}
@@ -815,6 +834,13 @@
     .gtp-up .gtp-up-day{break-inside:avoid}
 }
 
+/* Dunkel nur auf Wunsch (design="dunkel", design="auto" im Dunkelmodus): eigene Fläche,
+   sonst läge die Überschrift mit hellem Text auf dem hellen Theme. Hell: keine eigene Fläche. */
+.gtp-up[data-gtp-theme="dark"]{padding:var(--cl-space-4);border-radius:12px;background:var(--cl-bg)}
+@media (prefers-color-scheme: dark){
+    .gtp-up[data-gtp-theme="auto"]{padding:var(--cl-space-4);border-radius:12px;background:var(--cl-bg)}
+}
+
 /* ================================================================
    [gsh_monat] — Monatsraster im Startseiten-Look (seit 4.40.0)
    Teilt Tokens, Legende und Buttons mit [gsh_termine] (.gtp-up).
@@ -841,12 +867,12 @@
 .gtp-up .gtp-mo-dh{display:flex;align-items:center;gap:6px;min-height:28px;min-width:0}
 .gtp-up .gtp-mo-dnum{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-main)}
 .gtp-up .gtp-mo-cell.is-past .gtp-mo-dnum{color:var(--cl-product-up-ink-3)}
-.gtp-up .gtp-mo-cell.is-today .gtp-mo-dnum{background:var(--cl-product-up-accent);font-weight:700;color:var(--text-main)}
+.gtp-up .gtp-mo-cell.is-today .gtp-mo-dnum{background:var(--cl-product-up-accent);font-weight:700;color:var(--cl-product-up-on-accent)}
 .gtp-up .gtp-mo-dfull{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
-.gtp-up .gtp-mo-hol{min-width:0;overflow:hidden;font-size:11px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;color:var(--cl-product-up-hol-ink)}
+.gtp-up .gtp-mo-hol{min-width:0;overflow:hidden;font-size:12px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;color:var(--cl-product-up-hol-ink)}
 .gtp-up .gtp-mo-evs{display:flex;flex-direction:column;gap:3px;margin:0;padding:0;list-style:none;min-width:0}
-.gtp-up .gtp-mo-ev{display:block;padding:3px 6px 4px;border-left:3px solid var(--ev-c);border-radius:4px;background:var(--bg-surface);background:color-mix(in srgb,var(--ev-c) 12%,#fff);font-size:12px;line-height:1.3;min-width:0}
-.gtp-up .gtp-mo-time{display:block;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--cl-product-up-ink-3)}
+.gtp-up .gtp-mo-ev{display:block;padding:3px 6px 4px;border-left:3px solid var(--ev-c);border-radius:4px;background:var(--bg-surface);background:color-mix(in srgb,var(--ev-c) 12%,var(--cl-surface));font-size:12px;line-height:1.3;min-width:0}
+.gtp-up .gtp-mo-time{display:block;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--cl-product-up-ink-3)}
 .gtp-up .gtp-mo-ev.is-cont .gtp-mo-time{font-weight:600;font-style:italic}
 .gtp-up .gtp-mo-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-weight:600;color:var(--text-main);overflow-wrap:anywhere}
 .gtp-up .gtp-mo-meta{display:none}
@@ -887,10 +913,6 @@
 .gtp-adm-help .gtp-adm-row{margin:0 0 14px}
 .gtp-adm-help .gtp-adm-row[hidden]{display:none}
 .gtp-adm-help .gtp-adm-row input[type=text]{width:100%;max-width:420px}
-.gtp-adm-help .gtp-adm-cats{border-collapse:collapse;margin:0 0 6px}
-.gtp-adm-help .gtp-adm-cats th,.gtp-adm-help .gtp-adm-cats td{padding:6px 14px 6px 0;text-align:left;font-weight:400;vertical-align:middle}
-.gtp-adm-help .gtp-adm-cats thead th{font-weight:600;font-size:12px;color:var(--text-muted)}
-.gtp-adm-help .gtp-adm-cats td{text-align:center}
 .gtp-adm-help .gtp-adm-dot{display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;background:var(--dot);vertical-align:middle}
 .gtp-adm-help .gtp-adm-out{margin-top:18px;padding-top:16px;border-top:1px solid var(--border-strong)}
 .gtp-adm-help .gtp-adm-out-row{display:flex;gap:8px;max-width:720px}
@@ -935,6 +957,14 @@
     #gtp:not([data-gtp-theme="light"]) { --gtp-tint: 24%; }
 }
 #gtp[data-gtp-theme="dark"] { --gtp-tint: 24%; }
+/* Dunkel, ab 768 px (Liste und Raster): Kategorie-Label auf der getönten Terminfläche
+   (Feiertage lag mit ink-500 bei 4,39:1). Die mobile Liste behält ihre Farbe. */
+@media (min-width: 768px) and (prefers-color-scheme: dark) {
+    #gtp:not([data-gtp-theme="light"]) .ge .ge-cat { color: var(--cl-ink-900); }
+}
+@media (min-width: 768px) {
+    #gtp[data-gtp-theme="dark"] .ge .ge-cat { color: var(--cl-ink-900); }
+}
 
 /* Sichtbarkeit der Darstellungen */
 #gtp:not([data-view="jahr"]) .gtp-year-wrap     { display: none; }
@@ -1095,7 +1125,7 @@
 #gtp .gtp-mini-h { text-align: center; }
 #gtp .gtp-mini-w { display: flex; align-items: center; padding: 0; background: none; border: 0; color: var(--cl-ink-500); font: var(--cl-text-small); font-variant-numeric: tabular-nums; cursor: pointer; text-align: left; }
 #gtp .gtp-mini-w:hover { color: var(--cl-marine-800); text-decoration: underline; }
-#gtp .gtp-mini-c { position: relative; min-height: 34px; padding: 0 0 5px; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: var(--cl-surface); border: 1px solid var(--cl-line); color: var(--cl-ink-900); font: var(--cl-text-small); font-variant-numeric: tabular-nums; cursor: pointer; }
+#gtp .gtp-mini-c { position: relative; min-height: 36px; padding: 0 0 5px; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: var(--cl-surface); border: 1px solid var(--cl-line); color: var(--cl-ink-900); font: var(--cl-text-small); font-variant-numeric: tabular-nums; cursor: pointer; }
 #gtp .gtp-mini-c:hover { border-color: var(--cl-marine-500); }
 #gtp .gtp-mini-c:focus-visible { outline: 2px solid var(--cl-marine-500); outline-offset: 1px; }
 #gtp .gtp-mini-n { line-height: 1; }
@@ -1188,7 +1218,7 @@
     #gtp:not([data-view="liste"]) .gtp-filt-wrap,
     #gtp:not([data-view="liste"]) .gtp-grp-row { padding: 0; border: 0; display: contents; }
     #gtp:not([data-view="liste"]) .gtp-filt { flex-direction: row; flex-wrap: wrap; gap: var(--cl-space-1) var(--cl-space-4); }
-    #gtp:not([data-view="liste"]) .gtp-side .gtp-fb { width: auto; min-height: 28px; }
+    #gtp:not([data-view="liste"]) .gtp-side .gtp-fb { width: auto; min-height: 36px; }
     #gtp:not([data-view="liste"]) .gtp-grp-label { flex: none; font: var(--cl-text-label); color: var(--cl-ink-500); }
 
     /* Panel als Karte */
@@ -1207,6 +1237,8 @@
     #gtp .gtp-mob-dow { font: var(--cl-text-compact); font-size: 13px; font-weight: 500; color: var(--cl-ink-500); margin: 0; }
     #gtp .gtp-mob-dm { font: var(--cl-text-body); font-weight: 600; color: var(--cl-ink-900); font-variant-numeric: tabular-nums; }
     #gtp .gtp-mob-today .gtp-mob-dow, #gtp .gtp-mob-today .gtp-mob-dm { color: var(--cl-marine-800); }
+    #gtp .gtp-mob-day.gtp-mob-today { background: var(--cl-marine-100); border-radius: 8px; padding-left: var(--cl-space-2); padding-right: var(--cl-space-2); }
+    #gtp .gtp-mob-today .gtp-mob-badge { background: var(--cl-surface); }
     #gtp .gtp-mob-badge { display: inline-block; margin-top: 2px; padding: 0 var(--cl-space-2); border-radius: 999px; background: var(--cl-marine-100); color: var(--cl-marine-800); font: var(--cl-text-small); font-weight: 500; }
     #gtp .gtp-mob-events { display: flex; flex-direction: column; gap: var(--cl-space-1); }
     #gtp .gtp-mob .ge {
@@ -1214,7 +1246,7 @@
         min-height: 44px; margin: 0; padding: var(--cl-space-1) var(--cl-space-3); font: var(--cl-text-body);
     }
     #gtp .gtp-mob .ge-time { grid-column: 1; font: var(--cl-text-compact); font-weight: 700; font-variant-numeric: tabular-nums; margin: 0; }
-    #gtp .gtp-mob .ge-title { grid-column: 2; display: block; font: var(--cl-text-body); font-weight: 500; }
+    #gtp .gtp-mob .ge-title { grid-column: 2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow: hidden; overflow-wrap: anywhere; font: var(--cl-text-body); font-weight: 500; }
     #gtp .gtp-mob .ge-cat { grid-column: 3; display: block; font: var(--cl-text-compact); font-size: 13px; font-weight: 500; color: var(--cl-ink-500); white-space: nowrap; margin: 0; padding: 0; border: 0; background: none; }
     #gtp .gtp-mob .ge:not(:has(.ge-time))::before { content: "ganztägig"; grid-column: 1; font: var(--cl-text-compact); color: var(--cl-ink-500); }
     #gtp .gtp-mob .gtp-mob-long { margin-bottom: var(--cl-space-2); }
@@ -1289,7 +1321,6 @@
    Unter 1024 px entfällt das Raster; die Seitenleiste wird zur Leiste über der Liste.
    ═══════════════════════════════════════════════════════════════ */
 @media (min-width: 768px) and (max-width: 1180px) {
-    #gtp .gtp-tab-sub { display: none; }
     #gtp .gtp-tab { min-width: 0; padding: 0 var(--cl-space-3); }
     #gtp .gtp-export-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     #gtp .gtp-export-btn { padding: 0 var(--cl-space-3); }
@@ -1302,14 +1333,21 @@
     #gtp .gtp-subtitle-school { display: none; }
     #gtp .gtp-hd .gtp-search-wrap { width: 160px; }
 }
+/* Werkzeugleiste: bis etwa 850 px reicht die Breite nicht für Reiter und Werkzeuge in einer Zeile.
+   Die Werkzeuge stehen dann in einer zweiten Zeile; deren Oberlinie ist die Linie unter dem aktiven Reiter. */
+@media (min-width: 768px) and (max-width: 899px) {
+    #gtp .gtp-tabs { flex-wrap: wrap; height: auto; row-gap: 0; }
+    #gtp .gtp-tool-r { flex: 1 0 100%; justify-content: flex-end; padding: var(--cl-space-2) 0; border-top: 1px solid var(--cl-line); }
+}
 @media (min-width: 768px) and (max-width: 1023px) {
+    #gtp .gtp-tab-sub { display: none; }
     #gtp .gtp-seg-b[data-view="raster"] { display: none; }
     #gtp .gtp-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "side" "main"; gap: var(--cl-space-3); }
     #gtp .gtp-side { position: static; display: flex; flex-wrap: wrap; align-items: center; gap: var(--cl-space-1) var(--cl-space-4); background: none; border: 0; border-radius: 0; }
     #gtp .gtp-side-mini, #gtp .gtp-filt-header { display: none; }
     #gtp .gtp-filt-wrap, #gtp .gtp-grp-row { padding: 0; border: 0; display: contents; }
     #gtp .gtp-filt { flex-direction: row; flex-wrap: wrap; gap: var(--cl-space-1) var(--cl-space-4); }
-    #gtp .gtp-side .gtp-fb { width: auto; min-height: 28px; }
+    #gtp .gtp-side .gtp-fb { width: auto; min-height: 36px; }
     #gtp .gtp-grp-label { flex: none; font: var(--cl-text-label); color: var(--cl-ink-500); }
 }
 
@@ -1464,4 +1502,24 @@
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
     #gtp .gtp-mob-today-week .gtp-mob-wh::before { animation: none; }
+}
+
+/* Touch targets: 44 px minimum for filter buttons and comparable controls on coarse pointers.
+   Kept last so it wins over the 36 px base rules above (same selectors, source order). */
+@media (pointer: coarse) {
+    #gtp .gtp-side .gtp-fb,
+    #gtp:not([data-view="liste"]) .gtp-side .gtp-fb,
+    #gtp .gtp-fb,
+    #gtp .gtp-mob-today-btn,
+    #gtp .gtp-yc-chip,
+    #gtp .gtp-yp-open,
+    #gtp .gtp-seg-b,
+    #gtp .gtp-today-btn,
+    #gtp .gtp-export-btn,
+    #gtp .gtp-btn,
+    #gtp .gtp-filt-toggle,
+    #gtp .gtp-search-input,
+    #gtp .gtp-export-menu .gtp-btn { min-height: 44px; }
+    #gtp #gtp-tour-btn { width: 44px; height: 44px; min-height: 44px; }
+    #gtp .gtp-ft-meta a::after, #gtp .gtp-link-btn::after, #gtp .gtp-version-btn::after { inset: -14px -8px; }
 }

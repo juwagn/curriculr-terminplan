@@ -3,10 +3,26 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.45.2
+ * Version:     4.46.1
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.46.1
+ * - [FIX] Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten
+ * - [FIX] Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten
+ * - [UX] Einstellungsseiten sind auf schmalen Bildschirmen bedienbar; Tabellen lassen sich seitlich schieben
+ * - [UX] Alle Eingabefelder der Einstellungsseiten sind beschriftet und mit der Tastatur erreichbar; das Changelog-Fenster lässt sich mit der Tastatur bedienen und mit Esc schließen
+ * - [UX] Vor dem Import einer Datensicherung fragt das Plugin nach
+ * - [UX] Größere Schaltflächen und mindestens 12 px Schrift auf den Einstellungsseiten
+ * - [DESIGN] Besser lesbare Feiertage im Dunkelmodus
+ * v4.46.0
+ * - [FIX] Eltern-Filter: gruppe="…" in [gsh_termine], [gsh_monat], im Gruppen-Kalender-Abo und in den Gruppen-Kalendern zeigt nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist (Groß-/Kleinschreibung und Leerzeichen egal). Termine ohne Gruppe erscheinen dort nicht mehr. Die Attribute kategorien= und auch_kategorien= (seit 4.41.0) filtern nicht mehr; sie werden ohne Fehler ignoriert, Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Feed ohne Gruppennamen liefert 404
+ * - [FIX] Dunkelmodus: eingebettete Kalender ([gsh_termine], [gsh_monat]) bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist
+ * - [NEU] Attribut design="hell|auto|dunkel" für [gsh_termine] und [gsh_monat] (Standard hell); „auto“ und „dunkel“ nur für Websites mit eigenem Dunkelmodus
+ * - [FIX] Speichern aus dem Planer: Termine mit ungültigem Datum, ungültiger Uhrzeit oder falschen Feldtypen werden abgelehnt, statt Kalender-Abo und Anzeige zu beschädigen; Alttermine mit ungültiger Uhrzeit erscheinen ganztägig; Datenbankfehler werden nicht mehr als Bearbeitungskonflikt gemeldet
+ * - [UX] Filterknöpfe sind mindestens 36 px hoch, auf Touch-Geräten 44 px
+ * - [DESIGN] Mindestschriftgröße 12 px in Terminplan und Einbettungen
+ * - [INFRA] Neue Tests: Gruppenfilter, Einbettungs-Design und Termin-Validierung
  * v4.45.2
  * - [FIX] Jahr: „Heute“ wechselt bei Fensterbreiten von 768 bis 1023 px im sichtbaren Monatskalender zum aktuellen Monat
  *
@@ -702,7 +718,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.45.2' );
+define( 'GSH_TP_VERSION',       '4.46.1' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -952,6 +968,30 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.46.1',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten.' ),
+                array( 'tag' => 'FIX', 'text' => 'Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten.' ),
+                array( 'tag' => 'UX', 'text' => 'Einstellungsseiten sind auf schmalen Bildschirmen bedienbar; Tabellen lassen sich seitlich schieben.' ),
+                array( 'tag' => 'UX', 'text' => 'Alle Eingabefelder der Einstellungsseiten sind beschriftet und mit der Tastatur erreichbar; das Changelog-Fenster lässt sich mit der Tastatur bedienen und mit Esc schließen.' ),
+                array( 'tag' => 'UX', 'text' => 'Vor dem Import einer Datensicherung fragt das Plugin nach.' ),
+                array( 'tag' => 'UX', 'text' => 'Größere Schaltflächen und mindestens 12 px Schrift auf den Einstellungsseiten.' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Besser lesbare Feiertage im Dunkelmodus.' ),
+            ),
+        ),
+        array(
+            'version' => '4.46.0',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Eltern-Filter: gruppe="…" in [gsh_termine], [gsh_monat], im Gruppen-Kalender-Abo und in den Gruppen-Kalendern zeigt nur noch Termine, denen diese Gruppe im Planer ausdrücklich zugewiesen ist (Groß-/Kleinschreibung und Leerzeichen egal). Termine ohne Gruppe erscheinen dort nicht mehr. Die Attribute kategorien= und auch_kategorien= (seit 4.41.0) filtern nicht mehr; sie werden ohne Fehler ignoriert, Kategorien bestimmen nur noch Farbe und Legende. Ein Gruppen-Feed ohne Gruppennamen liefert 404.' ),
+                array( 'tag' => 'FIX', 'text' => 'Dunkelmodus: eingebettete Kalender ([gsh_termine], [gsh_monat]) bleiben hell und lesbar, auch wenn der Browser im Dunkelmodus ist.' ),
+                array( 'tag' => 'NEU', 'text' => 'Attribut design="hell|auto|dunkel" für [gsh_termine] und [gsh_monat] (Standard hell); „auto“ und „dunkel“ nur für Websites mit eigenem Dunkelmodus.' ),
+                array( 'tag' => 'FIX', 'text' => 'Speichern aus dem Planer: Termine mit ungültigem Datum, ungültiger Uhrzeit oder falschen Feldtypen werden abgelehnt, statt Kalender-Abo und Anzeige zu beschädigen; Alttermine mit ungültiger Uhrzeit erscheinen ganztägig; Datenbankfehler werden nicht mehr als Bearbeitungskonflikt gemeldet.' ),
+                array( 'tag' => 'UX', 'text' => 'Filterknöpfe sind mindestens 36 px hoch, auf Touch-Geräten 44 px.' ),
+                array( 'tag' => 'DESIGN', 'text' => 'Mindestschriftgröße 12 px in Terminplan und Einbettungen.' ),
+                array( 'tag' => 'INFRA', 'text' => 'Neue Tests: Gruppenfilter, Einbettungs-Design und Termin-Validierung.' ),
+            ),
+        ),
         array(
             'version' => '4.45.2',
             'entries' => array(
@@ -2832,10 +2872,12 @@ function gsh_tp_backup_page() {
         <div class="gsh-backup-section">
             <h2>Einstellungen importieren</h2>
             <p>Stellt alle Plugin-Einstellungen aus einer Export-Datei wieder her. Vorhandene Einstellungen werden überschrieben.</p>
-            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data"
+                  onsubmit="return confirm('Die aktuellen Einstellungen werden überschrieben. Import starten?')">
                 <?php wp_nonce_field( 'gsh_tp_import_settings' ); ?>
                 <input type="hidden" name="action" value="gsh_tp_import_settings">
-                <input type="file" name="settings_file" accept=".json" required class="gsh-backup-file-input">
+                <input type="file" name="settings_file" accept=".json" required class="gsh-backup-file-input"
+                       aria-label="Export-Datei (JSON) auswählen">
                 <?php submit_button( 'Einstellungen importieren', 'secondary', 'submit', false ); ?>
             </form>
         </div>
@@ -2874,7 +2916,8 @@ function gsh_tp_render_feedback_log_tab() {
         <p>Noch kein Feedback eingegangen.</p>
     <?php else : ?>
         <p><?php echo count( $log ); ?> Einträge (neueste zuerst, max. 200 gespeichert)</p>
-        <table class="widefat striped" style="max-width:1000px">
+        <div class="gsh-adm-scroll gsh-adm-scroll--w1000">
+        <table class="widefat striped">
             <thead>
                 <tr>
                     <th style="width:140px">Zeitpunkt</th>
@@ -2902,6 +2945,7 @@ function gsh_tp_render_feedback_log_tab() {
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
 
         <form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=_system' ) ); ?>" style="margin-top:16px">
             <?php wp_nonce_field( 'gsh_tp_clear_feedback_log' ); ?>
@@ -2972,9 +3016,16 @@ function gsh_tp_enqueue_admin_delete_warn( $hook ) {
             GSH_TP_VERSION
         );
     }
-    // Einstellungsseite: Tokens für die Farben der Oberfläche (var(--cl-*) in den Inline-Stilen).
+    // Einstellungsseite: Tokens für die Farben der Oberfläche (var(--cl-*) in den Inline-Stilen)
+    // und das Plugin-Stylesheet für die Admin-Klassen (.gsh-adm, Scroll-Container, Klickflächen).
     if ( 'settings_page_' . GSH_TP_SLUG === $hook ) {
         gsh_tp_enqueue_tokens();
+        wp_enqueue_style(
+            'gsh-terminplan',
+            plugin_dir_url( __FILE__ ) . 'assets/css/gsh-terminplan.css',
+            array( 'gsh-terminplan-tokens' ),
+            GSH_TP_VERSION
+        );
     }
     if ( 'plugins.php' !== $hook ) {
         return;
@@ -4385,7 +4436,7 @@ function gsh_tp_settings_page() {
         $sel_profile = gsh_tp_active_profile_id();
     }
     ?>
-    <div class="wrap">
+    <div class="wrap gsh-adm">
         <h1>Schul-Terminplan &ndash; Einstellungen
             <button type="button"
                     id="gsh-admin-cl-btn"
@@ -4399,16 +4450,17 @@ function gsh_tp_settings_page() {
 
         <!-- Admin-Changelog-Modal -->
         <div id="gshAdminChangelog"
-             role="dialog" aria-modal="true" aria-label="Vollständiger Changelog"
+             role="dialog" aria-modal="true" aria-label="Vollständiger Changelog" tabindex="-1"
              style="display:none;position:fixed;inset:0;z-index:100000;
                     background:rgba(0,0,0,.55);overflow-y:auto">
             <div style="background:var(--cl-surface);max-width:680px;margin:60px auto;border-radius:8px;
                         padding:28px 32px;position:relative;max-height:80vh;overflow-y:auto">
                 <button type="button"
+                        id="gshAdminChangelogCloseBtn"
                         onclick="gshAdminChangelogClose()"
                         aria-label="Schließen"
-                        style="position:absolute;top:14px;right:16px;border:none;background:none;
-                               font-size:22px;cursor:pointer;color:#666;line-height:1">&times;</button>
+                        style="position:absolute;top:6px;right:8px;border:none;background:none;
+                               font-size:22px;cursor:pointer;color:var(--cl-ink-900);line-height:1">&times;</button>
                 <h2 style="margin-top:0">Vollständiger Changelog</h2>
                 <?php
                 $cl_tag_colors = array(
@@ -4431,10 +4483,10 @@ function gsh_tp_settings_page() {
                         $color = $cl_tag_colors[ $entry['tag'] ] ?? 'var(--cl-ink-500)';
                     ?>
                         <li style="margin:.3rem 0;font-size:13px;color:var(--cl-ink-900)">
-                            <span style="display:inline-block;font-size:10px;font-weight:700;
+                            <span style="display:inline-block;font-size:12px;font-weight:700;
                                          padding:1px 6px;border-radius:3px;margin-right:6px;
                                          background:color-mix(in srgb, <?php echo esc_attr( $color ); ?> 14%, transparent);
-                                         color:<?php echo esc_attr( $color ); ?>;
+                                         color:color-mix(in srgb, <?php echo esc_attr( $color ); ?> 70%, var(--cl-ink-900));
                                          border:1px solid color-mix(in srgb, <?php echo esc_attr( $color ); ?> 30%, transparent)">
                                 <?php echo $tag; ?>
                             </span>
@@ -4450,16 +4502,34 @@ function gsh_tp_settings_page() {
         <script>
         /* Admin-Changelog-Modal – Funktionen müssen auf der Admin-Seite definiert sein,
            da gsh_tp_js() (Frontend-JS) hier nicht geladen wird. */
+        var gshClTrigger = null;
         function gshAdminChangelogOpen() {
             var m = document.getElementById('gshAdminChangelog');
-            if ( m ) m.style.display = 'block';
+            if ( ! m ) return;
+            gshClTrigger = document.activeElement;
+            m.style.display = 'block';
+            var c = document.getElementById('gshAdminChangelogCloseBtn');
+            ( c || m ).focus();
         }
         function gshAdminChangelogClose() {
             var m = document.getElementById('gshAdminChangelog');
-            if ( m ) m.style.display = 'none';
+            if ( ! m || m.style.display === 'none' ) return;
+            m.style.display = 'none';
+            if ( gshClTrigger && gshClTrigger.focus ) gshClTrigger.focus();
+            gshClTrigger = null;
         }
         document.addEventListener('keydown', function(e) {
-            if ( e.key === 'Escape' ) gshAdminChangelogClose();
+            var m = document.getElementById('gshAdminChangelog');
+            if ( ! m || m.style.display === 'none' ) return;
+            if ( e.key === 'Escape' ) { gshAdminChangelogClose(); return; }
+            if ( e.key !== 'Tab' ) return;
+            // Keep Tab inside the dialog.
+            var f = m.querySelectorAll('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])');
+            if ( ! f.length ) { e.preventDefault(); return; }
+            var first = f[0], last = f[f.length - 1];
+            if ( e.shiftKey && ( document.activeElement === first || document.activeElement === m ) ) { e.preventDefault(); last.focus(); }
+            else if ( ! e.shiftKey && document.activeElement === last ) { e.preventDefault(); first.focus(); }
+            else if ( ! m.contains( document.activeElement ) ) { e.preventDefault(); first.focus(); }
         });
         document.addEventListener('click', function(e) {
             var m = document.getElementById('gshAdminChangelog');
@@ -4471,10 +4541,10 @@ function gsh_tp_settings_page() {
 
         <?php settings_errors(); ?>
 
-        <nav class="nav-tab-wrapper" style="margin-bottom:1.5rem">
+        <nav class="nav-tab-wrapper" style="margin-bottom:1.5rem" aria-label="Plugin-Einstellungen">
             <?php foreach ( $tabs as $id => $label ) : ?>
                 <a href="<?php echo esc_url( admin_url( 'options-general.php?page=gsh-terminplan&tab=' . rawurlencode( $id ) ) ); ?>"
-                   class="nav-tab <?php echo ( $active_tab === $id ) ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo ( $active_tab === $id ) ? 'nav-tab-active' : ''; ?>"<?php echo ( $active_tab === $id ) ? ' aria-current="page"' : ''; ?>>
                     <?php echo $label; ?>
                 </a>
             <?php endforeach; ?>
@@ -4503,12 +4573,11 @@ function gsh_tp_settings_page() {
  */
 function gsh_tp_shortcode_reference() {
     $common = array(
-        'gruppe'          => array( 'Planner-Gruppe, z. B. „Eltern“. Leer = alle Termine. Termine ohne Gruppe sind immer sichtbar.', 'leer' ),
-        'kategorien'      => array( 'Nur Termine dieser Kategorien zeigen (Name oder Slug, kommagetrennt).', 'leer = alle' ),
-        'auch_kategorien' => array( 'Termine dieser Kategorien zusätzlich zeigen – auch wenn sie nicht zur Gruppe gehören (z. B. „Allgemein“ für Eltern).', 'leer' ),
+        'gruppe'          => array( 'Planner-Gruppe, z. B. „Eltern“. Leer = alle Termine. Mit Gruppe erscheinen nur Termine, bei denen diese Gruppe im Planner eingetragen ist (Groß-/Kleinschreibung egal). Termine ohne Gruppe erscheinen dann nicht.', 'leer' ),
         'abo'             => array( '„ja“ zeigt den Button „Kalender abonnieren“ für den (Gruppen-)ICS-Feed. Achtung: macht die Feed-Adresse öffentlich.', 'aus' ),
         'titel'           => array( 'Eigene Überschrift über der Ansicht.', 'keine' ),
         'schuljahr'       => array( 'Profil-ID eines bestimmten Schuljahres.', 'aktives Schuljahr' ),
+        'design'          => array( '„hell“, „auto“ (folgt dem Dunkelmodus des Browsers) oder „dunkel“. „auto“ und „dunkel“ nur verwenden, wenn die Website selbst einen Dunkelmodus hat.', 'hell' ),
     );
     return array(
         'gsh_termine'    => array(
@@ -4517,8 +4586,6 @@ function gsh_tp_shortcode_reference() {
             'where'    => 'Startseite, Bereich „Aktuelle Termine“ – in einem WPBakery-Text-Block (nicht „Raw HTML“).',
             'attrs'    => array(
                 'gruppe'          => $common['gruppe'],
-                'kategorien'      => $common['kategorien'],
-                'auch_kategorien' => $common['auch_kategorien'],
                 'wochen'          => array( 'Anzahl Wochen ab der aktuellen (1–6).', '2' ),
                 'max'             => array( 'Anzahl Termine, bevor der Rest unter „weitere Termine“ eingeklappt wird. 0 = alle.', '8' ),
                 'link'            => array( 'Adresse der vollständigen Terminseite, erzeugt den Button „Alle Termine“.', 'kein Button' ),
@@ -4527,10 +4594,11 @@ function gsh_tp_shortcode_reference() {
                 'titel'           => $common['titel'],
                 'ebene'           => array( 'Überschriften-Ebene 2–6 für Titel und Wochenüberschriften.', '5' ),
                 'schuljahr'       => $common['schuljahr'],
+                'design'          => $common['design'],
             ),
             'examples' => array(
                 '[gsh_termine gruppe="Eltern" link="/termine/"]',
-                '[gsh_termine gruppe="Eltern" auch_kategorien="Allgemein" max="6"]',
+                '[gsh_termine gruppe="Eltern" max="6"]',
             ),
         ),
         'gsh_monat'      => array(
@@ -4539,16 +4607,15 @@ function gsh_tp_shortcode_reference() {
             'where'    => 'Eigene Seite, z. B. „Termine für Eltern“.',
             'attrs'    => array(
                 'gruppe'          => $common['gruppe'],
-                'kategorien'      => $common['kategorien'],
-                'auch_kategorien' => $common['auch_kategorien'],
                 'abo'             => $common['abo'],
                 'titel'           => $common['titel'],
                 'ebene'           => array( 'Überschriften-Ebene 2–6 für den Monatsnamen.', '3' ),
                 'schuljahr'       => $common['schuljahr'],
+                'design'          => $common['design'],
             ),
             'examples' => array(
                 '[gsh_monat gruppe="Eltern"]',
-                '[gsh_monat gruppe="Eltern" auch_kategorien="Allgemein" abo="ja"]',
+                '[gsh_monat gruppe="Eltern" abo="ja"]',
             ),
         ),
         'gsh_terminplan' => array(
@@ -4568,7 +4635,7 @@ function gsh_tp_shortcode_reference() {
 }
 
 /**
- * Tab „Shortcodes & Hilfe": Generator (Gruppe/Kategorien per Auswahl) und
+ * Tab „Shortcodes & Hilfe": Generator (Gruppe per Auswahl) und
  * Referenz aller Shortcodes mit Attributen und Beispielen.
  *
  * @since 4.41.0
@@ -4576,15 +4643,9 @@ function gsh_tp_shortcode_reference() {
  */
 function gsh_tp_render_help_tab() {
     $source     = gsh_tp_public_curriculr_source( '', 'Hilfe' );
-    $categories = array();
     $groups     = array();
     if ( $source['src'] ) {
         $doc = $source['src']['doc'];
-        foreach ( (array) ( $doc['categories'] ?? array() ) as $c ) {
-            if ( is_array( $c ) && ! empty( $c['label'] ) ) {
-                $categories[] = array( 'label' => (string) $c['label'], 'color' => preg_match( '/^#[0-9a-fA-F]{6}$/', (string) ( $c['color'] ?? '' ) ) ? $c['color'] : '#94A3B8' );
-            }
-        }
         foreach ( (array) ( $doc['availableGroups'] ?? array() ) as $g ) {
             $groups[ (string) $g ] = true;
         }
@@ -4626,27 +4687,7 @@ function gsh_tp_render_help_tab() {
                             <option value="<?php echo esc_attr( $g ); ?>" <?php selected( 'Eltern', $g ); ?>><?php echo esc_html( $g ); ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-
-                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
-                    <span class="gtp-adm-label">Kategorien</span>
-                    <?php if ( $categories ) : ?>
-                        <table class="gtp-adm-cats">
-                            <thead><tr><th scope="col">Kategorie</th><th scope="col">nur diese</th><th scope="col">zusätzlich zeigen<br><small>(auch ohne Gruppe)</small></th></tr></thead>
-                            <tbody>
-                            <?php foreach ( $categories as $cat ) : ?>
-                                <tr>
-                                    <th scope="row"><i class="gtp-adm-dot" style="--dot:<?php echo esc_attr( $cat['color'] ); ?>"></i><?php echo esc_html( $cat['label'] ); ?></th>
-                                    <td><input type="checkbox" data-cat="only" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( 'Nur ' . $cat['label'] ); ?>"></td>
-                                    <td><input type="checkbox" data-cat="also" value="<?php echo esc_attr( $cat['label'] ); ?>" aria-label="<?php echo esc_attr( $cat['label'] . ' zusätzlich zeigen' ); ?>"></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <p class="description">„nur diese“ leer lassen = alle Kategorien. „zusätzlich“ z. B. für „Allgemein“, damit allgemeine Schultermine auch ohne Gruppe „Eltern“ erscheinen.</p>
-                    <?php else : ?>
-                        <p class="description">Noch kein Curricu:lr-Plan im aktiven Schuljahr – Kategorien können trotzdem von Hand eingetragen werden (Attribut <code>kategorien</code>).</p>
-                    <?php endif; ?>
+                    <p class="description">Mit Gruppe erscheinen nur Termine, bei denen diese Gruppe im Planner eingetragen ist. Termine ohne Gruppe erscheinen dann nicht.</p>
                 </div>
 
                 <div class="gtp-adm-row" data-for="gsh_termine">
@@ -4667,6 +4708,15 @@ function gsh_tp_render_help_tab() {
                 </div>
                 <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
                     <label><input type="checkbox" data-attr="abo" data-value="ja"> Button „Kalender abonnieren“ zeigen</label>
+                </div>
+                <div class="gtp-adm-row" data-for="gsh_termine gsh_monat">
+                    <label for="gtp-gen-design">Design</label>
+                    <select id="gtp-gen-design" data-attr="design" data-default="hell">
+                        <option value="hell">hell (Standard)</option>
+                        <option value="auto">automatisch (folgt dem Dunkelmodus des Browsers)</option>
+                        <option value="dunkel">dunkel</option>
+                    </select>
+                    <p class="description">„Automatisch“ und „dunkel“ nur verwenden, wenn die Website selbst einen Dunkelmodus hat.</p>
                 </div>
                 <div class="gtp-adm-row" data-for="gsh_terminplan">
                     <label for="gtp-gen-quartal">Quartal</label>
@@ -4693,6 +4743,7 @@ function gsh_tp_render_help_tab() {
                 <h2 id="gtp-adm-<?php echo esc_attr( $tag ); ?>"><?php echo esc_html( $ref['title'] ); ?> <code>[<?php echo esc_html( $tag ); ?>]</code></h2>
                 <p><?php echo esc_html( $ref['purpose'] ); ?></p>
                 <p><strong>Einsatz:</strong> <?php echo esc_html( $ref['where'] ); ?></p>
+                <div class="gsh-adm-scroll">
                 <table class="widefat striped gtp-adm-attrs">
                     <thead><tr><th scope="col">Attribut</th><th scope="col">Bedeutung</th><th scope="col">Standard</th></tr></thead>
                     <tbody>
@@ -4701,6 +4752,7 @@ function gsh_tp_render_help_tab() {
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
                 <p class="gtp-adm-ex-h"><strong>Beispiele</strong></p>
                 <ul class="gtp-adm-ex">
                     <?php foreach ( $ref['examples'] as $ex ) : ?>
@@ -4713,7 +4765,7 @@ function gsh_tp_render_help_tab() {
         <section class="gtp-adm-card" aria-labelledby="gtp-adm-notes">
             <h2 id="gtp-adm-notes">Gut zu wissen</h2>
             <ul class="gtp-adm-notes">
-                <li><strong>Gruppen und Kategorien</strong> kommen aus dem Curricu:lr Planner. Ein Termin ohne Gruppe gilt für alle und erscheint in jeder Gruppenansicht.</li>
+                <li><strong>Gruppen und Kategorien</strong> kommen aus dem Curricu:lr Planner. Eine Gruppenansicht (Attribut <code>gruppe</code>) zeigt nur Termine, bei denen diese Gruppe im Planner eingetragen ist; Termine ohne Gruppe erscheinen dort nicht. Ohne <code>gruppe</code> erscheinen alle Termine.</li>
                 <li><strong>Wochenend-Termine</strong> (z. B. Tag der offenen Tür) im Planner in der Spalte „Sa/So“ anlegen. Sie erscheinen im Eltern-Kalender (ICS), in <code>[gsh_termine]</code>, <code>[gsh_monat]</code> und in der Anmerkungen-Spalte von <code>[gsh_terminplan]</code>.</li>
                 <li><strong>Anmerkungen</strong> aus dem Planner erscheinen nur in der Anmerkungen-Spalte des Terminplans – nicht im ICS-Feed und nicht in Vorschau/Monatsansicht.</li>
                 <li><strong>Kiosk-Ansicht</strong> für IServ: Seite mit der Vorlage „Terminplan Kiosk“ anlegen, Token im Tab „System &amp; Logs“ erzeugen.</li>
@@ -5100,6 +5152,7 @@ function gsh_tp_render_kategorien_tab() {
     <?php endif; ?>
 
     <div id="gsh-cat-editor">
+    <div class="gsh-adm-scroll">
     <table class="widefat" id="gsh-cat-table" style="table-layout:fixed;margin-bottom:8px">
         <thead>
             <tr>
@@ -5122,16 +5175,18 @@ function gsh_tp_render_kategorien_tab() {
                            value="<?php echo esc_attr( $cat['slug'] ); ?>" />
                     <input type="text" class="gsh-cat-label"
                            value="<?php echo esc_attr( $cat['label'] ); ?>"
+                           aria-label="Anzeigename der Kategorie"
                            style="width:100%" placeholder="Anzeigename" />
                     <span class="gsh-cat-slug-preview">Slug: <code class="gsh-cat-slug-display"><?php echo esc_html( $cat['slug'] ); ?></code></span>
                     <details class="gsh-cat-keywords-wrap">
                         <summary>Stichwörter <span class="gsh-cat-kw-count">(<?php echo count( $cat['keywords'] ?? [] ); ?> Stichwörter)</span></summary>
-                        <textarea class="gsh-cat-keywords" rows="3" placeholder="klasse 5, jg 5, 5a, 5b, ..."><?php echo esc_html( implode( ', ', $cat['keywords'] ?? [] ) ); ?></textarea>
+                        <textarea class="gsh-cat-keywords" rows="3" aria-label="Stichwörter der Kategorie <?php echo esc_attr( $cat['label'] ); ?>" placeholder="klasse 5, jg 5, 5a, 5b, ..."><?php echo esc_html( implode( ', ', $cat['keywords'] ?? [] ) ); ?></textarea>
                         <p class="gsh-cat-keywords-hint">Kommagetrennte Begriffe. Groß-/Kleinschreibung wird ignoriert. Treffer in Titel oder Beschreibung ordnen diesen Kategorie zu.</p>
                     </details>
                 </td>
                 <td>
                     <input type="color" class="gsh-cat-color"
+                           aria-label="Farbe der Kategorie <?php echo esc_attr( $cat['label'] ); ?>"
                            value="<?php echo esc_attr( $cat['color'] ?? '#94a3b8' ); ?>"
                            style="width:56px;height:36px;padding:2px;cursor:pointer" />
                 </td>
@@ -5144,17 +5199,19 @@ function gsh_tp_render_kategorien_tab() {
                         <?php echo esc_html( $cat['label'] ); ?>
                     </span>
                 </td>
-                <td style="font-size:11px;color:var(--cl-ink-500)">
+                <td style="font-size:12px;color:var(--cl-ink-500)">
                     <?php echo esc_html( $cat['id'] ?? $cat['slug'] ?? '–' ); ?>
                 </td>
                 <td>
                     <button type="button" class="button gsh-cat-del"
+                            aria-label="Kategorie löschen: <?php echo esc_attr( $cat['label'] ); ?>"
                             title="Kategorie löschen"><?php echo gsh_tp_icon( 'x', '0.9em' ); ?></button>
                 </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <button type="button" class="button" id="gsh-cat-add">+ Neue Kategorie hinzufügen</button>
     </div>
 
@@ -5237,6 +5294,7 @@ function gsh_tp_render_kategorien_tab() {
 
         // HTML für neue Zeile generieren
         function buildRowHtml(cat) {
+            var nm = cat.label || '';
             var svgX = '<?php echo addslashes( gsh_tp_icon( 'x', '0.9em' ) ); ?>';
             function ea(s) {
                 return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -5247,18 +5305,18 @@ function gsh_tp_render_kategorien_tab() {
             return '<td>'
                 + '<input type="hidden" class="gsh-cat-id"    value="' + ea(cat.id    || '') + '">'
                 + '<input type="hidden" class="gsh-cat-slug"  value="' + ea(cat.slug  || '') + '">'
-                + '<input type="text"   class="gsh-cat-label" value="' + ea(cat.label || '') + '" style="width:100%" placeholder="Anzeigename">'
+                + '<input type="text"   class="gsh-cat-label" value="' + ea(cat.label || '') + '" aria-label="Anzeigename der Kategorie" style="width:100%" placeholder="Anzeigename">'
                 + '<span class="gsh-cat-slug-preview">Slug: <code class="gsh-cat-slug-display">' + ea(cat.slug || '') + '</code></span>'
                 + '<details class="gsh-cat-keywords-wrap">'
                 + '<summary>Stichwörter <span class="gsh-cat-kw-count">(' + kwCnt + ' Stichwörter)</span></summary>'
-                + '<textarea class="gsh-cat-keywords" rows="3" placeholder="klasse 5, jg 5, 5a, 5b, ...">' + ea(kwStr) + '</textarea>'
+                + '<textarea class="gsh-cat-keywords" rows="3" aria-label="' + (nm ? 'Stichw\u00f6rter der Kategorie ' + ea(nm) : 'Stichw\u00f6rter der neuen Kategorie') + '" placeholder="klasse 5, jg 5, 5a, 5b, ...">' + ea(kwStr) + '</textarea>'
                 + '<p class="gsh-cat-keywords-hint">Kommagetrennte Begriffe. Gro\u00df-/Kleinschreibung wird ignoriert.</p>'
                 + '</details>'
                 + '</td>'
-                + '<td><input type="color" class="gsh-cat-color" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
+                + '<td><input type="color" class="gsh-cat-color" aria-label="' + (nm ? 'Farbe der Kategorie ' + ea(nm) : 'Farbe der neuen Kategorie') + '" value="' + ea(color) + '" style="width:56px;height:36px;padding:2px;cursor:pointer"></td>'
                 + '<td><span class="gsh-cat-preview" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;border-left:3px solid ' + ea(color) + ';background:var(--cl-bg);color:var(--cl-ink-900)">' + ea(cat.label || 'Vorschau') + '</span></td>'
-                + '<td style="font-size:11px;color:var(--cl-ink-500)">' + ea(cat.id || '(neu)') + '</td>'
-                + '<td><button type="button" class="button gsh-cat-del" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
+                + '<td style="font-size:12px;color:var(--cl-ink-500)">' + ea(cat.id || '(neu)') + '</td>'
+                + '<td><button type="button" class="button gsh-cat-del" aria-label="' + (nm ? 'Kategorie l\u00f6schen: ' + ea(nm) : 'Neue Kategorie l\u00f6schen') + '" title="Kategorie l\u00f6schen">' + svgX + '</button></td>';
         }
 
         // ── Event-Listener ──────────────────────────────────────────────
@@ -5443,19 +5501,21 @@ function gsh_tp_render_profile_tab_v2() {
         <form method="post" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <?php wp_nonce_field( 'gsh_tp_new_schoolyear', 'gsh_tp_nsy_n' ); ?>
             <input type="text" name="gsh_tp_new_sy_label" placeholder="2027/28"
+                   aria-label="Neues Schuljahr, zum Beispiel 2027/28"
                    class="regular-text" style="width:110px" required />
             <button type="submit" name="gsh_tp_new_schoolyear" value="1"
                     class="button" style="color:var(--cl-success);border-color:var(--cl-success)">
                 + Schuljahr anlegen
             </button>
             <details style="display:inline-block">
-                <summary style="color:var(--cl-ink-500);font-size:11px;cursor:pointer;list-style:none">
+                <summary style="color:var(--cl-ink-500);font-size:12px;cursor:pointer;list-style:none">
                     Schlüssel (Erweitert)
                 </summary>
                 <div style="margin-top:4px">
                     <input type="text" name="gsh_tp_new_sy_key" placeholder="sj_2027_28"
+                           aria-label="Schlüssel des neuen Schuljahres"
                            class="regular-text" style="width:130px" />
-                    <p class="description" style="font-size:11px;margin-top:2px">
+                    <p class="description" style="font-size:12px;margin-top:2px">
                         Wird automatisch aus dem Label vorgeschlagen. Nur ändern wenn nötig.
                     </p>
                 </div>
@@ -5468,27 +5528,29 @@ function gsh_tp_render_profile_tab_v2() {
         <p class="description">Noch keine Schuljahre vorhanden. Das erste Schuljahr anlegen oder über den Planner synchronisieren.</p>
     <?php endif; ?>
 
-    <?php foreach ( $schoolyears as $sy ) :
+    <?php foreach ( $schoolyears as $sy_idx => $sy ) :
         $sy_key = $sy['key'];
         $pid    = sanitize_key( $sy_key );
+        $uid    = sanitize_key( $sy_idx . '-' . $pid ); // unique DOM-ID suffix even if two keys sanitize to the same value
     ?>
     <div style="border:1px solid var(--cl-line);border-radius:6px;margin-bottom:20px;overflow:hidden">
         <!-- Schuljahr-Header -->
         <div style="background:<?php echo ! empty( $sy['is_active'] ) ? 'var(--cl-success-bg)' : 'var(--cl-bg)'; ?>;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <h3 class="screen-reader-text">Schuljahr <?php echo esc_html( $sy['label'] ); ?></h3>
             <form method="post" style="margin:0;display:flex;align-items:center;gap:8px;flex:1">
                 <?php wp_nonce_field( 'gsh_tp_save_schoolyear_' . $pid, 'gsh_tp_ssy_n_' . $pid ); ?>
                 <input type="hidden" name="gsh_tp_ssy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
-                <strong style="min-width:60px">Schuljahr:</strong>
-                <input type="text" name="gsh_tp_ssy_label" value="<?php echo esc_attr( $sy['label'] ); ?>"
+                <label for="gsh-sy-label-<?php echo esc_attr( $uid ); ?>" style="min-width:60px;font-weight:700">Schuljahr:</label>
+                <input type="text" id="gsh-sy-label-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssy_label" value="<?php echo esc_attr( $sy['label'] ); ?>"
                        class="regular-text" style="width:140px" />
-                <button type="submit" name="gsh_tp_save_schoolyear" value="1" class="button button-small">Speichern</button>
+                <button type="submit" name="gsh_tp_save_schoolyear" value="1" class="button">Speichern</button>
             </form>
             <?php if ( empty( $sy['is_active'] ) ) : ?>
             <form method="post" style="margin:0">
                 <?php wp_nonce_field( 'gsh_tp_activate_sy_' . $pid, 'gsh_tp_asy_n' ); ?>
                 <input type="hidden" name="gsh_tp_asy_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <button type="submit" name="gsh_tp_activate_schoolyear" value="1"
-                        class="button button-small" style="color:var(--cl-success);border-color:var(--cl-success)">
+                        class="button" style="color:var(--cl-success);border-color:var(--cl-success)">
                     Als aktives Schuljahr setzen
                 </button>
                 <p class="description" style="margin:4px 0 0;font-size:12px">
@@ -5496,10 +5558,10 @@ function gsh_tp_render_profile_tab_v2() {
                 </p>
             </form>
             <?php else : ?>
-                <span style="background:var(--cl-success);color:var(--cl-on-primary);padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">AKTIV</span>
+                <span style="background:var(--cl-success);color:var(--cl-on-primary);padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">Aktiv</span>
             <?php endif; ?>
             <details style="display:inline-block">
-                <summary style="color:var(--cl-ink-500);font-size:11px;cursor:pointer;list-style:none">Erweitert</summary>
+                <summary style="color:var(--cl-ink-500);font-size:12px;cursor:pointer;list-style:none">Erweitert</summary>
                 <span style="color:var(--cl-ink-500);font-size:12px;display:block;margin-top:4px">
                     ID: <code><?php echo esc_html( $sy_key ); ?></code>
                 </span>
@@ -5573,7 +5635,7 @@ function gsh_tp_render_profile_tab_v2() {
 
         <!-- Planungsdokument: manueller Upload (SSO-Alternative, 4.28.0) -->
         <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);background:var(--cl-bg)">
-            <strong style="display:block;margin-bottom:6px">Planungsdokument (manueller Upload)</strong>
+            <h3 class="gsh-adm-h3">Planungsdokument (manueller Upload)</h3>
             <p class="description" style="margin:0 0 8px">
                 Für Schulen ohne IServ-SSO: Plan im Planer exportieren (Export ↓ → „JSON-Backup") und hier hochladen.
             </p>
@@ -5589,8 +5651,9 @@ function gsh_tp_render_profile_tab_v2() {
             <form method="post" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <?php wp_nonce_field( 'gsh_tp_doc_import_' . $pid, 'gsh_tp_di_n_' . $pid ); ?>
                 <input type="hidden" name="gsh_tp_di_sy" value="<?php echo esc_attr( $sy_key ); ?>" />
-                <input type="file" name="gsh_tp_di_file" accept=".json" required />
-                <select name="gsh_tp_di_stage">
+                <input type="file" name="gsh_tp_di_file" accept=".json" required
+                       aria-label="Planungsdokument (JSON-Datei) für <?php echo esc_attr( $sy['label'] ); ?>" />
+                <select name="gsh_tp_di_stage" aria-label="Veröffentlichungsstufe für <?php echo esc_attr( $sy['label'] ); ?>">
                     <option value="entwurf">Entwurf</option>
                     <option value="genehmigt">Intern</option>
                     <option value="oeffentlich">Öffentlich</option>
@@ -5613,22 +5676,22 @@ function gsh_tp_render_profile_tab_v2() {
                 <input type="hidden" name="gsh_tp_ssh_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <table class="form-table" style="margin:0">
                     <tr>
-                        <th style="padding:4px 10px 4px 0;width:200px"><label>Start Schulwoche 01</label></th>
+                        <th style="padding:4px 10px 4px 0;width:200px"><label for="gsh-sy-start-<?php echo esc_attr( $uid ); ?>">Start Schulwoche 01</label></th>
                         <td style="padding:4px 0">
-                            <input type="date" name="gsh_tp_ssh_start" value="<?php echo esc_attr( $sy['shared']['schuljahr_start'] ?? '' ); ?>" />
+                            <input type="date" id="gsh-sy-start-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_start" value="<?php echo esc_attr( $sy['shared']['schuljahr_start'] ?? '' ); ?>" />
                         </td>
                     </tr>
                     <tr>
-                        <th style="padding:4px 10px 4px 0"><label>Cache-Dauer (Sek.)</label></th>
+                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-cache-<?php echo esc_attr( $uid ); ?>">Cache-Dauer (Sek.)</label></th>
                         <td style="padding:4px 0">
-                            <input type="number" name="gsh_tp_ssh_cache" min="300" max="86400"
+                            <input type="number" id="gsh-sy-cache-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_cache" min="300" max="86400"
                                    value="<?php echo esc_attr( $sy['shared']['cache_duration'] ?? 3600 ); ?>" style="width:100px" />
                         </td>
                     </tr>
                     <tr>
-                        <th style="padding:4px 10px 4px 0"><label>Quartalsgrenzen</label></th>
+                        <th style="padding:4px 10px 4px 0"><label for="gsh-sy-quartal-<?php echo esc_attr( $uid ); ?>">Quartalsgrenzen</label></th>
                         <td style="padding:4px 0">
-                            <textarea name="gsh_tp_ssh_quartal" rows="4" class="large-text"
+                            <textarea id="gsh-sy-quartal-<?php echo esc_attr( $uid ); ?>" name="gsh_tp_ssh_quartal" rows="4" class="large-text"
                             ><?php echo esc_textarea( $sy['shared']['quartal_grenzen'] ?? '' ); ?></textarea>
                             <p class="description" style="margin:2px 0 0">Pro Zeile: Startdatum|Enddatum (JJJJ-MM-TT).</p>
                         </td>
@@ -5650,7 +5713,7 @@ function gsh_tp_render_profile_tab_v2() {
         $x_last   = get_option( 'gsh_tp_sync_' . $x_pid, '' );
         ?>
         <div style="padding:12px 16px;border-bottom:1px solid var(--cl-line);border-left:3px solid var(--cl-marine-500);background:<?php echo $x_extern ? 'var(--cl-marine-100)' : 'var(--cl-bg)'; ?>">
-            <strong style="display:block;margin-bottom:6px">IServ-Kalender direkt verbinden</strong>
+            <h3 class="gsh-adm-h3">IServ-Kalender direkt verbinden</h3>
             <p class="description" style="margin:0 0 8px">
                 Ohne Planer: Adresse eines freigegebenen IServ-Kalenders eintragen (in IServ meist unter
                 Kalender &rarr; Verwaltung &rarr; Freigabe als Link). Das Plugin holt die Termine dann selbst ab
@@ -5660,6 +5723,7 @@ function gsh_tp_render_profile_tab_v2() {
                 <?php wp_nonce_field( 'gsh_tp_save_extern_feed_' . $pid, 'gsh_tp_xf_n' ); ?>
                 <input type="hidden" name="gsh_tp_xf_key" value="<?php echo esc_attr( $sy_key ); ?>" />
                 <input type="url" name="gsh_tp_xf_url" value="<?php echo esc_attr( $x_url ); ?>"
+                       aria-label="Adresse des IServ-Kalenders für <?php echo esc_attr( $sy['label'] ); ?>"
                        placeholder="https://schule.iserv.de/public/calendar/..."
                        style="flex:1;min-width:320px;padding:4px 8px" />
                 <button type="submit" name="gsh_tp_save_extern_feed" value="1" class="button button-primary">
@@ -5677,13 +5741,14 @@ function gsh_tp_render_profile_tab_v2() {
                 <form method="post" style="margin:0">
                     <?php wp_nonce_field( 'gsh_tp_sync_manual', 'gsh_tp_sn' ); ?>
                     <input type="hidden" name="gsh_tp_sync_pid" value="<?php echo esc_attr( $x_pid ); ?>" />
-                    <button type="submit" name="gsh_tp_sync" value="1" class="button button-small">Jetzt neu abrufen</button>
+                    <button type="submit" name="gsh_tp_sync" value="1" class="button">Jetzt neu abrufen</button>
                 </form>
             </div>
             <?php endif; ?>
         </div>
 
-        <!-- Kalender-Liste -->
+        <!-- Kalender-Liste: horizontal scrollbar on narrow screens -->
+        <div class="gsh-adm-scroll">
         <table class="widefat" style="border:none;box-shadow:none">
             <thead>
                 <tr>
@@ -5703,28 +5768,29 @@ function gsh_tp_render_profile_tab_v2() {
                     <td>
                         <?php if ( $is_main ) : ?>
                             <strong>Alle Termine</strong>
-                            <span style="font-size:11px;color:var(--cl-ink-500);margin-left:6px">(Haupt-Kalender)</span>
+                            <span style="font-size:12px;color:var(--cl-ink-500);margin-left:6px">(Haupt-Kalender)</span>
                             <?php if ( gsh_tp_cal_is_extern( $cal ) ) : ?>
-                                <span style="font-size:11px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">IServ</span>
+                                <span style="font-size:12px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">IServ</span>
                             <?php endif; ?>
                         <?php else : ?>
                             <?php echo esc_html( $cal['group'] ); ?>
                             <?php if ( ! empty( $cal['managed'] ) ) : ?>
-                                <span style="font-size:11px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">Curriculr</span>
+                                <span style="font-size:12px;background:var(--cl-marine-100);color:var(--cl-marine-700);padding:1px 6px;border-radius:10px;margin-left:4px">Curriculr</span>
                             <?php endif; ?>
                             <?php if ( ! empty( $cal['orphaned'] ) ) : ?>
-                                <span style="font-size:11px;background:var(--cl-warning-bg);color:var(--cl-warning);padding:1px 6px;border-radius:10px;margin-left:4px">verwaist</span>
+                                <span style="font-size:12px;background:var(--cl-warning-bg);color:var(--cl-warning);padding:1px 6px;border-radius:10px;margin-left:4px">verwaist</span>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <br><span style="font-size:11px;color:var(--cl-ink-500)">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
+                        <br><span style="font-size:12px;color:var(--cl-ink-500)">ID: <code><?php echo esc_html( $cal_id ); ?></code></span>
                     </td>
                     <td>
                         <?php $cal_extern = gsh_tp_cal_is_extern( $cal ); ?>
                         <?php if ( ! empty( $cal['ical_url'] ) ) : ?>
                             <input type="text" readonly value="<?php echo esc_attr( $cal['ical_url'] ); ?>"
+                                   aria-label="Feed-Adresse: <?php echo esc_attr( $is_main ? 'Alle Termine' : $cal['group'] ); ?>"
                                    style="width:100%;font-size:12px;border:1px solid var(--cl-line);padding:3px 6px"
                                    onclick="this.select()" title="Klicken zum Auswählen" />
-                            <span style="font-size:11px;color:var(--cl-ink-500)">
+                            <span style="font-size:12px;color:var(--cl-ink-500)">
                                 <?php echo $cal_extern
                                     ? 'Quelle: IServ-Kalender (oben eingetragen)'
                                     : 'Abo-Adresse für IServ und andere Kalender-Apps'; ?>
@@ -5741,7 +5807,7 @@ function gsh_tp_render_profile_tab_v2() {
                             <input type="hidden" name="gsh_tp_td_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
                             <input type="hidden" name="gsh_tp_td_cal" value="<?php echo esc_attr( $cal['group'] ?? '' ); ?>" />
                             <?php echo ! empty( $cal['is_draft'] ) ? '<span style="color:var(--cl-warning)">Entwurf</span>' : '<span style="color:var(--cl-success)">Beschlossen</span>'; ?>
-                            <button type="submit" name="gsh_tp_toggle_draft" value="1" class="button button-small">
+                            <button type="submit" name="gsh_tp_toggle_draft" value="1" class="button">
                                 <?php echo ! empty( $cal['is_draft'] ) ? 'Als beschlossen markieren' : 'Als Entwurf markieren'; ?>
                             </button>
                         </form>
@@ -5753,7 +5819,7 @@ function gsh_tp_render_profile_tab_v2() {
                             <input type="hidden" name="gsh_tp_dc_sy"  value="<?php echo esc_attr( $sy_key ); ?>" />
                             <input type="hidden" name="gsh_tp_dc_cal" value="<?php echo esc_attr( $cal['group'] ); ?>" />
                             <button type="submit" name="gsh_tp_del_cal" value="1"
-                                    class="button button-small" style="color:var(--cl-danger);border-color:var(--cl-danger)"
+                                    class="button" style="color:var(--cl-danger);border-color:var(--cl-danger)"
                                     onclick="return confirm('Kalender «<?php echo esc_js( $cal['group'] ); ?>» wirklich löschen?')">
                                 &times; Löschen
                             </button>
@@ -5764,6 +5830,7 @@ function gsh_tp_render_profile_tab_v2() {
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
 
         <?php if ( empty( $sy['is_active'] ) ) : ?>
         <details style="padding:10px 16px;border-top:1px solid var(--cl-line)">
@@ -5846,7 +5913,7 @@ function gsh_tp_render_sync_tab() {
                            value="<?php echo esc_attr( $cur_sj_key ); ?>"
                            class="regular-text" placeholder="sj_2026_27" />
                     &rarr;
-                    <select name="gsh_tp_curriculr_profile_id">
+                    <select name="gsh_tp_curriculr_profile_id" aria-label="Profil für die Zuordnung">
                         <option value="">— kein Profil —</option>
                         <?php foreach ( gsh_tp_get_profiles() as $p ) : ?>
                             <option value="<?php echo esc_attr( $p['id'] ); ?>"
@@ -6073,7 +6140,8 @@ function gsh_tp_render_system_tab() {
             ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
             : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
     </p>
-    <table class="widefat" style="max-width:640px">
+    <div class="gsh-adm-scroll gsh-adm-scroll--w640">
+    <table class="widefat">
         <thead><tr><th>Konstante (in wp-config.php)</th><th>Status</th></tr></thead>
         <tbody>
         <?php foreach ( $cur_defs as $const => $set ) : ?>
@@ -6086,6 +6154,7 @@ function gsh_tp_render_system_tab() {
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <p>
         <strong>Redirect-URI f&uuml;r die IServ-Client-Registrierung:</strong><br>
         <code><?php echo esc_html( $cur_cfg['redirect_uri'] ); ?></code>
@@ -6178,7 +6247,7 @@ function gsh_tp_render_system_tab() {
                            value="<?php echo esc_attr( $cur_sj_key ); ?>"
                            class="regular-text" placeholder="sj_2026_27" />
                     &rarr;
-                    <select name="gsh_tp_curriculr_profile_id">
+                    <select name="gsh_tp_curriculr_profile_id" aria-label="Profil für die Zuordnung">
                         <option value="">— kein Profil —</option>
                         <?php foreach ( gsh_tp_get_profiles() as $p ) : ?>
                             <option value="<?php echo esc_attr( $p['id'] ); ?>"
@@ -6232,7 +6301,8 @@ function gsh_tp_render_sync_log_tab() {
     <?php if ( empty( $logs ) ) : ?>
         <p style="color:var(--cl-ink-500)"><em>Noch keine Sync-Versuche gespeichert.</em></p>
     <?php else : ?>
-    <table class="widefat" style="max-width:960px;margin-bottom:12px;border-collapse:collapse">
+    <div class="gsh-adm-scroll gsh-adm-scroll--sync">
+    <table class="widefat" style="border-collapse:collapse">
         <thead>
             <tr style="background:var(--cl-bg)">
                 <th style="width:148px;padding:8px 10px">Zeitpunkt</th>
@@ -6283,6 +6353,7 @@ function gsh_tp_render_sync_log_tab() {
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endif; ?>
     <?php endforeach; ?>
 
@@ -7658,6 +7729,22 @@ function gsh_tp_up_range( $from, $to ) {
 }
 
 /**
+ * Maps the design attribute of the embedded blocks to the data-gtp-theme value.
+ * "hell", empty and anything unknown give 'light'; trimmed, case-insensitive.
+ *
+ * @since 4.46.0
+ * @param  mixed $value Attribute value.
+ * @return string 'light' | 'auto' | 'dark'
+ */
+function gsh_tp_embed_theme( $value ): string {
+    $v = is_string( $value ) ? strtolower( trim( $value ) ) : '';
+    if ( 'auto' === $v ) {
+        return 'auto';
+    }
+    return 'dunkel' === $v ? 'dark' : 'light';
+}
+
+/**
  * Shortcode-Handler [gsh_termine]: Terminvorschau für die Startseite.
  *
  * Aufbau (Ergebnis Experten-Review UI/UX/Webdesign, 4.39.0):
@@ -7670,11 +7757,10 @@ function gsh_tp_up_range( $from, $to ) {
  * gsh-termine.js korrigiert nur „Heute/Morgen" bei gecachter Seite.
  *
  * Attribute:
- *   gruppe    Planner-Gruppe, z. B. "Eltern" (leer = alle). Termine ohne Gruppe
- *             sind immer sichtbar — gleiche Regel wie der Gruppen-ICS-Feed.
- *   kategorien       Nur diese Planner-Kategorien (kommagetrennt, Name oder Slug).
- *   auch_kategorien  Diese Kategorien zusätzlich zeigen, auch ohne passende Gruppe
- *                    (z. B. "Allgemein" für Eltern).
+ *   gruppe    Planner-Gruppe, z. B. "Eltern" (leer = alle). Nur Termine, bei denen
+ *             die Gruppe explizit eingetragen ist (trim, Groß-/Kleinschreibung egal);
+ *             Termine ohne Gruppe erscheinen nicht — gleiche Regel wie der Gruppen-ICS-Feed.
+ *   kategorien, auch_kategorien  Veraltet: werden akzeptiert, aber nicht ausgewertet.
  *   wochen    Anzahl Wochen ab der aktuellen (1–6, Standard 2; am Wochenende +1).
  *   schuljahr Profil-ID (leer = aktives Profil).
  *   titel     Optionale Überschrift (leer = keine, die Seite hat meist eine eigene).
@@ -7683,6 +7769,7 @@ function gsh_tp_up_range( $from, $to ) {
  *   link      Optionale URL zur vollständigen Terminübersicht.
  *   link_text Beschriftung des Links (Standard "Alle Termine").
  *   abo       "ja" = Abo-Link für den (Gruppen-)ICS-Feed anzeigen.
+ *   design    "hell" (Standard), "auto" (folgt dem Dunkelmodus des Browsers) oder "dunkel"; Unbekanntes = hell.
  *
  * @since 4.38.0
  * @param  array $atts Shortcode-Attribute.
@@ -7704,6 +7791,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
         'link'      => '',
         'link_text' => 'Alle Termine',
         'abo'       => '',
+        'design'    => 'hell',
     ), $atts, 'gsh_termine' );
 
     $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Terminvorschau' );
@@ -7724,7 +7812,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
     $now      = current_datetime();
     $today    = $now->format( 'Y-m-d' );
     $tomorrow = $now->modify( '+1 day' )->format( 'Y-m-d' );
-    $data     = gsh_tp_curriculr_agenda( $src['doc'], $today, $group, (int) $atts['wochen'], gsh_tp_public_category_filter( $atts ) );
+    $data     = gsh_tp_curriculr_agenda( $src['doc'], $today, $group, (int) $atts['wochen'] );
     $uid      = 'gtp-up-' . ( ++$instance );
     $level    = max( 2, min( 6, (int) $atts['ebene'] ) );
     $max      = max( 0, (int) $atts['max'] );
@@ -7737,7 +7825,7 @@ function gsh_tp_upcoming_shortcode( $atts ) {
         return $dow_long[ (int) $d->format( 'N' ) ] . ', ' . $d->format( 'j' ) . '. ' . $mon_long[ (int) $d->format( 'n' ) ];
     };
 
-    $o = '<section class="gtp-up" id="' . $uid . '" data-today="' . esc_attr( $today ) . '"';
+    $o = '<section class="gtp-up" id="' . $uid . '" data-gtp-theme="' . esc_attr( gsh_tp_embed_theme( $atts['design'] ) ) . '" data-today="' . esc_attr( $today ) . '"';
     if ( '' !== $atts['titel'] ) {
         $o .= ' aria-labelledby="' . $uid . '-t"><h' . $level . ' class="gtp-up-title" id="' . $uid . '-t">' . esc_html( $atts['titel'] ) . '</h' . $level . '>';
         $level = min( 6, $level + 1 );
@@ -7986,21 +8074,6 @@ function gsh_tp_public_abo_button( $src, $group, $abo ) {
         . '<p class="gtp-up-note">Für Handy, Outlook &amp; Co. — aktualisiert sich automatisch.</p>';
 }
 
-/**
- * Kategorienfilter aus Shortcode-Attributen: kategorien = nur diese,
- * auch_kategorien = zusätzlich zeigen, auch ohne passende Gruppe.
- *
- * @since 4.41.0
- * @param  array $atts Shortcode-Attribute.
- * @return array{only: string[], also: string[]}
- */
-function gsh_tp_public_category_filter( $atts ) {
-    return array(
-        'only' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['kategorien'] ?? '' ) ),
-        'also' => gsh_tp_curriculr_parse_list( sanitize_text_field( $atts['auch_kategorien'] ?? '' ) ),
-    );
-}
-
 /* ================================================================
    5a2. SHORTCODE [gsh_monat] — Monatsansicht im Startseiten-Look
    ================================================================ */
@@ -8011,7 +8084,7 @@ function gsh_tp_public_category_filter( $atts ) {
  * Blättern per Link (?gtp_monat=YYYY-MM), ohne JavaScript. Schmale Blöcke
  * (Handy) zeigen statt des Rasters eine Tagesliste nur mit Terminen.
  *
- * Attribute: gruppe, kategorien, auch_kategorien, schuljahr, titel, ebene (Standard 3), abo — wie [gsh_termine].
+ * Attribute: gruppe, schuljahr, titel, ebene (Standard 3), abo, design — wie [gsh_termine]. kategorien/auch_kategorien sind veraltet (akzeptiert, nicht ausgewertet).
  *
  * @since 4.40.0
  * @param  array $atts Shortcode-Attribute.
@@ -8029,6 +8102,7 @@ function gsh_tp_month_shortcode( $atts ) {
         'titel'     => '',
         'ebene'     => '3',
         'abo'       => '',
+        'design'    => 'hell',
     ), $atts, 'gsh_monat' );
 
     $source = gsh_tp_public_curriculr_source( $atts['schuljahr'], 'Monatsansicht' );
@@ -8048,7 +8122,7 @@ function gsh_tp_month_shortcode( $atts ) {
     $group     = sanitize_text_field( $atts['gruppe'] );
     $today     = current_datetime()->format( 'Y-m-d' );
     $requested = isset( $_GET['gtp_monat'] ) ? sanitize_text_field( wp_unslash( $_GET['gtp_monat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- read-only navigation
-    $data      = gsh_tp_curriculr_month( $src['doc'], $requested, $today, $group, gsh_tp_public_category_filter( $atts ) );
+    $data      = gsh_tp_curriculr_month( $src['doc'], $requested, $today, $group );
     $uid       = 'gtp-mo-' . ( ++$instance );
     $level     = max( 2, min( 6, (int) $atts['ebene'] ) );
     $dow_short = array( 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So' );
@@ -8059,7 +8133,7 @@ function gsh_tp_month_shortcode( $atts ) {
         return gsh_tp_curriculr_month( array(), $ym, $ym . '-01' )['label'];
     };
 
-    $o  = '<section class="gtp-up gtp-mo" id="' . $uid . '" data-today="' . esc_attr( $today ) . '" aria-label="' . esc_attr( '' !== $atts['titel'] ? $atts['titel'] : 'Terminkalender' ) . '">';
+    $o  = '<section class="gtp-up gtp-mo" id="' . $uid . '" data-gtp-theme="' . esc_attr( gsh_tp_embed_theme( $atts['design'] ) ) . '" data-today="' . esc_attr( $today ) . '" aria-label="' . esc_attr( '' !== $atts['titel'] ? $atts['titel'] : 'Terminkalender' ) . '">';
     if ( '' !== $atts['titel'] ) {
         $o .= '<p class="gtp-up-span">' . esc_html( $atts['titel'] ) . '</p>';
     }
@@ -9064,7 +9138,7 @@ function gsh_tp_css() {
 .gtp-search-icon{position:absolute;left:14px;pointer-events:none;display:flex;align-items:center;color:var(--gtp-text-muted);flex-shrink:0}
 .gtp-t{font-size:1.6rem;font-weight:800;color:var(--gtp-text);margin:0;letter-spacing:-.03em;line-height:1.15}
 .gtp-subtitle{font-size:.8rem;color:var(--gtp-text-muted);font-weight:400;letter-spacing:.01em}
-.gtp-meta{font-size:.72rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gtp-meta{font-size:.75rem;color:var(--gtp-text-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
 /* Schuljahr-Umschalter */
 .gtp-sj-switch{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .gtp-sj-btn{
@@ -9136,7 +9210,7 @@ function gsh_tp_css() {
   display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem;
 }
 .gtp-filt-lbl{
-  font-size:.68rem;font-weight:700;color:var(--gtp-text-muted);
+  font-size:.75rem;font-weight:700;color:var(--gtp-text-muted);
 }
 /* Toggle-Button immer sichtbar */
 .gtp-filt-toggle{
@@ -9154,7 +9228,7 @@ function gsh_tp_css() {
 }
 .gtp-filt.gtp-filt-open{max-height:400px;overflow:visible}
 .gtp-filt-count{
-  font-size:.68rem;font-weight:500;color:var(--gtp-text-muted);
+  font-size:.75rem;font-weight:500;color:var(--gtp-text-muted);
   margin-left:.35em;text-transform:none;
 }
 .gtp-fb{
@@ -9188,7 +9262,7 @@ function gsh_tp_css() {
 .gt{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem;table-layout:fixed}
 .gt thead th{
   background:var(--gtp-text);color:var(--cl-on-primary);padding:9px 6px;
-  text-align:center;font-weight:600;font-size:.74rem;
+  text-align:center;font-weight:600;font-size:.75rem;
   border-right:1px solid rgba(255,255,255,.1);
   position:sticky;top:var(--gtp-thead-top,44px);z-index:10;
 }
@@ -9211,8 +9285,8 @@ function gsh_tp_css() {
 .gt tbody tr:first-child td{border-top:1px solid var(--gtp-border)}
 .gs{width:42px;text-align:center;background:var(--gtp-surface);font-size:.8rem;font-weight:700;color:var(--gtp-text-muted)}
 .gh{width:140px;background:var(--cl-bg)}
-.gdl{display:block;font-size:.65rem;color:var(--gtp-text-faint);margin-bottom:3px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
-.gnc{font-size:.72rem;color:var(--gtp-text-muted)}
+.gdl{display:block;font-size:.75rem;color:var(--gtp-text-faint);margin-bottom:3px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.gnc{font-size:.75rem;color:var(--gtp-text-muted)}
 
 /* ── Event-Cards (Tagesspalten) ── */
 .ge{
@@ -9239,7 +9313,7 @@ function gsh_tp_css() {
   font-weight:500;transition:var(--gtp-tr);
 }
 .gn-range{
-  display:block;font-size:.63rem;opacity:.65;font-style:normal;
+  display:block;font-size:.75rem;font-style:normal;
   margin-bottom:1px;font-variant-numeric:tabular-nums;
 }
 
@@ -9317,7 +9391,7 @@ function gsh_tp_css() {
 .gtp-ics-help-body ul{margin:4px 0 0;padding-left:18px}
 .gtp-ics-help-body li{margin-bottom:4px}
 .gtp-pdf-loading{opacity:.55;pointer-events:none;cursor:default}
-.gtp-src{font-size:.7rem;color:var(--gtp-text-faint)}
+.gtp-src{font-size:.75rem;color:var(--gtp-text-faint)}
 /* PDF-Hinweis-Banner */
 .gtp-pdf-hint{
   position:fixed;top:0;left:0;right:0;background:var(--gtp-text);color:var(--cl-on-primary);
@@ -9370,14 +9444,14 @@ function gsh_tp_css() {
 }
 .gtp-search-results{
   display:flex;flex-wrap:wrap;gap:4px;align-items:center;
-  font-size:.73rem;padding:0 4px;min-height:18px;
+  font-size:.75rem;padding:0 4px;min-height:18px;
 }
 .gtp-sr-count{color:var(--gtp-text-muted);font-weight:600}
 .gtp-sr-none{color:var(--cl-danger);font-weight:600}
 .gtp-sr-q{
   display:inline-block;padding:1px 9px;
   background:var(--gtp-accent-light);color:var(--gtp-accent);border-radius:10px;
-  text-decoration:none;font-weight:700;font-size:.71rem;
+  text-decoration:none;font-weight:700;font-size:.75rem;
   transition:var(--gtp-tr-fast);
 }
 .gtp-sr-q:hover{background:var(--gtp-accent);color:var(--cl-on-primary)}
@@ -9411,7 +9485,7 @@ function gsh_tp_css() {
   .gtp-tab-sep{display:none}
   .gtp-view-toggle{font-size:.76rem;padding:.25em .6em}
   .gtp-filt-wrap{padding:.625rem .875rem}
-  .gtp-fb{white-space:nowrap;font-size:.72rem;padding:4px 10px}
+  .gtp-fb{white-space:nowrap;font-size:.75rem;padding:4px 10px}
   .gtp-tabs{margin:0 -1rem;padding:0 1rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
   .gtp-tabs::-webkit-scrollbar{display:none}
   .gtp-tab{padding:.5rem 1rem;font-size:.82rem;white-space:nowrap;flex-shrink:0}
@@ -9445,7 +9519,7 @@ function gsh_tp_css() {
   /* Mitte: Schulwoche + Datumsbereich */
   .gtp-mob-nav-info{flex:1;text-align:center;line-height:1.3;overflow:hidden;padding:0 4px}
   .gtp-mob-nav-sw{font-size:.87rem;font-weight:700;color:var(--gtp-text)}
-  .gtp-mob-nav-dates{font-size:.67rem;color:var(--gtp-text-muted)}
+  .gtp-mob-nav-dates{font-size:.75rem;color:var(--gtp-text-muted)}
 
   /* 📍 Heute-Button */
   .gtp-mob-today-btn{
@@ -9470,7 +9544,7 @@ function gsh_tp_css() {
     margin:12px 0 0;
   }
   .admin-bar .gtp-mob-wh{top:124px}
-  .gtp-mob-wh-sub{font-weight:400;color:var(--gtp-text-faint);font-size:.7rem;text-transform:none;letter-spacing:0}
+  .gtp-mob-wh-sub{font-weight:400;color:var(--gtp-text-faint);font-size:.75rem;text-transform:none;letter-spacing:0}
 
   /* ── Heutige Woche: pulsierender Punkt + hervorgehobener Header ── v3.6.3 */
   @keyframes gtpMobPulse{
@@ -9491,7 +9565,7 @@ function gsh_tp_css() {
   .gtp-mob-today-week .gtp-mob-wh-sub{color:var(--gtp-today-bd);opacity:.7}
 
   /* Vergrößerter „HEUTE"-Badge (v3.6.3) */
-  .gtp-mob-badge{font-size:.62rem;padding:2px 6px;border-radius:5px}
+  .gtp-mob-badge{font-size:.75rem;padding:2px 6px;border-radius:5px}
 
   /* ── Tag-Zeile (Feed-Karte) ── */
   .gtp-mob-day{
@@ -9515,7 +9589,7 @@ function gsh_tp_css() {
   /* ── Datumsspalte (iOS-Stil: Wochentag + Kreis-Zahl) ── */
   .gtp-mob-date{flex:0 0 44px;text-align:center;padding-top:2px}
   .gtp-mob-dow{
-    font-size:.65rem;font-weight:600;color:var(--gtp-text-muted);
+    font-size:.75rem;font-weight:600;color:var(--gtp-text-muted);
     line-height:1;margin-bottom:4px;
   }
   .gtp-mob-dm{
@@ -9532,7 +9606,7 @@ function gsh_tp_css() {
   .gtp-mob-hol .gtp-mob-dow,.gtp-mob-hol .gtp-mob-dm{color:var(--gtp-text-faint)}
   /* „HEUTE"-Badge */
   .gtp-mob-badge{
-    font-size:.52rem;background:var(--gtp-today-bd);color:var(--cl-on-primary);
+    font-size:.75rem;background:var(--gtp-today-bd);color:var(--cl-on-primary);
     border-radius:4px;padding:1px 4px;margin-top:4px;
     font-weight:700;display:block;text-align:center;
   }
@@ -9568,7 +9642,7 @@ function gsh_tp_css() {
 .gtp-changes-text{flex:1;font-size:.84rem;color:var(--c-fs-tx);font-weight:600}
 .gtp-changes-show{
   padding:4px 12px;background:var(--c-fs-bg);border:1.5px solid var(--c-fs-bd);border-radius:6px;
-  font-size:.74rem;font-weight:600;color:var(--c-fs-tx);cursor:pointer;white-space:nowrap;
+  font-size:.75rem;font-weight:600;color:var(--c-fs-tx);cursor:pointer;white-space:nowrap;
   transition:var(--gtp-tr-fast);
 }
 .gtp-changes-show:hover{filter:brightness(.9)}
@@ -9582,7 +9656,7 @@ function gsh_tp_css() {
 .gtp-changes-item:last-child{border-bottom:none}
 .gtp-changes-badge{
   flex:0 0 auto;padding:1px 7px;border-radius:4px;
-  font-size:.64rem;font-weight:700;
+  font-size:.75rem;font-weight:700;
 }
 .gtp-changes-badge-new{background:var(--c-pr-bg);color:var(--c-pr-tx)}
 .gtp-changes-badge-del{background:var(--c-pf-bg);color:var(--c-pf-tx)}
@@ -9636,7 +9710,7 @@ function gsh_tp_css() {
 }
 .gtp-popup-close:hover{background:var(--gtp-border);color:var(--gtp-text)}
 .gtp-popup-cat{
-  display:inline-block;font-size:.7rem;font-weight:700;padding:.2rem .65rem;border-radius:20px;
+  display:inline-block;font-size:.75rem;font-weight:700;padding:.2rem .65rem;border-radius:20px;
   background:var(--gtp-surface);color:var(--gtp-text-muted);margin-bottom:.75rem;
 }
 .gtp-popup-cat.gc-standard {background:var(--c-st-bg);color:var(--c-st-tx)}
@@ -9671,7 +9745,7 @@ function gsh_tp_css() {
 }
 .gtp-feedback-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.875rem}
 .gtp-feedback-label{
-  display:block;font-size:.72rem;font-weight:700;
+  display:block;font-size:.75rem;font-weight:700;
   color:var(--gtp-text-muted);
 }
 .gtp-feedback-textarea{
@@ -9684,7 +9758,7 @@ function gsh_tp_css() {
   resize:vertical;line-height:1.5;
 }
 .gtp-feedback-textarea:focus{outline:none;border-color:var(--gtp-accent)}
-.gtp-feedback-counter{font-size:.72rem;color:var(--gtp-text-faint);text-align:right}
+.gtp-feedback-counter{font-size:.75rem;color:var(--gtp-text-faint);text-align:right}
 .gtp-feedback-actions{display:flex;gap:.625rem;margin-top:1.1rem}
 .gtp-feedback-actions .gtp-btn{flex:1;justify-content:center;text-align:center}
 .gtp-feedback-status{
@@ -9718,7 +9792,7 @@ function gsh_tp_css() {
 .gtp-version-btn{
   background:var(--gtp-surface,var(--cl-bg));
   border:1px solid var(--gtp-border,var(--cl-line));border-radius:4px;
-  padding:3px 9px;font-size:11px;color:var(--gtp-text-muted,var(--cl-ink-500));
+  padding:3px 9px;font-size:12px;color:var(--gtp-text-muted,var(--cl-ink-500));
   cursor:pointer;transition:background .15s,color .15s,border-color .15s;
   font-family:inherit;
 }
@@ -9739,7 +9813,7 @@ function gsh_tp_css() {
 .gtp-cl-list{margin:.3rem 0 0 1rem;padding:0;list-style:disc}
 .gtp-cl-list li{font-size:13px;color:var(--gtp-text-muted,var(--cl-ink-500));margin:.25rem 0}
 .gtp-cl-tag{
-  display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;
+  display:inline-block;font-size:12px;font-weight:700;padding:1px 6px;border-radius:3px;
   margin-right:5px;vertical-align:middle;
 }
 .gtp-cl-tag--feature {background:var(--cl-success-bg);color:var(--cl-success);border:1px solid var(--cl-success)}
@@ -9800,7 +9874,7 @@ function gsh_tp_css() {
   border-top:1px solid var(--gtp-border);
   background:var(--gtp-surface);border-radius:0 0 16px 16px;flex-shrink:0;
 }
-.gtp-help-version{font-size:.72rem;color:var(--gtp-text-faint)}
+.gtp-help-version{font-size:.75rem;color:var(--gtp-text-faint)}
 </style>';
 }
 

@@ -74,6 +74,8 @@ Das Projekt besteht aus vier Teilen:
 
 URL-Parameter `?sj=` überschreibt den Shortcode-Wert (Schuljahr-Umschalter im Frontend).
 
+Termine für Eltern einbetten (`[gsh_termine]`, `[gsh_monat]`, Attribute `gruppe` und `design`): siehe [docs/anleitung/termine-fuer-eltern-einbetten.md](docs/anleitung/termine-fuer-eltern-einbetten.md). Eine Gruppenansicht zeigt nur Termine mit dieser Gruppe; `kategorien`/`auch_kategorien` filtern nicht mehr.
+
 ### Mehrere Schuljahre (Profile)
 
 Das Plugin verwaltet bis zu 5 Schuljahr-Profile. Jedes Profil hat:

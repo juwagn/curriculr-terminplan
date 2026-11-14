@@ -92,43 +92,55 @@ function gsh_tp_curriculr_build_event( $e, $cats_by_id ) {
         $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $start );
         $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
     } else {
-        $st      = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
-        $et      = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
-        $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
-        $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
+        $st = ( isset( $e['startTime'] ) && $e['startTime'] !== null ) ? $e['startTime'] : '00:00';
+        $et = ( isset( $e['endTime'] ) && $e['endTime'] !== null ) ? $e['endTime'] : '23:59';
+        if ( ! gsh_tp_curriculr_is_hhmm( $st ) || ! gsh_tp_curriculr_is_hhmm( $et ) ) {
+            // Altdaten mit ungueltiger Uhrzeit: als ganztaegig ausgeben statt kaputtes DTSTART/DTEND (Datum ist gueltig).
+            $end_exclusive = ( new DateTime( $end ) )->modify( '+1 day' )->format( 'Ymd' );
+            $lines[]       = 'DTSTART;VALUE=DATE:' . gsh_tp_curriculr_ics_fmt_date( $start );
+            $lines[]       = 'DTEND;VALUE=DATE:' . $end_exclusive;
+        } else {
+            // Planner erlaubt endTime < startTime am selben Tag: DTEND nie vor DTSTART ausgeben.
+            if ( $end === $start && $et < $st ) {
+                $et = $st;
+            }
+            $lines[] = 'DTSTART:' . gsh_tp_curriculr_ics_fmt_datetime( $start, $st );
+            $lines[] = 'DTEND:' . gsh_tp_curriculr_ics_fmt_datetime( $end, $et );
+        }
     }
 
-    if ( ! empty( $e['location'] ) ) {
+    if ( ! empty( $e['location'] ) && is_string( $e['location'] ) ) {
         $lines[] = 'LOCATION:' . gsh_tp_curriculr_ics_escape( $e['location'] );
     }
 
     $desc_parts = array();
-    if ( ! empty( $e['notes'] ) ) {
+    if ( ! empty( $e['notes'] ) && is_string( $e['notes'] ) ) {
         $desc_parts[] = $e['notes'];
     }
-    if ( ! empty( $e['groups'] ) ) {
-        $desc_parts[] = 'Gruppen: ' . implode( ', ', $e['groups'] );
+    // Bereinigte Gruppenliste (getrimmt, Leere verworfen) fuer DESCRIPTION und X-GSH-GROUPS.
+    $clean_groups = array();
+    if ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) {
+        foreach ( $e['groups'] as $g ) {
+            $g = is_scalar( $g ) ? trim( (string) $g ) : '';
+            if ( '' !== $g ) {
+                $clean_groups[] = $g;
+            }
+        }
+    }
+    if ( $clean_groups ) {
+        $desc_parts[] = 'Gruppen: ' . implode( ', ', $clean_groups );
     }
     if ( $desc_parts ) {
         $lines[] = 'DESCRIPTION:' . gsh_tp_curriculr_ics_escape( implode( "\n", $desc_parts ) );
     }
 
-    if ( isset( $e['categoryId'] ) && isset( $cats_by_id[ $e['categoryId'] ] ) ) {
+    if ( isset( $e['categoryId'] ) && is_string( $e['categoryId'] ) && isset( $cats_by_id[ $e['categoryId'] ] ) ) {
         $lines[] = 'CATEGORIES:' . gsh_tp_curriculr_ics_escape( $cats_by_id[ $e['categoryId'] ] );
     }
 
-    if ( ! empty( $e['groups'] ) && is_array( $e['groups'] ) ) {
-        $groups = array();
-        foreach ( $e['groups'] as $g ) {
-            $g = trim( (string) $g );
-            if ( '' !== $g ) {
-                $groups[] = gsh_tp_curriculr_ics_escape( $g );
-            }
-        }
-        if ( $groups ) {
-            // Multi-Value wie CATEGORIES: Werte einzeln escaped, Separator-Komma roh.
-            $lines[] = 'X-GSH-GROUPS:' . implode( ',', $groups );
-        }
+    if ( $clean_groups ) {
+        // Multi-Value wie CATEGORIES: Werte einzeln escaped, Separator-Komma roh.
+        $lines[] = 'X-GSH-GROUPS:' . implode( ',', array_map( 'gsh_tp_curriculr_ics_escape', $clean_groups ) );
     }
 
     $lines[] = 'END:VEVENT';
@@ -153,12 +165,9 @@ function gsh_tp_curriculr_build_ics( $doc, $target_group = null ) {
     );
     if ( ! empty( $doc['events'] ) ) {
         foreach ( $doc['events'] as $e ) {
-            if ( null !== $target_group ) {
-                // Missing or non-array groups key → treat as no restriction (same as groups: []).
-                $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
-                if ( ! empty( $groups ) && ! in_array( $target_group, $groups, true ) ) {
-                    continue;
-                }
+            // Group feed: only events that explicitly carry the group (same rule as the shortcodes).
+            if ( null !== $target_group && ! gsh_tp_curriculr_event_in_group( $e, $target_group ) ) {
+                continue;
             }
             $lines = array_merge( $lines, gsh_tp_curriculr_build_event( $e, $cats_by_id ) );
         }
@@ -278,16 +287,39 @@ function gsh_tp_curriculr_validate_event( $e ) {
         return false;
     }
     if ( array_key_exists( 'startTime', $e ) && $e['startTime'] !== null ) {
-        if ( ! is_string( $e['startTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['startTime'] ) !== 1 ) {
+        if ( ! gsh_tp_curriculr_is_hhmm( $e['startTime'] ) ) {
             return false;
         }
     }
     if ( array_key_exists( 'endTime', $e ) && $e['endTime'] !== null ) {
-        if ( ! is_string( $e['endTime'] ) || preg_match( '/^\d{2}:\d{2}$/', $e['endTime'] ) !== 1 ) {
+        if ( ! gsh_tp_curriculr_is_hhmm( $e['endTime'] ) ) {
             return false;
         }
     }
     if ( array_key_exists( 'allDay', $e ) && ! is_bool( $e['allDay'] ) ) {
+        return false;
+    }
+    // Typen der Felder, die in DESCRIPTION/LOCATION/CATEGORIES/X-GSH-GROUPS fliessen.
+    if ( array_key_exists( 'groups', $e ) ) {
+        if ( ! is_array( $e['groups'] ) ) {
+            return false;
+        }
+        foreach ( $e['groups'] as $g ) {
+            if ( ! is_string( $g ) ) {
+                return false;
+            }
+        }
+    }
+    foreach ( array( 'notes', 'location' ) as $k ) {
+        if ( array_key_exists( $k, $e ) && ! is_string( $e[ $k ] ) ) {
+            return false;
+        }
+    }
+    if ( array_key_exists( 'categoryId', $e ) && null !== $e['categoryId'] && ! is_string( $e['categoryId'] ) ) {
+        return false;
+    }
+    // Ende nicht vor Beginn (ISO-Daten vergleichen lexikografisch korrekt).
+    if ( $e['end'] < $e['start'] ) {
         return false;
     }
     return true;
@@ -322,7 +354,16 @@ function gsh_tp_curriculr_normalize_stage( $stage ) {
 // schoolweeks.ts getQuarterRange: Grenzen auf Freitag der ISO-Woche snappen.
 
 function gsh_tp_curriculr_is_iso_date( $d ) {
-    return is_string( $d ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $d ) === 1;
+    // \z (nicht $): "$" liesse ein angehaengtes "\n" durch (ICS-Zeilen-Injection).
+    // checkdate(): "2026-13-45" / "2026-02-30" wuerden sonst new DateTime() zum Absturz bringen.
+    return is_string( $d )
+        && preg_match( '/^(\d{4})-(\d{2})-(\d{2})\z/', $d, $m ) === 1
+        && checkdate( (int) $m[2], (int) $m[3], (int) $m[1] );
+}
+
+// HH:MM im Bereich 00:00-23:59, ohne angehaengtes Newline.
+function gsh_tp_curriculr_is_hhmm( $t ) {
+    return is_string( $t ) && preg_match( '/^([01]\d|2[0-3]):[0-5]\d\z/', $t ) === 1;
 }
 
 function gsh_tp_curriculr_snap_friday( $iso ) {
@@ -546,45 +587,32 @@ function gsh_tp_curriculr_display_notes( $doc ) {
     return $map;
 }
 
-/** "Allgemein, elternarbeit" → ['allgemein', 'elternarbeit'] (getrimmt, klein, ohne Leere). */
-function gsh_tp_curriculr_parse_list( $str ) {
-    $out = array();
-    foreach ( explode( ',', (string) $str ) as $part ) {
-        $part = trim( $part );
-        if ( '' !== $part ) {
-            $out[] = function_exists( 'mb_strtolower' ) ? mb_strtolower( $part, 'UTF-8' ) : strtolower( $part );
-        }
+/** Normal form for group names: trim + lower case; non-strings become ''. */
+function gsh_tp_curriculr_norm_group( $v ) {
+    if ( ! is_string( $v ) ) {
+        return '';
     }
-    return array_values( array_unique( $out ) );
+    $v = trim( $v );
+    return mb_strtolower( $v, 'UTF-8' );
 }
 
 /**
- * Sichtbarkeit eines Termins in den öffentlichen Ansichten.
- * - filter['only']: nur diese Kategorien (Label oder Slug, Groß-/Kleinschreibung egal).
- * - filter['also']: diese Kategorien zusätzlich zeigen, auch wenn der Termin nicht zur
- *   Gruppe gehört (z. B. „Allgemein“ für Eltern).
+ * Group filter (shortcodes and group ICS feed). Empty $group = no restriction.
+ * Otherwise an event matches only if its groups array explicitly contains the
+ * group (trim + case-insensitive). Empty, missing or non-array groups never match.
  */
-function gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter = array() ) {
-    $only = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['only'] ?? array() ) ) );
-    $also = gsh_tp_curriculr_parse_list( implode( ',', (array) ( $filter['also'] ?? array() ) ) );
-    $cat  = isset( $e['categoryId'] ) && isset( $cats[ $e['categoryId'] ] ) ? $cats[ $e['categoryId'] ] : null;
-    $keys = $cat ? gsh_tp_curriculr_parse_list( ( $cat['label'] ?? '' ) . ',' . ( $cat['slug'] ?? '' ) ) : array();
-    if ( $only && ! array_intersect( $keys, $only ) ) {
-        return false;
-    }
-    if ( gsh_tp_curriculr_event_in_group( $e, $group ) ) {
-        return true;
-    }
-    return $also && array_intersect( $keys, $also );
-}
-
-/** Gruppenfilter mit derselben Semantik wie der Gruppen-ICS-Feed: ohne Gruppen = für alle. */
 function gsh_tp_curriculr_event_in_group( $e, $group ) {
-    if ( '' === $group ) {
+    $want = gsh_tp_curriculr_norm_group( $group );
+    if ( '' === $want ) {
         return true;
     }
-    $groups = ( isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
-    return ! $groups || in_array( $group, $groups, true );
+    $groups = ( is_array( $e ) && isset( $e['groups'] ) && is_array( $e['groups'] ) ) ? $e['groups'] : array();
+    foreach ( $groups as $g ) {
+        if ( gsh_tp_curriculr_norm_group( $g ) === $want ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -600,7 +628,7 @@ function gsh_tp_curriculr_event_in_group( $e, $group ) {
  *
  * @return array{from: string, to: string, strip: array, entries: array, categories: array, next: ?array}
  */
-function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter = array() ) {
+function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2 ) {
     $empty = array( 'from' => '', 'to' => '', 'strip' => array(), 'entries' => array(), 'categories' => array(), 'next' => null );
     if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
         return $empty;
@@ -625,7 +653,7 @@ function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter
     $next   = null;
     foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
         $span = gsh_tp_curriculr_event_span( $e );
-        if ( null === $span || $span['end'] < $today || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+        if ( null === $span || $span['end'] < $today || ! gsh_tp_curriculr_event_in_group( $e, $group ) ) {
             continue;
         }
         if ( $span['start'] > $to ) {
@@ -743,7 +771,7 @@ function gsh_tp_curriculr_agenda( $doc, $today, $group = '', $weeks = 2, $filter
  * @param string $ym    'YYYY-MM'; ungültig → Monat von $today.
  * @return array{ym: string, label: string, prev: string, next: string, weeks: array, categories: array}
  */
-function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '', $filter = array() ) {
+function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '' ) {
     static $months = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' );
     if ( ! gsh_tp_curriculr_is_iso_date( $today ) ) {
         $today = gmdate( 'Y-m-d' );
@@ -767,7 +795,7 @@ function gsh_tp_curriculr_month( $doc, $ym, $today, $group = '', $filter = array
     $events = array();
     foreach ( ( isset( $doc['events'] ) && is_array( $doc['events'] ) ) ? $doc['events'] : array() as $e ) {
         $span = gsh_tp_curriculr_event_span( $e );
-        if ( null === $span || $span['end'] < $ym . '-01' || $span['start'] > $last || ! gsh_tp_curriculr_event_visible( $e, $group, $cats, $filter ) ) {
+        if ( null === $span || $span['end'] < $ym . '-01' || $span['start'] > $last || ! gsh_tp_curriculr_event_in_group( $e, $group ) ) {
             continue;
         }
         list( $st, $et ) = gsh_tp_curriculr_event_times( $e );
@@ -987,6 +1015,11 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         : wp_generate_password( 32, false, false );
 
     $json_str = wp_json_encode( $doc );
+    if ( false === $json_str || '' === $json_str ) {
+        // Nie ein leeres json in die DB schreiben (Datenverlust).
+        error_log( 'curriculr: wp_json_encode failed for ' . $sj );
+        return array( 'status' => 'error', 'code' => 'encode_error' );
+    }
     $data = array(
         'schoolyear' => $sj,
         'json'       => $json_str,
@@ -1003,6 +1036,11 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         // Write 0 Zeilen, hat ein paralleler Request denselben baseVersion bereits
         // committet -> frisches repo_get, Conflict wie im Schnellpfad.
         $affected = $wpdb->update( $table, $data, array( 'schoolyear' => $sj, 'version' => $current ) );
+        if ( false === $affected ) {
+            // wpdb::update() gibt nur bei DB-Fehlern false zurueck (0 = kein Treffer = Konflikt).
+            error_log( 'curriculr: DB update failed: ' . $wpdb->last_error );
+            return array( 'status' => 'error', 'code' => 'db_error' );
+        }
         if ( ! $affected ) {
             $fresh = gsh_tp_curriculr_repo_get( $sj );
             return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
@@ -1013,7 +1051,12 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         $ok = $wpdb->insert( $table, $data );
         if ( ! $ok ) {
             $fresh = gsh_tp_curriculr_repo_get( $sj );
-            return gsh_tp_curriculr_repo_put_conflict( $sj, $fresh ? (int) $fresh['version'] : $current, $fresh );
+            if ( ! $fresh ) {
+                // Kein Doc vorhanden: kein Race, sondern ein echter DB-Fehler.
+                error_log( 'curriculr: DB insert failed: ' . $wpdb->last_error );
+                return array( 'status' => 'error', 'code' => 'db_error' );
+            }
+            return gsh_tp_curriculr_repo_put_conflict( $sj, (int) $fresh['version'], $fresh );
         }
     }
 
@@ -1023,7 +1066,10 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
         : ( function_exists( 'gsh_tp_curriculr_guard_current_claims' ) ? gsh_tp_curriculr_guard_current_claims() : null );
     $author_sub  = $guard ? (string) ( $guard['sub'] ?? '' ) : '';
     $author_name = $guard ? (string) ( $guard['name'] ?? '' ) : '';
-    gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name );
+    if ( ! gsh_tp_curriculr_repo_save_revision( $sj, $new_version, $json_str, $author_sub, $author_name ) ) {
+        // Doc ist gespeichert (keine Transaktion); fehlender Snapshot wird nur protokolliert.
+        error_log( 'curriculr: revision insert failed (v' . $new_version . '): ' . $wpdb->last_error );
+    }
     gsh_tp_curriculr_prune_revisions( $sj );
 
     return array(
@@ -1038,7 +1084,7 @@ function gsh_tp_curriculr_repo_put( $sj, $doc, $base_version, $stage = 'entwurf'
 function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str, $author_sub = '', $author_name = '' ) {
     global $wpdb;
     $table = gsh_tp_curriculr_revisions_table();
-    $wpdb->insert(
+    $ok = $wpdb->insert(
         $table,
         array(
             'schoolyear'  => sanitize_key( $sj ),
@@ -1049,7 +1095,8 @@ function gsh_tp_curriculr_repo_save_revision( $sj, $version, $json_str, $author_
             'author_name' => (string) $author_name,
         )
     );
-    return (int) $wpdb->insert_id;
+    // wpdb::insert() gibt bei Fehler false zurueck; insert_id bliebe sonst auf dem alten Wert.
+    return false !== $ok && 0 !== $ok ? (int) $wpdb->insert_id : false;
 }
 
 function gsh_tp_curriculr_prune_revisions( $sj ) {
@@ -1231,12 +1278,17 @@ function gsh_tp_curriculr_rest_put( $req ) {
     $stage = gsh_tp_curriculr_normalize_stage( isset( $body['stage'] ) ? $body['stage'] : 'entwurf' );
     $res   = gsh_tp_curriculr_repo_put( $req['sj'], $body['doc'], (int) $body['baseVersion'], $stage );
 
+    if ( $res['status'] === 'error' ) {
+        // Generisch: keine DB-Details an den Client (Details stehen im error_log).
+        return new WP_REST_Response( array( 'error' => 'server_error', 'message' => 'Speichern fehlgeschlagen.' ), 500 );
+    }
+
     if ( $res['status'] === 'conflict' ) {
         return new WP_REST_Response(
             array(
                 'error'         => 'conflict',
-                'serverVersion' => (int) $res['current']['version'],
-                'doc'           => json_decode( $res['current']['json'], true ),
+                'serverVersion' => (int) ( $res['current']['version'] ?? 0 ),
+                'doc'           => isset( $res['current']['json'] ) ? json_decode( $res['current']['json'], true ) : null,
                 'authorName'    => (string) ( $res['authorName'] ?? '' ),
                 'savedAt'       => (string) ( $res['savedAt']    ?? '' ),
             ),
@@ -1278,12 +1330,22 @@ function gsh_tp_curriculr_rest_feed( $req ) {
     exit;
 }
 
+/** Group name from the feed path; '' if blank after decoding, sanitizing and normalizing. */
+function gsh_tp_curriculr_feed_group_name( $raw ) {
+    $group = sanitize_text_field( urldecode( (string) $raw ) );
+    return '' === gsh_tp_curriculr_norm_group( $group ) ? '' : $group;
+}
+
 function gsh_tp_curriculr_rest_feed_group( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
     if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
-    $group = sanitize_text_field( urldecode( $req['group'] ) );
+    $group = gsh_tp_curriculr_feed_group_name( $req['group'] );
+    if ( '' === $group ) {
+        // A blank group would mean "no restriction" and leak the full feed.
+        return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
+    }
     $doc   = json_decode( $row['json'], true );
     $ics   = gsh_tp_curriculr_build_ics( $doc, $group );
 
@@ -2132,6 +2194,10 @@ function gsh_tp_curriculr_handle_doc_import() {
     $author       = array( 'sub' => 'manual:' . get_current_user_id(), 'name' => (string) $user->display_name );
 
     $res = gsh_tp_curriculr_repo_put( $sy_key, $parsed['doc'], $base_version, $stage, $author );
+    if ( 'error' === $res['status'] ) {
+        echo '<div class="notice notice-error"><p>Hochladen fehlgeschlagen. Das Dokument konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut oder wenden Sie sich an die Administration.</p></div>';
+        return;
+    }
     if ( $res['status'] !== 'ok' ) {
         echo '<div class="notice notice-error"><p>Hochladen fehlgeschlagen — der Stand hat sich zwischenzeitlich geändert. Bitte erneut versuchen.</p></div>';
         return;

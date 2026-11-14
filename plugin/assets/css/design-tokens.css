@@ -8,12 +8,13 @@
  * in den produktspezifischen --cl-product-* und in den Modus-Pins am Dateiende
  * (Kopie der Paketwerte, nötig weil das Plugin-Modus-Attribut vor dem System gilt).
  *
- * Der Selektor ":root, #gtp, body.wp-admin" ist Absicht: var() wird dort aufgelöst, wo die
+ * Der Selektor ":root, #gtp, .gtp-up, body.wp-admin" ist Absicht: var() wird dort aufgelöst, wo die
  * Eigenschaft steht. Nur so folgen die Namen auch dem Plugin-Modus
  * (#gtp[data-gtp-theme="light|dark"], siehe gsh-terminplan.css).
  */
 :root,
 #gtp,
+.gtp-up,
 body.wp-admin {
   /* Marine */
   --primary-900: var(--cl-marine-800);
@@ -102,6 +103,7 @@ body.wp-admin {
   --cl-product-up-hol-bg: #F4EFE4;
   --cl-product-up-hol-line: #E8DCC0;
   --cl-product-up-hol-ink: #6B5A2E;
+  --cl-product-up-on-accent: #111827;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -159,4 +161,159 @@ body.wp-admin,
     --cl-warning-bg: #3A2A12;
     --cl-danger-bg: #3A1A18;
     color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EINGEBETTETE BLÖCKE ([gsh_termine], [gsh_monat]) – Standard hell
+   curriculr-tokens.css kippt --cl-* global auf :root, sobald der Browser im Dunkelmodus ist.
+   Ein Block im hellen Theme der Schul-Website würde dann hellen Text auf hellem Grund zeigen.
+   Deshalb pinnt .gtp-up die hellen Werte am Block: ohne Attribut (gecachte Seiten), mit
+   data-gtp-theme="light" und mit "auto" außerhalb des Dunkelmodus. Dunkel gilt nur bei
+   data-gtp-theme="dark" und bei "auto" innerhalb von prefers-color-scheme: dark.
+   Die Fläche des Blocks im Dunkelfall steht in gsh-terminplan.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+.gtp-up:not([data-gtp-theme="dark"]) {
+    --cl-marine-900: #001F35;
+    --cl-marine-800: #00345C;
+    --cl-marine-700: #00467D;
+    --cl-marine-500: #0058A0;
+    --cl-marine-100: #E6F4FF;
+    --cl-gold-500: #FFC857;
+    --cl-gold-100: #FFF8E1;
+    --cl-ink-900: #111827;
+    --cl-ink-500: #4B5563;
+    --cl-line: #E2E8F0;
+    --cl-border: #8A919C;
+    --cl-bg: #F3F5F9;
+    --cl-surface: #FFFFFF;
+    --cl-on-primary: #FFFFFF;
+    --cl-on-gold: #1C1917;
+    --cl-success: #047857;
+    --cl-warning: #B45309;
+    --cl-danger: #B42318;
+    --cl-success-bg: #ECFDF5;
+    --cl-warning-bg: #FFF8E6;
+    --cl-danger-bg: #FEF2F2;
+    --cl-product-up-accent: #04D2C8;
+    --cl-product-up-accent-ink: #047A74;
+    --cl-product-up-accent-soft: #E6FAF9;
+    --cl-product-up-line: #ECEEF1;
+    --cl-product-up-ink-3: #5F6368;
+    --cl-product-up-weekend: #F3F4F6;
+    --cl-product-up-hol-bg: #F4EFE4;
+    --cl-product-up-hol-line: #E8DCC0;
+    --cl-product-up-hol-ink: #6B5A2E;
+    --cl-product-up-on-accent: #111827;
+    color-scheme: light;
+}
+
+/* Keep these dark values in sync with the #gtp[data-gtp-theme="dark"] block above and with
+   the prefers-color-scheme block below (three copies of the same palette). */
+.gtp-up[data-gtp-theme="dark"] {
+    --cl-marine-800: #80A3BE;
+    --cl-marine-700: #9DBAD0;
+    --cl-marine-500: #B5CBDC;
+    --cl-marine-100: #12324A;
+    --cl-gold-100: #3A2F12;
+    --cl-ink-900: #ECEBE8;
+    --cl-ink-500: #AEABA5;
+    --cl-line: #343436;
+    --cl-border: #7A7A80;
+    --cl-bg: #19191A;
+    --cl-surface: #212122;
+    --cl-on-primary: #001F35;
+    --cl-success: #4ACB9B;
+    --cl-warning: #F0A35E;
+    --cl-danger: #F2867A;
+    --cl-success-bg: #12302A;
+    --cl-warning-bg: #3A2A12;
+    --cl-danger-bg: #3A1A18;
+    --cl-product-up-accent: #04D2C8;
+    --cl-product-up-accent-ink: #3DD6CC;
+    --cl-product-up-accent-soft: #12322F;
+    --cl-product-up-line: #343436;
+    --cl-product-up-ink-3: #AEABA5;
+    --cl-product-up-weekend: #2A2A2C;
+    --cl-product-up-hol-bg: #3A2F12;
+    --cl-product-up-hol-line: #5A4A1E;
+    --cl-product-up-hol-ink: #E8D49A;
+    --cl-product-up-on-accent: #001F35;
+    color-scheme: dark;
+}
+
+/* Must stay AFTER the light pin (.gtp-up:not([data-gtp-theme="dark"])) above: same specificity,
+   so source order decides. Values: see the dark block above. */
+@media (prefers-color-scheme: dark) {
+    .gtp-up[data-gtp-theme="auto"] {
+        --cl-marine-800: #80A3BE;
+        --cl-marine-700: #9DBAD0;
+        --cl-marine-500: #B5CBDC;
+        --cl-marine-100: #12324A;
+        --cl-gold-100: #3A2F12;
+        --cl-ink-900: #ECEBE8;
+        --cl-ink-500: #AEABA5;
+        --cl-line: #343436;
+        --cl-border: #7A7A80;
+        --cl-bg: #19191A;
+        --cl-surface: #212122;
+        --cl-on-primary: #001F35;
+        --cl-success: #4ACB9B;
+        --cl-warning: #F0A35E;
+        --cl-danger: #F2867A;
+        --cl-success-bg: #12302A;
+        --cl-warning-bg: #3A2A12;
+        --cl-danger-bg: #3A1A18;
+        --cl-product-up-accent: #04D2C8;
+        --cl-product-up-accent-ink: #3DD6CC;
+        --cl-product-up-accent-soft: #12322F;
+        --cl-product-up-line: #343436;
+        --cl-product-up-ink-3: #AEABA5;
+        --cl-product-up-weekend: #2A2A2C;
+        --cl-product-up-hol-bg: #3A2F12;
+        --cl-product-up-hol-line: #5A4A1E;
+        --cl-product-up-hol-ink: #E8D49A;
+        --cl-product-up-on-accent: #001F35;
+        color-scheme: dark;
+    }
+}
+
+/* Print: dark and auto-dark embeds get the light tokens (dark text on paper). Placed last, same
+   specificity as the dark blocks, so order wins. Light values: see the light pin above. */
+@media print {
+    .gtp-up[data-gtp-theme="dark"],
+    .gtp-up[data-gtp-theme="auto"] {
+        --cl-marine-900: #001F35;
+        --cl-marine-800: #00345C;
+        --cl-marine-700: #00467D;
+        --cl-marine-500: #0058A0;
+        --cl-marine-100: #E6F4FF;
+        --cl-gold-500: #FFC857;
+        --cl-gold-100: #FFF8E1;
+        --cl-ink-900: #111827;
+        --cl-ink-500: #4B5563;
+        --cl-line: #E2E8F0;
+        --cl-border: #8A919C;
+        --cl-bg: #F3F5F9;
+        --cl-surface: #FFFFFF;
+        --cl-on-primary: #FFFFFF;
+        --cl-on-gold: #1C1917;
+        --cl-success: #047857;
+        --cl-warning: #B45309;
+        --cl-danger: #B42318;
+        --cl-success-bg: #ECFDF5;
+        --cl-warning-bg: #FFF8E6;
+        --cl-danger-bg: #FEF2F2;
+        --cl-product-up-accent: #04D2C8;
+        --cl-product-up-accent-ink: #047A74;
+        --cl-product-up-accent-soft: #E6FAF9;
+        --cl-product-up-line: #ECEEF1;
+        --cl-product-up-ink-3: #5F6368;
+        --cl-product-up-weekend: #F3F4F6;
+        --cl-product-up-hol-bg: #F4EFE4;
+        --cl-product-up-hol-line: #E8DCC0;
+        --cl-product-up-hol-ink: #6B5A2E;
+        --cl-product-up-on-accent: #111827;
+        color-scheme: light;
+    }
 }

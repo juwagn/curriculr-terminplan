@@ -206,6 +206,11 @@ $GLOBALS['wpdb']->rows['sj_2027_28'] = array(
     'stage' => 'entwurf', 'feed_token' => 'grptoken', 'updated_at' => '2027-09-01 00:00:00',
 );
 gsh_tp_curriculr_after_put( 'sj_2027_28', 'grptoken' );
+// rest_feed_group: group name empty after sanitizing must not leak the full feed.
+foreach ( array( '   ', '%20', '' ) as $blank ) {
+    $bf = gsh_tp_curriculr_rest_feed_group( new Gsh_Fake_Req( array(), array( 'sj' => 'sj_2027_28', 'token' => 'grptoken', 'group' => $blank ) ) );
+    gsh_assert_true( $bf instanceof WP_REST_Response && $bf->status === 404, 'rest_feed_group blank group ' . var_export( $blank, true ) . ' -> 404' );
+}
 $grp_cals = array();
 foreach ( gsh_tp_get_schoolyears() as $sy_check ) {
     if ( $sy_check['key'] === 'sj_2027_28' ) {
@@ -319,8 +324,8 @@ gsh_assert_contains( $ics_p_all, 'UID:nm1@curriculr-planner', 'n:m catch-all: nm
 gsh_assert_contains( $ics_p_all, 'UID:nm2@curriculr-planner', 'n:m catch-all: nm2 (Schulleitung) present' );
 gsh_assert_contains( $ics_p_all, 'UID:nm3@curriculr-planner', 'n:m catch-all: nm3 (Kollegium) present' );
 
-// Schulleitung profile: nm1 (no group) + nm2 (Schulleitung) but not nm3 (Kollegium).
-gsh_assert_contains( $ics_p_sl, 'UID:nm1@curriculr-planner', 'n:m SL filter: nm1 (no group) present' );
+// Schulleitung profile: only nm2 (Schulleitung); nm1 (no group) and nm3 (Kollegium) are excluded.
+gsh_assert_true( strpos( $ics_p_sl, 'UID:nm1@curriculr-planner' ) === false, 'n:m SL filter: nm1 (no group) excluded' );
 gsh_assert_contains( $ics_p_sl, 'UID:nm2@curriculr-planner', 'n:m SL filter: nm2 (Schulleitung) present' );
 gsh_assert_true( strpos( $ics_p_sl, 'UID:nm3@curriculr-planner' ) === false, 'n:m SL filter: nm3 (Kollegium) excluded' );
 
