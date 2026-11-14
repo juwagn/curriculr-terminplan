@@ -18,6 +18,7 @@ $GLOBALS['transients']   = array();
 $GLOBALS['redirects']    = array();
 $GLOBALS['remote_queue'] = array();
 $GLOBALS['app_filter']   = null; // callable|null — simuliert add_filter('curriculr_apps', …)
+function wp_salt( $scheme = 'auth' ) { return 'synthetic-wordpress-salt'; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function set_transient( $k, $v, $ttl ) { $GLOBALS['transients'][ $k ] = $v; return true; }
 function get_transient( $k ) { return $GLOBALS['transients'][ $k ] ?? false; }
@@ -176,6 +177,9 @@ gsh_assert_eq( $t['groups'], array( 'Schulleitung' ), 'Terminplan-Token enthält
 gsh_assert_eq( $t['aud'], 'https://juwagn.github.io/curriculr-planner/', 'Terminplan-aud unverändert' );
 
 /* ---------- /auth/login mit unbekannter App ---------- */
+function gsh_test_oauth_states() {
+    return array_filter( $GLOBALS['transients'], function( $key ) { return strpos( $key, 'gsh_tp_cur_oauth_' ) === 0; }, ARRAY_FILTER_USE_KEY );
+}
 class Gsh_Fake_Login_Req implements ArrayAccess {
     private $p;
     public function __construct( $p ) { $this->p = $p; }
@@ -190,7 +194,7 @@ $res = gsh_tp_curriculr_rest_auth_login( new Gsh_Fake_Login_Req( array( 'app' =>
 gsh_assert_eq( $res->status, 400, 'unbekannte App → 400' );
 gsh_assert_eq( $res->data, array( 'error' => 'unknown_app' ), 'Fehlercode unknown_app' );
 gsh_assert_eq( $GLOBALS['redirects'], array(), 'kein Redirect bei unbekannter App' );
-gsh_assert_eq( $GLOBALS['transients'], array(), 'kein State-Transient bei unbekannter App' );
+gsh_assert_eq( gsh_test_oauth_states(), array(), 'kein State-Transient bei unbekannter App' );
 
 /* ---------- /auth/login mit bekannter App und ohne App (Redirect + State-Transient) ---------- */
 $GLOBALS['app_filter'] = $with_klausurplan;
@@ -202,8 +206,8 @@ try {
 } catch ( Gsh_Test_Redirect $e ) {
     gsh_assert_contains( $e->url, 'https://schule.iserv.de/iserv/auth/auth?', 'Redirect zur IServ-Authorize-URL' );
 }
-gsh_assert_eq( count( $GLOBALS['transients'] ), 1, 'genau ein State-Transient gespeichert' );
-$saved = array_values( $GLOBALS['transients'] )[0];
+gsh_assert_eq( count( gsh_test_oauth_states() ), 1, 'genau ein State-Transient gespeichert' );
+$saved = array_values( gsh_test_oauth_states() )[0];
 gsh_assert_eq( array_keys( $saved ), array( 'nonce', 'app' ), 'Transient-Struktur nonce+app' );
 gsh_assert_eq( $saved['app'], 'klausurplan', 'Transient merkt sich app=klausurplan' );
 
@@ -215,7 +219,7 @@ try {
 } catch ( Gsh_Test_Redirect $e ) {
     gsh_assert_contains( $e->url, 'https://schule.iserv.de/iserv/auth/auth?', 'Redirect zur IServ-Authorize-URL (ohne app)' );
 }
-$saved = array_values( $GLOBALS['transients'] )[0];
+$saved = array_values( gsh_test_oauth_states() )[0];
 gsh_assert_eq( $saved['app'], 'terminplan', 'Transient ohne app → terminplan' );
 
 /* ---------- /auth/callback: Finding 2 — gültiger State, leerer code (z.B. access_denied) ---------- */

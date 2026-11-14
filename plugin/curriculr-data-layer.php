@@ -1136,13 +1136,30 @@ function gsh_tp_curriculr_perm( $req ) {
 }
 
 function gsh_tp_curriculr_allowed_origin() {
-    return get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+    $config = gsh_tp_curriculr_auth_config();
+    if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
+        return '';
+    }
+    $origin = get_option( 'gsh_tp_curriculr_origin', '' );
+    return is_string( $origin ) && trim( $origin ) !== ''
+        ? $origin
+        : gsh_tp_curriculr_app_origin( $config['spa_url'] );
 }
 
 function gsh_tp_curriculr_send_cors() {
+    if ( ! gsh_tp_curriculr_auth_is_configured( gsh_tp_curriculr_auth_config() ) ) {
+        // This filter runs after WordPress core, which may already set CORS.
+        header_remove( 'Access-Control-Allow-Origin' );
+        header_remove( 'Access-Control-Allow-Credentials' );
+        return;
+    }
     $request_origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? (string) wp_unslash( $_SERVER['HTTP_ORIGIN'] ) : '';
     $origin         = gsh_tp_curriculr_cors_origin( $request_origin, gsh_tp_curriculr_allowed_origin(), gsh_tp_curriculr_apps() );
-    header( 'Access-Control-Allow-Origin: ' . esc_url_raw( $origin ) );
+    if ( $origin !== '' ) {
+        header( 'Access-Control-Allow-Origin: ' . esc_url_raw( $origin ) );
+    } else {
+        header_remove( 'Access-Control-Allow-Origin' );
+    }
     header( 'Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS' );
     header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
     header( 'Vary: Origin' );
@@ -1316,6 +1333,9 @@ function gsh_tp_curriculr_rest_put( $req ) {
 function gsh_tp_curriculr_rest_feed( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
     if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+        if ( ! curriculr_tp_rate_limit( 'feed', CURRICULR_TP_FEED_ERROR_LIMIT, CURRICULR_TP_RATE_WINDOW ) ) {
+            return new WP_REST_Response( array( 'error' => 'rate_limited' ), 429 );
+        }
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
     $doc = json_decode( $row['json'], true );
@@ -1339,6 +1359,9 @@ function gsh_tp_curriculr_feed_group_name( $raw ) {
 function gsh_tp_curriculr_rest_feed_group( $req ) {
     $row = gsh_tp_curriculr_repo_get( $req['sj'] );
     if ( ! $row || ! hash_equals( (string) $row['feed_token'], (string) $req['token'] ) ) {
+        if ( ! curriculr_tp_rate_limit( 'feed', CURRICULR_TP_FEED_ERROR_LIMIT, CURRICULR_TP_RATE_WINDOW ) ) {
+            return new WP_REST_Response( array( 'error' => 'rate_limited' ), 429 );
+        }
         return new WP_REST_Response( array( 'error' => 'not_found' ), 404 );
     }
     $group = gsh_tp_curriculr_feed_group_name( $req['group'] );
@@ -2243,7 +2266,7 @@ function gsh_tp_curriculr_handle_doc_export() {
 
 if ( function_exists( 'add_action' ) ) {
     add_action( 'rest_api_init', 'gsh_tp_curriculr_register_rest' );
-    add_filter( 'rest_pre_serve_request', 'gsh_tp_curriculr_cors_filter', 10, 4 );
+    add_filter( 'rest_pre_serve_request', 'gsh_tp_curriculr_cors_filter', 20, 4 );
 
     // Tabelle bei Aktivierung anlegen ...
     register_activation_hook( dirname( __FILE__ ) . '/gsh-terminplan.php', 'gsh_tp_curriculr_install' );

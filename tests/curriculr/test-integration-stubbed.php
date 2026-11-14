@@ -86,6 +86,7 @@ function current_time( $t ) { return '2026-01-01 12:00:00'; }
 function get_current_user_id() { return 7; }
 function wp_json_encode( $d ) { return json_encode( $d ); }
 function current_user_can( $c ) { return true; }
+function wp_salt( $scheme = 'auth' ) { return 'synthetic-wordpress-salt'; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function gsh_tp_get_profiles() { return $GLOBALS['profiles'] ?? array(); }
 // Mutable schoolyears store: seit Auto-Provision (4.31.0) legt after_put fehlende
@@ -102,6 +103,7 @@ function gsh_tp_active_profile_id() { return 'p1'; }
 function gsh_tp_ck( $prefix, $pid ) { return $prefix . $pid . '_v' . GSH_TP_CACHE_VERSION; }
 function gsh_tp_cal_is_extern( $cal ) { return 'extern' === ( $cal['source'] ?? 'planner' ); }
 function delete_transient( $k ) { unset( $GLOBALS['options'][ $k ] ); }
+function get_transient( $k ) { return $GLOBALS['options'][ $k ] ?? false; }
 function set_transient( $k, $v, $ttl = 0 ) { $GLOBALS['options'][ $k ] = $v; }
 $GLOBALS['gsh_tp_curriculr_current_claims'] = null;
 function gsh_tp_curriculr_guard_current_claims() {
@@ -115,6 +117,7 @@ function wp_next_scheduled() { return false; }
 function wp_schedule_event() {}
 class WP_REST_Response { public $data; public $status; public function __construct( $d, $s = 200 ) { $this->data = $d; $this->status = $s; } }
 
+require __DIR__ . '/../../plugin/curriculr-auth.php';
 require __DIR__ . '/../../plugin/curriculr-data-layer.php';
 
 $doc = json_decode( file_get_contents( __DIR__ . '/fixtures/sample-doc.json' ), true );
