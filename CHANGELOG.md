@@ -6,6 +6,17 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+### Sicherheit
+- Die IServ-Anmeldung setzt eine ausdrücklich konfigurierte, gültige HTTPS-Adresse des Planers voraus. Ohne diese Einstellung werden Anmeldung und Token-Austausch verweigert; die feste Entwickler-Adresse entfällt als Rückfallwert.
+- Anmeldung und Token-Austausch erhalten eine Abrufbegrenzung. Bei Kalender-Abos werden nur Abrufe mit ungültigem Token oder unbekanntem Schuljahr begrenzt. Gültige Kalender-Abos bleiben unbegrenzt.
+- Beim Deinstallieren bleiben standardmäßig alle gespeicherten Daten erhalten. Mit ausdrücklich aktiviertem Löschhaken werden auch Jahrespläne, Revisionen, Einstellungen, Protokolle und lokale Sicherungen entfernt.
+- Sicherheits-Meldeweg und Datenschutz-Dokumentation ergänzt.
+
+### Was Sie beim Update auf 4.46.2 tun müssen
+1. Prüfen Sie vor der Installation, dass `CURRICULR_SPA_URL` in `wp-config.php` steht und die gültige HTTPS-Adresse Ihres Planers enthält. Fehlt sie oder ist sie ungültig, funktioniert die Anmeldung nach dem Update nicht mehr. Geben Sie keine Zugangsdaten weiter.
+2. Eine ausdrücklich gespeicherte CORS-Origin bleibt bestehen. Ohne eigene Angabe wird die Origin aus `CURRICULR_SPA_URL` abgeleitet. Prüfen Sie nach dem Update Anmeldung und Übertragung eines Plans.
+3. Unter **Einstellungen → Schul-Terminplan → System & Logs** ist **Beim Deinstallieren alle Daten löschen** standardmäßig ausgeschaltet. Aktivieren Sie den Haken nur, wenn beim späteren Löschen des Plugins auch die Daten endgültig entfernt werden sollen. Exportieren Sie vorher benötigte Pläne und Einstellungen. Updates und Deaktivierung erhalten die Plandaten.
+
 ## [4.46.1] – 2026-11-13
 
 ### Behoben

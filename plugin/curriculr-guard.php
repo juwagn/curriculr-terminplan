@@ -41,6 +41,11 @@ function gsh_tp_curriculr_guard_validate_bearer( $auth_header, $app_token_key, $
  */
 function gsh_tp_curriculr_guard_perm( $req ) {
     $config       = gsh_tp_curriculr_auth_config();
+    // An empty audience would make the low-level verifier skip that check.
+    if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
+        unset( $GLOBALS['gsh_tp_curriculr_current_claims'] );
+        return new WP_Error( 'unauthorized', 'App-Token invalid', array( 'status' => 401 ) );
+    }
     $auth         = (string) $req->get_header( 'authorization' );
     $expected_iss = function_exists( 'rest_url' ) ? rest_url( 'curriculr/v1' ) : '';
     $expected_aud = isset( $config['spa_url'] ) ? $config['spa_url'] : '';

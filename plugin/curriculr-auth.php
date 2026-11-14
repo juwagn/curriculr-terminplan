@@ -34,7 +34,7 @@ function gsh_tp_curriculr_auth_config() {
         'client_id'      => defined( 'CURRICULR_ISERV_CLIENT_ID' ) ? CURRICULR_ISERV_CLIENT_ID : '',
         'client_secret'  => defined( 'CURRICULR_ISERV_CLIENT_SECRET' ) ? CURRICULR_ISERV_CLIENT_SECRET : '',
         'app_token_key'  => defined( 'CURRICULR_APP_TOKEN_KEY' ) ? CURRICULR_APP_TOKEN_KEY : '',
-        'spa_url'        => defined( 'CURRICULR_SPA_URL' ) ? CURRICULR_SPA_URL : 'https://juwagn.github.io/curriculr-planner/',
+        'spa_url'        => defined( 'CURRICULR_SPA_URL' ) ? CURRICULR_SPA_URL : '',
         'redirect_uri'   => rest_url( 'curriculr/v1/auth/callback' ),
         'allowed_groups' => $groups,
         'token_ttl'      => defined( 'CURRICULR_APP_TOKEN_TTL' ) ? (int) CURRICULR_APP_TOKEN_TTL : 1800,
@@ -45,7 +45,54 @@ function gsh_tp_curriculr_auth_is_configured( $config ) {
     return ! empty( $config['iserv_base'] )
         && ! empty( $config['client_id'] )
         && ! empty( $config['client_secret'] )
-        && ! empty( $config['app_token_key'] );
+        && ! empty( $config['app_token_key'] )
+        && curriculr_tp_valid_spa_url( $config['spa_url'] ?? '' );
+}
+
+/** Validate the configured redirect target without changing the token audience. */
+function curriculr_tp_valid_spa_url( $url ) {
+    if ( ! is_string( $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+        return false;
+    }
+    $parts = parse_url( $url );
+    return is_array( $parts )
+        && strtolower( $parts['scheme'] ?? '' ) === 'https'
+        && ! empty( $parts['host'] )
+        && ! isset( $parts['user'] )
+        && ! isset( $parts['query'] )
+        && ! isset( $parts['fragment'] );
+}
+
+// Generous per-network limits accommodate shared school and mobile connections.
+define( 'CURRICULR_TP_AUTH_LOGIN_LIMIT', 300 );
+define( 'CURRICULR_TP_AUTH_TOKEN_LIMIT', 600 );
+define( 'CURRICULR_TP_FEED_ERROR_LIMIT', 300 );
+define( 'CURRICULR_TP_RATE_WINDOW', 600 );
+
+/**
+ * Transient counter, like the kiosk/draft guards, with a fixed expiry.
+ * Store only a salted hash of an IPv4 /24 or IPv6 /64 network, never the IP.
+ * The optional clock makes boundary tests deterministic.
+ */
+function curriculr_tp_rate_limit( $bucket, $max, $window, $now = null ) {
+    $now    = $now === null ? time() : $now;
+    $raw_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $packed = is_string( $raw_ip ) && filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? inet_pton( $raw_ip ) : false;
+    $network = 'unknown';
+    if ( $packed !== false ) {
+        $network = strlen( $packed ) === 4 ? substr( $packed, 0, 3 ) : substr( $packed, 0, 8 );
+    }
+    $key   = 'gsh_tp_cur_rl_' . $bucket . '_' . hash_hmac( 'sha256', $network, wp_salt( 'auth' ) );
+    $state = get_transient( $key );
+    if ( ! is_array( $state ) || (int) ( $state['expires'] ?? 0 ) <= $now ) {
+        $state = array( 'count' => 0, 'expires' => $now + $window );
+    }
+    if ( $state['count'] >= $max ) {
+        return false;
+    }
+    $state['count']++;
+    set_transient( $key, $state, max( 1, $state['expires'] - $now ) );
+    return true;
 }
 
 /* ---------- Pure: App-Registry — Login für mehrere Apps (ab 4.42.0) ---------- */
@@ -433,6 +480,9 @@ function gsh_tp_curriculr_rest_auth_login( $req ) {
     if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
         return new WP_REST_Response( array( 'error' => 'sso_not_configured' ), 503 );
     }
+    if ( ! curriculr_tp_rate_limit( 'login', CURRICULR_TP_AUTH_LOGIN_LIMIT, CURRICULR_TP_RATE_WINDOW ) ) {
+        return new WP_REST_Response( array( 'error' => 'rate_limited' ), 429 );
+    }
     $app_key = gsh_tp_curriculr_resolve_app_key( isset( $req['app'] ) ? $req['app'] : '', gsh_tp_curriculr_apps() );
     if ( $app_key === null ) {
         return new WP_REST_Response( array( 'error' => 'unknown_app' ), 400 );
@@ -540,6 +590,12 @@ function gsh_tp_curriculr_rest_auth_callback( $req ) {
 /* ---------- WP: /auth/token — Einmal-Handoff → App-Token (Fetch, CORS) ---------- */
 
 function gsh_tp_curriculr_rest_auth_token( $req ) {
+    if ( ! gsh_tp_curriculr_auth_is_configured( gsh_tp_curriculr_auth_config() ) ) {
+        return new WP_REST_Response( array( 'error' => 'sso_not_configured' ), 503 );
+    }
+    if ( ! curriculr_tp_rate_limit( 'token', CURRICULR_TP_AUTH_TOKEN_LIMIT, CURRICULR_TP_RATE_WINDOW ) ) {
+        return new WP_REST_Response( array( 'error' => 'rate_limited' ), 429 );
+    }
     $body     = $req->get_json_params();
     $exchange = ( is_array( $body ) && isset( $body['exchange'] ) ) ? (string) $body['exchange'] : '';
     if ( $exchange === '' ) {

@@ -3,10 +3,15 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.46.1
+ * Version:     4.46.2
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
+ * v4.46.2
+ * - [SECURITY] IServ-Anmeldung verlangt eine ausdrücklich konfigurierte HTTPS-Planer-Adresse; vor dem Update CURRICULR_SPA_URL prüfen
+ * - [SECURITY] Abrufbegrenzung für Anmeldung und ungültige Feed-Token; gültige Kalender-Abos bleiben unbegrenzt
+ * - [SECURITY] Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken; Standard erhält alle Daten
+ * - [NEU] Sicherheits-Meldeweg und Datenschutz-Dokumentation
  * v4.46.1
  * - [FIX] Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten
  * - [FIX] Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten
@@ -718,7 +723,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.46.1' );
+define( 'GSH_TP_VERSION',       '4.46.2' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -968,6 +973,15 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
  */
 function gsh_tp_changelog() {
     return array(
+        array(
+            'version' => '4.46.2',
+            'entries' => array(
+                array( 'tag' => 'SECURITY', 'text' => 'Vor dem Update CURRICULR_SPA_URL prüfen: Die IServ-Anmeldung verlangt eine ausdrücklich konfigurierte HTTPS-Planer-Adresse.' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Abrufbegrenzung für Anmeldung und ungültige Feed-Token. Gültige Kalender-Abos bleiben unbegrenzt.' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken. Standardmäßig bleiben alle Daten erhalten; Updates und Deaktivierung erhalten die Plandaten.' ),
+                array( 'tag' => 'NEU', 'text' => 'Sicherheits-Meldeweg und Datenschutz-Dokumentation ergänzt.' ),
+            ),
+        ),
         array(
             'version' => '4.46.1',
             'entries' => array(
@@ -3040,7 +3054,10 @@ function gsh_tp_enqueue_admin_delete_warn( $hook ) {
     wp_localize_script(
         'gsh-curriculr-delete-warn',
         'gshDeleteWarn',
-        array( 'backupUrl' => admin_url( 'options-general.php?page=gsh-terminplan-backup' ) )
+        array(
+            'backupUrl' => admin_url( 'options-general.php?page=gsh-terminplan-backup' ),
+            'deleteData' => '1' === (string) get_option( 'gsh_tp_delete_on_uninstall', '0' ),
+        )
     );
 }
 add_action( 'admin_enqueue_scripts', 'gsh_tp_enqueue_admin_delete_warn' );
@@ -4345,6 +4362,41 @@ function gsh_tp_handle_clear_logs( &$profiles ) {
     }
 }
 
+/** Save the destructive uninstall preference only after an explicit administrator action. */
+function curriculr_tp_handle_save_uninstall( &$profiles ) {
+    if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'curriculr_tp_save_uninstall' ) ) {
+        echo '<div class="notice notice-error"><p>Sicherheitsprüfung fehlgeschlagen.</p></div>';
+        return;
+    }
+    $enabled = isset( $_POST['gsh_tp_delete_on_uninstall'] ) && '1' === $_POST['gsh_tp_delete_on_uninstall'];
+    $value = $enabled ? '1' : '0';
+    update_option( 'gsh_tp_delete_on_uninstall', $value, false );
+    if ( $value !== (string) get_option( 'gsh_tp_delete_on_uninstall', '0' ) ) {
+        echo '<div class="notice notice-error"><p>Die Einstellung zur Deinstallation konnte nicht gespeichert werden. Die bisherige Einstellung bleibt aktiv. Bitte prüfen Sie die Datenbankverbindung und versuchen Sie es erneut.</p></div>';
+        return;
+    }
+    echo '<div class="notice notice-success"><p>Einstellung zur Deinstallation gespeichert.</p></div>';
+}
+
+/** Render the default-off uninstall preference separately from ordinary settings. */
+function curriculr_tp_render_uninstall_settings() {
+    ?>
+    <h2>Daten bei der Deinstallation</h2>
+    <form method="post">
+        <?php wp_nonce_field( 'curriculr_tp_save_uninstall' ); ?>
+        <input type="hidden" name="curriculr_tp_save_uninstall" value="1">
+        <p><label for="gsh-tp-delete-on-uninstall">
+            <input type="checkbox" id="gsh-tp-delete-on-uninstall" name="gsh_tp_delete_on_uninstall" value="1" aria-describedby="gsh-tp-uninstall-description" <?php checked( get_option( 'gsh_tp_delete_on_uninstall', '0' ), '1' ); ?>>
+            Beim Deinstallieren alle Daten löschen
+        </label></p>
+        <p id="gsh-tp-uninstall-description">Standardmäßig bleiben Jahrespläne, Einstellungen, Revisionen und Sicherungen beim Löschen des Plugins erhalten.
+            Mit aktiviertem Haken werden diese Daten beim Löschen des Plugins dauerhaft entfernt.
+            Updates und Deaktivierung löschen keine Plandaten. Exportieren Sie benötigte Pläne und Einstellungen vorher.</p>
+        <?php submit_button( 'Einstellung zur Deinstallation speichern', 'secondary', 'curriculr-uninstall-submit' ); ?>
+    </form>
+    <?php
+}
+
 /**
  * Dispatcher: leitet POST-Aktionen der Einstellungsseite an benannte Handler weiter.
  *
@@ -4353,6 +4405,7 @@ function gsh_tp_handle_clear_logs( &$profiles ) {
  */
 function gsh_tp_settings_handle_post( &$profiles ) {
     $map = array(
+        'curriculr_tp_save_uninstall' => 'curriculr_tp_handle_save_uninstall',
         'gsh_tp_new_profile'        => 'gsh_tp_handle_new_profile',
         'gsh_tp_save_profile'       => 'gsh_tp_handle_save_profile',
         'gsh_tp_activate_profile'   => 'gsh_tp_handle_activate_profile',
@@ -6121,6 +6174,7 @@ function gsh_tp_render_kiosk_tab() {
  * @return void
  */
 function gsh_tp_render_system_tab() {
+    curriculr_tp_render_uninstall_settings();
     // Kiosk + Entwurf-Vorschau — moved from former standalone Kiosk tab.
     gsh_tp_render_kiosk_tab();
     echo '<hr style="margin:24px 0" />';
@@ -6131,6 +6185,7 @@ function gsh_tp_render_system_tab() {
         'CURRICULR_ISERV_CLIENT_ID'     => ! empty( $cur_cfg['client_id'] ),
         'CURRICULR_ISERV_CLIENT_SECRET' => ! empty( $cur_cfg['client_secret'] ),
         'CURRICULR_APP_TOKEN_KEY'       => ! empty( $cur_cfg['app_token_key'] ),
+        'CURRICULR_SPA_URL'             => curriculr_tp_valid_spa_url( $cur_cfg['spa_url'] ),
     );
     $cur_ready = gsh_tp_curriculr_auth_is_configured( $cur_cfg );
     ?>
@@ -6138,7 +6193,7 @@ function gsh_tp_render_system_tab() {
     <p>
         <?php echo wp_kses_post( $cur_ready
             ? gsh_tp_icon( 'check' ) . ' <strong>Konfiguriert.</strong> Die Anmeldung &uuml;ber IServ ist aktiv.'
-            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die fehlenden Konstanten in <code>wp-config.php</code> erg&auml;nzen.' ); ?>
+            : gsh_tp_icon( 'alert-triangle' ) . ' <strong>Noch nicht vollst&auml;ndig konfiguriert.</strong> Bitte die Konstanten in <code>wp-config.php</code> pr&uuml;fen. <code>CURRICULR_SPA_URL</code> muss eine g&uuml;ltige HTTPS-Adresse des Planers enthalten.' ); ?>
     </p>
     <div class="gsh-adm-scroll gsh-adm-scroll--w640">
     <table class="widefat">
@@ -6149,7 +6204,7 @@ function gsh_tp_render_system_tab() {
                 <td><code><?php echo esc_html( $const ); ?></code></td>
                 <td><?php echo wp_kses_post( $set
                     ? gsh_tp_icon( 'check' ) . ' gesetzt'
-                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt' ); ?></td>
+                    : gsh_tp_icon( 'alert-triangle' ) . ' fehlt oder ungültig' ); ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -6217,10 +6272,10 @@ function gsh_tp_render_system_tab() {
                 <th><label for="gsh_tp_curriculr_origin_sys">Erlaubte Planner-Adresse</label></th>
                 <td>
                     <input type="url" id="gsh_tp_curriculr_origin_sys" name="gsh_tp_curriculr_origin"
-                           value="<?php echo esc_attr( get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' ) ); ?>"
-                           class="regular-text" placeholder="https://juwagn.github.io" />
+                           value="<?php echo esc_attr( gsh_tp_curriculr_allowed_origin() ); ?>"
+                           class="regular-text" placeholder="https://planer.example.org" />
                     <p class="description">
-                        Online-Planner: <code>https://juwagn.github.io</code> (Standard).<br>
+                        Ohne eigene Angabe wird die Origin aus <code>CURRICULR_SPA_URL</code> verwendet.<br>
                         Zum lokalen Testen: <code>http://localhost:5173</code> &ndash; nur Schema + Host + Port, ohne Pfad, ohne Schr&auml;gstrich am Ende.
                     </p>
                 </td>
@@ -6229,7 +6284,7 @@ function gsh_tp_render_system_tab() {
                 <th>REST-Schnittstelle</th>
                 <td>
                     <?php
-                    $cur_origin = get_option( 'gsh_tp_curriculr_origin', 'https://juwagn.github.io' );
+                    $cur_origin = gsh_tp_curriculr_allowed_origin();
                     echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
                     echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
                     ?>
@@ -11898,68 +11953,105 @@ register_deactivation_hook( __FILE__, function () {
     }
 } );
 
-/**
- * Deinstallations-Hook: Entfernt alle Plugin-Daten vollständig aus WordPress.
- *
- * Löscht alle gespeicherten Optionen und den Transient-Cache, sodass nach
- * einer Deinstallation keine Überreste in der WordPress-Datenbank verbleiben.
- * Wird nur aufgerufen wenn das Plugin im Backend vollständig gelöscht wird.
- *
- * @since 1.2.0 (profil-aware seit 3.5.0)
- * @return void
- */
+/** Remove only the dedicated backup directory, without following symlinks. */
+function curriculr_tp_remove_backup_directory() {
+    $uploads = wp_upload_dir();
+    if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
+        return false;
+    }
+    $base = realpath( $uploads['basedir'] );
+    if ( false === $base ) {
+        return ! file_exists( $uploads['basedir'] );
+    }
+    $directory = $base . '/curriculr-backups';
+    if ( is_link( $directory ) ) {
+        return unlink( $directory );
+    }
+    if ( ! file_exists( $directory ) ) {
+        return true;
+    }
+    if ( ! is_dir( $directory ) || realpath( $directory ) !== $directory ) {
+        return false;
+    }
+    try {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS ),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ( $iterator as $entry ) {
+            $path = $entry->getPathname();
+            $ok = $entry->isLink() || ! $entry->isDir() ? unlink( $path ) : rmdir( $path );
+            if ( ! $ok ) {
+                return false;
+            }
+        }
+        return rmdir( $directory );
+    } catch ( UnexpectedValueException $error ) {
+        return false;
+    }
+}
+
+/** Uninstall preserves stored data unless the administrator explicitly opted in. */
 register_uninstall_hook( __FILE__, 'gsh_tp_uninstall' );
 function gsh_tp_uninstall() {
-    // Globale und Legacy-Options
-    foreach ( array(
-        'gsh_tp_ical_url',
-        'gsh_tp_cache_duration',
-        'gsh_tp_schuljahr_start',
-        'gsh_tp_quartal_grenzen',
-        'gsh_tp_kategorie_mapping',
-        'gsh_tp_categories',       // konfigurierbare Kategorien (seit 3.4.0)
-        'gsh_tp_kiosk_token',
-        'gsh_tp_draft_kiosk_token',
-        'gsh_tp_iserv_domain',
-        'gsh_tp_last_sync',
-        GSH_TP_CACHE_KEY,          // permanente Daten-Option (seit 3.3.0)
-        GSH_TP_BACKUP_KEY,
-        'gsh_tp_curriculr_origin',
-        'gsh_tp_curriculr_profile_map',
-        'gsh_tp_curriculr_db_version',
-    ) as $opt ) {
-        delete_option( $opt );
-    }
-    delete_transient( GSH_TP_FRESH_KEY );
-
-    // Profil-spezifische Options und Transients löschen
-    $profiles = get_option( 'gsh_tp_profiles', array() );
-    if ( is_array( $profiles ) ) {
-        foreach ( $profiles as $p ) {
-            $pid = sanitize_key( $p['id'] ?? '' );
-            if ( ! $pid ) {
-                continue;
-            }
-            // Versionierte Keys (aktuelle Version und alle Vorgänger)
-            delete_option( gsh_tp_ck( 'gsh_tp_ical_', $pid ) );
-            delete_option( gsh_tp_ck( 'gsh_tp_sync_logs_', $pid ) );
-            delete_transient( gsh_tp_ck( 'gsh_tp_fresh_', $pid ) );
-            delete_transient( gsh_tp_ck( 'gsh_tp_chg_', $pid ) );
-            // Legacy unversionierte Keys (falls noch vorhanden)
-            delete_option( 'gsh_tp_ical_' . $pid );
-            delete_option( 'gsh_tp_sync_logs_' . $pid );
-            delete_transient( 'gsh_tp_fresh_' . $pid );
-            delete_transient( 'gsh_tp_chg_' . $pid );
-            // Unversionierte Keys
-            delete_option( 'gsh_tp_backup_' . $pid );
-            delete_option( 'gsh_tp_sync_' . $pid );
-            delete_transient( 'gsh_tp_snap_' . $pid );
-            delete_transient( 'gsh_tp_sched_' . $pid );
-        }
-    }
-    delete_option( 'gsh_tp_profiles' );
-    delete_option( 'gsh_tp_cache_ver' );
-
     wp_clear_scheduled_hook( 'gsh_tp_cron_refresh' );
     wp_clear_scheduled_hook( 'gsh_tp_curriculr_daily_backup' );
+    if ( '1' !== (string) get_option( 'gsh_tp_delete_on_uninstall', '0' ) ) {
+        return;
+    }
+    // Stop rather than silently leave personal backups behind after removing the plugin.
+    if ( ! curriculr_tp_remove_backup_directory() ) {
+        wp_die( 'Die Sicherungen konnten nicht vollständig gelöscht werden. Bitte die Dateirechte im Upload-Verzeichnis prüfen und die Deinstallation wiederholen.' );
+    }
+    global $wpdb;
+    // Escape underscores: SQL LIKE must never match another plugin's prefix.
+    $names = $wpdb->get_col( $wpdb->prepare(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+        $wpdb->esc_like( 'gsh_tp_' ) . '%',
+        $wpdb->esc_like( '_transient_gsh_tp_' ) . '%',
+        $wpdb->esc_like( '_transient_timeout_gsh_tp_' ) . '%'
+    ) );
+    if ( ! is_array( $names ) || ! empty( $wpdb->last_error ) ) {
+        wp_die( 'Die gespeicherten Einstellungen konnten nicht gelesen werden. Bitte die Datenbankverbindung prüfen und die Deinstallation wiederholen.' );
+    }
+    // These identifiers contain only the WordPress-managed table prefix and fixed names.
+    foreach ( array( 'curriculr_docs', 'curriculr_doc_revisions' ) as $suffix ) {
+        $table = str_replace( '`', '``', $wpdb->prefix . $suffix );
+        if ( false === $wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ) ) {
+            wp_die( 'Die Plandaten konnten nicht vollständig gelöscht werden. Bitte die Datenbankrechte prüfen und die Deinstallation wiederholen.' );
+        }
+    }
+    // Remove known cache-only profile transients without flushing other plugins' caches.
+    foreach ( array( GSH_TP_FRESH_KEY, 'gsh_tp_events_snapshot', 'gsh_tp_changes', 'gsh_tp_ical_data' ) as $key ) {
+        delete_transient( $key );
+    }
+    foreach ( gsh_tp_get_profiles() as $profile ) {
+        $pid = sanitize_key( $profile['id'] ?? '' );
+        if ( '' === $pid ) {
+            continue;
+        }
+        foreach ( array( 'gsh_tp_fresh_', 'gsh_tp_chg_', 'gsh_tp_snap_', 'gsh_tp_sched_' ) as $prefix ) {
+            delete_transient( $prefix . $pid );
+            delete_transient( gsh_tp_ck( $prefix, $pid ) );
+        }
+    }
+    foreach ( $names as $name ) {
+        if ( 'gsh_tp_delete_on_uninstall' === $name ) {
+            continue;
+        }
+        if ( 0 === strpos( $name, '_transient_timeout_gsh_tp_' ) ) {
+            delete_transient( substr( $name, strlen( '_transient_timeout_' ) ) );
+        } elseif ( 0 === strpos( $name, '_transient_gsh_tp_' ) ) {
+            delete_transient( substr( $name, strlen( '_transient_' ) ) );
+        }
+        // Also remove database copies if an external object cache is now enabled.
+        $missing = new stdClass();
+        if ( $missing !== get_option( $name, $missing ) && ! delete_option( $name ) ) {
+            wp_die( 'Die gespeicherten Einstellungen konnten nicht vollständig gelöscht werden. Bitte die Datenbankrechte prüfen und die Deinstallation wiederholen.' );
+        }
+    }
+    // Keep consent until all other deletion steps succeeded, so a retry remains possible.
+    if ( ! delete_option( 'gsh_tp_delete_on_uninstall' ) ) {
+        wp_die( 'Die Einstellung zur Deinstallation konnte nicht gelöscht werden. Bitte die Datenbankrechte prüfen und die Deinstallation wiederholen.' );
+    }
 }

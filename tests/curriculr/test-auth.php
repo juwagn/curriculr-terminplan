@@ -22,6 +22,7 @@ define( 'CURRICULR_ALLOWED_GROUPS',      'Schulleitung, Verwaltung' );
 $GLOBALS['transients']   = array();
 $GLOBALS['redirects']    = array();
 $GLOBALS['remote_queue'] = array(); // FIFO: nächste wp_remote_*-Antwort
+function wp_salt( $scheme = 'auth' ) { return 'synthetic-wordpress-salt'; }
 function rest_url( $p ) { return 'https://wp.test/wp-json/' . $p; }
 function set_transient( $k, $v, $ttl ) { $GLOBALS['transients'][ $k ] = $v; return true; }
 function get_transient( $k ) { return $GLOBALS['transients'][ $k ] ?? false; }
