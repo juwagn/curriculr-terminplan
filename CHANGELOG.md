@@ -6,6 +6,8 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.46.2] – 2026-11-25
+
 ### Neu
 - Anleitung „Google-Kalender als Quelle für Terminplan und Kiosk“ mit Beispieladressen, Stichwort-Beispielen und bekannten Grenzen.
 
