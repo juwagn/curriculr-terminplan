@@ -6,6 +6,9 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+### Behoben
+- Termine aus dem Planer behalten im Terminplan ihre Kategorie. Bisher konnte ein Stichwort im Titel (etwa „EF“ oder „Q2“) eine andere Kategorie wie „Oberstufe“ erzwingen.
+
 ## [4.46.1] – 2026-11-13
 
 ### Behoben
