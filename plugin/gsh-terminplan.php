@@ -3569,7 +3569,8 @@ function gsh_tp_color_derive( string $color ): array {
  * Weist einem Termin automatisch Kategorien per Keyword-Matching zu.
  *
  * Läuft NUR wenn der Termin noch keine Kategorien hat (categories ist
- * kein nicht-leeres Array). Durchsucht Titel, Beschreibung, Ort und
+ * kein nicht-leeres Array). Entspricht das CATEGORIES-Feld genau dem Namen
+ * einer Kategorie (so exportiert der Planer), gilt nur diese. Sonst durchsucht es Titel, Beschreibung, Ort und
  * das rohe iCal-CATEGORIES-Feld. Bei keinem Treffer bleibt categories
  * ein leeres Array – der Termin wird ungefärbt dargestellt.
  *
@@ -3585,8 +3586,20 @@ function gsh_tp_assign_categories_to_event( array $event ): array {
 
     $categories = gsh_tp_get_categories();
 
-    // Suchtext: Titel, Beschreibung, Ort und CATEGORIES-String (für IServ-Felder)
-    $ical_cats  = is_string( $event['categories'] ) ? $event['categories'] : '';
+    // Planner exports the exact category label: an exact match is authoritative,
+    // otherwise keywords from other categories (e.g. 'ef' -> Oberstufe) would win.
+    $ical_cats = is_string( $event['categories'] ) ? $event['categories'] : '';
+    $exact     = mb_strtolower( trim( $ical_cats ), 'UTF-8' );
+    if ( '' !== $exact ) {
+        foreach ( $categories as $cat ) {
+            if ( mb_strtolower( trim( (string) ( $cat['label'] ?? '' ) ), 'UTF-8' ) === $exact ) {
+                $event['categories'] = array( $cat['id'] );
+                return $event;
+            }
+        }
+    }
+
+    // Fallback (z. B. IServ): Suchtext aus Titel, Beschreibung, Ort und CATEGORIES-String
     $search_raw = ( $event['summary']     ?? '' ) . ' '
                 . ( $event['description'] ?? '' ) . ' '
                 . ( $event['location']    ?? '' ) . ' '
