@@ -187,20 +187,26 @@ function gsh_tp_curriculr_app_origin( $url ) {
     if ( ! is_array( $p ) || empty( $p['scheme'] ) || empty( $p['host'] ) ) {
         return '';
     }
-    return strtolower( $p['scheme'] ) . '://' . strtolower( $p['host'] ) . ( isset( $p['port'] ) ? ':' . (int) $p['port'] : '' );
+    $scheme = strtolower( $p['scheme'] );
+    $port   = isset( $p['port'] ) ? (int) $p['port'] : 0;
+    // Browser lassen den Standard-Port in der Origin weg.
+    if ( ( $scheme === 'https' && $port === 443 ) || ( $scheme === 'http' && $port === 80 ) ) {
+        $port = 0;
+    }
+    return $scheme . '://' . strtolower( $p['host'] ) . ( $port ? ':' . $port : '' );
 }
 
 /**
- * CORS: Die Anfrage-Origin wird nur gespiegelt, wenn sie zu einer zusätzlich
- * registrierten App gehört; sonst gilt wie bisher die Terminplan-Origin.
+ * CORS: Die Anfrage-Origin wird nur gespiegelt, wenn sie zu einer registrierten
+ * App gehört (auch zum Planer aus CURRICULR_SPA_URL); sonst gilt die Terminplan-Origin.
  */
 function gsh_tp_curriculr_cors_origin( $request_origin, $default_origin, $apps ) {
     $wanted = gsh_tp_curriculr_app_origin( is_string( $request_origin ) ? rtrim( trim( $request_origin ), '/' ) : '' );
     if ( $wanted === '' ) {
         return $default_origin;
     }
-    foreach ( $apps as $key => $app ) {
-        if ( $key !== 'terminplan' && gsh_tp_curriculr_app_origin( $app['url'] ) === $wanted ) {
+    foreach ( $apps as $app ) {
+        if ( gsh_tp_curriculr_app_origin( $app['url'] ) === $wanted ) {
             return $wanted;
         }
     }

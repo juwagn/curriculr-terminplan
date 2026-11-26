@@ -1140,10 +1140,9 @@ function gsh_tp_curriculr_allowed_origin() {
     if ( ! gsh_tp_curriculr_auth_is_configured( $config ) ) {
         return '';
     }
-    $origin = get_option( 'gsh_tp_curriculr_origin', '' );
-    return is_string( $origin ) && trim( $origin ) !== ''
-        ? $origin
-        : gsh_tp_curriculr_app_origin( $config['spa_url'] );
+    $stored = get_option( 'gsh_tp_curriculr_origin', '' );
+    $origin = gsh_tp_curriculr_app_origin( is_string( $stored ) ? trim( $stored ) : '' );
+    return $origin !== '' ? $origin : gsh_tp_curriculr_app_origin( $config['spa_url'] );
 }
 
 function gsh_tp_curriculr_send_cors() {

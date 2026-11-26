@@ -12,6 +12,7 @@
  * - [SECURITY] Abrufbegrenzung für Anmeldung und ungültige Feed-Token; gültige Kalender-Abos bleiben unbegrenzt
  * - [SECURITY] Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken; Standard erhält alle Daten
  * - [NEU] Sicherheits-Meldeweg und Datenschutz-Dokumentation
+ * - [SECURITY] Browser-Zugriff (CORS) nur noch vom Planer, von registrierten Apps und von der zusätzlich gespeicherten Adresse
  * v4.46.2
  * - [FIX] Termine aus dem Planer behalten ihre Kategorie; ein Stichwort im Titel (etwa „EF“ oder „Q2“) erzwingt keine andere Kategorie wie „Oberstufe“ mehr
  * - [DOCS] Anleitung „Google-Kalender als Quelle für Terminplan und Kiosk“
@@ -983,6 +984,7 @@ function gsh_tp_changelog() {
                 array( 'tag' => 'SECURITY', 'text' => 'Abrufbegrenzung für Anmeldung und ungültige Feed-Token. Gültige Kalender-Abos bleiben unbegrenzt.' ),
                 array( 'tag' => 'SECURITY', 'text' => 'Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken. Standardmäßig bleiben alle Daten erhalten; Updates und Deaktivierung erhalten die Plandaten.' ),
                 array( 'tag' => 'NEU', 'text' => 'Sicherheits-Meldeweg und Datenschutz-Dokumentation ergänzt.' ),
+                array( 'tag' => 'SECURITY', 'text' => 'Browser-Zugriff (CORS) nur noch vom Planer aus CURRICULR_SPA_URL, von registrierten Apps und von der zusätzlich gespeicherten Planner-Adresse.' ),
             ),
         ),
         array(
@@ -6285,21 +6287,22 @@ function gsh_tp_render_system_tab() {
     <h2>Curriculr REST-Einstellungen</h2>
     <div style="background:var(--cl-marine-100);border:1px solid var(--cl-marine-500);padding:12px 16px;margin-bottom:16px;border-radius:6px;">
         <strong>Erlaubte Planner-Adresse (CORS-Origin):</strong>
-        Nur Anfragen von dieser Adresse werden vom REST-Endpunkt <code>curriculr/v1</code> akzeptiert.
+        Browser dürfen den REST-Endpunkt <code>curriculr/v1</code> nur vom Planer aus <code>CURRICULR_SPA_URL</code>,
+        von registrierten Apps und von dieser zusätzlichen Adresse aus abfragen.
     </div>
     <form method="post" action="">
         <?php wp_nonce_field( 'gsh_tp_save_curriculr', 'gsh_tp_cur_n' ); ?>
         <input type="hidden" name="gsh_tp_save_curriculr" value="1" />
         <table class="form-table">
             <tr>
-                <th><label for="gsh_tp_curriculr_origin_sys">Erlaubte Planner-Adresse</label></th>
+                <th><label for="gsh_tp_curriculr_origin_sys">Zusätzliche Planner-Adresse</label></th>
                 <td>
                     <input type="url" id="gsh_tp_curriculr_origin_sys" name="gsh_tp_curriculr_origin"
-                           value="<?php echo esc_attr( gsh_tp_curriculr_allowed_origin() ); ?>"
+                           value="<?php echo esc_attr( get_option( 'gsh_tp_curriculr_origin', '' ) ); ?>"
                            class="regular-text" placeholder="https://planer.example.org" />
                     <p class="description">
-                        Ohne eigene Angabe wird die Origin aus <code>CURRICULR_SPA_URL</code> verwendet.<br>
-                        Zum lokalen Testen: <code>http://localhost:5173</code> &ndash; nur Schema + Host + Port, ohne Pfad, ohne Schr&auml;gstrich am Ende.
+                        Leer lassen, wenn nur der Planer aus <code>CURRICULR_SPA_URL</code> zugreift.<br>
+                        Zum lokalen Testen: <code>http://localhost:5173</code>. Pfad und Standard-Port werden ignoriert.
                     </p>
                 </td>
             </tr>
@@ -6308,8 +6311,12 @@ function gsh_tp_render_system_tab() {
                 <td>
                     <?php
                     $cur_origin = gsh_tp_curriculr_allowed_origin();
+                    $cur_config = gsh_tp_curriculr_auth_config();
+                    $cur_list   = $cur_origin
+                        ? implode( ', ', array_unique( array( gsh_tp_curriculr_app_origin( $cur_config['spa_url'] ), $cur_origin ) ) )
+                        : 'keine (Anmeldekonfiguration unvollständig)';
                     echo '<code style="display:block;padding:6px 10px;background:var(--cl-bg);border:1px solid var(--cl-line);border-radius:3px;font-size:13px;word-break:break-all">' . esc_html( rest_url( 'curriculr/v1/health' ) ) . '</code>';
-                    echo '<p class="description" style="margin-top:6px">Aktuell erlaubte Adresse: <strong>' . esc_html( $cur_origin ) . '</strong></p>';
+                    echo '<p class="description" style="margin-top:6px">Aktuell erlaubt (ohne weitere registrierte Apps): <strong>' . esc_html( $cur_list ) . '</strong></p>';
                     ?>
                 </td>
             </tr>
