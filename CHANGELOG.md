@@ -6,6 +6,8 @@ Frühere Änderungen stehen im Plugin unter **Einstellungen → Schul-Terminplan
 
 ## [Unreleased]
 
+## [4.46.3] – 2026-11-26
+
 ### Sicherheit
 - Die IServ-Anmeldung setzt eine ausdrücklich konfigurierte, gültige HTTPS-Adresse des Planers voraus. Ohne diese Einstellung werden Anmeldung und Token-Austausch verweigert; die feste Entwickler-Adresse entfällt als Rückfallwert.
 - Anmeldung und Token-Austausch erhalten eine Abrufbegrenzung. Bei Kalender-Abos werden nur Abrufe mit ungültigem Token oder unbekanntem Schuljahr begrenzt. Gültige Kalender-Abos bleiben unbegrenzt.
