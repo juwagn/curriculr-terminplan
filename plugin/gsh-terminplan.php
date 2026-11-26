@@ -3,15 +3,18 @@
  * Plugin Name: Schul-Terminplan Dashboard
  * Plugin URI:  https://example.com
  * Description: Interaktive Quartalsuebersicht des Schuljahresterminplans aus dem IServ-Kalender (iCal-Feed).
- * Version:     4.46.2
+ * Version:     4.46.3
  * Author:      Open Source Community
  * License:     GPL v2 or later
  * Text Domain: gsh-terminplan
- * v4.46.2
+ * v4.46.3
  * - [SECURITY] IServ-Anmeldung verlangt eine ausdrücklich konfigurierte HTTPS-Planer-Adresse; vor dem Update CURRICULR_SPA_URL prüfen
  * - [SECURITY] Abrufbegrenzung für Anmeldung und ungültige Feed-Token; gültige Kalender-Abos bleiben unbegrenzt
  * - [SECURITY] Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken; Standard erhält alle Daten
  * - [NEU] Sicherheits-Meldeweg und Datenschutz-Dokumentation
+ * v4.46.2
+ * - [FIX] Termine aus dem Planer behalten ihre Kategorie; ein Stichwort im Titel (etwa „EF“ oder „Q2“) erzwingt keine andere Kategorie wie „Oberstufe“ mehr
+ * - [DOCS] Anleitung „Google-Kalender als Quelle für Terminplan und Kiosk“
  * v4.46.1
  * - [FIX] Terminplan-Ansicht für das Kollegium bei mittlerer Bildschirmbreite (Tablet) nicht mehr abgeschnitten
  * - [FIX] Lange Termin-Titel werden in der Listenansicht auf zwei Zeilen umbrochen statt abgeschnitten
@@ -723,7 +726,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Direktzugriff auf die PHP-Datei blockieren (WordPress-Standard)
 }
 
-define( 'GSH_TP_VERSION',       '4.46.2' );
+define( 'GSH_TP_VERSION',       '4.46.3' );
 define( 'GSH_TP_CACHE_VERSION', 3 );       // Bei Datenstruktur-Änderungen erhöhen → alte Caches werden automatisch ignoriert
 define( 'GSH_TP_SLUG',     'gsh-terminplan' );
 define( 'GSH_TP_CACHE_KEY', 'gsh_tp_ical_data' );      // Option (nie ablaufend)
@@ -974,12 +977,19 @@ function gsh_tp_icon( $name, $size = '1em', $class = '' ) {
 function gsh_tp_changelog() {
     return array(
         array(
-            'version' => '4.46.2',
+            'version' => '4.46.3',
             'entries' => array(
                 array( 'tag' => 'SECURITY', 'text' => 'Vor dem Update CURRICULR_SPA_URL prüfen: Die IServ-Anmeldung verlangt eine ausdrücklich konfigurierte HTTPS-Planer-Adresse.' ),
                 array( 'tag' => 'SECURITY', 'text' => 'Abrufbegrenzung für Anmeldung und ungültige Feed-Token. Gültige Kalender-Abos bleiben unbegrenzt.' ),
                 array( 'tag' => 'SECURITY', 'text' => 'Vollständige Datenlöschung bei Deinstallation nur mit ausdrücklich aktiviertem Löschhaken. Standardmäßig bleiben alle Daten erhalten; Updates und Deaktivierung erhalten die Plandaten.' ),
                 array( 'tag' => 'NEU', 'text' => 'Sicherheits-Meldeweg und Datenschutz-Dokumentation ergänzt.' ),
+            ),
+        ),
+        array(
+            'version' => '4.46.2',
+            'entries' => array(
+                array( 'tag' => 'FIX', 'text' => 'Termine aus dem Planer behalten ihre Kategorie. Ein Stichwort im Titel (etwa „EF“ oder „Q2“) erzwingt keine andere Kategorie wie „Oberstufe“ mehr.' ),
+                array( 'tag' => 'DOCS', 'text' => 'Anleitung „Google-Kalender als Quelle für Terminplan und Kiosk“.' ),
             ),
         ),
         array(
@@ -3586,7 +3596,8 @@ function gsh_tp_color_derive( string $color ): array {
  * Weist einem Termin automatisch Kategorien per Keyword-Matching zu.
  *
  * Läuft NUR wenn der Termin noch keine Kategorien hat (categories ist
- * kein nicht-leeres Array). Durchsucht Titel, Beschreibung, Ort und
+ * kein nicht-leeres Array). Entspricht das CATEGORIES-Feld genau dem Namen
+ * einer Kategorie (so exportiert der Planer), gilt nur diese. Sonst durchsucht es Titel, Beschreibung, Ort und
  * das rohe iCal-CATEGORIES-Feld. Bei keinem Treffer bleibt categories
  * ein leeres Array – der Termin wird ungefärbt dargestellt.
  *
@@ -3602,8 +3613,20 @@ function gsh_tp_assign_categories_to_event( array $event ): array {
 
     $categories = gsh_tp_get_categories();
 
-    // Suchtext: Titel, Beschreibung, Ort und CATEGORIES-String (für IServ-Felder)
-    $ical_cats  = is_string( $event['categories'] ) ? $event['categories'] : '';
+    // Planner exports the exact category label: an exact match is authoritative,
+    // otherwise keywords from other categories (e.g. 'ef' -> Oberstufe) would win.
+    $ical_cats = is_string( $event['categories'] ) ? $event['categories'] : '';
+    $exact     = mb_strtolower( trim( $ical_cats ), 'UTF-8' );
+    if ( '' !== $exact ) {
+        foreach ( $categories as $cat ) {
+            if ( mb_strtolower( trim( (string) ( $cat['label'] ?? '' ) ), 'UTF-8' ) === $exact ) {
+                $event['categories'] = array( $cat['id'] );
+                return $event;
+            }
+        }
+    }
+
+    // Fallback (z. B. IServ): Suchtext aus Titel, Beschreibung, Ort und CATEGORIES-String
     $search_raw = ( $event['summary']     ?? '' ) . ' '
                 . ( $event['description'] ?? '' ) . ' '
                 . ( $event['location']    ?? '' ) . ' '

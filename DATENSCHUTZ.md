@@ -1,6 +1,6 @@
 # Datenschutz – Curricu:lr Terminplan
 
-Diese Beschreibung erläutert die technische Datenverarbeitung des WordPress-Plugins ab Version 4.46.2.
+Diese Beschreibung erläutert die technische Datenverarbeitung des WordPress-Plugins ab Version 4.46.3.
 Verantwortlich für den Einsatz und das Datenschutzkonzept ist die jeweilige Schule.
 Die Beschreibung ersetzt nicht die Datenschutzerklärung der Schule.
 
