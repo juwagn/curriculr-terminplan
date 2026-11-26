@@ -159,4 +159,12 @@ gsh_assert_eq( strpos( $pages['Schuljahre'], 'AKTIV' ), false, 'No capitals-only
 
 gsh_assert_contains( $pages['Datensicherung'], "onsubmit=\"return confirm('Die aktuellen Einstellungen werden überschrieben. Import starten?')\"", 'Import asks for confirmation before it runs' );
 
+// The origin field shows what is stored, so saving the form never erases or pins it.
+$origin_field = '//input[@id="gsh_tp_curriculr_origin_sys"]';
+gsh_assert_eq( gsh_dom( $pages['System'] )->query( $origin_field )->item( 0 )->getAttribute( 'value' ), '', 'Unset origin leaves the field empty' );
+gsh_assert_contains( $pages['System'], 'keine (Anmeldekonfiguration unvollständig)', 'Missing planner configuration is named in plain German' );
+$GLOBALS['_wp_options']['gsh_tp_curriculr_origin'] = 'https://alt.example.test';
+$x = gsh_dom( gsh_render( 'gsh_tp_settings_page', '_system' ) );
+gsh_assert_eq( $x->query( $origin_field )->item( 0 )->getAttribute( 'value' ), 'https://alt.example.test', 'Stored origin survives an invalid planner configuration' );
+
 gsh_test_done();

@@ -30,7 +30,9 @@
         heading.textContent = 'Plugin löschen';
 
         var body = document.createElement('p');
-        body.innerHTML = 'Vor dem Löschen Einstellungen exportieren.<br>Curriculr-Planungsdokumente bleiben erhalten.';
+        body.textContent = config.deleteData
+            ? 'Beim Löschen werden Jahrespläne, Einstellungen, Revisionen und Sicherungen dauerhaft entfernt. Exportieren Sie benötigte Pläne und Einstellungen vorher.'
+            : 'Das Plugin wird gelöscht. Jahrespläne, Einstellungen, Revisionen und Sicherungen bleiben für eine Neuinstallation erhalten.';
 
         var actions = document.createElement('div');
         actions.className = 'gsh-delete-warn-actions';
